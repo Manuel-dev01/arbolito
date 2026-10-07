@@ -1,6 +1,6 @@
 # 04: Reference: addresses, pools, endpoints, gotchas (canonical)
 
-Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs. **Re-verify before first use.** Read the chain and the live docs; never trust this file blindly. Update this file whenever something changes.
+Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs; onchain entries re-verified 2026-10-07 by `pnpm verify:addresses` (67/67 at block 79491985). **Re-verify before first use.** Read the chain and the live docs; never trust this file blindly. Update this file whenever something changes.
 
 ## Network
 | | Value |
@@ -19,19 +19,24 @@ Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs. **Re-verify
 | wMXN | 0x337e7456b420bd3481e7fa61fa9850343d610d34 | 18 | Ripio. Seed supply only |
 | wPEN | 0x4F34c8b3b5FB6D98Da888F0feA543d4d9C9F2eBE | 18 | Ripio. Seed supply only |
 | wCLP | 0x61D450a098b6a7f69fC4b98CE68198fe59768651 | 18 | Ripio. Seed supply only |
-| USA₮ | 0xD2ab3C9A02DBBAB236BfEC45D1d755DF4267F771 | 6 | Anchorage/Tether. Fee adapter **0x0357EE22278c922e1D36cFe6b899269b161880C4** |
-| USDT | 0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e | 6 | |
-| USDC | 0xcebA9300f2b948710d2653dD7B07f33A8B32118C | 6 | |
+| USA₮ | 0xD2ab3C9A02DBBAB236BfEC45D1d755DF4267F771 | 6 | Anchorage/Tether. Onchain `symbol()` = `USAT`. Fee adapter **0x0357EE22278c922e1D36cFe6b899269b161880C4** |
+| USDT | 0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e | 6 | Onchain `symbol()` = `USD₮`. Fee adapter **0x0E2A3e05bc9A16F5292A6170456A710cb89C6f72** |
+| USDC | 0xcebA9300f2b948710d2653dD7B07f33A8B32118C | 6 | Fee adapter **0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B** |
 | USDm (Mento) | 0x765DE816845861e75A25fCA122bb6898B8B1282a | 18 | |
 | BRLm (Mento) | 0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787 | 18 | Cross-issuer BRL |
 | COPm (Mento) | 0x8A567e2aE79CA692Bd748aB832081C45de4041eA | 18 | Cross-issuer COP |
-| cNGN | 0xF6829D7393dAe24509eb1E52eE8e572e2E271a4f | check | Textile corridor (desk) |
+| cNGN | 0xF6829D7393dAe24509eb1E52eE8e572e2E271a4f | 6 | Textile corridor (desk). Decimals verified onchain 2026-10-07 |
 | CELO | 0x471EcE3750Da237f93B8E339c536989b8978a438 | 18 | |
 
 **Fee abstraction:** for 6-decimal tokens, `feeCurrency` must be the **adapter** address, not the token. wFIAT tokens are **not** on the fee-currency allowlist. Sponsor gas, or pay it in USDT/USA₮/CELO.
+- Allowlist source: Registry `0x000000000000000000000000000000000000ce10` → `FeeCurrencyDirectory` `0x15F344b9E6c3Cb6F0376A36A64928b13F62C6276` → `getCurrencies()`.
+- Read 2026-10-07: 21 currencies, including the three 6-decimal adapters above (USA₮ and USDT adapters expose `getAdaptedToken()`; the USDC adapter exposes `adaptedToken()`) and the Mento 18-decimal stables directly.
 
 ## Uniswap v3 on Celo
-- Factory: 0xAfE208a311B21f13EF87E33A90049fC17A7acDEc. Get QuoterV2 and SwapRouter02 addresses from Uniswap's Celo deployments page and record them here.
+- Factory: 0xAfE208a311B21f13EF87E33A90049fC17A7acDEc
+- QuoterV2: **0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8** (verified onchain 2026-10-07: `factory()` matches; struct-arg `quoteExactInputSingle` works)
+- SwapRouter02: **0x5615CDAb10dc425a742d643d949a7F474C01abc4** (verified onchain 2026-10-07: `factory()` matches)
+- Uniswap's docs site was not reachable from the build sandbox; confirm against the Celo deployments page when it is.
 
 | Pool | Fee | Address | Balances (2026-10-04) | ≈ TVL |
 |---|---|---|---|---|

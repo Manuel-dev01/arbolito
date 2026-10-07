@@ -7,6 +7,25 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@arbolito/chain':
+        specifier: workspace:*
+        version: link:packages/chain
+      '@arbolito/config':
+        specifier: workspace:*
+        version: link:packages/config
+      '@arbolito/proof':
+        specifier: workspace:*
+        version: link:packages/proof
+      '@arbolito/router':
+        specifier: workspace:*
+        version: link:packages/router
+      viem:
+        specifier: ^2.57.3
+        version: 2.57.3(typescript@7.0.2)(zod@4.6.5)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^26.6.4
