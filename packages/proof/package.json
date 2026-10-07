@@ -1,0 +1,16 @@
+{
+  "name": "@arbolito/proof",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@arbolito/chain": "workspace:*",
+    "@arbolito/config": "workspace:*",
+    "@arbolito/router": "workspace:*",
+    "viem": "^2.57.3",
+    "zod": "^4.6.5"
+  }
+}

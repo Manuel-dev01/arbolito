@@ -1,0 +1,27 @@
+{
+  "name": "arbolito",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "verify:addresses": "tsx scripts/verify-addresses.ts",
+    "quote": "tsx packages/router/src/cli/quote.ts",
+    "smoke:convert": "tsx scripts/smoke-convert.ts",
+    "register:8004": "tsx scripts/register-8004.ts",
+    "contracts:build": "forge build --root contracts",
+    "contracts:test": "forge test --root contracts",
+    "test": "pnpm contracts:test && vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:fork": "pnpm contracts:build && vitest run --project fork",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

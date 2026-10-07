@@ -1,0 +1,14 @@
+{
+  "name": "@arbolito/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.5",
+    "viem": "^2.57.3",
+    "zod": "^4.6.5"
+  }
+}
