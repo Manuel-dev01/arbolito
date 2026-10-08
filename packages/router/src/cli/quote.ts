@@ -9,7 +9,7 @@ import { loadEnv, tokenBySymbol } from "@arbolito/config";
 import { makePublicClient } from "@arbolito/chain";
 import { effectiveRate, fmtAmount, toAtomic } from "../format";
 import { plan } from "../planner";
-import { fetchReferences } from "../refs";
+import { fetchReferences, fiatOf, referenceRate } from "../refs";
 import { TextileRfqAdapter } from "../textile/rfq";
 import { UniswapV3Adapter } from "../uniswap/adapter";
 import type { Reference, Route } from "../types";
@@ -21,57 +21,42 @@ if (!fromArg || !toArg || !amountArg) {
 }
 
 async function main(fromArg: string, toArg: string, amountArg: string) {
-const t0 = 0; // measure from process start (includes tsx boot and module load)
-const env = loadEnv();
-const from = tokenBySymbol(fromArg);
-const to = tokenBySymbol(toArg);
-const amountIn = toAtomic(from.address, amountArg);
-const taker: Address = env.OPS_PRIVATE_KEY ? privateKeyToAccount(env.OPS_PRIVATE_KEY as `0x${string}`).address : zeroAddress;
+  const t0 = 0; // measure from process start (includes tsx boot and module load)
+  const env = loadEnv();
+  const from = tokenBySymbol(fromArg);
+  const to = tokenBySymbol(toArg);
+  const amountIn = toAtomic(from.address, amountArg);
+  const taker: Address = env.OPS_PRIVATE_KEY ? privateKeyToAccount(env.OPS_PRIVATE_KEY as `0x${string}`).address : zeroAddress;
 
-const client = makePublicClient();
-const blockNumber = await client.getBlockNumber();
-const textile = new TextileRfqAdapter();
-const [result, refs] = await Promise.all([
-  plan({ client, adapters: [new UniswapV3Adapter(client), textile], tokenIn: from.address, tokenOut: to.address, amountIn, taker, blockNumber }),
-  fetchReferences(client, blockNumber),
-]);
-const elapsed = Math.round(performance.now() - t0);
+  const client = makePublicClient();
+  const blockNumber = await client.getBlockNumber();
+  const textile = new TextileRfqAdapter();
+  const [result, refs] = await Promise.all([
+    plan({ client, adapters: [new UniswapV3Adapter(client), textile], tokenIn: from.address, tokenOut: to.address, amountIn, taker, blockNumber }),
+    fetchReferences(client, blockNumber),
+  ]);
+  const elapsed = Math.round(performance.now() - t0);
 
-const fiat = (s: string) => s.replace(/^w/, "").replace(/^USAT$|^USDT$|^USDC$/, "USD");
-const rateOf = (r: Route) => effectiveRate(r.tokenIn, r.amountIn, r.tokenOut, r.expectedOut);
-const pair = `${fiat(from.symbol)}/${fiat(to.symbol)}`;
-const refRate = (name: Reference["name"], p: string) => {
-  const hit = refs.references.find((r) => r.name === name && r.pair === p);
-  return hit ? Number(hit.rate) : undefined;
-};
-/** Reference rate for the requested pair, derived via USD crosses when needed. */
-const refFor = (name: Reference["name"]): number | undefined => {
-  const direct = refRate(name, pair);
-  if (direct) return direct;
-  const [b, q] = pair.split("/") as [string, string];
-  if (b === "USD") return refRate(name, `USD/${q}`);
-  if (q === "USD") {
-    const x = refRate(name, `USD/${b}`);
-    return x ? 1 / x : undefined;
-  }
-  return undefined;
-};
+  const rateOf = (r: Route) => effectiveRate(r.tokenIn, r.amountIn, r.tokenOut, r.expectedOut);
+  const [base, quote] = [fiatOf(from.symbol), fiatOf(to.symbol)];
+  const pair = `${base}/${quote}`;
+  const refFor = (name: Reference["name"]) => referenceRate(refs.references, name, base, quote);
 
-console.log(`\n${fmtAmount(from.address, amountIn)} → ${to.symbol}   (block ${blockNumber})\n`);
-if (!result.best) {
-  console.log("No route found. No venue could quote this pair and size right now.");
-} else {
-  const best = result.best;
-  console.log(`BEST   ${fmtAmount(to.address, best.expectedOut)}   rate ${rateOf(best).toPrecision(6)} ${pair}`);
-  console.log(`       ${best.label}`);
-  console.log(`       min out (${((Number(best.expectedOut - best.minOut) * 10_000) / Number(best.expectedOut)).toFixed(0)} bps slippage): ${fmtAmount(to.address, best.minOut)}`);
-  if (result.alternatives.length) {
-    console.log("\nALTERNATIVES");
-    for (const alt of result.alternatives) {
-      const diffBps = Number(((alt.expectedOut - best.expectedOut) * 10_000n) / best.expectedOut);
-      console.log(`       ${fmtAmount(to.address, alt.expectedOut).padEnd(24)} ${String(diffBps).padStart(6)} bps   ${alt.label}`);
+  console.log(`\n${fmtAmount(from.address, amountIn)} → ${to.symbol}   (block ${blockNumber})\n`);
+  if (!result.best) {
+    console.log("No route found. No venue could quote this pair and size right now.");
+  } else {
+    const best = result.best;
+    console.log(`BEST   ${fmtAmount(to.address, best.expectedOut)}   rate ${rateOf(best).toPrecision(6)} ${pair}`);
+    console.log(`       ${best.label}`);
+    console.log(`       min out (${((Number(best.expectedOut - best.minOut) * 10_000) / Number(best.expectedOut)).toFixed(0)} bps slippage): ${fmtAmount(to.address, best.minOut)}`);
+    if (result.alternatives.length) {
+      console.log("\nALTERNATIVES");
+      for (const alt of result.alternatives) {
+        const diffBps = Number(((alt.expectedOut - best.expectedOut) * 10_000n) / best.expectedOut);
+        console.log(`       ${fmtAmount(to.address, alt.expectedOut).padEnd(24)} ${String(diffBps).padStart(6)} bps   ${alt.label}`);
+      }
     }
-  }
 }
 
 console.log("\nREFERENCES");

@@ -54,7 +54,8 @@ export interface GuardedSendParams {
   live?: boolean;
   publicClient: PublicClient;
   walletClient: WalletClient;
-  to: Address;
+  /** Omit to deploy a contract (data = initcode; the suffix trails the constructor args harmlessly). */
+  to?: Address;
   data?: Hex;
   value?: bigint;
   /** USD value this action moves, in micro-USD. 0 for gas-only calls (approvals, receipts). */
@@ -115,7 +116,7 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
 
   const data = withAttribution(p.data, code);
   const feeCurrency = p.feeCurrency ? feeCurrencyFor(p.feeCurrency) : undefined;
-  const tx = { account, to: p.to, data, value: p.value ?? 0n, ...(feeCurrency ? { feeCurrency } : {}) };
+  const tx = { account, ...(p.to ? { to: p.to } : {}), data, value: p.value ?? 0n, ...(feeCurrency ? { feeCurrency } : {}) };
 
   // Simulate first: a revert here costs nothing.
   await p.publicClient.call(tx);

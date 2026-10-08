@@ -90,6 +90,30 @@ export async function textileRefs(timeoutMs = 1500): Promise<Reference[]> {
     .map((x) => ({ name: "textile_mid", pair: `USD/${x.target.slice(1)}`, rate: fmtRate(x.mid), source: `${t.source}#${x.tickerId}`, at: t.at }));
 }
 
+/** Fiat code for a token: USD stables → "USD", wFIAT → the ISO code ("wBRL" → "BRL"). */
+export function fiatOf(symbol: string): string {
+  if (["USAT", "USDT", "USDC", "USDm"].includes(symbol)) return "USD";
+  return symbol.replace(/^w/, "");
+}
+
+/**
+ * Reference rate for BASE/QUOTE (QUOTE units per 1 BASE), using USD crosses when the
+ * direct pair is missing: USD/X directly, or X/USD as 1 / (USD/X).
+ */
+export function referenceRate(refs: Reference[], name: Reference["name"], base: string, quote: string): number | undefined {
+  const find = (pair: string) => {
+    const hit = refs.find((r) => r.name === name && r.pair === pair);
+    return hit ? Number(hit.rate) : undefined;
+  };
+  const direct = find(`${base}/${quote}`);
+  if (direct) return direct;
+  if (quote === "USD") {
+    const inv = find(`USD/${base}`);
+    return inv ? 1 / inv : undefined;
+  }
+  return undefined;
+}
+
 export interface RefsResult {
   references: Reference[];
   /** Sources that failed or timed out (shown, never fatal). */
