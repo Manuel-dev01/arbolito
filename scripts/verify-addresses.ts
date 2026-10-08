@@ -8,7 +8,7 @@
  * Exits non-zero on any mismatch. Read-only; sends no transactions.
  */
 import { createPublicClient, fallback, http, parseAbi, type Address } from "viem";
-import { celo } from "viem/chains";
+import { celoMainnet as celo } from "@arbolito/chain";
 import { CONTRACTS, POOLS, TOKENS, loadEnv } from "@arbolito/config";
 
 const env = loadEnv();

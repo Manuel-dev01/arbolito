@@ -34,7 +34,7 @@ export const envSchema = z.object({
   TEXTILE_RFQ_ENABLED: bool.default(false),
 
   // Reference rates
-  DOLAR_API_URL: z.string().url().default("https://dolarapi.com/v1/dolares"),
+  DOLAR_API_URL: z.string().url().default("https://dolarapi.com/v1"),
 
   // x402 facilitator
   X402_FACILITATOR_URL: z.string().url().default("https://api.x402.celo.org"),

@@ -7,8 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "verify:addresses": "tsx scripts/verify-addresses.ts",
-    "quote": "tsx packages/router/src/cli/quote.ts",
+    "verify:addresses": "node scripts/run.mjs verify-addresses",
+    "quote": "node scripts/run.mjs quote",
     "smoke:convert": "tsx scripts/smoke-convert.ts",
     "register:8004": "tsx scripts/register-8004.ts",
     "contracts:build": "forge build --root contracts",
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

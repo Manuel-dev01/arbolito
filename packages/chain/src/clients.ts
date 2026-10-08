@@ -9,7 +9,7 @@ import {
   type WalletClient,
   type Chain,
 } from "viem";
-import { celo } from "viem/chains";
+import { celoMainnet as celo } from "./celo";
 import { loadEnv } from "@arbolito/config";
 
 export interface ClientOptions {
