@@ -48,9 +48,12 @@ export const envSchema = z.object({
   BUY_PAY_TOKEN: z.enum(["USAT", "USDT", "USDC"]).default("USAT"),
 
   // LLM / speech
+  LLM_PROVIDER: z.enum(["deepseek", "anthropic"]).default("deepseek"),
+  DEEPSEEK_API_KEY: opt(z.string()),
+  DEEPSEEK_BASE_URL: z.string().url().default("https://api.deepseek.com"),
   ANTHROPIC_API_KEY: opt(z.string()),
-  AGENT_MODEL: z.string().default("claude-sonnet-5"),
-  RISK_OFFICER_MODEL: z.string().default("claude-opus-5-5"),
+  AGENT_MODEL: z.string().default("deepseek-chat"),
+  RISK_OFFICER_MODEL: z.string().default("deepseek-reasoner"),
   STT_PROVIDER: opt(z.string()),
   STT_API_KEY: opt(z.string()),
 

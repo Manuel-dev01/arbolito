@@ -15,6 +15,9 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 attribution | Facilitator tagging is not live yet (x402-rs#99). Declare the builder-code extension now. **Judges credit x402 volume by `payTo`.** See [04-reference](04-reference.md#celo-x402-facilitator) |
 | Ripio ramps | Deep links (`ramp.ripio.com`), no credentials needed. The full API is KYB, legal entities only. See [04-reference](04-reference.md#ripio-ramps-wfiat-onoff-ramp) |
 
+## Decisions
+- **2026-10-09: LLM provider is DeepSeek, not Anthropic** (founder). `LLM_PROVIDER=deepseek`, OpenAI-compatible API at `https://api.deepseek.com`, default models `deepseek-chat` (agent) and `deepseek-reasoner` (risk officer), to be confirmed via `GET /models`. This supersedes the Claude models in MASTER_PROMPT §2. Voice notes still need an STT provider (Groq Whisper).
+
 ## Day 0 checklist
 - [ ] Textile email sent ([draft](06-outreach-drafts.md#1-textile-api-key-and-filler-onboarding)). **Less critical now:** taker paths are keyless and maker enrollment is self-serve (`/v2/maker/enroll`). Still ask how "quoted volume" is measured.
 - [ ] x402.celo.org API key

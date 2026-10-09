@@ -2,12 +2,12 @@
 
 Where to get every `.env` value, and when you need it. Values go only in `.env` (gitignored). Never paste them into chat, commits or logs.
 
-## Phase 1 (now)
+## Phase 1 (done)
 | Key | Where to get it | Notes |
 |---|---|---|
 | `ATTRIBUTION_CODE` | Issued at hackathon registration (`celo_xxxxxxxx`). Ask the organizers in the hub or the Celo dev channels if you don't have one. | Mainnet sends refuse to run without it. Fork tests use a placeholder. |
 | `OPS_PRIVATE_KEY` | Generate a fresh wallet: `cast wallet new`. Don't reuse a personal wallet. | Fund it with about **$6 of USDT on Celo plus ~1 CELO for gas** (see "Funding the ops wallet"). Deploys `ArbolitoReceipts` and runs the ≤ $2 smoke. |
-| `TEXTILE_API_KEY` | Email contact@textilecredit.com (draft in [06-outreach-drafts.md](06-outreach-drafts.md)). Ask for a `tx_live_` taker key and filler onboarding. | Critical path for T2a. `tx_test_` keys don't cover Celo. |
+| `TEXTILE_API_KEY` | Optional. Email contact@textilecredit.com (draft in [06-outreach-drafts.md](06-outreach-drafts.md)). | **Not needed:** taker paths are keyless (wallet-signed) and maker enrollment is self-serve. Still worth asking how "quoted volume" is measured. |
 | `CELO_RPC_URL_FALLBACK` | Chainstack console: Celo mainnet node (hackathon Growth-plan perk). | Optional. Forno works without it. |
 
 ## Funding the ops wallet (no Ripio account needed)
@@ -22,15 +22,20 @@ wBRL and wARS are ordinary tokens on Celo, so the ops wallet can buy them onchai
 Gas can also be paid in USDT (`--fee-currency USDT`, via the fee adapter), but that path is untested; use CELO for the first runs.
 
 ## Phase 2
-| Key | Where to get it | Notes |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | console.anthropic.com → API keys | Set a monthly spend limit. |
-| `TELEGRAM_BOT_TOKEN` | @BotFather in Telegram → `/newbot` | `TELEGRAM_WEBHOOK_SECRET` is any random string you generate. |
-| `THIRDWEB_CLIENT_ID`, `THIRDWEB_SECRET_KEY` | thirdweb.com dashboard → create a project | Smart accounts and session keys. |
-| `STT_PROVIDER`, `STT_API_KEY` | console.groq.com (Whisper) or console.deepgram.com | Voice notes. |
-| `DATABASE_URL` | neon.tech → new project → connection string | Postgres. |
-| `DESK_PRIVATE_KEY` | `cast wallet new` | Fund only up to `DESK_MAX_INVENTORY_USD`. |
-| `MINI_APP_URL`, `PUBLIC_BASE_URL` | Your Vercel deployment URL | |
+Do these in order; each is free to start unless noted.
+
+| # | `.env` key(s) | Where to get it | Steps and notes |
+|---|---|---|---|
+| 1 | `DEEPSEEK_API_KEY` (plus `LLM_PROVIDER=deepseek`, `AGENT_MODEL`, `RISK_OFFICER_MODEL`) | **platform.deepseek.com** | Sign up → **Top up** a small prepaid balance (paid per token; $5 lasts a long time at hackathon volume) → **API keys** → *Create new API key*. It's shown once; paste it into `.env`. The API is OpenAI-compatible at `https://api.deepseek.com`. Defaults are `deepseek-chat` (agent) and `deepseek-reasoner` (risk officer); we confirm them with `GET /models` before building. |
+| 2 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | **Telegram app → @BotFather** | Send `/newbot`, give it a name ("Arbolito") and a username ending in `bot` (e.g. `arbolito_cambio_bot`). BotFather replies with the token. For the webhook secret, generate any random string: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Later we set the Mini App with `/newapp` or `/setmenubutton`, once the web URL exists. |
+| 3 | `STT_PROVIDER`, `STT_API_KEY` | **console.groq.com** (recommended, free tier, Whisper) or **console.deepgram.com** (free starter credit) | DeepSeek can't transcribe audio, so voice notes need their own provider. Groq: sign in → **API Keys** → *Create API Key*. Set `STT_PROVIDER=groq`. |
+| 4 | `DATABASE_URL` | **neon.tech** (free tier) | Sign up → *Create project* (pick the region nearest your server) → **Connection string**, choosing the *pooled* option → copy the `postgresql://…?sslmode=require` URL. |
+| 5 | `THIRDWEB_CLIENT_ID`, `THIRDWEB_SECRET_KEY` | **thirdweb.com → Dashboard** | Sign in (wallet or email) → *Create project* → copy the **Client ID** and the **Secret Key** (the secret is shown once). Under allowed domains add `localhost` and your Vercel domain. Smart accounts on mainnet may ask you to add a billing method for sponsored gas; we pay gas ourselves at first. |
+| 6 | `PUBLIC_BASE_URL`, `MINI_APP_URL` | **github.com** (new repo) + **vercel.com** (free Hobby plan) | Push this repo to GitHub (a public repo is a submission requirement anyway; `.env` stays ignored). Vercel → *Add New Project* → import the repo → you get `https://<name>.vercel.app`. Use that for both keys. Telegram Mini Apps need HTTPS, and `vercel.app` qualifies, so a custom domain is optional. |
+| 7 | (no key) bot hosting | **railway.com** or **fly.io** | An always-on host for `apps/agent`. Railway: sign in with GitHub → *New Project → Deploy from repo*; trial credit, then ~$5/month. Add the `.env` values in its Variables tab. Not needed until the bot runs 24/7. |
+| 8 | `DESK_PRIVATE_KEY` | `cast wallet new` (local) | A separate wallet for Desk v0. **Don't fund it yet:** the inventory cap and amount need your approval first (`DESK_MAX_INVENTORY_USD`, default 500, which we'll set lower). |
+
+No key is needed for Textile: taker quotes are keyless, and Desk maker enrollment is self-serve with a wallet signature.
 
 ## Phase 3+
 | Key | Where to get it | Notes |
@@ -42,3 +47,5 @@ Gas can also be paid in USDT (`--fee-currency USDT`, via the fee adapter), but t
 
 ## Sandbox network allowlist (for Claude Code sessions)
 `api.textilecredit.com`, `docs.textilecredit.com`, `api.x402.celo.org`, `x402.celo.org`, `gateway.usebuy.ai`, `usebuy.ai`, `docs.uniswap.org`, `developers.uniswap.org`, `docs.celo.org`, `raw.githubusercontent.com`.
+
+Add for Phase 2: `api.deepseek.com`, `api-docs.deepseek.com`, `api.telegram.org`, `api.groq.com`, `*.neon.tech`, `*.thirdweb.com`, `api.thirdweb.com`. For the hackathon CLI (track rules): `www.loops.house`, `api.loops.house`, `*.supabase.co`.
