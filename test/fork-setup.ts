@@ -16,7 +16,8 @@ declare module "vitest" {
   }
 }
 
-const PORT = 8547;
+// FORK_PORT lets parallel sessions run their own anvil instead of sharing (or hijacking) 8547.
+const PORT = Number(process.env.FORK_PORT ?? 8547);
 let anvil: ChildProcess | undefined;
 
 async function rpc(url: string, method: string, params: unknown[] = []): Promise<unknown> {
@@ -51,6 +52,14 @@ export async function setup(project: TestProject) {
 
   const upstream = loadEnv().CELO_RPC_URL;
   const forkBlock = process.env.FORK_BLOCK ? BigInt(process.env.FORK_BLOCK) : (await latestBlock(upstream)) - 2n;
+
+  // Refuse to run against someone else's node: if the port already answers, our anvil could not
+  // bind and the readiness loop below would happily talk to the other instance.
+  const portBusy = await rpc(`http://127.0.0.1:${PORT}`, "eth_chainId").then(
+    () => true,
+    () => false,
+  );
+  if (portBusy) throw new Error(`Port ${PORT} is already serving JSON-RPC; set FORK_PORT to a free port`);
 
   try {
     anvil = spawn(
