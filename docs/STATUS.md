@@ -54,6 +54,23 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-09: Textile-leg execution (`executeRoute`), no mainnet sends
+**Shipped:**
+- **`packages/router/src/executor.ts`:** `executeRoute` runs routes leg by leg. Every send goes through `sendGuarded`.
+  - Consecutive Uniswap legs run as one atomic swap, sized to what the previous step actually delivered (from Transfer logs).
+  - Each Textile leg takes a firm RFQ for that exact amount. Before anything is broadcast, it checks the bound taker, `sellAmount`, `takerPays ≤ input`, spender and swap target equal to the verified LimitOrderReactor, chainId and value, `buyAmount ≥ leg.minOut`, and `expiresAt` with a 15 s margin (checked again after the approve). Any failure cancels the RFQ.
+  - It approves exactly `takerPays` with its own calldata (not the API's), sends `transactions.swap`, then calls `/submit` with the hash. If `/submit` fails, it reads the status and records both, with no retry. On a fork it cancels instead of submitting.
+  - A failure stops the route and returns `partial` or `failed`, with every tx, the error and the exact holding. An unconfirmed swap is looked up onchain once. If it is still unknown, the holding is marked uncertain and shows both possible outcomes; the swap is never re-sent or cancelled.
+  - The route's USD value is charged to the caps once, on the first value-moving send.
+- **`sendGuarded`:** throws `BroadcastError {hash, outcome: reverted | unconfirmed}` after broadcast.
+- **`executableRoutes(..., { textileFirm: true })`** returns Uniswap+Textile RFQ routes. It never returns other venues.
+- **`pnpm smoke:convert`:** runs via `executeRoute` and picks Textile routes only when `TEXTILE_RFQ_ENABLED=true`. A partial run prints the txs and the holding, saves `<routeId>.execution.json` and anchors no receipt.
+- **Tests:**
+  - Unit: 73 pass, 18 of them new (mocked clients and Textile).
+  - Fork: 11 pass. The new Uniswap→Textile run uses `MockRfqReactor` etched at the reactor address, because firm quotes can't be fetched for fork wallets.
+
+**Not yet exercised:** a real firm Textile fill on mainnet. That needs a founder go-ahead and a funded taker. Note that `--fork` with `TEXTILE_RFQ_ENABLED=true` takes a **real** firm quote, which locks maker inventory and is cancelled after the fork fill.
+
 ### 2026-10-09: Phase 1 mainnet smoke (founder go-ahead; ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`)
 Funded by the founder with 6.9 USDT + 2.73 CELO. `verify:addresses` 68/68 before any send. Every tx carries `celo_e054d92430a5`.
 

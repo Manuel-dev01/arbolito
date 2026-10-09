@@ -26,6 +26,24 @@ export class LiveGuardError extends Error {
   }
 }
 
+/**
+ * A transaction that was broadcast but did not confirm successfully. Carries the hash so the
+ * caller can check the chain instead of guessing (and never blindly re-sends).
+ * - reverted:    mined and reverted; nothing moved but gas
+ * - unconfirmed: no receipt within the timeout; it may still land
+ */
+export class BroadcastError extends Error {
+  constructor(
+    message: string,
+    readonly hash: Hex,
+    readonly outcome: "reverted" | "unconfirmed",
+    readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "BroadcastError";
+  }
+}
+
 export function capsFromEnv(): Caps {
   const env = loadEnv();
   return { maxActionMicros: USD(env.BUILD_MAX_ACTION_USD), maxDailyMicros: USD(env.BUILD_MAX_DAILY_USD) };
@@ -165,10 +183,17 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
   await ledger.update(day, id, { status: "sent", txHash: hash });
   log(`[${p.mode}] ${p.purpose}: sent ${p.mode === "live" ? txUrl(hash) : hash} (${formatUsd(p.usdMicros)})`);
 
-  const receipt = await p.publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+  let receipt: TransactionReceipt;
+  try {
+    receipt = await p.publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+  } catch (err) {
+    // Broadcast but unconfirmed: keep the reservation (it may still land) and hand back the hash.
+    const msg = (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;
+    throw new BroadcastError(`Transaction ${hash} unconfirmed: ${msg}`, hash, "unconfirmed", err);
+  }
   if (receipt.status !== "success") {
     await ledger.update(day, id, { status: "released" });
-    throw new Error(`Transaction reverted: ${hash}`);
+    throw new BroadcastError(`Transaction reverted: ${hash}`, hash, "reverted");
   }
   await ledger.update(day, id, { status: "confirmed" });
   return { hash, receipt, data };
