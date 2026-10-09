@@ -14,6 +14,7 @@ const SECRET_KEYS = [
   "TELEGRAM_WEBHOOK_SECRET",
   "THIRDWEB_SECRET_KEY",
   "DATABASE_URL",
+  "DATABASE_URL_UNPOOLED",
 ] as const;
 
 /** Masks every configured secret value, plus buy poll URLs (bearer capabilities). */

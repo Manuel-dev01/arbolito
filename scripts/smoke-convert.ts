@@ -83,7 +83,7 @@ runMain(async () => {
   const value = await usdMicros(publicClient, from.address, amountIn, planned.blockNumber);
 
   // Cap pre-check, so a refusal shows before anyone is asked to confirm.
-  checkCaps(value, ledger.spent(utcDay(new Date())), capsFromEnv());
+  checkCaps(value, await ledger.spent(utcDay(new Date())), capsFromEnv());
 
   console.log(`Smoke convert on ${fork ? `anvil fork ${fork}` : "Celo mainnet"} (block ${planned.blockNumber})
   from          ${account.address}

@@ -15,10 +15,11 @@ export interface LedgerEntry {
   txHash?: string;
 }
 
+/** Async so a database can back it (packages/db DbLedger); memory and file ledgers resolve immediately. */
 export interface SpendLedger {
-  spent(dayUtc: string): bigint;
-  reserve(dayUtc: string, entry: Omit<LedgerEntry, "status">): void;
-  update(dayUtc: string, id: string, patch: Partial<LedgerEntry>): void;
+  spent(dayUtc: string): Promise<bigint>;
+  reserve(dayUtc: string, entry: Omit<LedgerEntry, "status">): Promise<void>;
+  update(dayUtc: string, id: string, patch: Partial<LedgerEntry>): Promise<void>;
 }
 
 export const utcDay = (d: Date) => d.toISOString().slice(0, 10);
@@ -29,15 +30,15 @@ function sumActive(entries: LedgerEntry[]): bigint {
 
 export class MemoryLedger implements SpendLedger {
   private days = new Map<string, LedgerEntry[]>();
-  spent(day: string) {
+  async spent(day: string) {
     return sumActive(this.days.get(day) ?? []);
   }
-  reserve(day: string, entry: Omit<LedgerEntry, "status">) {
+  async reserve(day: string, entry: Omit<LedgerEntry, "status">) {
     const list = this.days.get(day) ?? [];
     list.push({ ...entry, status: "reserved" });
     this.days.set(day, list);
   }
-  update(day: string, id: string, patch: Partial<LedgerEntry>) {
+  async update(day: string, id: string, patch: Partial<LedgerEntry>) {
     const e = this.days.get(day)?.find((x) => x.id === id);
     if (e) Object.assign(e, patch);
   }
@@ -59,15 +60,15 @@ export class FileLedger implements SpendLedger {
     writeFileSync(tmp, JSON.stringify(data, null, 2));
     renameSync(tmp, this.path);
   }
-  spent(day: string) {
+  async spent(day: string) {
     return sumActive(this.read()[day] ?? []);
   }
-  reserve(day: string, entry: Omit<LedgerEntry, "status">) {
+  async reserve(day: string, entry: Omit<LedgerEntry, "status">) {
     const data = this.read();
     (data[day] ??= []).push({ ...entry, status: "reserved" });
     this.write(data);
   }
-  update(day: string, id: string, patch: Partial<LedgerEntry>) {
+  async update(day: string, id: string, patch: Partial<LedgerEntry>) {
     const data = this.read();
     const e = data[day]?.find((x) => x.id === id);
     if (e) {

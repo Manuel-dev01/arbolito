@@ -7,7 +7,16 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["packages/*/test/**/*.test.ts"],
-          exclude: ["**/*.fork.test.ts", "**/node_modules/**"],
+          exclude: ["**/*.fork.test.ts", "**/*.db.test.ts", "**/node_modules/**"],
+        },
+      },
+      {
+        // Integration tests against the real Postgres (DATABASE_URL); they clean up after themselves.
+        test: {
+          name: "db",
+          include: ["packages/*/test/**/*.db.test.ts"],
+          testTimeout: 30_000,
+          fileParallelism: false,
         },
       },
       {

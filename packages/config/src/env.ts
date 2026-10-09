@@ -72,6 +72,8 @@ export const envSchema = z.object({
 
   // Data
   DATABASE_URL: opt(z.string()),
+  /** Direct (non -pooler) connection, for migrations only. */
+  DATABASE_URL_UNPOOLED: opt(z.string()),
 
   // Web
   PUBLIC_BASE_URL: opt(z.string().url()),

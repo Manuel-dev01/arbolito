@@ -142,7 +142,7 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
   const caps = p.caps ?? capsFromEnv();
   const now = p.now ?? new Date();
   const day = utcDay(now);
-  checkCaps(p.usdMicros, ledger.spent(day), caps);
+  checkCaps(p.usdMicros, await ledger.spent(day), caps);
 
   const data = withAttribution(p.data, code);
   const feeCurrency = p.feeCurrency ? feeCurrencyFor(p.feeCurrency) : undefined;
@@ -152,24 +152,24 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
   const gas = await simulateWithRetry(p.publicClient, tx, p.purpose);
 
   const id = randomUUID();
-  ledger.reserve(day, { id, at: now.toISOString(), purpose: p.purpose, usdMicros: p.usdMicros.toString() });
+  await ledger.reserve(day, { id, at: now.toISOString(), purpose: p.purpose, usdMicros: p.usdMicros.toString() });
   let hash: Hex;
   try {
     // Pass the simulated gas so signing doesn't re-estimate against a possibly lagging node.
     hash = await p.walletClient.sendTransaction({ ...tx, gas, chain: p.walletClient.chain ?? null } as never);
   } catch (err) {
     // Nothing was broadcast, so nothing moved.
-    ledger.update(day, id, { status: "released" });
+    await ledger.update(day, id, { status: "released" });
     throw err;
   }
-  ledger.update(day, id, { status: "sent", txHash: hash });
+  await ledger.update(day, id, { status: "sent", txHash: hash });
   log(`[${p.mode}] ${p.purpose}: sent ${p.mode === "live" ? txUrl(hash) : hash} (${formatUsd(p.usdMicros)})`);
 
   const receipt = await p.publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
   if (receipt.status !== "success") {
-    ledger.update(day, id, { status: "released" });
+    await ledger.update(day, id, { status: "released" });
     throw new Error(`Transaction reverted: ${hash}`);
   }
-  ledger.update(day, id, { status: "confirmed" });
+  await ledger.update(day, id, { status: "confirmed" });
   return { hash, receipt, data };
 }

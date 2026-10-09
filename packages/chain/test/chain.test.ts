@@ -29,19 +29,20 @@ describe("checkCaps", () => {
     expect(() => checkCaps(USD(2), USD(24), caps)).toThrow(/daily cap/);
     expect(checkCaps(USD(1), USD(24), caps)).toBe(USD(25));
   });
-  it("resets at the UTC day boundary", () => {
+  it("resets at the UTC day boundary", async () => {
     const ledger = new MemoryLedger();
     const late = new Date("2026-10-07T23:59:00Z");
     const early = new Date("2026-10-08T00:01:00Z");
-    ledger.reserve(utcDay(late), { id: "a", at: late.toISOString(), purpose: "t", usdMicros: USD(25).toString() });
-    expect(() => checkCaps(USD(1), ledger.spent(utcDay(late)), caps)).toThrow(CapExceededError);
-    expect(checkCaps(USD(1), ledger.spent(utcDay(early)), caps)).toBe(USD(1));
+    await ledger.reserve(utcDay(late), { id: "a", at: late.toISOString(), purpose: "t", usdMicros: USD(25).toString() });
+    const lateSpent = await ledger.spent(utcDay(late));
+    expect(() => checkCaps(USD(1), lateSpent, caps)).toThrow(CapExceededError);
+    expect(checkCaps(USD(1), await ledger.spent(utcDay(early)), caps)).toBe(USD(1));
   });
-  it("does not count released reservations", () => {
+  it("does not count released reservations", async () => {
     const ledger = new MemoryLedger();
-    ledger.reserve("2026-10-07", { id: "a", at: "", purpose: "t", usdMicros: USD(20).toString() });
-    ledger.update("2026-10-07", "a", { status: "released" });
-    expect(ledger.spent("2026-10-07")).toBe(0n);
+    await ledger.reserve("2026-10-07", { id: "a", at: "", purpose: "t", usdMicros: USD(20).toString() });
+    await ledger.update("2026-10-07", "a", { status: "released" });
+    expect(await ledger.spent("2026-10-07")).toBe(0n);
   });
 });
 
