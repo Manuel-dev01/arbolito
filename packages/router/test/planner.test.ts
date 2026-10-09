@@ -139,10 +139,10 @@ describe("execution building", () => {
     expect(params.amountOutMinimum).toBe(r.best!.minOut);
   });
 
-  it("refuses routes with Textile legs until the spike lands", async () => {
+  it("has no static calls for Textile legs (executeRoute takes the firm quote)", async () => {
     const tex = fakeVenue("textile_rfq", { [k(USDT.address, wARS.address)]: 1610 });
     const r = await plan({ client, adapters: [tex], tokenIn: USDT.address, tokenOut: wARS.address, amountIn: 1_000_000n, taker: zeroAddress, blockNumber: 1n });
-    expect(() => buildRouteCalls(r.best!, zeroAddress)).toThrow(/Textile/);
+    expect(() => buildRouteCalls(r.best!, zeroAddress)).toThrow(/executeRoute/);
   });
 });
 

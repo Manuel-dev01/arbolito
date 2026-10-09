@@ -1,5 +1,6 @@
 export * from "./abis";
 export * from "./execution";
+export * from "./executor";
 export * from "./format";
 export * from "./planner";
 export * from "./pricing";
