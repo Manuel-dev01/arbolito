@@ -54,6 +54,31 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-09: Phase 2 block 1 (parallel build)
+**Shipped (merged to main):**
+- **packages/db:** Drizzle on Neon. Tables users, contacts, receipts, spend_ledger, pending_actions, messages; migration applied. `DbLedger` keeps caps per signing wallet across restarts (4 integration tests against Neon).
+- **packages/llm** (agent branch, 57 tests):
+  - DeepSeek chat client with bounded retries and typed errors
+  - strict zod tool schemas (no tool moves funds; the user must tap Confirm)
+  - a tool-use loop with injected handlers
+  - es-AR/pt-BR/en prompts and language detection
+  - Groq Whisper speech-to-text
+- **Textile firm execution** (agent branch, 18 unit + fork tests): `executeRoute` runs mixed Uniswap/Textile routes leg by leg.
+  - Each firm quote is taken for the actual amount the previous leg delivered (from its Transfer logs).
+  - Before broadcasting, it checks spender, reactor, minOut and expiry; any failure cancels the RFQ. Approvals are exact.
+  - It reports to `/submit`, and a later-leg failure returns a `partial` result naming exactly what the user holds.
+  - `sendGuarded` raises `BroadcastError` carrying the tx hash. Still gated by `TEXTILE_RFQ_ENABLED`.
+- **apps/agent (started):** es/pt/en strings, route card with Confirmar/Ver alternativas/Cancelar buttons, route serde.
+- **Tests:** `pnpm test` is 10 forge + 144 vitest (unit, db and fork projects), all green.
+
+**Wallet spike (founder chose smart accounts):**
+- thirdweb factories (v0.6 `0x85e2…DF00`, v0.7 `0x4bE0…dceb`) and both EntryPoints are live on Celo.
+- Session-key permissions are target-level only (approvedTargets, native limit, time window). **There are no ERC-20 amount limits, so caps stay server-side.**
+- On a fork, `execute` from a non-admin reverts "Account: not admin or EntryPoint.", so a session key must act through UserOps.
+- **Running now:** a fork spike to prove Arbolito can self-bundle zero-fee UserOps (no hosted bundler or paymaster) and to settle attribution placement.
+
+**Track 2 (Textile):** organizer suggestions recorded in docs/08. The "treasury bot that quotes to manage its own currency exposure" fits Arbolito Desk.
+
 ### 2026-10-09: Textile-leg execution (`executeRoute`), no mainnet sends
 **Shipped:**
 - **`packages/router/src/executor.ts`:** `executeRoute` runs routes leg by leg. Every send goes through `sendGuarded`.

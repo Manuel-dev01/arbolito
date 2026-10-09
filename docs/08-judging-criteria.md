@@ -26,6 +26,16 @@ Source: the Loops House event skill (`loops add agents-on-open-rails`, CLI v0.6.
 | Volume quoted and filled | 30% | Quotes answered and filled, and competitive-quote share, on cNGN/wARS/wBRL/IDRX/USDC vs USD₮. **Independent traders' fills count; self-trading does not** |
 | Originality | 30% | Inventory-aware pricing, FX risk management, capital efficiency, flow-adaptive strategies; clear reasoning in the repo |
 
+The Celo Developers announcement (2026-10-09) adds:
+- **Corridors:** cNGN, IDRX and Ripio wFIAT against USD₮.
+- **Suggested directions:**
+  - pricing that adapts to your inventory
+  - FX risk management across corridors
+  - quoting that does more with less capital
+  - **a treasury bot that quotes to manage a business's own currency exposure, rather than to earn the spread**
+
+The last one maps well onto Arbolito Desk: its quoting can be driven by the inventory Arbolito needs for user conversions, not just spread.
+
 ## T2b Open Corridors: USA₮ with x402: 🥇 $750 · 🥈 $250
 1st place: "real users whose value flows through USA₮ settling over Celo's x402 facilitator on mainnet, with a **named counterparty outside the team**, **repeat payments**, and a clear reason USA₮ fits that user."
 
