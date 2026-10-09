@@ -52,8 +52,8 @@ export const envSchema = z.object({
   DEEPSEEK_API_KEY: opt(z.string()),
   DEEPSEEK_BASE_URL: z.string().url().default("https://api.deepseek.com"),
   ANTHROPIC_API_KEY: opt(z.string()),
-  AGENT_MODEL: z.string().default("deepseek-chat"),
-  RISK_OFFICER_MODEL: z.string().default("deepseek-reasoner"),
+  AGENT_MODEL: z.string().default("deepseek-flash"),
+  RISK_OFFICER_MODEL: z.string().default("deepseek-v4-pro"),
   STT_PROVIDER: opt(z.string()),
   STT_API_KEY: opt(z.string()),
 
