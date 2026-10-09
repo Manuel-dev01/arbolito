@@ -18,3 +18,4 @@ coverage/
 *.log
 .self/
 .claude/settings.local.json
+.claude/worktrees/
