@@ -8,7 +8,7 @@ import { bundleHash, receiptsAbi, verifyBundle, type ProofBundle } from "@arboli
 export const RECEIPTS_ADDRESS = CONTRACTS.arbolitoReceipts as Address | undefined;
 
 /** Public RPC the browser may use for its own check. Never the server's (possibly keyed) CELO_RPC_URL. */
-export const PUBLIC_RPC_URL = process.env.NEXT_PUBLIC_CELO_RPC_URL || "https://forno.celo.org";
+export const PUBLIC_RPC_URL = "https://forno.celo.org";
 
 let client: PublicClient | undefined;
 function publicClient(): PublicClient {
