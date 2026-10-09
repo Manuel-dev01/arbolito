@@ -15,6 +15,16 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 attribution | Facilitator tagging is not live yet (x402-rs#99). Declare the builder-code extension now. **Judges credit x402 volume by `payTo`.** See [04-reference](04-reference.md#celo-x402-facilitator) |
 | Ripio ramps | Deep links (`ramp.ripio.com`), no credentials needed. The full API is KYB, legal entities only. See [04-reference](04-reference.md#ripio-ramps-wfiat-onoff-ramp) |
 
+## Infrastructure (2026-10-09)
+| Piece | Where | State |
+|---|---|---|
+| Repo | https://github.com/Manuel-dev01/arbolito | **Private** for now; make it public before submission (founder's call). History scanned: no `.env` value appears in any commit |
+| Web (Mini App, `/r/:id`, `/metrics`) | Vercel project `arbolito` (manuel-dev01s-projects), linked locally | Git connection and root dir `apps/web` deferred until `apps/web` exists, so a stub doesn't produce failing builds on every push |
+| Postgres | Neon `arbolito-db` via Vercel marketplace (us-east-1, pooled) | `DATABASE_URL` set in `.env` and in Vercel env. No billing balance attached (free plan). Unreachable from the Claude sandbox until `*.neon.tech` is allowlisted |
+| Bot / API hosting | Railway project `arbolito` (`e8a7b24e-50ec-4f14-88d5-7e93bf85a796`) | Empty; the first service deploys in Phase 2 |
+| Desk wallet | `0xBCB8B7dcEB8B39457Ef6D5dC95520A562b13EdbE` (`DESK_PRIVATE_KEY`) | **Unfunded.** Inventory cap to be agreed first |
+| Loops entry | Event skill installed (`.claude/skills/loops-agents-on-open-rails`). Criteria in [08-judging-criteria.md](08-judging-criteria.md) | **CLI not signed in yet; not enrolled; no project.** Must confirm the Loops-assigned attribution tag matches `celo_e054d92430a5` |
+
 ## Decisions
 - **2026-10-09: LLM provider is DeepSeek, not Anthropic** (founder). `LLM_PROVIDER=deepseek`, OpenAI-compatible API at `https://api.deepseek.com`, default models `deepseek-chat` (agent) and `deepseek-reasoner` (risk officer), to be confirmed via `GET /models`. This supersedes the Claude models in MASTER_PROMPT §2. Voice notes still need an STT provider (Groq Whisper).
 
