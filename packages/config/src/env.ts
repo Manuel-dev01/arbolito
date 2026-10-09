@@ -83,11 +83,12 @@ export type Env = z.infer<typeof envSchema>;
 
 /** Walks up from cwd to the workspace root (the dir holding pnpm-workspace.yaml). */
 export function findRepoRoot(start = process.cwd()): string {
-  let dir = resolve(start);
+  // turbopackIgnore: a runtime walk-up; keeps Next.js (apps/web) from tracing the whole repo.
+  let dir = resolve(/*turbopackIgnore: true*/ start);
   for (;;) {
-    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
+    if (existsSync(join(/*turbopackIgnore: true*/ dir, "pnpm-workspace.yaml"))) return dir;
     const up = dirname(dir);
-    if (up === dir) return resolve(start);
+    if (up === dir) return resolve(/*turbopackIgnore: true*/ start);
     dir = up;
   }
 }
