@@ -19,7 +19,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | Piece | Where | State |
 |---|---|---|
 | Repo | https://github.com/Manuel-dev01/arbolito | **Private** for now; make it public before submission (founder's call). History scanned: no `.env` value appears in any commit |
-| Web (Mini App, `/r/:id`, `/metrics`) | Vercel project `arbolito` (manuel-dev01s-projects), linked locally | Git connection and root dir `apps/web` deferred until `apps/web` exists, so a stub doesn't produce failing builds on every push |
+| Web (Mini App, `/r/:id`, `/metrics`) | Vercel project `arbolito` (manuel-dev01s-projects), linked locally | `apps/web` exists (Next.js 16.4) and builds with no env vars. **Still to do on Vercel:** connect Git, set the root dir to `apps/web`, and keep "include files outside the root directory" on. `DATABASE_URL` is already set. Not deployed yet |
 | Postgres | Neon `arbolito-db` via Vercel marketplace (us-east-1, pooled) | `DATABASE_URL` set in `.env` and in Vercel env. No billing balance attached (free plan). Unreachable from the Claude sandbox until `*.neon.tech` is allowlisted |
 | Bot / API hosting | Railway project `arbolito` (`e8a7b24e-50ec-4f14-88d5-7e93bf85a796`) | Empty; the first service deploys in Phase 2 |
 | Desk wallet | `0xBCB8B7dcEB8B39457Ef6D5dC95520A562b13EdbE` (`DESK_PRIVATE_KEY`) | **Unfunded.** Inventory cap to be agreed first |
@@ -54,6 +54,41 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-09: apps/web v0 (receipt pages, metrics, landing)
+**Shipped:**
+- **`/r/[id]`:** public receipt page.
+  - **Amounts:** shown in the users' currencies (`R$ 10 → ARS 3.177,41`), with the effective rate and the savings line.
+  - **Comparison table:** official, MEP, CCL, crypto and blue rates, plus the market mid. USD/ARS references are crossed through the USD/BRL mid.
+  - **Route:** the chosen route with per-hop venues, the alternatives considered, and celoscan links for the execution and anchor txs.
+  - **Verification panel:**
+    - The browser canonicalizes the JSON, recomputes keccak256, and looks the hash up over forno: `anchoredAt`, then the `ReceiptAnchored` log, then routeId and `isEmitter`.
+    - The JSON is editable, so a one-character change visibly stops matching.
+    - `verifyBundle` also runs server-side, cached for 1 h.
+  - **Raw JSON:** served at `/r/[id]/bundle.json`.
+  - **Superseded receipts:** `*.superseded.json` is served at `/r/<id>.superseded`. Rows with `superseded_by` get a "superseded by …" notice, and the corrected receipt links back.
+- **`/metrics` v0:**
+  - **Numbers:** unique wallets, onchain conversions (+ anchors), receipts, routed USD volume, median savings vs official (ARS corridor), wFIAT volume by token, and corridors. Each one links to its receipts or to celoscan.
+  - **Superseded receipts:** listed but not counted.
+  - **Refresh:** data is cached for 60 s and the page refreshes itself every 60 s.
+  - **Placeholders:** Desk, USA₮, buy and API sales show "coming soon".
+- **`/`:** a landing page with links to @arbolitoo_bot, the metrics and the latest receipt.
+- **Languages:** copy in es/pt/en via `?lang=`; Spanish is the default.
+- **Data:**
+  - The `receipts` table is read first; `packages/db` gained read queries.
+  - It falls back to `docs/receipts/*.json` when `DATABASE_URL` is unset or the DB doesn't have the receipt.
+  - The JSON files ship with the functions via `outputFileTracingIncludes`, and the DB pool is attached with `attachDatabasePool`.
+- **Tests:** 35 new unit tests in `apps/web/test`.
+  - **Coverage:** formatting; the browser canonical/hash vs `packages/proof`, pinned to the 3 anchored hashes; the ABI slice; the file fallback; the receipt view; and metrics.
+  - **Setup:** the vitest `unit` project now includes `apps/*/test`.
+  - **Typecheck:** `apps/web` has its own tsconfig (`pnpm --filter @arbolito/web typecheck`) and is excluded from the root one.
+
+**Gap:** nothing writes to the `receipts` table yet. Until the bot or smoke path inserts rows, the site serves the committed JSON files.
+
+**Next:**
+- Insert receipts into the DB when they are anchored.
+- Connect Vercel (root dir `apps/web`).
+- Set `PUBLIC_BASE_URL` once the domain is known.
+
 ### 2026-10-09: Phase 1 mainnet smoke (founder go-ahead; ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`)
 Funded by the founder with 6.9 USDT + 2.73 CELO. `verify:addresses` 68/68 before any send. Every tx carries `celo_e054d92430a5`.
 
