@@ -10,12 +10,20 @@
     "@arbolito/chain": "workspace:*",
     "@arbolito/config": "workspace:*",
     "@arbolito/db": "workspace:*",
+    "@arbolito/llm": "workspace:*",
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
     "@grammyjs/auto-retry": "^2.0.2",
     "@grammyjs/runner": "^2.0.3",
+    "drizzle-orm": "^0.45.4",
     "grammy": "^1.46.0",
     "viem": "^2.57.3",
     "zod": "^4.6.5"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

@@ -14,7 +14,7 @@ export default defineConfig({
         // Integration tests against the real Postgres (DATABASE_URL); they clean up after themselves.
         test: {
           name: "db",
-          include: ["packages/*/test/**/*.db.test.ts"],
+          include: ["packages/*/test/**/*.db.test.ts", "apps/*/test/**/*.db.test.ts"],
           testTimeout: 30_000,
           fileParallelism: false,
         },
