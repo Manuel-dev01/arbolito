@@ -61,6 +61,27 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
 - RFQ semantics:
   - Firm quote bound to the taker wallet, ~60s TTL, **no partial fills**, `no_quote` possible.
   - v1 order-book endpoints are deprecated; `POST /v2/rfq/preview` gives indicative, unlocked depth.
+- **v2 RFQ taker flow (verified from `openapi-v2.json` + docs, 2026-10-09):**
+  - **No API key needed for takers.** The partner key is optional on taker paths.
+  - `POST /v2/rfq/preview`: free, anonymous, reserves nothing, no `taker`. Same body as request. Implemented in `TextileClient.preview`.
+  - `POST /v2/rfq/request`: firm quote bound to `taker`.
+    - Keyless callers send `takerProof`: an EIP-712 `TakerControl{taker,chainId,nonce(bytes32),issuedAt(ms)}` under domain `{name:"Textile Taker Control",version:"1",chainId}`. It's valid for 60 s, and one verified proof covers that wallet and chain for ~12 h.
+    - Smart-contract takers verify via **EIP-1271, including counterfactual ERC-6492**.
+    - **Proof of funds:** the taker must hold the sell token.
+    - Returns `claimToken` (once), `quote` and `transactions.{approval,swap}`. The call blocks for up to ~70 s, so set a 75 s client timeout.
+  - **The taker broadcasts settlement:** approve `takerPays` of the sell token to `quote.spender` (normally the reactor), then send `transactions.swap`, an `executeBatch` across the makers in the bundle. Always use `transactions.swap`, never the top-level `encodedOrder`.
+  - `POST /v2/rfq/{id}/submit {txHash}` reports the fill, after which `GET /v2/rfq/{id}` gives status and `POST /v2/rfq/{id}/cancel` releases inventory. All three are authorized by the `X-Rfq-Claim: <claimToken>` header.
+  - After `expiresAt`, `/submit` is rejected, but the signed order can still land until `orderDeadline`.
+  - **Makers:** `POST /v2/maker/enroll` (wallet signature) issues a maker credential, followed by `/maker/verify-email` and `/maker/status`. Enrollment is self-serve, with no email required for onboarding.
+  - Minimum size: about $1 notional. Fee: about 1 bps, taken in the sell token.
+  - **Corridors seen:** a direct wBRL→wARS request returns 400 `corridor_unavailable`; route via USDT.
+  - **Live preview on 2026-10-09:** 200 wBRL → 39.6855 USDT; 39 USDT → 62,620.30 wARS.
+- **LimitOrderReactor is UniswapX's `LimitOrderReactor`** (onchain, 2026-10-09):
+  - It exposes `execute`, `executeWithCallback`, `executeBatch` and `executeBatchWithCallback`.
+  - `permit2()` is canonical Permit2; `feeController()` is the FeeController above; owner is `0x0Ddf1DBb612B07aFdAaE54a21e453bb36b3693a7`.
+  - The swapper (signer) is the maker on RFQ, or the user on gasless limit orders. Its input is pulled by Permit2 `permitWitnessTransferFrom` with the UniswapX LimitOrder witness.
+  - Fork test `contracts/test/fork/TextileReactorSmartAccount.t.sol` executes a LimitOrder whose swapper is an EIP-1271 contract wallet, and our witness hashing matches the reactor's.
+- Tickers live shape: an array of `{ticker_id, base_currency, target_currency, last_price, base_volume, target_volume, bid, ask, high, low}`, with numbers as strings. `USAT_USDT` is also listed.
 - Fees: 1 bps taker fee on Celo, baked into the quoted rate. Makers earn their configured spread.
 - Celo contracts:
   - LimitOrderReactor 0xa9AA0a64769cBed4d3B1Ceb4Df01CdE915C235b3
@@ -88,6 +109,13 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
 - Seller packages (v2): `@x402/express` or `@x402/hono`, plus `@x402/core` and `@x402/evm`. Use `HTTPFacilitatorClient` with `createAuthHeaders` for X-API-Key.
 - Buyer header (v2): `PAYMENT-SIGNATURE`. Check `/supported` and the package docs for the permit2-asset `extra` fields.
 - Alternative facilitator: thirdweb x402 (supports Celo).
+- `/supported` re-read 2026-10-09: unchanged. v2 `exact` on eip155:42220 and v1 `exact` on `celo`, extension `eip2612GasSponsoring`, signer `0x0d74…FB48`.
+- **ERC-8021 attribution on x402 settlements** (Celo team, 2026-10-08):
+  - The facilitator submits `transferWithAuthorization`, so only it can append the Schema 2 tag. **Not live yet:** it's pending upstream in x402-rs/x402-rs#99, which has been tested on Celo Sepolia. Until it ships, settlements land onchain untagged.
+  - **Seller (our FX API):** declare our code in the 402 response under `extensions["builder-code"].info.a`, using `declareBuilderCodeExtension` from `@x402/extensions` (2.28.0 on npm). The facilitator writes it as `a` (app) and adds its own `w`. No key or registration is needed. Add it now; nothing breaks before the facilitator ships.
+  - **Buyer (our agent paying others):** put our code in the payment payload under `extensions["builder-code"].info.s` (service), using `BuilderCodeClientExtension`.
+  - **Limits:** v2 payments only, since v1 (including buy) has no extensions field. USDC, USDT and USA₮ come first; wARS, wBRL and wCOP (Permit2 path) follow later.
+  - **Crediting meanwhile:** the gateway attributes settlements to the API key that made them, and **judges credit by `payTo` address**.
 
 ## buy (x402 marketplace)
 - Catalog (free): `https://gateway.usebuy.ai/v1/catalog`
@@ -133,7 +161,32 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - `toDataSuffix("celo_xxxxxxxx")`, appended as `data` or `dataSuffix`.
   - The code is issued via hackathon registration.
 
+## Ripio ramps (wFIAT on/off-ramp)
+From the Ripio team via the hackathon channel, 2026-10-08.
+- **Hackathon path, no credentials:** URL-parameter deep links.
+  - On-ramp: `https://ramp.ripio.com/`. Off-ramp: `https://ramp.ripio.com/offramp`.
+  - **Params:**
+    - `country`: ISO-2 (AR, BR, MX, CO)
+    - `chain`: numeric chain ID (42220 for Celo)
+    - `token`: e.g. `WARS`, `USDT`
+    - `amount`
+    - `address`: EVM destination
+  - With country, chain, token and amount all present, the user goes straight into Ripio's flow. Otherwise the given params only prefill the form.
+  - Ripio handles end-user KYC inside the flow. Availability of tokens and chains varies by country.
+  - Example: `https://ramp.ripio.com/?country=AR&chain=42220&token=WARS&amount=10000&address=0x…`
+- **Full API (Platform):** platform.ripio.com, with KYB for **legal entities only**. Partners request `client_id`/`client_secret` through support. A sandbox exists at skala-sandbox.ripio.com.
+- **Design:** the Ripio integration goes behind an adapter. Deep links are the default, and API or sandbox access is optional if credentials arrive. The onchain part stays real on Celo mainnet.
+- Ripio serves 6M+ users in LatAm.
+
+## Self Agent ID SDK
+- `@selfxyz/agent-sdk` 0.2.1 (repo selfxyz/self-agent-id, BUSL-1.1).
+- **CLI:** `self-agent register init|open|wait`. It **defaults to testnet**, so pass `--network mainnet`.
+- **Modes:** self-custody, linked, wallet-free, ed25519, smartwallet. Mainnet registry `0xaC3DF9ABf80d0F5c020C06B04Cced27763355944`, which matches the entry above.
+
 ## Reference rates (benchmarks)
 - Argentina: official, MEP, CCL, blue and crypto rates. Use a public dollar-rates API (e.g. dolarapi.com) and record the source in the ProofBundle.
+  - In use: `https://dolarapi.com/v1/dolares`, which returns `[{moneda, casa, compra, venta, fechaActualizacion}]`. The `casa` values are oficial, blue, bolsa (MEP), contadoconliqui (CCL), mayorista, cripto and tarjeta. We use `venta`.
+  - BRL→ARS official comes from `https://dolarapi.com/v1/cotizaciones` (the `BRL` row).
+  - Avoid `br.dolarapi.com`: its USD row was stale (dated 2023) when read on 2026-10-07.
 - Textile tickers as the onchain FX reference.
 - Competitor quotes (Western Union, Remitly, bank pages) captured via buy browser sessions.

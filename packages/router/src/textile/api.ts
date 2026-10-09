@@ -145,7 +145,7 @@ export class TextileClient {
   }
 
   /** Free indicative quote from published maker levels. */
-  async preview(p: TradeParams, timeoutMs = 2_000): Promise<TextilePreview> {
+  async preview(p: TradeParams, timeoutMs = 1_500): Promise<TextilePreview> {
     const body = { chainId: p.chainId, sellToken: p.sellToken, buyToken: p.buyToken, sellAmount: p.sellAmount.toString() };
     return (await this.call("/rfq/preview", { method: "POST", body: JSON.stringify(body), timeoutMs }, previewSchema)).data;
   }
