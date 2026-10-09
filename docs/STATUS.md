@@ -11,7 +11,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | T1 (Ripio, "Stable Agents LatAm") | $2K: 🥇 $1.5K, 🥈 $500. "Build a solution a real user in Latin America would pay to use." Judged on **functionality, UX, impact, innovation, verified onchain wFIAT use** |
 | Hub / submission form | TBD. Organizers also offer an agent skill: `npx loopshouse add agents-on-open-rails` (installs the loops CLI and an `.agents` skill, plus a browser sign-in). Founder to decide/run |
 | Multi-track eligibility | TBD |
-| Attribution code | TBD. Note that `@celo/attribution-tags` exports `codeFromRepo()` / `codeFromHostname()`, so codes may be derived from the repo slug. Ask organizers |
+| Attribution code | **`celo_e054d92430a5`** (founder, 2026-10-09). Public by design (it is in every tx's calldata); set in `.env` |
 | x402 attribution | Facilitator tagging is not live yet (x402-rs#99). Declare the builder-code extension now. **Judges credit x402 volume by `payTo`.** See [04-reference](04-reference.md#celo-x402-facilitator) |
 | Ripio ramps | Deep links (`ramp.ripio.com`), no credentials needed. The full API is KYB, legal entities only. See [04-reference](04-reference.md#ripio-ramps-wfiat-onoff-ramp) |
 

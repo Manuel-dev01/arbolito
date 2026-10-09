@@ -6,9 +6,20 @@ Where to get every `.env` value, and when you need it. Values go only in `.env` 
 | Key | Where to get it | Notes |
 |---|---|---|
 | `ATTRIBUTION_CODE` | Issued at hackathon registration (`celo_xxxxxxxx`). Ask the organizers in the hub or the Celo dev channels if you don't have one. | Mainnet sends refuse to run without it. Fork tests use a placeholder. |
-| `OPS_PRIVATE_KEY` | Generate a fresh wallet: `cast wallet new`. Don't reuse a personal wallet. | Fund it with about $3: some wBRL (withdraw from the Ripio app to the Celo address) plus a little CELO or USDT for gas. Deploys `ArbolitoReceipts` and runs the ≤ $2 smoke. |
+| `OPS_PRIVATE_KEY` | Generate a fresh wallet: `cast wallet new`. Don't reuse a personal wallet. | Fund it with about **$6 of USDT on Celo plus ~1 CELO for gas** (see "Funding the ops wallet"). Deploys `ArbolitoReceipts` and runs the ≤ $2 smoke. |
 | `TEXTILE_API_KEY` | Email contact@textilecredit.com (draft in [06-outreach-drafts.md](06-outreach-drafts.md)). Ask for a `tx_live_` taker key and filler onboarding. | Critical path for T2a. `tx_test_` keys don't cover Celo. |
 | `CELO_RPC_URL_FALLBACK` | Chainstack console: Celo mainnet node (hackathon Growth-plan perk). | Optional. Forno works without it. |
+
+## Funding the ops wallet (no Ripio account needed)
+wBRL and wARS are ordinary tokens on Celo, so the ops wallet can buy them onchain. A Ripio account only matters for Argentine or Brazilian users moving pesos or reais in and out. Ripio KYC is tied to its supported countries; don't try to pass it over a VPN, since that risks a frozen account.
+
+1. Get **USDT on the Celo network** plus **~1 CELO** for gas into the ops address. Options:
+   - **MiniPay** (Opera's Celo wallet, widely used in Nigeria). It has local deposit options; send USDT from it to the ops address.
+   - **An exchange** that supports withdrawals **on the Celo network**. Check the network selector says Celo, not Ethereum or Tron, before sending. CELO is widely listed.
+2. Buy wBRL through Arbolito itself. The guarded sender and caps apply, and this run gets a receipt too: `pnpm smoke:convert USDT wBRL 2.5 --live` (≈ 12.6 wBRL at 2026-10-09 prices).
+3. Run the Phase 1 smoke: `pnpm smoke:convert wBRL wARS 10 --live`.
+
+Gas can also be paid in USDT (`--fee-currency USDT`, via the fee adapter), but that path is untested; use CELO for the first runs.
 
 ## Phase 2
 | Key | Where to get it | Notes |
