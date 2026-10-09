@@ -36,6 +36,7 @@ import {
   receivedInTx,
   toAtomic,
   usdMicros,
+  type Call,
 } from "@arbolito/router";
 import { anchorBundle, buildBundle, bundleHash } from "@arbolito/proof";
 import { verifyWithRetry } from "./lib/verify";
@@ -103,7 +104,17 @@ runMain(async () => {
     return;
   }
 
-  const calls = buildRouteCalls(route, account.address);
+  // Skip the approve when the standing allowance already covers this swap (a stale read only
+  // costs one redundant approve).
+  const [approveCall, swapCall] = buildRouteCalls(route, account.address) as [Call, Call];
+  const allowance = await publicClient.readContract({
+    address: from.address,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: [account.address, swapCall.to],
+  });
+  const calls: Call[] = allowance >= amountIn ? [swapCall] : [approveCall, swapCall];
+  if (calls.length === 1) console.log(`  allowance already covers ${fmtAmount(from.address, amountIn)}; skipping approve`);
   let swap: Awaited<ReturnType<typeof sendGuarded>> | undefined;
   for (const [i, call] of calls.entries()) {
     const isSwap = i === calls.length - 1; // approve first, swap last

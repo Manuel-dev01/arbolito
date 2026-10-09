@@ -1,0 +1,476 @@
+{
+  "v": 1,
+  "routeId": "bf28b8ab-31a9-4679-8028-bcb471f7d980",
+  "createdAt": "2026-10-09T10:54:15.486Z",
+  "chainId": 42220,
+  "request": {
+    "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+    "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+    "amountIn": "10000000000000000000",
+    "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+  },
+  "quotesConsidered": [
+    {
+      "venue": "uniswap_v3",
+      "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "amountIn": "10000000000000000000",
+      "amountOut": "1976342",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+        "sqrtPriceX96After": "178208273469531900150420045548986977",
+        "initializedTicksCrossed": 0,
+        "gasEstimate": "93413"
+      },
+      "meta": {
+        "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+        "fee": 100
+      }
+    },
+    {
+      "venue": "textile_rfq",
+      "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "amountIn": "10000000000000000000",
+      "amountOut": "1988538",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "kind": "preview",
+        "status": "preview",
+        "sellAmount": "10000000000000000000",
+        "buyAmount": "1988538",
+        "feeAmount": "999900009998999",
+        "takerPays": "10000000000000000000",
+        "rateRay": "198873685379999999978121905",
+        "availableSellAmount": "447404698162896854025212",
+        "routing": {
+          "preferenceApplied": false,
+          "restrictionApplied": false,
+          "fallbackUsed": false,
+          "targetMakerWallets": [],
+          "preferredQuotesReceived": 0,
+          "openMarketQuotesReceived": 0
+        }
+      }
+    },
+    {
+      "venue": "uniswap_v3",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "1988538",
+      "amountOut": "3197020033133784620430",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+        "sqrtPriceX96After": "1975843113621515697956",
+        "initializedTicksCrossed": 0,
+        "gasEstimate": "94481"
+      },
+      "meta": {
+        "pool": "0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391",
+        "fee": 100
+      }
+    },
+    {
+      "venue": "textile_rfq",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "1988538",
+      "amountOut": "3192499871551148332733",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "kind": "preview",
+        "status": "preview",
+        "sellAmount": "1988538",
+        "buyAmount": "3192499871551148332733",
+        "feeAmount": "198",
+        "takerPays": "1988538",
+        "rateRay": "622816000000000000000176",
+        "availableSellAmount": "8272721965",
+        "routing": {
+          "preferenceApplied": false,
+          "restrictionApplied": false,
+          "fallbackUsed": false,
+          "targetMakerWallets": [],
+          "preferredQuotesReceived": 0,
+          "openMarketQuotesReceived": 0
+        }
+      }
+    },
+    {
+      "venue": "uniswap_v3",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "1976342",
+      "amountOut": "3177411908400035561279",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+        "sqrtPriceX96After": "1975843094800887661015",
+        "initializedTicksCrossed": 0,
+        "gasEstimate": "94481"
+      },
+      "meta": {
+        "pool": "0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391",
+        "fee": 100
+      }
+    },
+    {
+      "venue": "textile_rfq",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "1976342",
+      "amountOut": "3172919449725119457432",
+      "blockNumber": "79642487",
+      "firm": false,
+      "raw": {
+        "kind": "preview",
+        "status": "preview",
+        "sellAmount": "1976342",
+        "buyAmount": "3172919449725119457432",
+        "feeAmount": "197",
+        "takerPays": "1976342",
+        "rateRay": "622816000000000000000009",
+        "availableSellAmount": "8272721965",
+        "routing": {
+          "preferenceApplied": false,
+          "restrictionApplied": false,
+          "fallbackUsed": false,
+          "targetMakerWallets": [],
+          "preferredQuotesReceived": 0,
+          "openMarketQuotesReceived": 0
+        }
+      }
+    }
+  ],
+  "chosen": {
+    "id": "bf28b8ab-31a9-4679-8028-bcb471f7d980",
+    "label": "wBRL →[uniswap 0.01%] USDT →[uniswap 0.01%] wARS",
+    "legs": [
+      {
+        "quote": {
+          "venue": "uniswap_v3",
+          "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+          "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+          "amountIn": "10000000000000000000",
+          "amountOut": "1976342",
+          "blockNumber": "79642487",
+          "firm": false,
+          "raw": {
+            "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+            "sqrtPriceX96After": "178208273469531900150420045548986977",
+            "initializedTicksCrossed": 0,
+            "gasEstimate": "93413"
+          },
+          "meta": {
+            "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+            "fee": 100
+          }
+        },
+        "minOut": "1966460"
+      },
+      {
+        "quote": {
+          "venue": "uniswap_v3",
+          "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+          "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+          "amountIn": "1976342",
+          "amountOut": "3177411908400035561279",
+          "blockNumber": "79642487",
+          "firm": false,
+          "raw": {
+            "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+            "sqrtPriceX96After": "1975843094800887661015",
+            "initializedTicksCrossed": 0,
+            "gasEstimate": "94481"
+          },
+          "meta": {
+            "pool": "0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391",
+            "fee": 100
+          }
+        },
+        "minOut": "3161524848858035383472"
+      }
+    ],
+    "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+    "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+    "amountIn": "10000000000000000000",
+    "expectedOut": "3177411908400035561279",
+    "minOut": "3161524848858035383472",
+    "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+  },
+  "alternatives": [
+    {
+      "id": "ca9a5fd6-58d5-4577-b3d6-0060ee028f65",
+      "label": "wBRL →[textile_rfq] USDT →[textile_rfq] wARS",
+      "legs": [
+        {
+          "quote": {
+            "venue": "textile_rfq",
+            "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+            "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "amountIn": "10000000000000000000",
+            "amountOut": "1988538",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "kind": "preview",
+              "status": "preview",
+              "sellAmount": "10000000000000000000",
+              "buyAmount": "1988538",
+              "feeAmount": "999900009998999",
+              "takerPays": "10000000000000000000",
+              "rateRay": "198873685379999999978121905",
+              "availableSellAmount": "447404698162896854025212",
+              "routing": {
+                "preferenceApplied": false,
+                "restrictionApplied": false,
+                "fallbackUsed": false,
+                "targetMakerWallets": [],
+                "preferredQuotesReceived": 0,
+                "openMarketQuotesReceived": 0
+              }
+            }
+          },
+          "minOut": "1978595"
+        },
+        {
+          "quote": {
+            "venue": "textile_rfq",
+            "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+            "amountIn": "1988538",
+            "amountOut": "3192499871551148332733",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "kind": "preview",
+              "status": "preview",
+              "sellAmount": "1988538",
+              "buyAmount": "3192499871551148332733",
+              "feeAmount": "198",
+              "takerPays": "1988538",
+              "rateRay": "622816000000000000000176",
+              "availableSellAmount": "8272721965",
+              "routing": {
+                "preferenceApplied": false,
+                "restrictionApplied": false,
+                "fallbackUsed": false,
+                "targetMakerWallets": [],
+                "preferredQuotesReceived": 0,
+                "openMarketQuotesReceived": 0
+              }
+            }
+          },
+          "minOut": "3176537372193392591069"
+        }
+      ],
+      "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "10000000000000000000",
+      "expectedOut": "3192499871551148332733",
+      "minOut": "3176537372193392591069",
+      "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+    },
+    {
+      "id": "bf28b8ab-31a9-4679-8028-bcb471f7d980",
+      "label": "wBRL →[uniswap 0.01%] USDT →[uniswap 0.01%] wARS",
+      "legs": [
+        {
+          "quote": {
+            "venue": "uniswap_v3",
+            "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+            "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "amountIn": "10000000000000000000",
+            "amountOut": "1976342",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+              "sqrtPriceX96After": "178208273469531900150420045548986977",
+              "initializedTicksCrossed": 0,
+              "gasEstimate": "93413"
+            },
+            "meta": {
+              "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+              "fee": 100
+            }
+          },
+          "minOut": "1966460"
+        },
+        {
+          "quote": {
+            "venue": "uniswap_v3",
+            "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+            "amountIn": "1976342",
+            "amountOut": "3177411908400035561279",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+              "sqrtPriceX96After": "1975843094800887661015",
+              "initializedTicksCrossed": 0,
+              "gasEstimate": "94481"
+            },
+            "meta": {
+              "pool": "0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391",
+              "fee": 100
+            }
+          },
+          "minOut": "3161524848858035383472"
+        }
+      ],
+      "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "10000000000000000000",
+      "expectedOut": "3177411908400035561279",
+      "minOut": "3161524848858035383472",
+      "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+    },
+    {
+      "id": "572cc2e7-99b0-4645-bf57-02fd12132c67",
+      "label": "wBRL →[uniswap 0.01%] USDT →[textile_rfq] wARS",
+      "legs": [
+        {
+          "quote": {
+            "venue": "uniswap_v3",
+            "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+            "tokenOut": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "amountIn": "10000000000000000000",
+            "amountOut": "1976342",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+              "sqrtPriceX96After": "178208273469531900150420045548986977",
+              "initializedTicksCrossed": 0,
+              "gasEstimate": "93413"
+            },
+            "meta": {
+              "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+              "fee": 100
+            }
+          },
+          "minOut": "1966460"
+        },
+        {
+          "quote": {
+            "venue": "textile_rfq",
+            "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+            "amountIn": "1976342",
+            "amountOut": "3172919449725119457432",
+            "blockNumber": "79642487",
+            "firm": false,
+            "raw": {
+              "kind": "preview",
+              "status": "preview",
+              "sellAmount": "1976342",
+              "buyAmount": "3172919449725119457432",
+              "feeAmount": "197",
+              "takerPays": "1976342",
+              "rateRay": "622816000000000000000009",
+              "availableSellAmount": "8272721965",
+              "routing": {
+                "preferenceApplied": false,
+                "restrictionApplied": false,
+                "fallbackUsed": false,
+                "targetMakerWallets": [],
+                "preferredQuotesReceived": 0,
+                "openMarketQuotesReceived": 0
+              }
+            }
+          },
+          "minOut": "3157054852476493860144"
+        }
+      ],
+      "tokenIn": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "tokenOut": "0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D",
+      "amountIn": "10000000000000000000",
+      "expectedOut": "3172919449725119457432",
+      "minOut": "3157054852476493860144",
+      "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+    }
+  ],
+  "references": [
+    {
+      "name": "official",
+      "pair": "USD/ARS",
+      "rate": "1540",
+      "source": "https://dolarapi.com/v1/dolares#oficial.venta",
+      "at": "2026-10-08T18:00:00.000Z"
+    },
+    {
+      "name": "blue",
+      "pair": "USD/ARS",
+      "rate": "1540",
+      "source": "https://dolarapi.com/v1/dolares#blue.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "mep",
+      "pair": "USD/ARS",
+      "rate": "1542.7",
+      "source": "https://dolarapi.com/v1/dolares#bolsa.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "ccl",
+      "pair": "USD/ARS",
+      "rate": "1613.6",
+      "source": "https://dolarapi.com/v1/dolares#contadoconliqui.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "crypto",
+      "pair": "USD/ARS",
+      "rate": "1608.68",
+      "source": "https://dolarapi.com/v1/dolares#cripto.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "official",
+      "pair": "BRL/ARS",
+      "rate": "301.9033",
+      "source": "https://dolarapi.com/v1/cotizaciones#BRL.oficial.venta",
+      "at": "2026-10-08T17:01:00.000Z"
+    },
+    {
+      "name": "uniswap_mid",
+      "pair": "USD/ARS",
+      "rate": "1607.8873",
+      "source": "uniswap-v3:0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391@79642487",
+      "at": "2026-10-09T10:54:14.290Z"
+    },
+    {
+      "name": "uniswap_mid",
+      "pair": "USD/BRL",
+      "rate": "5.0593221",
+      "source": "uniswap-v3:0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F@79642487",
+      "at": "2026-10-09T10:54:14.290Z"
+    }
+  ],
+  "savings": {
+    "vs": "official",
+    "pair": "BRL/ARS",
+    "referenceOut": "3019033000000000000000",
+    "executedOut": "3177411908400035561279",
+    "delta": "158378908400035561279",
+    "bps": 524
+  },
+  "execution": {
+    "txHash": "0xa8a3c6399979525de3706127a183b9e87d9f7e24a3b2626a7e88c5deccac71b7",
+    "blockNumber": "79642495",
+    "amountOut": "3177411908400035561279",
+    "attribution": [
+      "celo_e054d92430a5"
+    ]
+  }
+}

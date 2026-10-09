@@ -27,7 +27,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - [x] `pnpm verify:addresses` green: **67/67** at block 79491985. It covers tokens, pools (+ `factory.getPool`), periphery `factory()`, fee adapters vs FeeCurrencyDirectory, and code presence.
 - [~] `pnpm quote wBRL wARS 200`: best route + alternatives + references. **2.3–2.6 s** measured from process start with 6 quotes (Uniswap + Textile previews). Wall time via `pnpm` is 4.0–4.2 s, because pnpm's own startup on Windows adds ~1.6 s; `node scripts/run.mjs quote …` is ~2.6 s. On a degraded network the Textile and dolarapi timeouts (1.5 s each) bound it.
 - [x] Fork e2e passes in `pnpm test`: 10 forge + 63 vitest, including 8 fork e2e tests (wBRL→wARS executed, receipt anchored, verified; tampered and foreign-emitter bundles rejected).
-- [ ] Mainnet BRL→ARS conversion with a verified receipt. **Deferred, pending the founder:** no `OPS_PRIVATE_KEY`, no funds, no `ATTRIBUTION_CODE`, no go-ahead yet. The script is ready and rehearsed on a fork (see log).
+- [x] Mainnet BRL→ARS conversion with a verified receipt. **Done 2026-10-09:** 10 wBRL → 3,177.4119 wARS (exactly as quoted), +524 bps vs official BRL/ARS. Swap [`0xa8a3c639…71b7`](https://celoscan.io/tx/0xa8a3c6399979525de3706127a183b9e87d9f7e24a3b2626a7e88c5deccac71b7), receipt anchored [`0x83bbf7a6…1263`](https://celoscan.io/tx/0x83bbf7a6fd68ca0b0bfd632b931b80fbc078b3dc00ff0125ac0eee3772f91263). `pnpm verify:receipt docs/receipts/bf28b8ab-31a9-4679-8028-bcb471f7d980.json` returns OK.
 - [x] Spikes "Textile v2 taker flow" and "smart-account taker" have written findings and decisions (below).
 - [x] STATUS updated with evidence.
 
@@ -41,6 +41,27 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-09: Phase 1 mainnet smoke (founder go-ahead; ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`)
+Funded by the founder with 6.9 USDT + 2.73 CELO. `verify:addresses` 68/68 before any send. Every tx carries `celo_e054d92430a5`.
+
+| # | Action | Tx | Result |
+|---|---|---|---|
+| 1 | Deploy ArbolitoReceipts | [`0xd3e1a5f6…421a`](https://celoscan.io/tx/0xd3e1a5f6585c19d13d89491b47f597ed9b61f77fd074c9c14b86c30162ba421a) | `0x5C0b…2d34`. Owner and emitter are the ops wallet; attribution suffix confirmed in the initcode |
+| 2 | approve USDT | [`0x3564c91c…0fd5`](https://celoscan.io/tx/0x3564c91cbc427e957a9c2376f7cb3ccb17186de1f4310246f14d2ae616750fd5) | |
+| 3 | 2.5 USDT → wBRL (Uniswap) | [`0x43ab6cca…e743`](https://celoscan.io/tx/0x43ab6ccad6b56d72e76cdfba312b7f42923016da8d361eb26aba9da23f5ee743) | 12.647118 wBRL, exactly as quoted |
+| 4 | Receipt #1 anchor (**flawed**) | [`0x741eba2d…6d6a`](https://celoscan.io/tx/0x741eba2d59e19642f1afaca5c8bde7b05eeeee2947f5d71478539b0656fa6d6a) | Recorded amountOut 0. Kept as `.superseded.json`; now fails verify |
+| 5 | Receipt #1 corrected | [`0xbda9ac2c…4255`](https://celoscan.io/tx/0xbda9ac2ca3ad520a87a2db6fdd2a7c3fbb0f0af1882d14f0a7877f9aad4b4255) | verify OK |
+| 6 | approve wBRL | [`0x3ad763ab…d2ef`](https://celoscan.io/tx/0x3ad763ab5e73436f85b4b4d1c4c032b3720f65a29c418dba887287f5ce90d2ef) | The swap that followed failed simulation (`STF`, lagging node) and was **never broadcast** |
+| 7 | **10 wBRL → wARS** (Uniswap, 2 hops) | [`0xa8a3c639…71b7`](https://celoscan.io/tx/0xa8a3c6399979525de3706127a183b9e87d9f7e24a3b2626a7e88c5deccac71b7) | **3,177.4119 wARS**, exactly as quoted; +524 bps vs official |
+| 8 | Receipt #2 anchor | [`0x83bbf7a6…1263`](https://celoscan.io/tx/0x83bbf7a6fd68ca0b0bfd632b931b80fbc078b3dc00ff0125ac0eee3772f91263) | verify OK |
+
+- **Spend:** the cap ledger counts $4.48 of the $25 day; gas was 0.195 CELO for 8 txs.
+- **Balances after:** 4.4 USDT, 2.647 wBRL, 3,177.41 wARS, 2.536 CELO.
+- **Two production bugs, both caused by forno being load-balanced (read-after-write lag), both fixed:**
+  1. The amount was measured from balance diffs and read 0. Executed amounts now come from the swap's Transfer logs, and `verifyBundle` rejects a bundle whose amountOut differs from what the tx delivered. Fork regression test added.
+  2. Simulating right after an approve reverted. Simulation now retries read-only and passes its gas estimate to signing; the smoke script skips an approve when the allowance already covers the swap.
+- **Textile:** the best route was Textile→Uniswap, but firm Textile execution is still opt-in, so the best executable all-Uniswap route ran.
+
 ### 2026-10-09: Phase 1 build block (steps 1–9)
 **Shipped (commits `cda1065`…):**
 - **Scaffold:** pnpm monorepo (apps/agent, fx-api, mcp, desk, web; packages/config, chain, router, proof, buy-client, x402, db, llm), strict TS, Vitest unit and fork projects, Foundry + forge-std, zod env schema (a test keeps it in sync with `.env.example`). Added [07-keys-setup.md](07-keys-setup.md).
@@ -74,7 +95,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Fork test hang:** anvil's on-demand mining raced viem's receipt watcher and hung the fork suite intermittently. anvil now runs with `--block-time 1`.
 
 **Blocked on the founder:**
-- **Mainnet smoke:** needs `OPS_PRIVATE_KEY` funded with ~10 wBRL + gas, a real `ATTRIBUTION_CODE`, and an explicit go-ahead. Order: `pnpm deploy:receipts` (dry), `--live`, set `CONTRACTS.arbolitoReceipts`, then `pnpm smoke:convert wBRL wARS 10 --live`.
+- **Mainnet smoke:** done (see the 2026-10-09 mainnet smoke entry above).
 - **Identity:** ERC-8004 registration and Self Agent ID wait on a domain (`PUBLIC_BASE_URL`), a bot handle and the go-ahead.
 - **Decision:** whether to run `npx loopshouse add agents-on-open-rails`.
 - **Untracked file:** `AGENTS.md` is the founder's file and is left uncommitted. Its "Codex-api" skill reference came from a find-and-replace of "Claude" and should probably read `claude-api`.

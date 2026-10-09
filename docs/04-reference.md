@@ -144,6 +144,11 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - #5: the gateway returns x402Version 1 while the facilitator uses 2.
 - Get listed: open the "List your service" issue form in celo-org/buy-skill (curated).
 
+## Arbolito contracts (Celo mainnet)
+| Contract | Address | Notes |
+|---|---|---|
+| ArbolitoReceipts | **0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34** | Deployed 2026-10-09, block 79641781, tx `0xd3e1a5f6585c19d13d89491b47f597ed9b61f77fd074c9c14b86c30162ba421a`. Owner and emitter: ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`. The deploy tx carries `celo_e054d92430a5` |
+
 ## Identity, reputation, attribution
 - ERC-8004 (mainnet):
   - Identity 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432

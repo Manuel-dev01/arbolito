@@ -14,6 +14,7 @@ const ENTRIES = {
   "deploy-receipts": "scripts/deploy-receipts.ts",
   "register-8004": "scripts/register-8004.ts",
   "reanchor-receipt": "scripts/reanchor-receipt.ts",
+  "verify-receipt": "scripts/verify-receipt.ts",
 };
 
 const name = process.argv[2];

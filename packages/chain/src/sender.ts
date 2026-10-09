@@ -78,6 +78,36 @@ export interface GuardedSendResult {
 const forkLedger = new MemoryLedger();
 
 /**
+ * Gas estimate (which simulates the call), retried a few times. Read-only, so retrying is safe.
+ * Why: forno is load-balanced; right after our previous tx (e.g. an approve) a node that hasn't
+ * seen it yet makes the next call revert (we hit "STF" on mainnet). A genuine revert still fails
+ * after the last attempt. Returns the estimate plus a 20% buffer.
+ */
+export async function simulateWithRetry(
+  client: PublicClient,
+  tx: Parameters<PublicClient["estimateGas"]>[0],
+  purpose: string,
+  attempts = 4,
+  baseDelayMs = 1_500,
+): Promise<bigint> {
+  let lastErr: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      const est = await client.estimateGas(tx);
+      return (est * 12n) / 10n;
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts) {
+        const msg = (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;
+        log(`[sim] ${purpose}: attempt ${i} reverted (${msg.slice(0, 80)}); retrying`);
+        await new Promise((r) => setTimeout(r, baseDelayMs * i));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+/**
  * The only path Arbolito uses to send a transaction. In order:
  * 1. mode guard (fork must be anvil; live needs live=true, chainId 42220, a real attribution code)
  * 2. per-action and daily caps, checked before signing
@@ -118,14 +148,15 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
   const feeCurrency = p.feeCurrency ? feeCurrencyFor(p.feeCurrency) : undefined;
   const tx = { account, ...(p.to ? { to: p.to } : {}), data, value: p.value ?? 0n, ...(feeCurrency ? { feeCurrency } : {}) };
 
-  // Simulate first: a revert here costs nothing.
-  await p.publicClient.call(tx);
+  // Simulate first (estimateGas executes the call): a revert here costs nothing.
+  const gas = await simulateWithRetry(p.publicClient, tx, p.purpose);
 
   const id = randomUUID();
   ledger.reserve(day, { id, at: now.toISOString(), purpose: p.purpose, usdMicros: p.usdMicros.toString() });
   let hash: Hex;
   try {
-    hash = await p.walletClient.sendTransaction({ ...tx, chain: p.walletClient.chain ?? null } as never);
+    // Pass the simulated gas so signing doesn't re-estimate against a possibly lagging node.
+    hash = await p.walletClient.sendTransaction({ ...tx, gas, chain: p.walletClient.chain ?? null } as never);
   } catch (err) {
     // Nothing was broadcast, so nothing moved.
     ledger.update(day, id, { status: "released" });

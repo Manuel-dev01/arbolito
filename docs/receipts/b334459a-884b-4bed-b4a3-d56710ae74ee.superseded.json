@@ -1,0 +1,204 @@
+{
+  "v": 1,
+  "routeId": "b334459a-884b-4bed-b4a3-d56710ae74ee",
+  "createdAt": "2026-10-09T10:45:35.302Z",
+  "chainId": 42220,
+  "request": {
+    "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+    "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+    "amountIn": "2500000",
+    "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+  },
+  "quotesConsidered": [
+    {
+      "venue": "uniswap_v3",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "amountIn": "2500000",
+      "amountOut": "12647118280431389240",
+      "blockNumber": "79641965",
+      "firm": false,
+      "raw": {
+        "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+        "sqrtPriceX96After": "178207405739221301699837094677302533",
+        "initializedTicksCrossed": 0,
+        "gasEstimate": "96369"
+      },
+      "meta": {
+        "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+        "fee": 100
+      }
+    },
+    {
+      "venue": "textile_rfq",
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "amountIn": "2500000",
+      "amountOut": "12562998594356942009",
+      "blockNumber": "79641965",
+      "firm": false,
+      "raw": {
+        "kind": "preview",
+        "status": "preview",
+        "sellAmount": "2500000",
+        "buyAmount": "12562998594356942009",
+        "feeAmount": "249",
+        "takerPays": "2500000",
+        "rateRay": "198977257000000000011232245",
+        "availableSellAmount": "76231322359",
+        "routing": {
+          "preferenceApplied": false,
+          "restrictionApplied": false,
+          "fallbackUsed": false,
+          "targetMakerWallets": [],
+          "preferredQuotesReceived": 0,
+          "openMarketQuotesReceived": 0
+        }
+      }
+    }
+  ],
+  "chosen": {
+    "id": "b334459a-884b-4bed-b4a3-d56710ae74ee",
+    "label": "USDT →[uniswap 0.01%] wBRL",
+    "legs": [
+      {
+        "quote": {
+          "venue": "uniswap_v3",
+          "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+          "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+          "amountIn": "2500000",
+          "amountOut": "12647118280431389240",
+          "blockNumber": "79641965",
+          "firm": false,
+          "raw": {
+            "quoter": "0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8",
+            "sqrtPriceX96After": "178207405739221301699837094677302533",
+            "initializedTicksCrossed": 0,
+            "gasEstimate": "96369"
+          },
+          "meta": {
+            "pool": "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F",
+            "fee": 100
+          }
+        },
+        "minOut": "12583882689029232293"
+      }
+    ],
+    "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+    "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+    "amountIn": "2500000",
+    "expectedOut": "12647118280431389240",
+    "minOut": "12583882689029232293",
+    "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+  },
+  "alternatives": [
+    {
+      "id": "bbbf571d-5de7-465e-aec2-f811b78551fa",
+      "label": "USDT →[textile_rfq] wBRL",
+      "legs": [
+        {
+          "quote": {
+            "venue": "textile_rfq",
+            "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+            "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+            "amountIn": "2500000",
+            "amountOut": "12562998594356942009",
+            "blockNumber": "79641965",
+            "firm": false,
+            "raw": {
+              "kind": "preview",
+              "status": "preview",
+              "sellAmount": "2500000",
+              "buyAmount": "12562998594356942009",
+              "feeAmount": "249",
+              "takerPays": "2500000",
+              "rateRay": "198977257000000000011232245",
+              "availableSellAmount": "76231322359",
+              "routing": {
+                "preferenceApplied": false,
+                "restrictionApplied": false,
+                "fallbackUsed": false,
+                "targetMakerWallets": [],
+                "preferredQuotesReceived": 0,
+                "openMarketQuotesReceived": 0
+              }
+            }
+          },
+          "minOut": "12500183601385157298"
+        }
+      ],
+      "tokenIn": "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+      "tokenOut": "0xD76f5Faf6888e24D9F04Bf92a0c8B921FE4390e0",
+      "amountIn": "2500000",
+      "expectedOut": "12562998594356942009",
+      "minOut": "12500183601385157298",
+      "taker": "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c"
+    }
+  ],
+  "references": [
+    {
+      "name": "official",
+      "pair": "USD/ARS",
+      "rate": "1540",
+      "source": "https://dolarapi.com/v1/dolares#oficial.venta",
+      "at": "2026-10-08T18:00:00.000Z"
+    },
+    {
+      "name": "blue",
+      "pair": "USD/ARS",
+      "rate": "1540",
+      "source": "https://dolarapi.com/v1/dolares#blue.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "mep",
+      "pair": "USD/ARS",
+      "rate": "1542.7",
+      "source": "https://dolarapi.com/v1/dolares#bolsa.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "ccl",
+      "pair": "USD/ARS",
+      "rate": "1613.6",
+      "source": "https://dolarapi.com/v1/dolares#contadoconliqui.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "crypto",
+      "pair": "USD/ARS",
+      "rate": "1608.68",
+      "source": "https://dolarapi.com/v1/dolares#cripto.venta",
+      "at": "2026-10-08T20:58:00.000Z"
+    },
+    {
+      "name": "official",
+      "pair": "BRL/ARS",
+      "rate": "301.9033",
+      "source": "https://dolarapi.com/v1/cotizaciones#BRL.oficial.venta",
+      "at": "2026-10-08T17:01:00.000Z"
+    },
+    {
+      "name": "uniswap_mid",
+      "pair": "USD/ARS",
+      "rate": "1607.8873",
+      "source": "uniswap-v3:0x5D8ef8B839be522b9E3d60a51EDB5837CD0b2391@79641965",
+      "at": "2026-10-09T10:45:34.185Z"
+    },
+    {
+      "name": "uniswap_mid",
+      "pair": "USD/BRL",
+      "rate": "5.0593844",
+      "source": "uniswap-v3:0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F@79641965",
+      "at": "2026-10-09T10:45:34.185Z"
+    }
+  ],
+  "execution": {
+    "txHash": "0x43ab6ccad6b56d72e76cdfba312b7f42923016da8d361eb26aba9da23f5ee743",
+    "blockNumber": "79641974",
+    "amountOut": "0",
+    "attribution": [
+      "celo_e054d92430a5"
+    ]
+  }
+}
