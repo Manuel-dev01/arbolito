@@ -17,3 +17,4 @@ coverage/
 .vercel/
 *.log
 .self/
+.claude/settings.local.json
