@@ -19,7 +19,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | Piece | Where | State |
 |---|---|---|
 | Repo | https://github.com/Manuel-dev01/arbolito | **Private** for now; make it public before submission (founder's call). History scanned: no `.env` value appears in any commit |
-| Web (Mini App, `/r/:id`, `/metrics`) | Vercel project `arbolito` (manuel-dev01s-projects), linked locally | `apps/web` exists (Next.js 16.4) and builds with no env vars. **Still to do on Vercel:** connect Git, set the root dir to `apps/web`, and keep "include files outside the root directory" on. `DATABASE_URL` is already set. Not deployed yet |
+| Web (Mini App, `/r/:id`, `/metrics`) | **https://arbolito-livid.vercel.app** (Vercel project `arbolito`, root `apps/web`, Next.js 16.4) | **Public** (founder, 2026-10-09). Git-connected: pushes to `main` deploy to production. Vercel Authentication turned off so the production URL isn't behind a login. First deploy `dpl_D2U8uhBT9HDwTLpKQoj7CzzEgjRB` (commit `6b1195c`) READY. `PUBLIC_BASE_URL` set. Not reachable from the Claude sandbox until `*.vercel.app` is allowlisted |
 | Postgres | Neon `arbolito-db` via Vercel marketplace (us-east-1, pooled) | `DATABASE_URL` set in `.env` and in Vercel env. No billing balance attached (free plan). Unreachable from the Claude sandbox until `*.neon.tech` is allowlisted |
 | Bot / API hosting | Railway project `arbolito` (`e8a7b24e-50ec-4f14-88d5-7e93bf85a796`) | Empty; the first service deploys in Phase 2 |
 | Desk wallet | `0xBCB8B7dcEB8B39457Ef6D5dC95520A562b13EdbE` (`DESK_PRIVATE_KEY`) | **Unfunded.** Inventory cap to be agreed first |
