@@ -10,6 +10,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ENTRIES = {
   quote: "packages/router/src/cli/quote.ts",
   "verify-addresses": "scripts/verify-addresses.ts",
+  "smoke-convert": "scripts/smoke-convert.ts",
+  "deploy-receipts": "scripts/deploy-receipts.ts",
+  "register-8004": "scripts/register-8004.ts",
 };
 
 const name = process.argv[2];

@@ -79,12 +79,17 @@ if (notes.length) console.log(`notes: ${notes.join("; ")}`);
 console.log(`\n${result.quotesConsidered.length} quotes considered in ${elapsed} ms${elapsed > 4000 ? "  (over the 4s budget)" : ""}`);
 }
 
+// Exit via exitCode + an unref'd timer: a hung DNS lookup from a timed-out reference fetch
+// can keep Node alive, but calling process.exit() mid-teardown trips a libuv assert on Windows.
+const exitSoon = (code: number) => {
+  process.exitCode = code;
+  setTimeout(() => process.exit(code), 250).unref();
+};
 main(fromArg, toArg, amountArg).then(
-  // Don't wait on sockets left open by timed-out reference fetches (a hung DNS lookup keeps Node alive).
-  () => process.exit(0),
+  () => exitSoon(0),
   (err: unknown) => {
     const e = err as { shortMessage?: string; message?: string };
     console.error(`quote failed: ${e.shortMessage ?? e.message ?? String(err)}`);
-    process.exit(1);
+    exitSoon(1);
   },
 );
