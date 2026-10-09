@@ -5,3 +5,4 @@ export * from "./feeCurrency";
 export * from "./ledger";
 export * from "./redact";
 export * from "./sender";
+export * from "./smartAccount";
