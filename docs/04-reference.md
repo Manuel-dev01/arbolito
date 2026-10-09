@@ -144,6 +144,24 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - #5: the gateway returns x402Version 1 while the facilitator uses 2.
 - Get listed: open the "List your service" issue form in celo-org/buy-skill (curated).
 
+## ERC-4337 / thirdweb smart accounts (Celo mainnet, verified 2026-10-09)
+| Contract | Address | Notes |
+|---|---|---|
+| EntryPoint v0.6 | 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789 | code present |
+| EntryPoint v0.7 | 0x0000000071727De22E5E9d8BAf0edAc6f37da032 | code present |
+| thirdweb AccountFactory v0.6 | 0x85e23b94e7F5E9cC1fF78BCe78cfb15B81f0DF00 | SDK `DEFAULT_ACCOUNT_FACTORY_V0_6` (5.121.6); impl `0xf22175c80c6e074C171811C59C6c0087e2a6a346` |
+| thirdweb AccountFactory v0.7 | 0x4bE0ddfebcA9A5A4a617dee4DeCe99E7c862dceb | SDK `DEFAULT_ACCOUNT_FACTORY_V0_7`; impl `0x94eC38a5d2EDA5A543Ab4c08D998338D4082beb2`; `entrypoint()` matches |
+
+- **`execute` access:** `execute` from a non-admin reverts "Account: not admin or EntryPoint.", so session keys act only through UserOps.
+- **Self-bundling works:** Arbolito's relayer EOA calls `EntryPoint.handleOps` with ops at `maxFeePerGas = 0`. The account needs no CELO, and only the relayer pays gas. Proven by the fork test `packages/chain/test/smartAccount.fork.test.ts`.
+- **Session-key scope** (`isValidSigner`):
+  - call targets must be in `approvedTargets`
+  - native value per call must be ≤ `nativeTokenLimitPerTransaction`
+  - the key only works inside its time window, and grants are revocable (each signed request `uid` is single-use)
+  - **There are no ERC-20 amount limits and no per-function limits.** A key scoped to SwapRouter02 can call `exactInputSingle(recipient = anyone)` or `pull` + `sweepToken`, so **never make a router or reactor a direct session-key target**. Route through an Arbolito guard contract instead.
+- **Attribution:** tag both the outer `handleOps` calldata (credits the relayer) and the inner UserOp `callData` (`verifyUserOps` credits the smart account `sender`).
+- **⚠️ Anvil's well-known dev addresses carry EIP-7702 delegations to sweeper contracts on Celo mainnet** (e.g. `0x7099…79C8` has code `0xef0100…`). Using one as relayer or beneficiary drained 10 CELO on the fork. **Never use or fund those addresses; production relayers must be fresh plain EOAs.**
+
 ## Arbolito contracts (Celo mainnet)
 | Contract | Address | Notes |
 |---|---|---|
