@@ -19,3 +19,7 @@ coverage/
 .self/
 .claude/settings.local.json
 .claude/worktrees/
+
+# Next.js (apps/web)
+next-env.d.ts
+*.tsbuildinfo

@@ -6,7 +6,7 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["packages/*/test/**/*.test.ts"],
+          include: ["packages/*/test/**/*.test.ts", "apps/*/test/**/*.test.ts"],
           exclude: ["**/*.fork.test.ts", "**/*.db.test.ts", "**/node_modules/**"],
         },
       },
