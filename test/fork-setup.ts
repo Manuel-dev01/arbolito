@@ -60,6 +60,9 @@ export async function setup(project: TestProject) {
         "--fork-block-number", forkBlock.toString(),
         "--chain-id", "42220",
         "--port", String(PORT),
+        // Keep mining: with on-demand mining only, viem's waitForTransactionReceipt can miss a tx
+        // that was mined before its block watcher started, and then wait forever for a new block.
+        "--block-time", "1",
         "--retries", "8",
         "--timeout", "45000",
         "--silent",

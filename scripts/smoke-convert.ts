@@ -29,6 +29,7 @@ import {
   UniswapV3Adapter,
   buildRouteCalls,
   erc20Abi,
+  executableRoutes,
   fetchReferences,
   fmtAmount,
   plan,
@@ -72,7 +73,10 @@ runMain(async () => {
     taker: account.address,
   });
   if (!planned.best) throw new Error("No route available right now");
-  const route = planned.best;
+  // Textile previews compete in planning; Textile legs need firm execution, which is opt-in for now.
+  const route = executableRoutes(planned, { textileFirm: false })[0];
+  if (!route) throw new Error("No executable route right now (best routes need Textile firm execution)");
+  if (route !== planned.best) console.log(`note: best route ${planned.best.label} needs Textile firm execution; using best executable route`);
   const value = await usdMicros(publicClient, from.address, amountIn, planned.blockNumber);
 
   // Cap pre-check, so a refusal shows before anyone is asked to confirm.

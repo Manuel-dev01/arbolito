@@ -34,11 +34,13 @@ import {
   UniswapV3Adapter,
   buildRouteCalls,
   erc20Abi,
+  executableRoutes,
   fetchReferences,
   plan,
   toAtomic,
   usdMicros,
   type PlanResult,
+  type Route,
 } from "@arbolito/router";
 import { anchorBundle, buildBundle, bundleHash, receiptsAbi, receiptsBytecode, verifyBundle, type ProofBundle } from "../src";
 
@@ -54,6 +56,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
   let walletClient: WalletClient;
   let receipts: Address;
   let planned: PlanResult;
+  let route: Route;
   let swapTx: Hex;
   let received: bigint;
   let bundle: ProofBundle;
@@ -111,13 +114,16 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
       taker: TAKER.address,
     });
     expect(planned.best).not.toBeNull();
-    expect(planned.best!.label).toBe("wBRL →[uniswap 0.01%] USDT →[uniswap 0.01%] wARS");
-    expect(planned.best!.expectedOut).toBeGreaterThan(0n);
     expect(planned.quotesConsidered.length).toBeGreaterThanOrEqual(2);
+    // Textile previews compete in planning; firm Textile execution is opt-in, so execute the
+    // best route that is executable without it (all-Uniswap here).
+    route = executableRoutes(planned, { textileFirm: false })[0]!;
+    expect(route.label).toBe("wBRL →[uniswap 0.01%] USDT →[uniswap 0.01%] wARS");
+    expect(route.expectedOut).toBeGreaterThan(0n);
   });
 
   it("refuses the swap under the default $5 build cap", async () => {
-    const [, swap] = buildRouteCalls(planned.best!, TAKER.address);
+    const [, swap] = buildRouteCalls(route, TAKER.address);
     const value = await usdMicros(publicClient, TOKENS.wBRL.address, AMOUNT_IN);
     expect(value).toBeGreaterThan(USD(5));
     await expect(
@@ -126,7 +132,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
   });
 
   it("executes the route and receives at least minOut", async () => {
-    const calls = buildRouteCalls(planned.best!, TAKER.address);
+    const calls = buildRouteCalls(route, TAKER.address);
     const value = await usdMicros(publicClient, TOKENS.wBRL.address, AMOUNT_IN);
     const before = await publicClient.readContract({ address: TOKENS.wARS.address, abi: erc20Abi, functionName: "balanceOf", args: [TAKER.address] });
     for (const [i, call] of calls.entries()) {
@@ -146,9 +152,9 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     }
     const after = await publicClient.readContract({ address: TOKENS.wARS.address, abi: erc20Abi, functionName: "balanceOf", args: [TAKER.address] });
     received = after - before;
-    expect(received).toBeGreaterThanOrEqual(planned.best!.minOut);
+    expect(received).toBeGreaterThanOrEqual(route.minOut);
     // Nothing else trades on the fork, so the executed amount equals the quote.
-    expect(received).toBe(planned.best!.expectedOut);
+    expect(received).toBe(route.expectedOut);
 
     const tx = await publicClient.getTransaction({ hash: swapTx });
     expect(attributionCodes(tx.input)).toEqual([FORK_ATTRIBUTION_CODE]);
@@ -159,7 +165,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     const tx = await publicClient.getTransaction({ hash: swapTx });
     const refs = await fetchReferences(publicClient, planned.blockNumber);
     bundle = buildBundle({
-      route: planned.best!,
+      route: route,
       alternatives: planned.alternatives,
       quotesConsidered: planned.quotesConsidered,
       references: refs.references,

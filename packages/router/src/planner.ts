@@ -109,10 +109,20 @@ export async function plan(p: PlanParams): Promise<PlanResult> {
   return { best: routes[0] ?? null, alternatives: routes.slice(1), quotesConsidered, blockNumber, venueErrors };
 }
 
-/** Execution calls for a route. Only all-Uniswap routes are executable until the Textile spike lands. */
+const isAllUniswap = (route: Route) => route.legs.every((l) => l.quote.venue === "uniswap_v3");
+
+/**
+ * Routes that can execute today, best first. All-Uniswap routes always can. Routes with
+ * Textile legs need a firm quote at execution time (taker-funded, inventory-locking), which
+ * is opt-in until it has run on mainnet: pass textileFirm = textileFirmEnabled().
+ */
+export function executableRoutes(result: Pick<PlanResult, "best" | "alternatives">, opts: { textileFirm: boolean }): Route[] {
+  const all = result.best ? [result.best, ...result.alternatives] : [];
+  return all.filter((r) => isAllUniswap(r) || opts.textileFirm);
+}
+
+/** Static calls for an all-Uniswap route (approve + one atomic swap). */
 export function buildRouteCalls(route: Route, recipient: Address): Call[] {
-  if (route.legs.every((l) => l.quote.venue === "uniswap_v3")) {
-    return buildUniswapCalls(route.legs, recipient, route.minOut);
-  }
-  throw new Error("Routes with Textile legs are not executable yet (pending the Textile v2 taker spike)");
+  if (isAllUniswap(route)) return buildUniswapCalls(route.legs, recipient, route.minOut);
+  throw new Error("Textile legs execute from a firm quote taken at execution time, not from static calls");
 }

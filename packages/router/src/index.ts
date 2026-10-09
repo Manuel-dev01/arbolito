@@ -3,6 +3,7 @@ export * from "./format";
 export * from "./planner";
 export * from "./pricing";
 export * from "./refs";
+export * from "./textile/api";
 export * from "./textile/rfq";
 export * from "./textile/tickers";
 export * from "./types";

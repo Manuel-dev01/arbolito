@@ -30,9 +30,8 @@ async function main(fromArg: string, toArg: string, amountArg: string) {
 
   const client = makePublicClient();
   const blockNumber = await client.getBlockNumber();
-  const textile = new TextileRfqAdapter();
   const [result, refs] = await Promise.all([
-    plan({ client, adapters: [new UniswapV3Adapter(client), textile], tokenIn: from.address, tokenOut: to.address, amountIn, taker, blockNumber }),
+    plan({ client, adapters: [new UniswapV3Adapter(client), new TextileRfqAdapter()], tokenIn: from.address, tokenOut: to.address, amountIn, taker, blockNumber }),
     fetchReferences(client, blockNumber),
   ]);
   const elapsed = Math.round(performance.now() - t0);
@@ -57,26 +56,26 @@ async function main(fromArg: string, toArg: string, amountArg: string) {
         console.log(`       ${fmtAmount(to.address, alt.expectedOut).padEnd(24)} ${String(diffBps).padStart(6)} bps   ${alt.label}`);
       }
     }
-}
+  }
 
-console.log("\nREFERENCES");
-for (const r of refs.references) {
-  console.log(`       ${r.name.padEnd(12)} ${r.pair.padEnd(8)} ${r.rate.padStart(12)}   ${r.source}`);
-}
-if (result.best) {
-  const ours = rateOf(result.best);
-  const lines = (["official", "mep", "ccl", "crypto"] as const)
-    .map((n) => [n, refFor(n)] as const)
-    .filter((x): x is readonly [(typeof x)[0], number] => x[1] !== undefined)
-    .map(([n, v]) => `${n} ${((ours / v - 1) * 100).toFixed(2)}%`);
-  if (lines.length) console.log(`\nVS REFERENCES (${pair}): ${lines.join("   ")}`);
-}
-if (refs.unavailable.length) console.log(`\nunavailable: ${refs.unavailable.join(", ")}`);
-const notes: string[] = [];
-if (!textile.enabled) notes.push("Textile RFQ off (no key / flag)");
-for (const e of result.venueErrors) notes.push(`${e.venue} ${e.tokenIn}→${e.tokenOut}: ${e.error}`);
-if (notes.length) console.log(`notes: ${notes.join("; ")}`);
-console.log(`\n${result.quotesConsidered.length} quotes considered in ${elapsed} ms${elapsed > 4000 ? "  (over the 4s budget)" : ""}`);
+  console.log("\nREFERENCES");
+  for (const r of refs.references) {
+    console.log(`       ${r.name.padEnd(12)} ${r.pair.padEnd(8)} ${r.rate.padStart(12)}   ${r.source}`);
+  }
+  if (result.best) {
+    const ours = rateOf(result.best);
+    const lines = (["official", "mep", "ccl", "crypto"] as const)
+      .map((n) => [n, refFor(n)] as const)
+      .filter((x): x is readonly [(typeof x)[0], number] => x[1] !== undefined)
+      .map(([n, v]) => `${n} ${((ours / v - 1) * 100).toFixed(2)}%`);
+    if (lines.length) console.log(`\nVS REFERENCES (${pair}): ${lines.join("   ")}`);
+  }
+  if (refs.unavailable.length) console.log(`\nunavailable: ${refs.unavailable.join(", ")}`);
+  const notes: string[] = [];
+  if (result.quotesConsidered.some((x) => x.venue === "textile_rfq")) notes.push("Textile quotes are /rfq/preview (indicative); a firm quote is taken at execution");
+  for (const e of result.venueErrors) notes.push(`${e.venue} ${e.tokenIn}→${e.tokenOut}: ${e.error}`);
+  if (notes.length) console.log(`notes: ${notes.join("; ")}`);
+  console.log(`\n${result.quotesConsidered.length} quotes considered in ${elapsed} ms${elapsed > 4000 ? "  (over the 4s budget)" : ""}`);
 }
 
 // Exit via exitCode + an unref'd timer: a hung DNS lookup from a timed-out reference fetch
