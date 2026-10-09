@@ -16,6 +16,8 @@ export interface ClientOptions {
   /** Override RPC (e.g. an anvil fork at http://127.0.0.1:8547). Defaults to CELO_RPC_URL + fallback. */
   rpcUrl?: string;
   chain?: Chain;
+  /** ms between polls (receipts, blocks). Use ~100 on anvil, where blocks are instant. */
+  pollingInterval?: number;
 }
 
 function transport(opts: ClientOptions): Transport {
@@ -26,11 +28,11 @@ function transport(opts: ClientOptions): Transport {
 }
 
 export function makePublicClient(opts: ClientOptions = {}): PublicClient {
-  return createPublicClient({ chain: opts.chain ?? celo, transport: transport(opts) }) as PublicClient;
+  return createPublicClient({ chain: opts.chain ?? celo, transport: transport(opts), pollingInterval: opts.pollingInterval }) as PublicClient;
 }
 
 export function makeWalletClient(account: Account, opts: ClientOptions = {}): WalletClient {
-  return createWalletClient({ account, chain: opts.chain ?? celo, transport: transport(opts) });
+  return createWalletClient({ account, chain: opts.chain ?? celo, transport: transport(opts), pollingInterval: opts.pollingInterval });
 }
 
 /** True when the RPC node is an anvil instance (used to guard fork-mode sends). */
