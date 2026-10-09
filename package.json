@@ -12,6 +12,7 @@
     "smoke:convert": "node scripts/run.mjs smoke-convert",
     "deploy:receipts": "pnpm contracts:build && node scripts/run.mjs deploy-receipts",
     "register:8004": "node scripts/run.mjs register-8004",
+    "reanchor:receipt": "node scripts/run.mjs reanchor-receipt",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
     "contracts:test:fork": "forge test --root contracts --match-path \"test/fork/*\" --fork-url https://forno.celo.org",

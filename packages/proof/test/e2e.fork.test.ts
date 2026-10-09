@@ -17,7 +17,7 @@ import {
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { POOLS, TOKENS } from "@arbolito/config";
+import { POOLS, TOKENS, loadEnv } from "@arbolito/config";
 import {
   CapExceededError,
   FORK_ATTRIBUTION_CODE,
@@ -37,6 +37,7 @@ import {
   executableRoutes,
   fetchReferences,
   plan,
+  receivedInTx,
   toAtomic,
   usdMicros,
   type PlanResult,
@@ -49,6 +50,8 @@ const TAKER = privateKeyToAccount("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbe
 const WBRL_POOL = POOLS.find((p) => p.name.startsWith("wBRL/USDT"))!.address;
 const AMOUNT_IN = toAtomic(TOKENS.wBRL.address, "200");
 // The fork test moves ~$40, above the $5 build cap; it runs with an explicit fork-only cap.
+// Fork sends carry the real code when one is configured (a truer rehearsal), else the placeholder.
+const EXPECTED_CODE = loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE;
 const FORK_CAPS = { maxActionMicros: USD(100), maxDailyMicros: USD(500) };
 
 describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
@@ -100,7 +103,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     });
     expect(receipt.contractAddress).toBeTruthy();
     receipts = receipt.contractAddress!;
-    expect(attributionCodes(data)).toContain(FORK_ATTRIBUTION_CODE);
+    expect(attributionCodes(data)).toContain(EXPECTED_CODE);
     expect(await publicClient.readContract({ address: receipts, abi: receiptsAbi, functionName: "owner" })).toBe(TAKER.address);
   });
 
@@ -157,11 +160,13 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     expect(received).toBe(route.expectedOut);
 
     const tx = await publicClient.getTransaction({ hash: swapTx });
-    expect(attributionCodes(tx.input)).toEqual([FORK_ATTRIBUTION_CODE]);
+    expect(attributionCodes(tx.input)).toEqual([EXPECTED_CODE]);
   });
 
   it("builds a ProofBundle, anchors it and verifies it end to end", async () => {
     const swapReceipt = await publicClient.getTransactionReceipt({ hash: swapTx });
+    // The Transfer-log amount (what receipts record) equals the balance delta on the fork.
+    expect(receivedInTx(swapReceipt, TOKENS.wARS.address, TAKER.address)).toBe(received);
     const tx = await publicClient.getTransaction({ hash: swapTx });
     const refs = await fetchReferences(publicClient, planned.blockNumber);
     bundle = buildBundle({
@@ -181,6 +186,21 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
     expect(result.anchor!.txHash).toBe(anchored.txHash);
+  });
+
+  it("fails verification when an anchored bundle misstates the executed amount", async () => {
+    // Regression for the first mainnet smoke receipt: a lagging RPC made a balance diff read 0.
+    const wrong = buildBundle({
+      route,
+      alternatives: [],
+      quotesConsidered: planned.quotesConsidered,
+      references: [],
+      execution: { ...bundle.execution, txHash: bundle.execution.txHash as Hex, blockNumber: BigInt(bundle.execution.blockNumber), amountOut: 0n },
+    });
+    await anchorBundle({ bundle: wrong, receipts, mode: "fork", publicClient, walletClient });
+    const result = await verifyBundle(JSON.parse(JSON.stringify(wrong)), { client: publicClient, receipts });
+    expect(result.ok).toBe(false);
+    expect(result.errors.join(" ")).toMatch(/does not match the \d+ delivered onchain/);
   });
 
   it("rejects a tampered bundle", async () => {

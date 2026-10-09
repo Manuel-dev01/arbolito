@@ -40,6 +40,6 @@ export const CONTRACTS = {
     facilitatorSigner: "0x0d74D5Cefd2e7F24E623330ebE3d8D4cB45fFB48",
     buyPayTo: "0x20faAca5F980E29639A0FCC6dcA6988E18ed333B",
   },
-  /** Set after the founder-approved mainnet deploy. Fork tests deploy their own. */
-  arbolitoReceipts: undefined as Address | undefined,
+  /** Deployed 2026-10-09, tx 0xd3e1a5f6…a421a, block 79641781; owner/emitter = ops wallet. Fork tests deploy their own. */
+  arbolitoReceipts: "0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34" as Address | undefined,
 } as const;

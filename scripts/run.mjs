@@ -13,6 +13,7 @@ const ENTRIES = {
   "smoke-convert": "scripts/smoke-convert.ts",
   "deploy-receipts": "scripts/deploy-receipts.ts",
   "register-8004": "scripts/register-8004.ts",
+  "reanchor-receipt": "scripts/reanchor-receipt.ts",
 };
 
 const name = process.argv[2];

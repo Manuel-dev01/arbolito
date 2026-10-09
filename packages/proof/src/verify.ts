@@ -1,5 +1,6 @@
 import { decodeEventLog, type Address, type Hex, type PublicClient } from "viem";
 import { attributionCodes } from "@arbolito/chain";
+import { receivedInTx } from "@arbolito/router";
 import { bundleHash, routeIdToBytes32 } from "./hash";
 import { receiptsAbi } from "./receipts";
 import { proofBundleSchema, type ProofBundle } from "./schema";
@@ -23,7 +24,8 @@ export interface VerifyResult {
  * 1. JSON matches the v1 schema
  * 2. keccak256(canonical JSON) is anchored in ArbolitoReceipts (anchoredAt → ReceiptAnchored log)
  * 3. the log's routeId matches the bundle and the emitter is allowed
- * 4. the execution tx exists, succeeded, sits at the stated block and carries the stated attribution
+ * 4. the execution tx exists, succeeded, sits at the stated block, carries the stated attribution,
+ *    and its Transfer logs delivered exactly execution.amountOut of tokenOut to the taker
  */
 export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<VerifyResult> {
   const errors: string[] = [];
@@ -65,6 +67,11 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
     if (execReceipt.blockNumber > anchor.blockNumber) errors.push("receipt was anchored before the execution");
     const codes = attributionCodes(execTx.input);
     if (codes.join(",") !== bundle.execution.attribution.join(",")) errors.push("execution attribution does not match bundle");
+    // The claimed output must be what the execution tx actually delivered to the taker.
+    const delivered = receivedInTx(execReceipt, bundle.request.tokenOut as Address, bundle.request.taker as Address);
+    if (delivered.toString() !== bundle.execution.amountOut) {
+      errors.push(`execution.amountOut ${bundle.execution.amountOut} does not match the ${delivered} delivered onchain`);
+    }
   }
 
   return { ok: errors.length === 0, bundleHash: h, anchor, errors };

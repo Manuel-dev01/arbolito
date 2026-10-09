@@ -33,10 +33,12 @@ import {
   fetchReferences,
   fmtAmount,
   plan,
+  receivedInTx,
   toAtomic,
   usdMicros,
 } from "@arbolito/router";
-import { anchorBundle, buildBundle, bundleHash, verifyBundle } from "@arbolito/proof";
+import { anchorBundle, buildBundle, bundleHash } from "@arbolito/proof";
+import { verifyWithRetry } from "./lib/verify";
 import { jsonStringify } from "./lib/json";
 import { confirm, flagValue, forkUrl, hasFlag, opsAccount, positional, runMain } from "./lib/cli";
 
@@ -102,11 +104,10 @@ runMain(async () => {
   }
 
   const calls = buildRouteCalls(route, account.address);
-  const before = await publicClient.readContract({ address: to.address, abi: erc20Abi, functionName: "balanceOf", args: [account.address] });
-  let swapHash: `0x${string}` | undefined;
+  let swap: Awaited<ReturnType<typeof sendGuarded>> | undefined;
   for (const [i, call] of calls.entries()) {
     const isSwap = i === calls.length - 1; // approve first, swap last
-    const { hash } = await sendGuarded({
+    const sent = await sendGuarded({
       mode,
       live: !fork,
       publicClient,
@@ -118,12 +119,12 @@ runMain(async () => {
       feeCurrency,
       ledger,
     });
-    console.log(`  ${call.label}: ${fork ? hash : txUrl(hash)}`);
-    if (isSwap) swapHash = hash;
+    console.log(`  ${call.label}: ${fork ? sent.hash : txUrl(sent.hash)}`);
+    if (isSwap) swap = sent;
   }
-  const after = await publicClient.readContract({ address: to.address, abi: erc20Abi, functionName: "balanceOf", args: [account.address] });
-  const swapReceipt = await publicClient.getTransactionReceipt({ hash: swapHash! });
-  const swapTx = await publicClient.getTransaction({ hash: swapHash! });
+  // Executed amount from the swap's own Transfer logs; attribution from the calldata we sent.
+  // Re-reading balances or the tx over forno can hit a lagging node (it recorded 0 once).
+  const received = receivedInTx(swap!.receipt, to.address, account.address);
 
   const refs = await fetchReferences(publicClient, planned.blockNumber);
   const bundle = buildBundle({
@@ -131,7 +132,7 @@ runMain(async () => {
     alternatives: planned.alternatives,
     quotesConsidered: planned.quotesConsidered,
     references: refs.references,
-    execution: { txHash: swapHash!, blockNumber: swapReceipt.blockNumber, amountOut: after - before, attribution: attributionCodes(swapTx.input) },
+    execution: { txHash: swap!.hash, blockNumber: swap!.receipt.blockNumber, amountOut: received, attribution: attributionCodes(swap!.data) },
   });
 
   // The swap already settled; the receipt is bookkeeping. Save the bundle before anchoring
@@ -145,8 +146,8 @@ runMain(async () => {
   const anchored = await anchorBundle({ bundle, receipts: receipts!, mode, live: !fork, publicClient, walletClient, feeCurrency });
   console.log(`  receipt anchored: ${fork ? anchored.txHash : txUrl(anchored.txHash)}`);
 
-  const verified = await verifyBundle(JSON.parse(jsonStringify(bundle)), { client: publicClient, receipts: receipts!, emitters: [account.address] });
+  const verified = await verifyWithRetry(JSON.parse(jsonStringify(bundle)), { client: publicClient, receipts: receipts!, emitters: [account.address] });
   console.log(`\nverifyBundle: ${verified.ok ? "OK" : `FAILED: ${verified.errors.join("; ")}`}`);
-  console.log(`received ${fmtAmount(to.address, after - before)} (expected ${fmtAmount(to.address, route.expectedOut)})`);
+  console.log(`received ${fmtAmount(to.address, received)} (expected ${fmtAmount(to.address, route.expectedOut)})`);
   console.log(`savings vs official: ${bundle.savings ? `${bundle.savings.bps} bps (${bundle.savings.pair})` : "n/a"}`);
 });
