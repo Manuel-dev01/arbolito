@@ -4,6 +4,7 @@
  * 2. anvil --fork-url <CELO_RPC_URL> at a recent mainnet block, chainId 42220
  * 3. provide the anvil URL to tests; kill anvil on teardown
  * FORK_BLOCK pins a specific block; otherwise latest-2 (forno serves recent state reliably).
+ * FORK_PORT picks the anvil port (default 8547); use a free one when another session is running.
  */
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import type { TestProject } from "vitest/node";
