@@ -45,6 +45,10 @@ Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs; onchain ent
 | USA₮/USDT | 0.01% | 0x070d575a713eaf5025462d0865fb0dac4b14bc38 | 63.8K USA₮ + 42.2K USDT | ~$106K |
 | USA₮/USDT | 0.05% | 0xae073a816117dcd1cc237fe4cb99f89f8f8bff4f | dust | — |
 
+**TWAP oracle depth** (read 2026-10-09, `slot0().observationCardinality`; used by `ArbolitoSessionExecutor`'s 10-minute minOut floor):
+- wARS/USDT and USA₮/USDT 0.01%: cardinality **1200** (next 1200). With ≤ 1 observation per 1 s block that always spans ≥ 20 min, so `observe([600, 0])` works.
+- wBRL/USDT 0.01%: cardinality **1** (next 1). `observe([600, 0])` reverts `OLD` for 10 min after any swap that moves the tick, and otherwise just returns the current tick. The guard then needs an admin-signed reference price. Growing it is a permissionless `increaseObservationCardinalityNext(n)` on the pool (roughly 20–25k gas per slot, paid once). It's a mainnet tx and needs a go-ahead.
+
 There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not found at the 100/500/3000/10000 fee tiers against USDT, USDC, USDm, BRLm or CELO (scan of wARS, wBRL, wCOP and wMXN).
 
 ## Textile FX

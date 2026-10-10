@@ -6,3 +6,4 @@ export * from "./ledger";
 export * from "./redact";
 export * from "./sender";
 export * from "./smartAccount";
+export * from "./guard";
