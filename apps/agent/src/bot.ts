@@ -5,7 +5,8 @@ import { loadEnv } from "@arbolito/config";
 import { log } from "@arbolito/chain";
 import { runAgentTurn, transcribe, type AgentCard } from "@arbolito/llm";
 import { cardKeyboard, parseCardData, renderAlternatives, renderCard } from "./card";
-import { t, type Lang } from "./i18n";
+import { checkAccess, parseAllowlist } from "./access";
+import { langFromTelegram, t, type Lang } from "./i18n";
 import { NoRouteError, quote } from "./quotes";
 import { deserializeRoute, serializeRoute, type Json } from "./serde";
 import { getServices, type Services } from "./services";
@@ -67,9 +68,21 @@ export function createBot(token: string): Bot<Ctx> {
   // One update at a time per chat: no two actions from the same user can race the caps.
   bot.use(sequentialize((ctx) => ctx.chat?.id.toString()));
 
-  // Private chats only (group "vaquinha" mode is P2). Attach the user and their language.
+  // Private chats only (group "vaquinha" mode is P2). Beta gate before anything is stored.
+  // Then attach the user and their language.
+  const allowlist = parseAllowlist(loadEnv().TELEGRAM_ALLOWED_USERS);
+  const pinned = new Set<number>();
   bot.use(async (ctx, next) => {
     if (ctx.chat?.type !== "private" || !ctx.from || ctx.from.is_bot) return;
+    const access = checkAccess(allowlist, ctx.from);
+    if (access === "denied") {
+      await ctx.reply(t("privateBeta", langFromTelegram(ctx.from.language_code))).catch(() => {});
+      return;
+    }
+    if (access === "username" && !pinned.has(ctx.from.id)) {
+      pinned.add(ctx.from.id);
+      log(`[beta] @${ctx.from.username} allowed by username; numeric id ${ctx.from.id} (add it to TELEGRAM_ALLOWED_USERS)`);
+    }
     ctx.user = await upsertUser(s.db, ctx.from);
     ctx.lang = (ctx.user.language as Lang) ?? "es";
     await next();

@@ -61,6 +61,8 @@ export const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: opt(z.string()),
   TELEGRAM_WEBHOOK_SECRET: opt(z.string()),
   MINI_APP_URL: opt(z.string().url()),
+  /** Private beta allowlist: numeric ids and/or @usernames, comma-separated. Unset = open. */
+  TELEGRAM_ALLOWED_USERS: opt(z.string()),
 
   // Wallet infra
   THIRDWEB_CLIENT_ID: opt(z.string()),

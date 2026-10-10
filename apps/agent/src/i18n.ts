@@ -21,6 +21,11 @@ const STRINGS = {
     pt: "Uso: <code>/quote DE PARA VALOR</code>, por exemplo <code>/quote wBRL wARS 200</code>",
     en: "Usage: <code>/quote FROM TO AMOUNT</code>, e.g. <code>/quote wBRL wARS 200</code>",
   },
+  privateBeta: {
+    es: "Arbolito está en beta privada por ahora. ¡Pronto abrimos para todos! 🌳",
+    pt: "O Arbolito está em beta privado por enquanto. Em breve abrimos para todos! 🌳",
+    en: "Arbolito is in private beta for now. We open to everyone soon! 🌳",
+  },
   quoting: { es: "Buscando el mejor precio…", pt: "Procurando o melhor preço…", en: "Finding the best rate…" },
   noRoute: {
     es: "Ningún mercado cotizó ese monto ahora. ¿Probamos con un monto menor?",

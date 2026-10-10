@@ -112,3 +112,20 @@ describe("i18n", () => {
     }
   });
 });
+
+describe("beta allowlist", () => {
+  it("is open when unset or empty", async () => {
+    const { parseAllowlist, checkAccess } = await import("../src/access");
+    expect(checkAccess(parseAllowlist(undefined), { id: 1 })).toBe("open");
+    expect(checkAccess(parseAllowlist(" , "), { id: 1 })).toBe("open");
+  });
+  it("matches numeric ids and @usernames case-insensitively, denies everyone else", async () => {
+    const { parseAllowlist, checkAccess } = await import("../src/access");
+    const list = parseAllowlist("12345, @Ola_Nuell,friend");
+    expect(checkAccess(list, { id: 12345 })).toBe("id");
+    expect(checkAccess(list, { id: 9, username: "ola_nuell" })).toBe("username");
+    expect(checkAccess(list, { id: 9, username: "FRIEND" })).toBe("username");
+    expect(checkAccess(list, { id: 9, username: "stranger" })).toBe("denied");
+    expect(checkAccess(list, { id: 9 })).toBe("denied");
+  });
+});
