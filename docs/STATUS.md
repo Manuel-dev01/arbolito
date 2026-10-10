@@ -55,6 +55,30 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-10: Session guard contract + bot core
+**Shipped (merged to main):**
+- **ArbolitoSessionExecutor** (`contracts/src/ArbolitoSessionExecutor.sol`): an ownerless, immutable guard that is the session key's **only** approved target.
+  - Swaps go only through 3 pinned pools, with the recipient hard-coded to the account. The approval is exact and reset afterwards.
+  - Sends go only to admin-approved contacts.
+  - The Textile passthrough measures balance deltas, refunds unspent input, forwards output to the account, and never trusts order contents.
+  - Per-token per-tx and per-day caps, contacts, slippage and unpause change **only with an EIP-712 signature from an account admin** (`isAdmin`), with nonce and deadline. The session key can't raise its own limits.
+  - **Price floor:** `minOut >= max(10-min TWAP, admin-signed PriceRef) * (1 - slippage)`. A never-configured account is fully blocked.
+  - **Tests:** 47 unit + 12 fork Foundry tests (real Celo pools and the real Textile reactor); TS fork test with the guard as the only session-key target (v0.6/v0.7).
+- **Math verified against upstream:** our TickMath/FullMath ports match Uniswap v4-core (MIT, commit 46c6834) **exactly**. All 21 TickMath constants are identical, and 5 differential fuzz properties pass at 20,000 runs each (`contracts/test/UniswapV3MathDifferential.t.sol`; the upstream copies are test-only in `contracts/test/reference/uniswap-v4/`).
+- **Telegram bot core** (`apps/agent`): /start, /quote, text and voice via the DeepSeek tool loop, cards with atomic pending actions, Ripio deep links. Confirm does not execute yet.
+- **Test totals:** 62 forge + 14 forge fork; 179 vitest unit.
+
+**Blocked / waiting:**
+- **TS fork suite:** anvil timed out on forno (5.7 s per request, network degraded on this machine); it passed 16/16 in the agent's run. Re-run when the network recovers.
+- **Postgres:** Neon port 5432 times out from this machine (HTTPS fine); the db tests are pending.
+- **Founder decisions:**
+  1. Deploy the bot to Railway with a beta allowlist.
+  2. Mainnet tx `increaseObservationCardinalityNext` on the wBRL/USDT pool (cardinality 1 makes the TWAP unusable for 10 min after any wBRL trade; ~20–25k gas per slot).
+  3. Ask Textile whether a firm quote bound to the account settles when the guard is `msg.sender`.
+  4. Guard mainnet deploy (~3.8M gas), when ready.
+
+**Next:** Mini App onboarding (thirdweb login → account → one-op setup: deploy + approve the guard + grant the key + signed config); wire Confirm → session-key UserOp via the guard → relayer `handleOps` → receipt.
+
 ### 2026-10-09: Phase 2 block 1 (parallel build)
 **Shipped (merged to main):**
 - **packages/db:** Drizzle on Neon. Tables users, contacts, receipts, spend_ledger, pending_actions, messages; migration applied. `DbLedger` keeps caps per signing wallet across restarts (4 integration tests against Neon).
