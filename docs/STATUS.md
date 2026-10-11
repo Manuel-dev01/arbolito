@@ -26,6 +26,14 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | Loops entry | CLI signed in (emmanuelolamiye@gmail.com). Event skill installed; criteria in [08-judging-criteria.md](08-judging-criteria.md) | **Assigned tag confirmed = `celo_e054d92430a5`** (dataSuffix matches ours byte for byte), so every mainnet tx so far counts. Enrolled (profile: Olamiye Emmanuel, Lagos, 18-24). **Entry creation paused by the founder (2026-10-09) to keep the repo private** (Loops cannot read a private repo via the CLI; the web form may support it). The approved draft text is ready. **Deadline: the entry, with a readable repo, ≥ 1 screenshot and a demo URL, must exist by 2026-11-09 09:00 UTC.** No project yet, `agent-wallet` unset, no ERC-8004 identity yet |
 
 ## Decisions
+- **2026-10-11: MiniPay is the primary surface; the wallet architecture is MiniPay-native** (founder). Supersedes the smart-accounts and session-keys decision of 2026-10-09.
+  - **Why MiniPay:** it's live as a standalone app in AR, BR, CL, CO, PE, UY and MX (and NG), with 7M+ activations and 50M+ weekly Discover impressions. It's Celo's flagship distribution, and MiniPay apps are the first priority of the attribution-tags SDK.
+  - **Users are MiniPay EOAs.** There are no sign-in screens; the wallet is injected and auto-connects.
+  - **User-initiated** convert, send and Textile fills are signed by the user's own MiniPay wallet. That also satisfies Textile's taker-exclusive fills.
+  - **Autonomous** rules run through **ArbolitoGuard v2**: a bounded ERC-20 allowance plus a revocable **operator**, with config only by the account's own transactions, Uniswap only.
+  - **Telegram stays as a second channel:** chat, voice, quotes, receipts, notifications. Its Confirm becomes "Confirm in MiniPay", a deep link to the mini app at that pending action. Each Telegram user links their MiniPay wallet once.
+  - The thirdweb smart-account and session-key code (`packages/chain/src/smartAccount.ts`, guard v1) stays in the repo as a verified alternative but is not used.
+  - **To verify inside MiniPay (Developer Mode):** whether the attribution suffix survives in MiniPay-sent txs, whether `feeCurrency` gets overridden, whether `eth_signTypedData`/`personal_sign` work for Textile's one-time takerProof (eip191 fallback), and how to prove wallet ownership for Telegram linking without auth-style message signing.
 - **2026-10-09: LLM provider is DeepSeek, not Anthropic** (founder). `LLM_PROVIDER=deepseek`, OpenAI-compatible API at `https://api.deepseek.com`, models verified via `GET /models` on 2026-10-09: **`deepseek-flash`** (agent: fast, cheap) and **`deepseek-v4-pro`** (risk officer). The older names `deepseek-chat`/`deepseek-reasoner` are not served. This supersedes the Claude models in MASTER_PROMPT §2. Voice notes use Groq `whisper-large-v3-turbo` (key verified). Telegram bot: **@arbolitoo_bot** (token verified via getMe).
 
 ## Day 0 checklist
