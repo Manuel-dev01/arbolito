@@ -63,6 +63,23 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-11: MiniPay pivot, bot live, oracle grown, Textile answered
+**Shipped:**
+- **Bot live on Railway** (@arbolitoo_bot, private beta allowlist, no private keys on the host).
+- **wBRL/USDT oracle** `cardinalityNext` 1 → 64 on mainnet (tx `0x4706ee55…4dab`, 0.29 CELO, tagged).
+- **Textile:** firm quotes are taker-exclusive. Proven with a real firm quote (cancelled) replayed on a fork; see 04-reference.
+- **Decision: MiniPay primary, MiniPay-native wallets** (see Decisions).
+- **ArbolitoGuard v2** (`contracts/src/ArbolitoGuard.sol`):
+  - The user's MiniPay EOA is the account. It sets a revocable operator (`setOperator`/`revokeOperator`) and configures caps, contacts, slippage and price refs with its own transactions (`configure`, `msg.sender == account`).
+  - The operator can only `swapFor` (recipient hard-coded to the account, pinned pools, caps, TWAP/price-ref floor) and `sendFor` (saved contacts), or pause.
+  - No Textile operator path, because fills are taker-exclusive. The `reactor` constructor arg was dropped.
+  - **Tests:** 43 unit tests (incl. a fuzz showing the operator can only pay the account or contacts), 7 fork tests, and a TS fork test of a MiniPay-style EOA + operator (7/7).
+  - **Gas:** `swapFor` 1-hop ≈ 244k, `sendFor` ≈ 80–97k, `configure` ≈ 110k, `setOperator` ≈ 47k, deploy ≈ 3.04M.
+- **Fixed two stale tests:** the v1 wBRL fork test now forces the oracle outage; the executor test's fake hung tx now throws viem's timeout error.
+- **Totals:** 105 forge + 21 forge fork; 186 vitest unit.
+
+**Next:** the MiniPay mini app in `apps/web` (auto-connect, quote → MiniPay confirmation → receipt), Telegram's "Confirm in MiniPay" deep link + wallet linking, and the in-MiniPay checks listed under Decisions. The guard v2 mainnet deploy needs the founder's go-ahead.
+
 ### 2026-10-10: Session guard contract + bot core
 **Shipped (merged to main):**
 - **ArbolitoSessionExecutor** (`contracts/src/ArbolitoSessionExecutor.sol`): an ownerless, immutable guard that is the session key's **only** approved target.
