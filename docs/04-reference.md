@@ -87,6 +87,14 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - `permit2()` is canonical Permit2; `feeController()` is the FeeController above; owner is `0x0Ddf1DBb612B07aFdAaE54a21e453bb36b3693a7`.
   - The swapper (signer) is the maker on RFQ, or the user on gasless limit orders. Its input is pulled by Permit2 `permitWitnessTransferFrom` with the UniswapX LimitOrder witness.
   - Fork test `contracts/test/fork/TextileReactorSmartAccount.t.sol` executes a LimitOrder whose swapper is an EIP-1271 contract wallet, and our witness hashing matches the reactor's.
+- **Firm quotes are taker-exclusive onchain** (probe 2026-10-11):
+  - **Probe:** one 1.1 USDT → wARS firm quote for the ops wallet, cancelled right after.
+  - **What the order carries:** the maker's LimitOrder sets `additionalValidationContract = 0x10B9EbA3a175Df418a35CB8329a527691EE258C5`, whose data is `(uint256 exclusiveUntil, address[] fillers = [taker])`.
+  - **Fork replay of the real signed order:**
+    - submitted by any other address: reverts `0xa49d4044(filler, exclusiveUntil)`
+    - submitted by the taker: settles exactly as quoted (1,764.51 wARS)
+  - **Consequence:** only the taker address can be `msg.sender` of the reactor, so the session guard **cannot** fill a quote bound to a user's smart account. A session key must also never target the reactor directly: a hostile order would make the account pay its outputs.
+  - **Textile for users therefore needs either:** (a) an admin-signed UserOp per Textile fill (the user signs in the Mini App), or (b) a per-user taker proxy that holds the sell token during the RFQ.
 - Tickers live shape: an array of `{ticker_id, base_currency, target_currency, last_price, base_volume, target_volume, bid, ask, high, low}`, with numbers as strings. `USAT_USDT` is also listed.
 - Fees: 1 bps taker fee on Celo, baked into the quoted rate. Makers earn their configured spread.
 - Celo contracts:
