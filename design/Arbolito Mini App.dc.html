@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>@keyframes arbSpin{to{transform:rotate(360deg)}}@keyframes arbBlink{0%,100%{opacity:.25}50%{opacity:1}}body{margin:0}button{font-family:inherit;cursor:pointer}a{color:oklch(0.47 0.13 150)}a:hover{color:oklch(0.38 0.12 150)}</style>
+</helmet>
+<div style="{{ rootStyle }}">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ isDark }}" width="{{ fw }}" height="{{ fh }}" hint-size="412px,892px">
+<div style="{{ appBg }}">
+
+<sc-if value="{{ hostShow }}" hint-placeholder-val="{{ true }}">
+<div style="flex:none;height:48px;display:flex;align-items:center;padding:0 4px;background:var(--host);border-bottom:1px solid var(--hostLine)">
+  <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--hostText)">←</div>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="font:600 15px/1.1 system-ui,Roboto,sans-serif;color:var(--hostText)">Arbolito</div><div style="font:400 12px/1.1 'JetBrains Mono',monospace;color:var(--hostMuted)">arbolito.app</div></div>
+  <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--hostText)">⋮</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hdr.show }}">
+<div style="flex:none;display:flex;align-items:center;gap:4px;padding:4px 12px 4px 4px;min-height:56px">
+  <button onClick="{{ hdr.onBack }}" aria-label="{{ t.back }}" style="width:44px;height:44px;border:0;background:transparent;color:var(--text);font-size:30px;line-height:1;border-radius:12px;display:flex;align-items:center;justify-content:center;padding-bottom:4px">‹</button>
+  <div style="flex:1;min-width:0;font-size:18px;font-weight:700;letter-spacing:-.01em">{{ hdr.title }}</div>
+  <sc-if value="{{ hdr.step }}"><div style="font:500 13px/1 'JetBrains Mono',monospace;color:var(--muted)">{{ hdr.step }}</div></sc-if>
+</div>
+</sc-if>
+
+<div ref="{{ scrollRef }}" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column">
+
+<sc-if value="{{ is.no_minipay }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:32px 24px">
+  <svg width="64" height="64" viewBox="0 0 64 64"><rect x="28.5" y="34" width="7" height="24" rx="3.5" fill="var(--ink)"></rect><circle cx="21" cy="31" r="11" fill="var(--c1)"></circle><circle cx="43" cy="31" r="11" fill="var(--c2)"></circle><circle cx="32" cy="17" r="12" fill="var(--c3)"></circle></svg>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:37px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.noMpTitle }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.noMpBody }}</p>
+  <div style="display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px">
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">1</span><span style="font-size:16px;line-height:1.4">{{ t.noMp1 }}</span></div>
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">2</span><span style="font-size:16px;line-height:1.4">{{ t.noMp2 }}</span></div>
+    <div style="display:flex;gap:12px;align-items:baseline"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">3</span><span style="font-size:16px;line-height:1.4">{{ t.noMp3 }}</span></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.conn_fail }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:32px 24px">
+  <div style="width:56px;height:56px;border-radius:50%;background:var(--warnBg);color:var(--warn);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800">!</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.connTitle }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.connBody }}</p>
+  <div style="display:flex;gap:10px;align-items:center;background:var(--saveBg);color:var(--save);border-radius:12px;padding:12px 14px;font-size:16px;font-weight:600">{{ t.noMoneyMoved }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.welcome }}">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;padding:12px 24px 16px">
+  <div style="display:flex;justify-content:flex-end"><button onClick="{{ openLang }}" style="min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px">{{ t.langName }} <span style="color:var(--muted)">▾</span></button></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px">
+    <div style="display:flex;align-items:center;gap:10px"><svg width="44" height="44" viewBox="0 0 64 64"><rect x="28.5" y="34" width="7" height="24" rx="3.5" fill="var(--ink)"></rect><circle cx="21" cy="31" r="11" fill="var(--c1)"></circle><circle cx="43" cy="31" r="11" fill="var(--c2)"></circle><circle cx="32" cy="17" r="12" fill="var(--c3)"></circle></svg><span style="font-family:'Instrument Serif',serif;font-size:34px;font-weight:400;letter-spacing:-.02em">arbolito<span style="color:var(--save)">.</span></span></div>
+    <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:41px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.welTitle }}</h1>
+    <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.welBody }}</p>
+  </div>
+  <div style="display:flex;flex-direction:column;border-top:1px dashed var(--line)">
+    <div style="display:flex;gap:14px;align-items:baseline;padding:14px 0;border-bottom:1px dashed var(--line)"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">01</span><span style="font-size:16px;line-height:1.4">{{ t.welS1 }}</span></div>
+    <div style="display:flex;gap:14px;align-items:baseline;padding:14px 0;border-bottom:1px dashed var(--line)"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">02</span><span style="font-size:16px;line-height:1.4">{{ t.welS2 }}</span></div>
+    <div style="display:flex;gap:14px;align-items:baseline;padding:14px 0;border-bottom:1px dashed var(--line)"><span style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--save)">03</span><span style="font-size:16px;line-height:1.4">{{ t.welS3 }}</span></div>
+  </div>
+  <div style="font-size:14px;line-height:1.4;color:var(--muted);text-align:center">{{ t.welLangNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.add }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:8px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.addTitle }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">{{ t.addBody }}</p>
+  <button onClick="{{ addCash }}" style="text-align:left;display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:22px;border:1.5px solid var(--cardBd);background:var(--surface);color:var(--text)">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="width:40px;height:40px;border-radius:50%;background:var(--USDbg);color:var(--USDfg);display:flex;align-items:center;justify-content:center;font:700 13px/1 'JetBrains Mono',monospace">US$</span><span style="font:500 13px/1 'JetBrains Mono',monospace;color:var(--muted)">{{ t.opensMP }} ↗</span></div>
+    <div style="font-size:19px;font-weight:700">{{ t.addCashT }}</div>
+    <div style="font-size:16px;line-height:1.45;color:var(--muted)">{{ t.addCashS }}</div>
+  </button>
+  <button onClick="{{ goRipio }}" style="text-align:left;display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:22px;border:1.5px solid var(--cardBd);background:var(--surface);color:var(--text)">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="display:flex"><span style="width:40px;height:40px;border-radius:50%;background:var(--ARSbg);color:var(--ARSfg);display:flex;align-items:center;justify-content:center;font:700 14px/1 'JetBrains Mono',monospace;border:2px solid var(--surface)">$</span><span style="width:40px;height:40px;margin-left:-12px;border-radius:50%;background:var(--BRLbg);color:var(--BRLfg);display:flex;align-items:center;justify-content:center;font:700 13px/1 'JetBrains Mono',monospace;border:2px solid var(--surface)">R$</span></span><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:6px 8px;border-radius:6px">{{ t.guided }}</span></div>
+    <div style="font-size:19px;font-weight:700">{{ t.addRipioT }}</div>
+    <div style="font-size:16px;line-height:1.45;color:var(--muted)">{{ t.addRipioS }}</div>
+  </button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.add_ripio }}">
+<div style="display:flex;flex-direction:column;gap:18px;padding:8px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.ripTitle }}</h1>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--line)"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:var(--text);color:var(--bg);display:flex;align-items:center;justify-content:center;font:600 14px/1 'JetBrains Mono',monospace">1</span><span style="font-size:16px;line-height:1.45">{{ t.rip1 }}</span></div>
+    <div style="display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--line)"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:var(--surface2);color:var(--text);display:flex;align-items:center;justify-content:center;font:600 14px/1 'JetBrains Mono',monospace">2</span><span style="font-size:16px;line-height:1.45">{{ t.rip2 }}</span></div>
+    <div style="display:flex;gap:14px;padding:16px"><span style="flex:none;width:28px;height:28px;border-radius:50%;background:var(--surface2);color:var(--text);display:flex;align-items:center;justify-content:center;font:600 14px/1 'JetBrains Mono',monospace">3</span><span style="font-size:16px;line-height:1.45">{{ t.rip3 }}</span></div>
+  </div>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted)">{{ t.ripNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.add_waiting }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:56px;height:56px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center">{{ spinBig }}</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.waitTitle }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.waitBody }}</p>
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.5;color:var(--text)">{{ t.waitNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.done_ob }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">✓</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:39px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ s.doneTitle }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.doneBody }}</p>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+    <div style="max-width:85%;background:var(--bubble);color:var(--onBubble);padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:16px">{{ t.ex1 }}</div>
+    <div style="max-width:85%;background:var(--bubble);color:var(--onBubble);padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:16px">{{ t.ex2 }}</div>
+  </div>
+  <button onClick="{{ goAuto }}" style="margin-top:8px;text-align:left;display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:16px;border:1px dashed var(--line);background:transparent;color:var(--text)"><span style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:500 12px/1 'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">{{ t.optional }}</span><span style="font-size:16px;font-weight:700">{{ t.autoTitle }}</span></span><span style="font-size:22px;color:var(--muted)">›</span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.homeAny }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:8px 16px 20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px">
+    <div style="font-size:20px;font-weight:700;letter-spacing:-.01em">{{ s.hello }}</div>
+    <button onClick="{{ goSettings }}" aria-label="{{ t.tabSettings }}" style="width:44px;height:44px;border-radius:50%;border:0;background:var(--surface2);color:var(--text);font-size:17px;font-weight:700">{{ s.initial }}</button>
+  </div>
+  <sc-if value="{{ is.home_offline }}"><div style="display:flex;gap:10px;align-items:flex-start;background:var(--warnBg);color:var(--warnText);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.4"><span style="font-weight:800">!</span><span>{{ t.offline }}</span></div></sc-if>
+  <sc-if value="{{ paused }}"><button onClick="{{ goSecurity }}" style="text-align:left;display:flex;gap:10px;align-items:center;background:var(--warnBg);color:var(--warnText);border:0;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.4"><span style="flex:1">{{ t.pausedHome }}</span><span style="font-weight:700">›</span></button></sc-if>
+  <div style="background:var(--ink);color:var(--paper);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:15px;opacity:.8">{{ s.totalIn }}</div>
+    <sc-if value="{{ is.home_loading }}"><div style="height:40px;width:70%;border-radius:8px;background:rgba(255,255,255,.12);margin:4px 0"></div></sc-if>
+    <sc-if value="{{ notLoading }}"><div style="{{ totalStyle }}">{{ s.total }}</div></sc-if>
+    <div style="font-size:14px;line-height:1.4;opacity:.75;padding-top:6px;border-top:1px dashed color-mix(in oklab,currentColor 22%,transparent);margin-top:6px">{{ t.onlyHere }}</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+    <sc-for list="{{ actions }}" as="a" hint-placeholder-count="4">
+      <button onClick="{{ a.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:transparent;color:var(--text);padding:4px 0;min-height:44px"><span style="width:56px;height:56px;border-radius:18px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">{{ a.glyph }}</span><span style="font-size:14px;line-height:1.2;font-weight:600;text-align:center">{{ a.label }}</span></button>
+    </sc-for>
+  </div>
+  <button onClick="{{ goChat }}" style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 16px;border-radius:26px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:16px;text-align:left"><span style="flex:1">{{ t.askPh }}</span><span style="width:40px;height:40px;border-radius:50%;background:var(--brand);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">●</span></button>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="padding:14px 16px 4px;font:600 13px/1 'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">{{ t.balances }}</div>
+    <sc-for list="{{ bals }}" as="b" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;border-bottom:1px solid var(--line)">
+        <span style="{{ b.badge }}">{{ b.glyph }}</span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">{{ b.name }}</span><span style="font:400 13px/1.2 'JetBrains Mono',monospace;color:var(--muted)">{{ b.code }}</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="{{ b.amtStyle }}">{{ b.amt }}</span><span style="font-size:14px;color:var(--muted)">{{ b.eq }}</span></div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ is.home_empty }}">
+  <div style="display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:20px">
+    <div style="font-size:18px;font-weight:700">{{ t.emptyTitle }}</div>
+    <div style="font-size:16px;line-height:1.45;color:var(--muted)">{{ t.emptyBody }}</div>
+    <button onClick="{{ goAdd }}" style="height:52px;border-radius:14px;border:0;background:var(--brand);color:var(--onBrand);font-size:17px;font-weight:700">{{ t.addMoney }}</button>
+  </div>
+  </sc-if>
+  <sc-if value="{{ showAutoPromo }}">
+  <button onClick="{{ goAuto }}" style="text-align:left;display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;border:1px dashed var(--line);background:transparent;color:var(--text)"><span style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:700">{{ t.autoTitle }}</span><span style="font-size:15px;line-height:1.4;color:var(--muted)">{{ t.autoPromo }}</span></span><span style="font-size:22px;color:var(--muted)">›</span></button>
+  </sc-if>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="padding:14px 16px 4px;font:600 13px/1 'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">{{ t.activity }}</div>
+    <sc-if value="{{ is.home_empty }}"><div style="padding:12px 16px 18px;font-size:16px;line-height:1.45;color:var(--muted)">{{ t.emptyAct }}</div></sc-if>
+    <sc-for list="{{ acts }}" as="a" hint-placeholder-count="4">
+      <button onClick="{{ goReceipt }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:60px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;width:100%">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">{{ a.title }}</span><span style="font-size:14px;color:var(--muted)">{{ a.sub }}</span></div>
+        <span style="{{ a.amtStyle }}">{{ a.amt }}</span>
+      </button>
+    </sc-for>
+    <sc-if value="{{ hasActs }}"><button onClick="{{ goReceipts }}" style="min-height:52px;border:0;background:transparent;color:var(--save);font-size:16px;font-weight:700">{{ t.seeReceipts }}</button></sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.chat }}">
+<div style="flex:1;display:flex;flex-direction:column">
+  <div style="flex:1;display:flex;flex-direction:column;gap:10px;padding:12px 12px 16px">
+    <div style="align-self:center;font:500 12px/1 'JetBrains Mono',monospace;color:var(--muted);padding:4px 0">{{ chat.day }}</div>
+    <sc-for list="{{ chat.msgs }}" as="m" hint-placeholder-count="3">
+      <sc-if value="{{ m.bot }}"><div style="align-self:flex-start;max-width:86%;background:var(--botBubble);border:1px solid var(--line);padding:10px 14px;border-radius:18px 18px 18px 4px;font-size:16px;line-height:1.45;text-wrap:pretty">{{ m.text }}</div></sc-if>
+      <sc-if value="{{ m.user }}"><div style="align-self:flex-end;max-width:80%;background:var(--bubble);color:var(--onBubble);padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:16px;line-height:1.45">{{ m.text }}</div></sc-if>
+      <sc-if value="{{ m.voice }}"><div style="align-self:flex-end;max-width:80%;background:var(--bubble);color:var(--onBubble);padding:10px 14px;border-radius:18px 18px 4px 18px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:var(--onBubble);color:var(--bubble);display:flex;align-items:center;justify-content:center;font-size:11px">▶</span><span style="display:flex;gap:3px;align-items:center"><span style="width:3px;height:10px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:18px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:12px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:20px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:8px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:14px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:16px;border-radius:2px;background:currentColor;opacity:.7"></span><span style="width:3px;height:9px;border-radius:2px;background:currentColor;opacity:.7"></span></span><span style="font:500 13px/1 'JetBrains Mono',monospace;opacity:.8">0:03</span></div>
+        <div style="font-size:15px;line-height:1.4;font-style:italic;opacity:.9">{{ m.text }}</div>
+      </div></sc-if>
+      <sc-if value="{{ m.typing }}"><div style="align-self:flex-start;background:var(--botBubble);border:1px solid var(--line);padding:14px 16px;border-radius:18px 18px 18px 4px;display:flex;gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);animation:arbBlink 1s infinite"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);animation:arbBlink 1s .2s infinite"></span><span style="width:7px;height:7px;border-radius:50%;background:var(--muted);animation:arbBlink 1s .4s infinite"></span></div></sc-if>
+      <sc-if value="{{ m.quote }}">
+      <div style="align-self:flex-start;width:90%;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px 18px 18px 4px;overflow:hidden">
+        <div style="height:4px;background:var(--surface2)"><div style="{{ m.bar }}"></div></div>
+        <div style="padding:14px 16px 10px;display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;color:var(--muted)">{{ t.chGet }}</span><span style="{{ m.cdStyle }}">{{ m.cd }}</span></div>
+          <div style="font-family:'Instrument Serif',serif;font-size:34px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums">{{ m.get }}</div>
+          <div style="font-size:15px;color:var(--muted)">{{ m.forPay }}</div>
+        </div>
+        <div style="padding:0 16px;display:flex;flex-direction:column">
+          <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px dashed var(--line);font-size:15px;line-height:1.35"><span style="color:var(--muted);flex:none">{{ r.k }}</span><span style="{{ r.style }}">{{ r.v }}</span></div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ m.live }}">
+        <div style="display:flex;flex-direction:column;gap:6px;padding:12px 12px 12px">
+          <button onClick="{{ m.onConfirm }}" style="min-height:48px;border-radius:12px;border:0;background:var(--brand);color:var(--onBrand);font-size:16px;font-weight:700">{{ t.confirmMP }}</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button onClick="{{ m.onAlts }}" style="min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:15px;font-weight:600">{{ t.altsShort }}</button><button onClick="{{ m.onCancel }}" style="min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:15px;font-weight:600">{{ t.cancel }}</button></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ m.expired }}">
+        <div style="display:flex;flex-direction:column;gap:8px;padding:12px">
+          <div style="font-size:15px;line-height:1.4;color:var(--warnText);background:var(--warnBg);border-radius:10px;padding:10px 12px">{{ t.expired }}. {{ t.noMoneyMoved }}</div>
+          <button onClick="{{ m.onRefresh }}" style="min-height:48px;border-radius:12px;border:0;background:var(--brand);color:var(--onBrand);font-size:16px;font-weight:700">{{ t.refresh }}</button>
+        </div>
+        </sc-if>
+        <sc-if value="{{ m.used }}"><div style="padding:12px 16px;border-top:1px dashed var(--line);font-size:15px;font-weight:600;color:var(--save)">✓ {{ t.pA }}</div></sc-if>
+      </div>
+      </sc-if>
+      <sc-if value="{{ m.proc }}"><div style="align-self:flex-start;max-width:86%;background:var(--botBubble);border:1px solid var(--line);padding:12px 14px;border-radius:18px 18px 18px 4px;display:flex;gap:10px;align-items:center;font-size:16px;line-height:1.4">{{ spinSm }}<span>{{ m.text }}</span></div></sc-if>
+      <sc-if value="{{ m.done }}">
+      <div style="align-self:flex-start;width:90%;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px 18px 18px 4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:28px;height:28px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">✓</span><span style="font-size:17px;font-weight:700">{{ m.title }}</span></div>
+        <div style="font-size:15px;line-height:1.45;color:var(--muted)">{{ m.text }}</div>
+        <button onClick="{{ goReceipt }}" style="min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:15px;font-weight:700">{{ t.seeReceipt }} · #A7F3-29</button>
+      </div>
+      </sc-if>
+      <sc-if value="{{ m.cancel }}">
+      <div style="align-self:flex-start;max-width:90%;background:var(--botBubble);border:1px solid var(--line);padding:12px 14px;border-radius:18px 18px 18px 4px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:16px;line-height:1.45">{{ m.text }}</span>
+        <button onClick="{{ m.onRefresh }}" style="min-height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font-size:15px;font-weight:700">{{ t.backToQuote }}</button>
+      </div>
+      </sc-if>
+    </sc-for>
+    <sc-if value="{{ chat.suggest }}">
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;padding-top:4px">
+      <sc-for list="{{ chat.chips }}" as="c" hint-placeholder-count="3">
+        <button onClick="{{ c.onClick }}" style="min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:15px;font-weight:600">{{ c.label }}</button>
+      </sc-for>
+    </div>
+    </sc-if>
+  </div>
+  <div style="position:sticky;bottom:0;flex:none;display:flex;gap:8px;align-items:center;padding:8px 12px 10px;background:var(--bg);border-top:1px solid var(--line)">
+    <sc-if value="{{ chat.recording }}"><div style="flex:1;min-height:48px;border-radius:24px;background:var(--dangerBg);color:var(--danger);display:flex;align-items:center;gap:10px;padding:0 16px;font-size:16px;font-weight:600"><span style="width:10px;height:10px;border-radius:50%;background:var(--danger);animation:arbBlink 1s infinite"></span>{{ t.recording }}</div></sc-if>
+    <sc-if value="{{ chat.notRecording }}"><div style="flex:1;min-height:48px;border-radius:24px;background:var(--surface);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;padding:0 16px;font-size:16px">{{ t.askPh }}</div></sc-if>
+    <button onClick="{{ chat.onMic }}" aria-label="{{ t.voice }}" style="width:48px;height:48px;flex:none;border-radius:50%;border:0;background:var(--brand);color:var(--onBrand);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center"><span style="width:12px;height:18px;border-radius:6px;background:currentColor"></span></button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.change }}">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;padding:0 16px 8px">
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:15px;color:var(--muted)">{{ t.chPay }}</span><button onClick="{{ cycleFrom }}" style="min-height:44px;display:flex;align-items:center;gap:8px;padding:0 12px 0 4px;border-radius:22px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;font-weight:700"><span style="{{ fromBadge }}">{{ fromGlyph }}</span>{{ fromName }} <span style="color:var(--muted)">▾</span></button></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:43px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1">{{ payDisp }}<span style="display:inline-block;width:2px;height:30px;background:var(--save);margin-left:3px;vertical-align:-3px;animation:arbBlink 1s infinite"></span></div>
+    <button onClick="{{ setAll }}" style="align-self:flex-start;text-align:left;min-height:32px;border:0;background:transparent;padding:0;color:var(--muted);font-size:14px">{{ t.available }} {{ avail }} · <b style="color:var(--save)">{{ t.all }}</b></button>
+  </div>
+  <div style="display:flex;justify-content:center;margin:-22px 0;position:relative;z-index:1"><button onClick="{{ swap }}" aria-label="swap" style="width:44px;height:44px;border-radius:50%;border:4px solid var(--bg);background:var(--text);color:var(--bg);font-size:18px;font-weight:800">⇅</button></div>
+  <div style="background:var(--surface2);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:15px;color:var(--muted)">{{ t.chGet }}</span><button onClick="{{ cycleTo }}" style="min-height:44px;display:flex;align-items:center;gap:8px;padding:0 12px 0 4px;border-radius:22px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;font-weight:700"><span style="{{ toBadge }}">{{ toGlyph }}</span>{{ toName }} <span style="color:var(--muted)">▾</span></button></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15;color:var(--save)">{{ Q.get }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font:500 13px/1.4 'JetBrains Mono',monospace;color:var(--muted)"><span>{{ Q.rate }}</span><sc-if value="{{ Q.hasPct }}"><span style="color:var(--save)">{{ Q.pct }} {{ t.vsOff }}</span></sc-if></div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onClick }}" style="flex:1;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:15px;font-weight:600">{{ c.label }}</button></sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:auto">
+    <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12"><button onClick="{{ k.onClick }}" style="height:52px;border:0;border-radius:12px;background:transparent;color:var(--text);font-size:26px;font-weight:600" style-active="background:var(--surface2)">{{ k.label }}</button></sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.quote_loading }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:4px 16px 16px">
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;gap:12px;align-items:center">{{ spinSm }}<span style="flex:1;font-size:17px;font-weight:700">{{ t.qLoadT }}</span></div>
+    <div style="font-size:15px;color:var(--muted)">{{ t.qLoadB }}</div>
+    <div style="height:38px;width:75%;border-radius:8px;background:var(--surface2);animation:arbBlink 1.4s infinite"></div>
+    <div style="height:14px;width:45%;border-radius:6px;background:var(--surface2);animation:arbBlink 1.4s .2s infinite"></div>
+    <div style="height:1px;background:var(--line)"></div>
+    <div style="height:14px;width:90%;border-radius:6px;background:var(--surface2);animation:arbBlink 1.4s .3s infinite"></div>
+    <div style="height:14px;width:70%;border-radius:6px;background:var(--surface2);animation:arbBlink 1.4s .4s infinite"></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.quoteAny }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px">
+  <sc-if value="{{ is.quote_expired }}"><div style="display:flex;flex-direction:column;gap:4px;background:var(--warnBg);color:var(--warnText);border-radius:14px;padding:14px 16px"><span style="font-size:17px;font-weight:700">{{ t.expired }}</span><span style="font-size:15px;line-height:1.45">{{ t.expiredB }}</span></div></sc-if>
+  <sc-if value="{{ is.quote_changed }}"><div style="display:flex;flex-direction:column;gap:4px;background:var(--warnBg);color:var(--warnText);border-radius:14px;padding:14px 16px"><span style="font-size:17px;font-weight:700">{{ t.changed }}</span><span style="font-size:15px;line-height:1.45">{{ changedB }}</span></div></sc-if>
+  <div style="{{ cardDim }}">
+  <sc-if value="{{ is.qa }}">
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="height:4px;background:var(--surface2)"><div style="{{ cd.bar }}"></div></div>
+    <div style="padding:18px 18px 14px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;color:var(--muted)">{{ t.chGet }}</span><span style="{{ cd.style }}">{{ cd.text }}</span></div>
+      <div style="font-family:'Instrument Serif',serif;font-size:43px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1">{{ Q.shownGet }}</div>
+      <div style="font-size:16px;color:var(--muted)">{{ Q.forPay }}</div>
+    </div>
+    <div style="padding:0 18px;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.rate }}</span><span style="font:500 14px/1.4 'JetBrains Mono',monospace;text-align:right">{{ Q.rate }}</span></div>
+      <sc-if value="{{ Q.hasPct }}"><div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.vsOff }}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:800;color:var(--save)">{{ Q.pct }}</span><span style="font-size:14px;color:var(--save)">{{ Q.saved }}</span></span></div></sc-if>
+      <div style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.route }}</span><span style="font-size:16px;line-height:1.4">{{ Q.route }}</span></div>
+      <div style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px dashed var(--line)"><span style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:15px;color:var(--muted)">{{ t.minimum }}</span><span style="font:600 14px/1.4 'JetBrains Mono',monospace">{{ Q.min }}</span></span><span style="font-size:14px;line-height:1.4;color:var(--muted)">{{ t.minNote }}</span></div>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ is.qb }}">
+  <div style="background:var(--ink);color:var(--paper);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;opacity:.8">{{ t.chGet }}</span><span style="{{ cd.pill }}">{{ cd.short }}</span></div>
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-size:46px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05">{{ Q.shownGet }}</div><div style="font-size:16px;opacity:.75">{{ Q.forPay }}</div></div>
+    <sc-if value="{{ Q.hasPct }}">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;justify-content:space-between;font-size:14px"><span>Arbolito</span><span style="font-variant-numeric:tabular-nums">{{ Q.get }}</span></div><div style="height:10px;border-radius:5px;background:var(--c3)"></div></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;justify-content:space-between;font-size:14px;opacity:.75"><span>{{ t.official }}</span><span style="font-variant-numeric:tabular-nums">{{ Q.off }}</span></div><div style="{{ Q.offW }}"></div></div>
+      <div style="align-self:flex-start;font-size:15px;font-weight:700;color:#0b1220;background:var(--a3);padding:6px 10px;border-radius:8px">{{ Q.pct }} · {{ Q.saved }}</div>
+    </div>
+    </sc-if>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed color-mix(in oklab,currentColor 22%,transparent)">
+      <sc-for list="{{ Q.stepsV }}" as="p" hint-placeholder-count="3"><span style="display:flex;align-items:center;gap:8px"><span style="font:600 13px/1 'JetBrains Mono',monospace;padding:7px 9px;border-radius:8px;border:1px solid color-mix(in oklab,currentColor 28%,transparent)">{{ p.l }}</span><span style="opacity:.6">{{ p.arrow }}</span></span></sc-for>
+      <span style="font-size:14px;opacity:.75">{{ t.bestMarket }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;opacity:.85"><span>{{ t.minimum }}</span><span style="font-family:'JetBrains Mono',monospace">{{ Q.min }}</span></div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ is.qc }}">
+  <div style="display:flex;flex-direction:column;gap:18px;padding:8px 4px">
+    <div style="font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-.02em;text-wrap:pretty">{{ Q.cPre }} <span style="display:block;font-size:40px;font-weight:800;color:var(--save);font-variant-numeric:tabular-nums;letter-spacing:-.03em">{{ Q.shownGet }}</span></div>
+    <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ Q.cBetter }} {{ Q.route }}</p>
+    <div style="font-size:16px;line-height:1.45;padding:14px 16px;border-radius:14px;border:1px dashed var(--line);background:var(--surface)">{{ Q.cMin }}</div>
+    <div style="display:flex;flex-direction:column;gap:8px"><div style="height:4px;background:var(--surface2);border-radius:2px"><div style="{{ cd.bar }}"></div></div><span style="{{ cd.style }}">{{ cd.long }}</span></div>
+  </div>
+  </sc-if>
+  </div>
+  <div style="display:flex;justify-content:center;gap:8px">
+    <button onClick="{{ openDetails }}" style="min-height:44px;padding:0 14px;border:0;background:transparent;color:var(--save);font-size:15px;font-weight:700">{{ t.details }}</button>
+    <button onClick="{{ goChange }}" style="min-height:44px;padding:0 14px;border:0;background:transparent;color:var(--muted);font-size:15px;font-weight:600">{{ t.cancel }}</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.quote_nomarket }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:56px;height:56px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">—</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ noMarketT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.noMarketB }}</p>
+  <div style="font-size:15px;line-height:1.45;padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line)">{{ t.noMarketTip }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.alts }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:4px 16px 16px">
+  <p style="margin:0 0 4px;font-size:16px;line-height:1.5;color:var(--muted)">{{ altB }}</p>
+  <sc-for list="{{ alts }}" as="a" hint-placeholder-count="3">
+    <div style="{{ a.style }}"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:600">{{ a.l }}</span><sc-if value="{{ a.chosen }}"><span style="align-self:flex-start;font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:5px 7px;border-radius:6px">{{ a.tag }}</span></sc-if></div><span style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">{{ a.v }}</span></div>
+  </sc-for>
+  <div style="font-size:14px;line-height:1.45;color:var(--muted)">{{ t.altNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.processing }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--saveBg);display:flex;align-items:center;justify-content:center">{{ spinBig }}</div>
+  <div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ procTitle }}</h1><div style="font:500 15px/1.4 'JetBrains Mono',monospace;color:var(--muted)">{{ procSummary }}</div></div>
+  <div style="display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:16px">
+    <sc-for list="{{ procView }}" as="p" hint-placeholder-count="3"><div style="display:flex;gap:12px;align-items:center"><span style="{{ p.dot }}">{{ p.icon }}</span><span style="{{ p.txt }}">{{ p.l }}</span></div></sc-for>
+  </div>
+  <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted)">{{ t.procNote }}</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.done }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">✓</div>
+  <div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:37px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ doneT }}</h1><div style="font-size:17px;color:var(--muted)">{{ doneSub }}</div></div>
+  <sc-if value="{{ Q.hasPct }}"><div style="align-self:flex-start;display:flex;flex-direction:column;gap:2px;background:var(--saveBg);color:var(--save);border-radius:14px;padding:12px 16px"><span style="font-size:20px;font-weight:800">{{ Q.pct }} {{ t.vsOff }}</span><span style="font-size:15px;font-weight:600">{{ Q.saved }}</span></div></sc-if>
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;border:1px dashed var(--line);background:var(--surface)"><div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:600 14px/1.2 'JetBrains Mono',monospace">#A7F3-29</span><span style="font-size:14px;color:var(--muted)">{{ t.receiptSaved }}</span></div><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:6px 8px;border-radius:6px">✓ {{ t.verified }}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.failed }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--dangerBg);color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">✕</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.failedT }}</h1>
+  <div style="align-self:flex-start;background:var(--saveBg);color:var(--save);border-radius:12px;padding:10px 14px;font-size:17px;font-weight:800">{{ t.noMoneyMoved }}</div>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--text);text-wrap:pretty">{{ failedB }}</p>
+  <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.failedWhy }}</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.cancelled }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--surface2);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800">↺</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ t.cancelT }}</h1>
+  <div style="align-self:flex-start;background:var(--saveBg);color:var(--save);border-radius:12px;padding:10px 14px;font-size:17px;font-weight:800">{{ t.noMoneyMoved }}</div>
+  <p style="margin:0;font-size:17px;line-height:1.5;text-wrap:pretty">{{ cancelB }}</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ t.sendTitle }}</h1>
+  <div style="min-height:48px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 14px;color:var(--muted);font-size:16px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid currentColor"></span>{{ t.search }}</div>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:68px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;width:100%">
+        <span style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">{{ c.initial }}</span>
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">{{ c.n }}</span><span style="font-size:14px;color:var(--muted)">{{ c.sub }}</span><span style="font:400 13px/1.3 'JetBrains Mono',monospace;color:var(--muted)">{{ c.ph }}</span></span>
+        <span style="{{ c.badge }}">{{ c.glyph }}</span>
+      </button>
+    </sc-for>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button onClick="{{ goSendAdd }}" style="min-height:52px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:16px;font-weight:700">+ {{ t.addContact }}</button>
+    <button onClick="{{ pickPhone }}" style="min-height:48px;border-radius:14px;border:0;background:transparent;color:var(--save);font-size:16px;font-weight:700">{{ t.fromPhone }}</button>
+  </div>
+  <div style="font-size:14px;line-height:1.45;color:var(--muted)">{{ t.sendSafety }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send_empty }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:72px;height:72px;border-radius:50%;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--muted)">+</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ t.sendEmptyT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ t.sendEmptyB }}</p>
+  <button onClick="{{ pickPhone }}" style="align-self:flex-start;min-height:48px;border:0;background:transparent;padding:0;color:var(--save);font-size:16px;font-weight:700">{{ t.fromPhone }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send_add }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:4px 16px 16px">
+  <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;color:var(--muted)">{{ t.phoneLbl }}</span><span style="min-height:52px;border-radius:14px;background:var(--surface);border:2px solid var(--save);display:flex;align-items:center;padding:0 14px;font:500 17px/1 'JetBrains Mono',monospace">+55 21 99812-3307</span><span style="font-size:14px;font-weight:700;color:var(--save)">✓ {{ t.lookupOk }}</span></label>
+  <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;color:var(--muted)">{{ t.nameLbl }}</span><span style="min-height:52px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;padding:0 14px;font-size:17px">Tomás Ribeiro</span></label>
+  <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;color:var(--muted)">{{ t.recvIn }}</span>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--surface2);padding:4px;border-radius:14px">
+      <span style="min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:15px;font-weight:600;color:var(--muted)">{{ s.cn.ARS }}</span>
+      <span style="min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:15px;font-weight:800;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08)">{{ s.cn.BRL }}</span>
+      <span style="min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:15px;font-weight:600;color:var(--muted)">{{ s.cn.USD }}</span>
+    </div>
+  </div>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px">{{ t.addNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send_amount }}">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;padding:0 16px 8px">
+  <div style="display:flex;align-items:center;gap:12px;padding:4px 0"><span style="width:40px;height:40px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:700">{{ S.initial }}</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:700">{{ S.name }}</span><span style="font:400 13px/1.2 'JetBrains Mono',monospace;color:var(--muted)">{{ S.ph }}</span></span></div>
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:15px;color:var(--muted)">{{ t.sendLbl }}</span><span style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700"><span style="{{ S.fromBadge }}">{{ S.fromGlyph }}</span>{{ S.fromName }}</span></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:43px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1">{{ S.payDisp }}<span style="display:inline-block;width:2px;height:30px;background:var(--save);margin-left:3px;vertical-align:-3px;animation:arbBlink 1s infinite"></span></div>
+    <div style="font-size:14px;color:var(--muted)">{{ t.available }} {{ S.avail }}</div>
+  </div>
+  <div style="background:var(--surface2);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:15px;color:var(--muted)">{{ S.recvLbl }}</span><span style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700"><span style="{{ S.toBadge }}">{{ S.toGlyph }}</span>{{ S.toNameC }}</span></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--save)">{{ S.get }}</div>
+    <div style="font:500 13px/1.4 'JetBrains Mono',monospace;color:var(--muted)">{{ S.rate }} {{ S.pctLine }}</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:auto">
+    <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12"><button onClick="{{ k.onClick }}" style="height:52px;border:0;border-radius:12px;background:transparent;color:var(--text);font-size:26px;font-weight:600" style-active="background:var(--surface2)">{{ k.label }}</button></sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send_quote }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px">
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="height:4px;background:var(--surface2)"><div style="{{ cd.bar }}"></div></div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;color:var(--muted)">{{ t.aboutTo }}</span><span style="{{ cd.style }}">{{ cd.text }}</span></div>
+      <div style="font-family:'Instrument Serif',serif;font-size:41px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05">{{ S.pay }}</div>
+      <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--saveBg);color:var(--save)"><span style="font-size:15px;font-weight:600">{{ S.recvLbl }}</span><span style="font-family:'Instrument Serif',serif;font-size:31px;font-weight:400;font-variant-numeric:tabular-nums">{{ S.get }}</span></div>
+    </div>
+    <div style="padding:0 18px 6px;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.to }}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:600">{{ S.name }}</span><span style="font:400 13px/1.2 'JetBrains Mono',monospace;color:var(--muted)">{{ S.ph }}</span></span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.rate }}</span><span style="font:500 14px/1.4 'JetBrains Mono',monospace;text-align:right">{{ S.rate }} <b style="color:var(--save)">{{ S.pct }}</b></span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ t.arrivesL }}</span><span style="font-size:15px;text-align:right">{{ t.arrives }}</span></div>
+    </div>
+  </div>
+  <button onClick="{{ openDetails }}" style="align-self:center;min-height:44px;padding:0 14px;border:0;background:transparent;color:var(--save);font-size:15px;font-weight:700">{{ t.details }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.send_done }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">✓</div>
+  <div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:37px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ t.sentT }}</h1><div style="font-size:18px;line-height:1.4">{{ S.sentB }}</div><div style="font-size:16px;color:var(--muted)">{{ S.sentFor }}</div></div>
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;border:1px dashed var(--line);background:var(--surface)"><div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:600 14px/1.2 'JetBrains Mono',monospace">#C9E1-04</span><span style="font-size:14px;color:var(--muted)">{{ t.receiptSaved }}</span></div><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:6px 8px;border-radius:6px">✓ {{ t.verified }}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.auto_intro }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:4px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.conT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">{{ t.autoIntroB }}</p>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-bottom:1px solid var(--line)"><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);text-transform:uppercase;letter-spacing:.06em">{{ t.autoEx1T }}</span><span style="font-size:16px;line-height:1.45">{{ t.auto1 }}</span></div>
+    <div style="display:flex;flex-direction:column;gap:4px;padding:16px;border-bottom:1px solid var(--line)"><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);text-transform:uppercase;letter-spacing:.06em">{{ t.autoEx2T }}</span><span style="font-size:16px;line-height:1.45">{{ t.auto2 }}</span></div>
+    <div style="display:flex;flex-direction:column;gap:4px;padding:16px"><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);text-transform:uppercase;letter-spacing:.06em">{{ t.autoEx3T }}</span><span style="font-size:16px;line-height:1.45">{{ t.auto3 }}</span></div>
+  </div>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted)">{{ t.autoOpt }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.auto_limits }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.limT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">{{ t.limB }}</p>
+  <sc-for list="{{ presets }}" as="p" hint-placeholder-count="3">
+    <button onClick="{{ p.onClick }}" style="{{ p.style }}">
+      <span style="{{ p.dot }}"></span>
+      <span style="flex:1;display:flex;flex-direction:column;gap:6px;text-align:left"><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:17px;font-weight:700">{{ p.label }}</span><sc-if value="{{ p.rec }}"><span style="font:600 12px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:5px 7px;border-radius:6px">{{ p.rec }}</span></sc-if></span><span style="font-size:16px">{{ p.op }} <span style="color:var(--muted)">{{ p.opL }}</span></span><span style="font-size:16px">{{ p.day }} <span style="color:var(--muted)">{{ p.dayL }}</span></span></span>
+    </button>
+  </sc-for>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted)">{{ t.limNote2 }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.auto_contacts }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em">{{ t.ctT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">{{ t.ctB }}</p>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <sc-for list="{{ cts }}" as="c" hint-placeholder-count="4">
+      <button onClick="{{ c.onClick }}" role="switch" style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;width:100%">
+        <span style="width:40px;height:40px;flex:none;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:700">{{ c.ini }}</span>
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:600">{{ c.n }}</span><span style="font:400 13px/1.2 'JetBrains Mono',monospace;color:var(--muted)">{{ c.sub }}</span></span>
+        <span style="{{ c.sw }}"><span style="{{ c.knob }}"></span></span>
+      </button>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.auto_consent }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 20px 20px">
+  <sc-if value="{{ is.ca }}">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.conT }}</h1>
+  <div style="display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:18px">
+    <div style="display:flex;gap:12px"><span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--saveBg);color:var(--save);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">✓</span><span style="font-size:16px;line-height:1.45">{{ A2.con1 }} <b>{{ A2.allowed }}</b></span></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--saveBg);color:var(--save);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">✓</span><span style="font-size:16px;line-height:1.45">{{ A2.con2 }}</span></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--saveBg);color:var(--save);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">✓</span><span style="font-size:16px;line-height:1.45">{{ t.con3 }}</span></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--saveBg);color:var(--save);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800">✓</span><span style="font-size:16px;line-height:1.45">{{ t.con4 }}</span></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;background:var(--dangerBg);border-radius:14px;padding:14px 16px"><span style="font-size:15px;font-weight:800;color:var(--danger)">{{ t.conNever }}</span><span style="font-size:16px;line-height:1.45">{{ t.conNever1 }}</span></div>
+  </sc-if>
+  <sc-if value="{{ is.cb }}">
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 24px -14px rgba(0,0,0,.3);display:flex;flex-direction:column">
+    <div style="height:10px;background:radial-gradient(circle at 6px 0,transparent 5px,var(--surface) 5.5px) 0 0/12px 10px repeat-x;margin-top:-10px"></div>
+    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:4px;border-bottom:1px dashed var(--line)"><span style="font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">{{ t.conSlip }}</span><span style="font-size:22px;font-weight:800;letter-spacing:-.02em">{{ t.conT }}</span><span style="font:400 13px/1.4 'JetBrains Mono',monospace;color:var(--muted)">{{ t.conHolder }}: {{ s.phone }}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr">
+      <div style="padding:14px 14px 14px 18px;display:flex;flex-direction:column;gap:10px;border-right:1px dashed var(--line)"><span style="font:700 13px/1 'JetBrains Mono',monospace;color:var(--save);text-transform:uppercase;letter-spacing:.06em">✓ {{ t.conCan }}</span><span style="font-size:15px;line-height:1.4">{{ t.conCan1 }}</span><span style="font-size:15px;line-height:1.4">{{ A2.conCan2 }}</span><span style="font-size:15px;line-height:1.4">{{ A2.conCan3 }}</span></div>
+      <div style="padding:14px 18px 14px 14px;display:flex;flex-direction:column;gap:10px"><span style="font:700 13px/1 'JetBrains Mono',monospace;color:var(--danger);text-transform:uppercase;letter-spacing:.06em">✕ {{ t.conCant }}</span><span style="font-size:15px;line-height:1.4">{{ t.conNo1 }}</span><span style="font-size:15px;line-height:1.4">{{ t.conNo2 }}</span><span style="font-size:15px;line-height:1.4">{{ t.conNo3 }}</span></div>
+    </div>
+    <div style="padding:14px 18px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:12px;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px/1 'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase">{{ t.conExp }}</span><span style="font:600 15px/1 'JetBrains Mono',monospace">10 nov 2026</span></div>
+      <div style="flex:1;max-width:55%;display:flex;flex-direction:column;gap:6px"><span style="border-bottom:1.5px solid var(--text);height:22px"></span><span style="font-size:12px;line-height:1.3;color:var(--muted)">{{ t.conSign }}</span></div>
+    </div>
+  </div>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted)">{{ t.con4 }}</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.auto_on }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">✓</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">{{ t.autoDoneT }}</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">{{ t.autoDoneB }}</p>
+  <div style="display:flex;flex-direction:column;border-top:1px dashed var(--line)">
+    <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);font-size:16px"><span style="color:var(--muted)">{{ t.limitsL }}</span><span style="font-weight:600">{{ A2.opS }} · {{ A2.dayS }}</span></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);font-size:16px"><span style="color:var(--muted)">{{ t.contactsL }}</span><span style="font-weight:600;text-align:right">{{ A2.allowed }}</span></div>
+    <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);font-size:16px"><span style="color:var(--muted)">{{ t.conExp }}</span><span style="font-weight:600">10 nov 2026</span></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.security }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 20px">
+  <div style="{{ sec.card }}"><span style="font:700 12px/1 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em">{{ sec.tag }}</span><span style="font-size:18px;font-weight:700;line-height:1.3">{{ sec.title }}</span><span style="font-size:15px;line-height:1.45">{{ sec.sub }}</span></div>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <button onClick="{{ togglePause }}" role="switch" style="display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:64px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;width:100%"><span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-size:17px;font-weight:600">Pausar Arbolito</span><span style="font-size:14px;line-height:1.35;color:var(--muted)">Al instante, sin confirmar en MiniPay.</span></span><span style="{{ sec.sw }}"><span style="{{ sec.knob }}"></span></span></button>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;font-size:16px"><span style="color:var(--muted)">Por operación</span><span style="font-weight:600">US$ 25 <span style="color:var(--muted);font-weight:400">≈ ARS 40.200</span></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:16px"><span style="color:var(--muted)">Por día</span><span style="font-weight:600">US$ 100 <span style="color:var(--muted);font-weight:400">≈ ARS 160.800</span></span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:8px;border-radius:4px;background:var(--surface2)"><div style="width:41%;height:8px;border-radius:4px;background:var(--save)"></div></div><span style="font-size:14px;color:var(--muted)">Hoy usó US$ 41 de US$ 100</span></div>
+    </div>
+    <button onClick="{{ goLimits }}" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;min-height:56px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font-size:16px;font-weight:600;text-align:left;width:100%"><span>Cambiar límites</span><span style="font-size:14px;font-weight:400;color:var(--muted)">1 confirmación en MiniPay ›</span></button>
+    <button onClick="{{ goAutoContacts }}" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;min-height:56px;border:0;background:transparent;color:var(--text);font-size:16px;font-weight:600;text-align:left;width:100%"><span>Contactos que puede pagar</span><span style="font-size:14px;font-weight:400;color:var(--muted)">{{ A2.allowed }} ›</span></button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:14px 16px"><span style="font-size:16px;font-weight:600">Si cambiás de teléfono</span><span style="font-size:15px;line-height:1.45;color:var(--muted)">Tu cuenta la cuida MiniPay. Recuperás todo con la copia de seguridad de MiniPay, y Arbolito vuelve a aparecer con tus saldos.</span></div>
+  <button onClick="{{ goRevoke }}" style="min-height:52px;border-radius:14px;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:16px;font-weight:700">Revocar permiso</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.revoke }}">
+<div style="display:flex;flex-direction:column;gap:16px;padding:4px 20px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em;text-wrap:pretty">¿Revocar el permiso de Arbolito?</h1>
+  <div style="display:flex;flex-direction:column;border-top:1px dashed var(--line)">
+    <div style="padding:14px 0;border-bottom:1px dashed var(--line);font-size:16px;line-height:1.45">Deja de hacer cosas automáticas al instante: sueldo, pagos del mes y alertas.</div>
+    <div style="padding:14px 0;border-bottom:1px dashed var(--line);font-size:16px;line-height:1.45"><b>Tu plata no se mueve.</b> Queda en tu cuenta, como está.</div>
+    <div style="padding:14px 0;border-bottom:1px dashed var(--line);font-size:16px;line-height:1.45">Podés seguir usando el chat y confirmando cada operación en MiniPay.</div>
+    <div style="padding:14px 0;border-bottom:1px dashed var(--line);font-size:16px;line-height:1.45">Para volver a activarlo, tenés que dar el permiso de nuevo.</div>
+  </div>
+  <div style="font-size:15px;line-height:1.45;color:var(--muted)">¿Solo querés un respiro? <button onClick="{{ pauseInstead }}" style="border:0;background:transparent;padding:0;min-height:44px;color:var(--save);font-size:15px;font-weight:700">Pausalo en lugar de revocar</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.receiptsAny }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:8px 16px 20px">
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:32px;line-height:1.02;font-weight:400;letter-spacing:-.025em">Comprobantes</h1>
+  <sc-if value="{{ is.receipts_empty }}">
+  <div style="display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:24px 20px">
+    <span style="font-size:18px;font-weight:700">Todavía no hay comprobantes</span>
+    <span style="font-size:16px;line-height:1.45;color:var(--muted)">Cada cambio o envío genera uno, con el precio que conseguiste. Cualquiera puede verificarlo.</span>
+  </div>
+  </sc-if>
+  <sc-if value="{{ is.receipts }}">
+  <div style="font:600 13px/1 'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 4px 0">Octubre 2026</div>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <sc-for list="{{ receiptsList }}" as="r" hint-placeholder-count="4">
+      <button onClick="{{ goReceipt }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:68px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left;width:100%">
+        <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ r.title }}</span><span style="font-size:14px;color:var(--muted)">{{ r.sub }}</span></span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span style="font-size:14px;font-weight:700;color:var(--save)">{{ r.pct }}</span><span style="font:600 11px/1 'JetBrains Mono',monospace;color:var(--save);background:var(--saveBg);padding:4px 6px;border-radius:5px">✓ Verificado</span></span>
+      </button>
+    </sc-for>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.receipt }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 20px">
+  <sc-if value="{{ is.ra }}">
+  <div style="display:flex;flex-direction:column;gap:4px;padding:8px 4px"><span style="font-size:16px;color:var(--muted)">Ahorraste</span><span style="font-family:'Instrument Serif',serif;font-size:53px;font-weight:400;letter-spacing:-.02em;color:var(--save);line-height:1">ARS 158</span><span style="font-size:16px;color:var(--muted)">frente al dólar oficial · 11 oct 2026, 10:42</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:var(--muted)">Pagaste</span><span style="font-size:20px;font-weight:800">R$ 10,00</span></div>
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;color:var(--muted)">Recibiste</span><span style="font-size:20px;font-weight:800">ARS 3.177,41</span></div>
+  </div>
+  <div style="background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px">
+    <span style="font-size:16px;font-weight:700">Cómo se compara</span>
+    <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;justify-content:space-between;font-size:15px"><span style="font-weight:700">Arbolito</span><span style="font-family:'JetBrains Mono',monospace">1 R$ = 317,74</span></div><div style="height:10px;border-radius:5px;background:var(--save)"></div></div>
+    <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;justify-content:space-between;font-size:15px;color:var(--muted)"><span>Oficial</span><span style="font-family:'JetBrains Mono',monospace">1 R$ = 302,89</span></div><div style="height:10px;width:95%;border-radius:5px;background:var(--muted);opacity:.45"></div></div>
+    <span style="font-size:15px;line-height:1.45;color:var(--muted)">+5,24% vs oficial. Lo cambiamos en 2 pasos (reales → dólares → pesos) por el mejor mercado. Miramos 3 caminos.</span>
+  </div>
+  <div style="background:var(--saveBg);border-radius:18px;padding:16px;display:flex;gap:14px;align-items:flex-start">
+    <span style="flex:none;width:40px;height:40px;border-radius:50%;background:var(--save);color:var(--onBrand);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">✓</span>
+    <span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:17px;font-weight:800;color:var(--save)">Verificado</span><span style="font-size:15px;line-height:1.45">La huella de este comprobante coincide con la registrada públicamente. Nadie la puede cambiar después.</span><button onClick="{{ toggleProof }}" style="align-self:flex-start;border:0;background:transparent;padding:0;min-height:40px;color:var(--save);font-size:15px;font-weight:700">{{ proofLabel }}</button></span>
+  </div>
+  <sc-if value="{{ proofOpen }}"><div style="display:flex;flex-direction:column;gap:8px;font:400 13px/1.5 'JetBrains Mono',monospace;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;word-break:break-all"><span>Huella · sha256 9f3a6c…41c71e</span><span>Registro · Celo bloque 31.204.877</span><span>Transacción · 0x7b2e…e4d9</span></div></sc-if>
+  </sc-if>
+  <sc-if value="{{ is.rb }}">
+  <div style="position:relative;background:var(--surface);border-radius:4px;box-shadow:0 10px 24px -14px rgba(0,0,0,.35);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column;margin-top:10px">
+    <div style="height:10px;background:radial-gradient(circle at 6px 0,transparent 5px,var(--surface) 5.5px) 0 0/12px 10px repeat-x;margin-top:-10px"></div>
+    <div style="padding:16px 18px 12px;display:flex;flex-direction:column;gap:4px;align-items:center;border-bottom:1px dashed var(--line)"><span style="font-family:'Instrument Serif',serif;font-weight:400;font-size:20px;font-weight:800;letter-spacing:-.03em">arbolito<span style="color:var(--save)">.</span></span><span style="font-size:13px;color:var(--muted)">COMPROBANTE #A7F3-29</span><span style="font-size:13px;color:var(--muted)">11.10.2026 · 10:42:07</span></div>
+    <div style="padding:12px 18px;display:flex;flex-direction:column;gap:8px;font-size:14px;border-bottom:1px dashed var(--line)">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">PAGASTE</span><span>R$ 10,00</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">RECIBISTE</span><span style="font-weight:600">ARS 3.177,41</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">COTIZACIÓN</span><span>317,74</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">OFICIAL</span><span>302,89</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">RUTA</span><span>R$ → US$ → ARS</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">COMISIÓN</span><span>0,00</span></div>
+    </div>
+    <div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line)"><span style="font-size:14px;color:var(--muted)">AHORRO VS OFICIAL</span><span style="font-family:'Instrument Serif',serif;font-weight:400;font-size:26px;font-weight:800;color:var(--save)">ARS 158</span></div>
+    <div style="padding:14px 18px 18px;display:flex;gap:14px;align-items:center">
+      <span style="flex:none;width:76px;height:76px;border-radius:50%;border:2.5px solid var(--save);color:var(--save);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-10deg);font-size:10px;font-weight:600;letter-spacing:.06em;line-height:1.3;text-align:center">✓<br>VERIFICADO<br>EN CELO</span>
+      <span style="font-size:12px;line-height:1.5;color:var(--muted);word-break:break-all">huella 9f3a6c…41c71e<br>coincide con el registro público</span>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.settings }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:8px 16px 20px">
+  <div style="display:flex;align-items:center;gap:14px;padding:4px"><span style="width:56px;height:56px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">{{ s.initial }}</span><span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:19px;font-weight:700">{{ s.name }}</span><span style="font:400 14px/1.2 'JetBrains Mono',monospace;color:var(--muted)">{{ s.phone }}</span><span style="font-size:14px;color:var(--muted)">Cuenta de MiniPay</span></span></div>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;overflow:hidden">
+    <button onClick="{{ openLang }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px;min-height:56px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font-size:16px;font-weight:600;width:100%;text-align:left"><span>Idioma</span><span style="font-weight:400;color:var(--muted)">{{ t.langName }} ›</span></button>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px;min-height:56px;border-bottom:1px solid var(--line);font-size:16px;font-weight:600"><span>Moneda para mostrar</span><span style="font-weight:400;color:var(--muted)">{{ s.dispName }} ›</span></div>
+    <button onClick="{{ goSend }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px;min-height:56px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font-size:16px;font-weight:600;width:100%;text-align:left"><span>Contactos</span><span style="font-weight:400;color:var(--muted)">4 ›</span></button>
+    <button onClick="{{ goSecurity }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px;min-height:56px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font-size:16px;font-weight:600;width:100%;text-align:left"><span>Límites y seguridad</span><span style="font-weight:400;color:var(--muted)">{{ sec.short }} ›</span></button>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 16px;min-height:56px;font-size:16px;font-weight:600"><span>Telegram</span><span style="font-weight:400;color:var(--muted)">@lucia.dg ›</span></div>
+  </div>
+  <div style="font-size:14px;line-height:1.5;color:var(--muted);padding:0 4px">Arbolito beta · sin comisión durante la beta. Retirar dólares: usá Retirar en MiniPay.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.withdraw }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px">
+  <div style="background:var(--surface);border:2px solid var(--save);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:17px;font-weight:700">Pesos o reales → Ripio</span><span style="width:22px;height:22px;border-radius:50%;border:6px solid var(--save)"></span></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:41px;font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums">ARS 50.000,00</div>
+    <div style="font-size:14px;color:var(--muted)">Disponible ARS 182.450,00</div>
+    <div style="font-size:15px;line-height:1.45;padding-top:10px;border-top:1px dashed var(--line)">Llega a tu cuenta Ripio del <span style="font-family:'JetBrains Mono',monospace">+54 9 11 5832-4107</span> en 1 a 2 minutos. Desde Ripio lo pasás a tu banco.</div>
+  </div>
+  <button onClick="{{ addCash }}" style="text-align:left;background:var(--surface);border:1.5px solid var(--cardBd);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:6px;color:var(--text)"><span style="display:flex;justify-content:space-between;width:100%"><span style="font-size:17px;font-weight:700">Dólares → MiniPay</span><span style="font:500 13px/1 'JetBrains Mono',monospace;color:var(--muted)">Abre MiniPay ↗</span></span><span style="font-size:15px;line-height:1.45;color:var(--muted)">Tus dólares ya están en MiniPay. Retiralos con su opción Retirar.</span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.withdraw_waiting }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+  <div style="width:64px;height:64px;border-radius:50%;background:var(--saveBg);display:flex;align-items:center;justify-content:center">{{ spinBig }}</div>
+  <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:34px;line-height:1.02;font-weight:400;letter-spacing:-.025em">En camino a Ripio</h1>
+  <p style="margin:0;font-size:17px;line-height:1.5">ARS 50.000,00 salieron de tu cuenta y llegan a Ripio en 1 a 2 minutos.</p>
+  <p style="margin:0;font-size:15px;line-height:1.5;color:var(--muted)">Te avisamos acá y en Telegram cuando lleguen. Si algo falla, la plata vuelve sola a tu cuenta Arbolito.</p>
+  <div style="font:600 14px/1 'JetBrains Mono',monospace;color:var(--muted)">Comprobante #B21C-07</div>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ act.show }}">
+<div style="flex:none;padding:12px 16px;display:flex;flex-direction:column;gap:6px;background:color-mix(in oklab,var(--bg) 82%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--line)">
+  <sc-if value="{{ act.note }}"><div style="font-size:14px;line-height:1.4;color:var(--muted);text-align:center;padding:0 8px 4px">{{ act.note }}</div></sc-if>
+  <sc-if value="{{ act.p }}"><button onClick="{{ act.p.onClick }}" style="{{ act.p.style }}">{{ act.p.spin }}<span>{{ act.p.label }}</span></button></sc-if>
+  <sc-if value="{{ act.s }}"><button onClick="{{ act.s.onClick }}" style="min-height:48px;border:0;border-radius:14px;background:transparent;color:var(--text);font-size:16px;font-weight:600">{{ act.s.label }}</button></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabs.show }}">
+<div style="flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;border-top:1px solid var(--line);background:var(--surface);padding:6px 6px 8px">
+  <sc-for list="{{ tabs.items }}" as="tb" hint-placeholder-count="4">
+    <button onClick="{{ tb.onClick }}" style="{{ tb.style }}">{{ tb.label }}</button>
+  </sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}"><div style="position:absolute;left:16px;right:16px;bottom:100px;background:var(--text);color:var(--bg);padding:14px 16px;border-radius:14px;font-size:15px;line-height:1.4;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:30">{{ toast }}</div></sc-if>
+
+<sc-if value="{{ sheetLang }}">
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;flex-direction:column;justify-content:flex-end">
+  <div style="background:var(--bg);border-radius:22px 22px 0 0;padding:12px 16px 20px;display:flex;flex-direction:column;gap:6px">
+    <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:var(--line)"></div>
+    <div style="font-size:19px;font-weight:700;padding:10px 4px">{{ t.langPick }}</div>
+    <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+      <button onClick="{{ l.onClick }}" style="{{ l.style }}"><span>{{ l.label }}</span><span style="color:var(--save);font-weight:800">{{ l.check }}</span></button>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetMP }}">
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:40;display:flex;flex-direction:column;justify-content:flex-end">
+  <div style="background:var(--mpBg);color:var(--mpText);border-radius:20px 20px 0 0;padding:12px 20px 20px;display:flex;flex-direction:column;gap:14px;font-family:system-ui,Roboto,sans-serif">
+    <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:var(--mpLine)"></div>
+    <div style="align-self:flex-start;font:500 11px/1.3 'JetBrains Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--mpMuted);border:1px dashed var(--mpMuted);border-radius:6px;padding:5px 8px">MiniPay · native sheet (reference only)</div>
+    <div style="font-size:20px;font-weight:600">{{ t.mpTitle }}</div>
+    <div style="display:flex;flex-direction:column;border:1px solid var(--mpLine);border-radius:12px">
+      <sc-for list="{{ mp.rows }}" as="r" hint-placeholder-count="3">
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--mpLine);font-size:15px"><span style="color:var(--mpMuted)">{{ r.k }}</span><span style="font-weight:600;text-align:right">{{ r.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onClick="{{ mpReject }}" style="height:48px;border-radius:24px;border:1px solid var(--mpLine);background:transparent;color:var(--mpText);font-size:16px;font-weight:600">{{ t.mpReject }}</button>
+      <button onClick="{{ mpConfirm }}" style="height:48px;border-radius:24px;border:0;background:var(--mpText);color:var(--mpBg);font-size:16px;font-weight:600">{{ t.mpConfirm }}</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetDetails }}">
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;flex-direction:column;justify-content:flex-end">
+  <div style="background:var(--bg);border-radius:22px 22px 0 0;padding:12px 20px 20px;display:flex;flex-direction:column;gap:12px">
+    <div style="align-self:center;width:36px;height:4px;border-radius:2px;background:var(--line)"></div>
+    <div style="font-size:19px;font-weight:700">{{ t.detTitle }}</div>
+    <div style="display:flex;flex-direction:column;border-top:1px dashed var(--line)">
+      <sc-for list="{{ detRows }}" as="r" hint-placeholder-count="5">
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px dashed var(--line)"><span style="font-size:15px;color:var(--muted)">{{ r.k }}</span><span style="font:500 14px/1.4 'JetBrains Mono',monospace;text-align:right">{{ r.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="font-size:14px;line-height:1.45;color:var(--muted)">{{ t.detNote }}</div>
+    <button onClick="{{ closeSheet }}" style="height:52px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:17px;font-weight:700">{{ t.close }}</button>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:892},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;no-minipay&quot;,&quot;conn-fail&quot;,&quot;welcome&quot;,&quot;add&quot;,&quot;add-ripio&quot;,&quot;add-waiting&quot;,&quot;done-ob&quot;,&quot;home&quot;,&quot;home-loading&quot;,&quot;home-empty&quot;,&quot;home-offline&quot;,&quot;chat&quot;,&quot;change&quot;,&quot;quote-loading&quot;,&quot;quote&quot;,&quot;quote-expired&quot;,&quot;quote-changed&quot;,&quot;quote-nomarket&quot;,&quot;alts&quot;,&quot;processing&quot;,&quot;done&quot;,&quot;failed&quot;,&quot;cancelled&quot;,&quot;send&quot;,&quot;send-empty&quot;,&quot;send-add&quot;,&quot;send-amount&quot;,&quot;send-quote&quot;,&quot;send-done&quot;,&quot;auto-intro&quot;,&quot;auto-limits&quot;,&quot;auto-contacts&quot;,&quot;auto-consent&quot;,&quot;auto-on&quot;,&quot;security&quot;,&quot;revoke&quot;,&quot;receipts&quot;,&quot;receipts-empty&quot;,&quot;receipt&quot;,&quot;settings&quot;,&quot;withdraw&quot;,&quot;withdraw-waiting&quot;],&quot;default&quot;:&quot;welcome&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;es&quot;,&quot;pt&quot;,&quot;en&quot;],&quot;default&quot;:&quot;es&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;quoteVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variants&quot;},&quot;consentVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variants&quot;},&quot;receiptVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Variants&quot;},&quot;interactive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;regular&quot;,&quot;min&quot;],&quot;default&quot;:&quot;regular&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;seconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:48,&quot;tsType&quot;:&quot;number&quot;},&quot;chatStage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;empty&quot;,&quot;rec&quot;,&quot;typing&quot;,&quot;quote&quot;,&quot;expired&quot;,&quot;proc&quot;,&quot;done&quot;,&quot;cancel&quot;],&quot;default&quot;:&quot;quote&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sheet&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;sheetKind&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;flow&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;paused&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;autoOn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const R = { ARS: 1, BRL: 317.74, USD: 1608 };
+const OFF = { BRL: 5.24, USD: 4.08 };
+const SYM = { ARS: 'ARS', BRL: 'R$', USD: 'US$' };
+const GLY = { ARS: '$', BRL: 'R$', USD: 'US$' };
+const LOC = { es: 'es-AR', pt: 'pt-BR', en: 'en-US' };
+const CN = { es: { ARS: 'Pesos', BRL: 'Reales', USD: 'Dólares' }, pt: { ARS: 'Pesos', BRL: 'Reais', USD: 'Dólares' }, en: { ARS: 'Pesos', BRL: 'Reais', USD: 'Dollars' } };
+const CL = { es: { ARS: 'pesos', BRL: 'reales', USD: 'dólares' }, pt: { ARS: 'pesos', BRL: 'reais', USD: 'dólares' }, en: { ARS: 'pesos', BRL: 'reais', USD: 'dollars' } };
+const TOK = { ARS: 'wARS', BRL: 'wBRL', USD: 'USDT' };
+const PERSONA = {
+  es: { name: 'Lucía', phone: '+54 9 11 5832-4107', disp: 'ARS', bal: { ARS: 182450, BRL: 1240, USD: 860 }, from: 'BRL', to: 'ARS', amt: '10', sendFrom: 'USD', sendAmt: '20' },
+  pt: { name: 'Agência Sol', phone: '+55 11 98765-4321', disp: 'BRL', bal: { ARS: 0, BRL: 48200, USD: 2150 }, from: 'BRL', to: 'ARS', amt: '200', sendFrom: 'BRL', sendAmt: '200' },
+  en: { name: 'Lucía', phone: '+54 9 11 5832-4107', disp: 'USD', bal: { ARS: 182450, BRL: 1240, USD: 860 }, from: 'BRL', to: 'ARS', amt: '10', sendFrom: 'USD', sendAmt: '20' },
+};
+const CONTACTS = {
+  es: [{ n: 'Graciela Gómez', tag: 'Mamá', cur: 'ARS', ph: '+54 9 351 412-7781' }, { n: 'Martín Ferreyra', tag: 'Alquiler', cur: 'ARS', ph: '+54 9 11 4420-1934' }, { n: 'Agência Sol', tag: 'Cliente', cur: 'BRL', ph: '+55 11 98765-4321' }, { n: 'Tomás Ribeiro', tag: '', cur: 'BRL', ph: '+55 21 99812-3307' }],
+  pt: [{ n: 'Lucía Gómez', tag: 'Designer', cur: 'ARS', ph: '+54 9 11 5832-4107' }, { n: 'Mateo Díaz', tag: 'Dev', cur: 'ARS', ph: '+54 9 11 6021-5590' }, { n: 'Camila Rocha', tag: '', cur: 'BRL', ph: '+55 11 97321-8840' }],
+  en: [{ n: 'Graciela Gómez', tag: 'Mom', cur: 'ARS', ph: '+54 9 351 412-7781' }, { n: 'Martín Ferreyra', tag: 'Rent', cur: 'ARS', ph: '+54 9 11 4420-1934' }, { n: 'Agência Sol', tag: 'Client', cur: 'BRL', ph: '+55 11 98765-4321' }, { n: 'Tomás Ribeiro', tag: '', cur: 'BRL', ph: '+55 21 99812-3307' }],
+};
+const PRESETS = { low: [10, 50], mid: [25, 100], high: [100, 500] };
+
+const T = {
+es: {
+  back: 'Atrás', close: 'Cerrar', langName: 'Español', langPick: 'Idioma',
+  noMpTitle: 'Abrí Arbolito desde MiniPay', noMpBody: 'Arbolito funciona dentro de MiniPay, la billetera de Opera. Así tu cuenta ya está lista, sin registrarte.', noMp1: 'Abrí MiniPay en tu teléfono.', noMp2: 'Entrá a Descubrir.', noMp3: 'Buscá Arbolito y tocá Abrir.', openMP: 'Abrir MiniPay',
+  connTitle: 'No pudimos conectar con tu MiniPay', connBody: 'Puede ser la conexión a internet. Probá de nuevo en unos segundos.', noMoneyMoved: 'No se movió plata.', retry: 'Probar de nuevo',
+  welTitle: 'Cambiá y mandá pesos, reales y dólares.', welBody: 'Al mejor precio del momento, en tu idioma, con un comprobante que lo prueba.', welS1: 'Escribís o mandás un audio: "pasá 100 dólares a pesos".', welS2: 'Arbolito busca el mejor precio y te lo muestra.', welS3: 'Confirmás en MiniPay y recibís tu comprobante.', welLangNote: 'Elegimos español por tu teléfono. Lo cambiás arriba.', start: 'Empezar',
+  addTitle: 'Agregá plata para empezar', addBody: 'Elegí cómo. También podés hacerlo después.', opensMP: 'Abre MiniPay', addCashT: 'Dólares con MiniPay', addCashS: 'Usá "Agregar efectivo" de MiniPay. Las opciones dependen de tu país.', guided: 'Guiado', addRipioT: 'Pesos o reales desde Ripio', addRipioS: 'De tu banco a Ripio, y de Ripio a Arbolito. Te guiamos paso a paso.', later: 'Lo hago después',
+  ripTitle: 'Agregá plata desde Ripio', rip1: 'Tocá Abrir Ripio. El envío ya va con tus datos cargados.', rip2: 'En Ripio elegí pesos o reales, el monto, y confirmá.', rip3: 'Volvé acá. Llega en 1 a 2 minutos.', ripNote: '¿No tenés Ripio? Te lleva a crear la cuenta y después volvés acá.', openRipio: 'Abrir Ripio', didIt: 'Ya lo envié',
+  waitTitle: 'Esperando tu envío desde Ripio', waitBody: 'Apenas llegue te avisamos acá y en Telegram. Podés cerrar Arbolito.', waitNote: 'Suele tardar 1 a 2 minutos. Si en 30 minutos no llegó, revisá el envío en Ripio: si no salió, tu plata sigue ahí.', next: 'Seguir',
+  doneTitle: '¡Listo, {n}!', doneBody: 'Escribile a Arbolito para cambiar o enviar plata. Por ejemplo:', ex1: 'pasá 100 dólares a pesos', ex2: 'mandale 20 dólares a mamá', optional: 'Opcional', autoTitle: 'Dejá que Arbolito actúe por vos', goChat: 'Hablar con Arbolito', seeAccount: 'Ver mi cuenta',
+  hello: 'Hola, {n}', totalIn: 'Tu plata, en {c}', onlyHere: 'Tus pesos y reales se ven solo en Arbolito. MiniPay muestra únicamente tus dólares.', aChange: 'Cambiar', aSend: 'Enviar', aAdd: 'Agregar dinero', aWithdraw: 'Retirar', askPh: 'Pedile algo a Arbolito…', balances: 'Tus saldos', activity: 'Actividad', seeReceipts: 'Ver comprobantes',
+  actChange: 'Cambiaste reales a pesos', actIn: 'Recibiste de Agência Sol', actSend: 'Enviaste a Martín', actAdd: 'Agregaste desde Ripio', today: 'Hoy', yesterday: 'Ayer',
+  emptyTitle: 'Todavía no tenés plata en Arbolito', emptyBody: 'Agregá dólares con MiniPay o pesos y reales desde Ripio.', emptyAct: 'Tus operaciones van a aparecer acá, cada una con su comprobante.', addMoney: 'Agregar dinero', offline: 'Sin conexión. Te mostramos tus saldos de hace 3 minutos.', pausedHome: 'Arbolito está en pausa: no hace nada automático.', autoPromo: 'Que convierta tu sueldo o pague el alquiler solo, dentro de tus límites.',
+  tabHome: 'Inicio', tabChat: 'Chat', tabReceipts: 'Comprobantes', tabSettings: 'Ajustes',
+  mpTitle: 'Confirmar transacción', mpReject: 'Rechazar', mpConfirm: 'Confirmar', mpApp: 'App', mpAction: 'Acción', mpAmount: 'Monto', mpFee: 'Costo de red', mpFeeV: '< US$ 0,01',
+  detTitle: 'Detalles', detNote: 'Sin comisión de Arbolito durante la beta. El costo de red se paga solo, en dólares.', 
+  hChange: 'Cambiar', hQuote: 'Tu cotización', hAlts: 'Alternativas', hSend: 'Enviar', hSendTo: 'Enviar a {n}', hAddContact: 'Nuevo contacto', hReceipt: 'Comprobante', hAuto: 'Arbolito por vos', hSecurity: 'Límites y seguridad', hWithdraw: 'Retirar', hAdd: 'Agregar dinero',
+  chPay: 'Pagás', chGet: 'Recibís', available: 'Disponible', all: 'Todo', searching: 'Buscando el mejor precio…', insufficient: 'No te alcanza el saldo', review: 'Ver cotización',
+  forX: 'por {x}', rate: 'Cotización', vsOff: 'vs oficial', route: 'Cómo lo hacemos', route2: 'En 2 pasos por el mejor mercado: {a} → dólares → {b}.', route1: 'Directo, en 1 paso, por el mejor mercado.', minimum: 'Mínimo garantizado', minNote: 'Si el precio cae por debajo, no se hace y no se mueve plata.', expiresIn: 'Vence en {s} s', expiresEnd: 'Cuando vence, pedimos una nueva.', confirmMP: 'Confirmar en MiniPay', alts: 'Ver alternativas', details: 'Ver detalles', saved: '{x} más que al oficial', mpNext: 'MiniPay te va a mostrar la operación para que la confirmes.',
+  qLoadT: 'Buscando el mejor precio', qLoadB: 'Comparamos 3 caminos. Tarda un segundo.',
+  expired: 'Esta cotización venció', expiredB: 'Los precios se mueven rápido. No se movió plata.', refresh: 'Pedir nueva cotización',
+  changed: 'El precio cambió', changedB: 'Ahora recibís {x}, {d} menos. Confirmá solo si te sirve.', confirmNew: 'Confirmar nuevo precio en MiniPay',
+  noMarket: 'Ahora no hay mercado para {a} → {b}', noMarketB: 'Pasa por unos minutos cuando hay mucho movimiento. No se movió plata.', notifyMe: 'Avisame cuando haya', tryAgain: 'Probar de nuevo', notifyToast: 'Listo. Te avisamos en el chat.',
+  processing: 'Haciendo el cambio', procNote: 'Podés cerrar Arbolito: te avisamos acá y en Telegram cuando termine.', pA: 'Confirmado en MiniPay', pB: 'Cambiando {a} a {b}', pC: 'Guardando tu comprobante', pS: 'Enviando a {n}',
+  doneT: 'Listo. Recibiste {x}', doneSub: 'por {y}', seeReceipt: 'Ver comprobante', backHome: 'Volver al inicio',
+  failedT: 'No pudimos hacer el cambio', failedB: 'No se movió plata. Tus {y} siguen en tu cuenta.', failedWhy: 'El precio cayó por debajo de tu mínimo garantizado, así que lo frenamos.', newQuote: 'Pedir nueva cotización',
+  cancelT: 'Cancelaste en MiniPay', cancelB: 'No se movió plata. Tus {y} siguen en tu cuenta.', backToQuote: 'Volver a cotizar',
+  altB: 'Para {y}, esto recibías por cada camino. Elegimos el mejor.', altChosen: 'Elegido', altA: 'Vía dólares, 2 pasos', altBk: 'Directo, 1 paso', altC: 'Banco, al oficial',
+  sendTitle: '¿A quién le enviás?', search: 'Buscar nombre o número', addContact: 'Agregar contacto', fromPhone: 'Elegir de los contactos del teléfono', sendEmptyT: 'Todavía no tenés contactos', sendEmptyB: 'Por seguridad, Arbolito envía solo a personas que vos guardaste. Las buscamos por número de teléfono.', receives: 'Recibe {c}', recvX: '{n} recibe', reviewSend: 'Revisar envío', sendLbl: 'Enviás', arrives: 'Llega en segundos a su MiniPay.', sentT: 'Enviado', sentB: '{n} recibió {x}', notifyContact: 'Avisarle por WhatsApp', cancel: 'Cancelar', phoneLbl: 'Número de teléfono', nameLbl: 'Nombre', lookupOk: 'Tiene MiniPay', recvIn: 'Recibe en', saveContact: 'Guardar contacto',
+  autoIntroB: 'Arbolito hace cosas solo, cuando vos no estás mirando:', auto1: 'Separar tu sueldo: cuando entran dólares, pasa una parte a pesos.', auto2: 'Pagar el alquiler o enviarle a tu mamá cada mes.', auto3: 'Cambiar cuando el precio llega al que querés.', autoOn: 'Activar', notNow: 'Ahora no',
+  limT: '¿Hasta cuánto puede mover sin preguntarte?', limB: 'Más que esto, siempre te lo pregunta.', limLow: 'Cuidadoso', limMid: 'Recomendado', limHigh: 'Amplio', perOp: 'por operación', perDay: 'por día',
+  ctT: '¿A quién puede pagarle?', ctB: 'Solo a estos contactos. Para sumar a alguien más, te lo va a preguntar.',
+  conT: 'Dejá que Arbolito actúe por vos', con1: 'Solo cambia plata dentro de tu cuenta y paga a {k} contactos que elegiste.', con2: 'Hasta {op} por operación y {day} por día.', con3: 'La plata cambiada siempre vuelve a tu cuenta. Nadie más puede retirarla.', con4: 'Vence en 30 días. Lo pausás o revocás cuando quieras.', conNever: 'Nunca puede', conNever1: 'Retirar tu plata ni enviar a gente nueva.', turnOn: 'Activar en MiniPay', conCan: 'Puede', conCant: 'No puede', conCan1: 'Cambiar entre pesos, reales y dólares', conCan2: 'Pagar a tus {k} contactos', conCan3: 'Hasta {op} por vez · {day} por día', conNo1: 'Retirar tu plata', conNo2: 'Enviar a gente nueva', conNo3: 'Subir tus límites', conSlip: 'Permiso para Arbolito', conHolder: 'Titular', conExp: 'Vence', conSign: 'Se firma con una confirmación en MiniPay', 
+  autoDoneT: 'Arbolito ya puede actuar por vos', autoDoneB: 'Dentro de tus límites y solo con tus contactos. Te avisamos de todo lo que haga.', setRule: 'Crear mi primera regla',
+  toastCopied: 'Copiado', toastMP: 'Abriendo MiniPay…', toastShare: 'Link del comprobante copiado', toastRefreshed: 'Actualizamos la cotización', toastWA: 'Abriendo WhatsApp…',
+},
+pt: {
+  back: 'Voltar', close: 'Fechar', langName: 'Português', langPick: 'Idioma',
+  noMpTitle: 'Abra o Arbolito pelo MiniPay', noMpBody: 'O Arbolito funciona dentro do MiniPay, a carteira da Opera. Assim sua conta já está pronta, sem cadastro.', noMp1: 'Abra o MiniPay no celular.', noMp2: 'Entre em Descobrir.', noMp3: 'Busque Arbolito e toque em Abrir.', openMP: 'Abrir MiniPay',
+  connTitle: 'Não conseguimos conectar com seu MiniPay', connBody: 'Pode ser a conexão. Tente de novo em alguns segundos.', noMoneyMoved: 'Nenhum dinheiro foi movido.', retry: 'Tentar de novo',
+  welTitle: 'Troque e envie pesos, reais e dólares.', welBody: 'Pelo melhor preço do momento, no seu idioma, com um comprovante que prova.', welS1: 'Você escreve ou manda um áudio: "manda 200 reais pra Lucía".', welS2: 'O Arbolito busca o melhor preço e te mostra.', welS3: 'Você confirma no MiniPay e recebe o comprovante.', welLangNote: 'Escolhemos português pelo seu celular. Mude acima.', start: 'Começar',
+  addTitle: 'Adicione dinheiro para começar', addBody: 'Escolha como. Você também pode fazer depois.', opensMP: 'Abre o MiniPay', addCashT: 'Dólares com o MiniPay', addCashS: 'Use "Adicionar dinheiro" do MiniPay. As opções dependem do seu país.', guided: 'Guiado', addRipioT: 'Pesos ou reais pelo Ripio', addRipioS: 'Do seu banco para o Ripio, e do Ripio para o Arbolito. Guiamos passo a passo.', later: 'Faço depois',
+  ripTitle: 'Adicione dinheiro pelo Ripio', rip1: 'Toque em Abrir Ripio. O envio já vai com seus dados.', rip2: 'No Ripio, escolha pesos ou reais, o valor, e confirme.', rip3: 'Volte aqui. Chega em 1 a 2 minutos.', ripNote: 'Não tem Ripio? Você cria a conta e volta aqui.', openRipio: 'Abrir Ripio', didIt: 'Já enviei',
+  waitTitle: 'Esperando seu envio do Ripio', waitBody: 'Assim que chegar avisamos aqui e no Telegram. Pode fechar o Arbolito.', waitNote: 'Costuma levar 1 a 2 minutos. Se em 30 minutos não chegou, confira no Ripio: se não saiu, seu dinheiro continua lá.', next: 'Continuar',
+  doneTitle: 'Pronto, {n}!', doneBody: 'Escreva para o Arbolito para trocar ou enviar dinheiro. Por exemplo:', ex1: 'manda 200 reais pra Lucía', ex2: 'troca 500 reais por dólares', optional: 'Opcional', autoTitle: 'Deixe o Arbolito agir por você', goChat: 'Falar com o Arbolito', seeAccount: 'Ver minha conta',
+  hello: 'Olá, {n}', totalIn: 'Seu dinheiro, em {c}', onlyHere: 'Seus pesos e reais aparecem só no Arbolito. O MiniPay mostra apenas seus dólares.', aChange: 'Trocar', aSend: 'Enviar', aAdd: 'Adicionar', aWithdraw: 'Sacar', askPh: 'Peça algo ao Arbolito…', balances: 'Seus saldos', activity: 'Atividade', seeReceipts: 'Ver comprovantes',
+  actChange: 'Você trocou reais por pesos', actIn: 'Você recebeu do Ripio', actSend: 'Você enviou para Lucía', actAdd: 'Você adicionou pelo Ripio', today: 'Hoje', yesterday: 'Ontem',
+  emptyTitle: 'Você ainda não tem dinheiro no Arbolito', emptyBody: 'Adicione dólares pelo MiniPay ou pesos e reais pelo Ripio.', emptyAct: 'Suas operações vão aparecer aqui, cada uma com comprovante.', addMoney: 'Adicionar dinheiro', offline: 'Sem conexão. Mostramos seus saldos de 3 minutos atrás.', pausedHome: 'O Arbolito está pausado: não faz nada automático.', autoPromo: 'Pague sua equipe todo mês, dentro dos seus limites.',
+  tabHome: 'Início', tabChat: 'Chat', tabReceipts: 'Comprovantes', tabSettings: 'Ajustes',
+  mpTitle: 'Confirmar transação', mpReject: 'Recusar', mpConfirm: 'Confirmar', mpApp: 'App', mpAction: 'Ação', mpAmount: 'Valor', mpFee: 'Taxa de rede', mpFeeV: '< US$ 0,01',
+  detTitle: 'Detalhes', detNote: 'Sem comissão do Arbolito durante a beta. A taxa de rede é paga sozinha, em dólares.',
+  hChange: 'Trocar', hQuote: 'Sua cotação', hAlts: 'Alternativas', hSend: 'Enviar', hSendTo: 'Enviar para {n}', hAddContact: 'Novo contato', hReceipt: 'Comprovante', hAuto: 'Arbolito por você', hSecurity: 'Limites e segurança', hWithdraw: 'Sacar', hAdd: 'Adicionar dinheiro',
+  chPay: 'Você paga', chGet: 'Você recebe', available: 'Disponível', all: 'Tudo', searching: 'Buscando o melhor preço…', insufficient: 'Saldo insuficiente', review: 'Ver cotação',
+  forX: 'por {x}', rate: 'Cotação', vsOff: 'vs oficial', route: 'Como fazemos', route2: 'Em 2 passos pelo melhor mercado: {a} → dólares → {b}.', route1: 'Direto, em 1 passo, pelo melhor mercado.', minimum: 'Mínimo garantido', minNote: 'Se o preço cair abaixo disso, não acontece e nenhum dinheiro se move.', expiresIn: 'Expira em {s} s', expiresEnd: 'Quando expira, pedimos outra.', confirmMP: 'Confirmar no MiniPay', alts: 'Ver alternativas', details: 'Ver detalhes', saved: '{x} a mais que no oficial', mpNext: 'O MiniPay vai mostrar a operação para você confirmar.',
+  qLoadT: 'Buscando o melhor preço', qLoadB: 'Comparamos 3 caminhos. Leva um segundo.',
+  expired: 'Esta cotação expirou', expiredB: 'Os preços mudam rápido. Nenhum dinheiro foi movido.', refresh: 'Pedir nova cotação',
+  changed: 'O preço mudou', changedB: 'Agora você recebe {x}, {d} a menos. Confirme só se servir.', confirmNew: 'Confirmar novo preço no MiniPay',
+  noMarket: 'Agora não há mercado para {a} → {b}', noMarketB: 'Acontece por alguns minutos quando há muito movimento. Nenhum dinheiro foi movido.', notifyMe: 'Me avise quando houver', tryAgain: 'Tentar de novo', notifyToast: 'Pronto. Avisamos no chat.',
+  processing: 'Fazendo a troca', procNote: 'Pode fechar o Arbolito: avisamos aqui e no Telegram quando terminar.', pA: 'Confirmado no MiniPay', pB: 'Trocando {a} por {b}', pC: 'Salvando seu comprovante', pS: 'Enviando para {n}',
+  doneT: 'Pronto. Você recebeu {x}', doneSub: 'por {y}', seeReceipt: 'Ver comprovante', backHome: 'Voltar ao início',
+  failedT: 'Não conseguimos fazer a troca', failedB: 'Nenhum dinheiro foi movido. Seus {y} continuam na sua conta.', failedWhy: 'O preço caiu abaixo do mínimo garantido, então paramos.', newQuote: 'Pedir nova cotação',
+  cancelT: 'Você cancelou no MiniPay', cancelB: 'Nenhum dinheiro foi movido. Seus {y} continuam na sua conta.', backToQuote: 'Cotar de novo',
+  altB: 'Para {y}, isto é o que você recebia por cada caminho. Escolhemos o melhor.', altChosen: 'Escolhido', altA: 'Via dólares, 2 passos', altBk: 'Direto, 1 passo', altC: 'Banco, no oficial',
+  sendTitle: 'Para quem você envia?', search: 'Buscar nome ou número', addContact: 'Adicionar contato', fromPhone: 'Escolher dos contatos do celular', sendEmptyT: 'Você ainda não tem contatos', sendEmptyB: 'Por segurança, o Arbolito envia só para pessoas que você salvou. Buscamos pelo número de celular.', receives: 'Recebe {c}', recvX: '{n} recebe', reviewSend: 'Revisar envio', sendLbl: 'Você envia', arrives: 'Chega em segundos no MiniPay dela.', sentT: 'Enviado', sentB: '{n} recebeu {x}', notifyContact: 'Avisar pelo WhatsApp', cancel: 'Cancelar', phoneLbl: 'Número de celular', nameLbl: 'Nome', lookupOk: 'Tem MiniPay', recvIn: 'Recebe em', saveContact: 'Salvar contato',
+  conT: 'Deixe o Arbolito agir por você', con1: 'Só troca dinheiro dentro da sua conta e paga {k} contatos que você escolheu.', con2: 'Até {op} por operação e {day} por dia.', con3: 'O dinheiro trocado sempre volta para sua conta. Ninguém mais pode sacar.', con4: 'Expira em 30 dias. Você pausa ou revoga quando quiser.', conNever: 'Nunca pode', conNever1: 'Sacar seu dinheiro nem enviar para gente nova.', turnOn: 'Ativar no MiniPay', conCan: 'Pode', conCant: 'Não pode', conCan1: 'Trocar entre pesos, reais e dólares', conCan2: 'Pagar seus {k} contatos', conCan3: 'Até {op} por vez · {day} por dia', conNo1: 'Sacar seu dinheiro', conNo2: 'Enviar para gente nova', conNo3: 'Aumentar seus limites', conSlip: 'Permissão para o Arbolito', conHolder: 'Titular', conExp: 'Expira', conSign: 'Assina-se com uma confirmação no MiniPay',
+  toastCopied: 'Copiado', toastMP: 'Abrindo o MiniPay…', toastShare: 'Link do comprovante copiado', toastRefreshed: 'Atualizamos a cotação', toastWA: 'Abrindo o WhatsApp…',
+},
+en: {
+  back: 'Back', close: 'Close', langName: 'English', langPick: 'Language',
+  noMpTitle: 'Open Arbolito from MiniPay', noMpBody: 'Arbolito runs inside MiniPay, the Opera wallet. That way your account is ready with no sign-up.', noMp1: 'Open MiniPay on your phone.', noMp2: 'Go to Discover.', noMp3: 'Find Arbolito and tap Open.', openMP: 'Open MiniPay',
+  connTitle: "We couldn't connect to your MiniPay", connBody: 'It may be your connection. Try again in a few seconds.', noMoneyMoved: 'No money moved.', retry: 'Try again',
+  welTitle: 'Change and send pesos, reais and dollars.', welBody: 'At the best rate right now, in your language, with a receipt that proves it.', welS1: 'Type or send a voice note: "change 100 dollars to pesos".', welS2: 'Arbolito finds the best rate and shows it to you.', welS3: 'You confirm in MiniPay and get your receipt.', welLangNote: 'We picked English from your phone. Change it above.', start: 'Get started',
+  addTitle: 'Add money to get started', addBody: 'Pick a way. You can also do it later.', opensMP: 'Opens MiniPay', addCashT: 'Dollars with MiniPay', addCashS: 'Use MiniPay\'s "Add cash". Options depend on your country.', guided: 'Guided', addRipioT: 'Pesos or reais from Ripio', addRipioS: 'From your bank to Ripio, then Ripio to Arbolito. We guide you step by step.', later: "I'll do it later",
+  ripTitle: 'Add money from Ripio', rip1: 'Tap Open Ripio. The transfer comes pre-filled.', rip2: 'In Ripio, pick pesos or reais, the amount, and confirm.', rip3: 'Come back here. It arrives in 1–2 minutes.', ripNote: "No Ripio? You'll create an account and come back here.", openRipio: 'Open Ripio', didIt: 'I sent it',
+  waitTitle: 'Waiting for your Ripio transfer', waitBody: "We'll tell you here and on Telegram as soon as it lands. You can close Arbolito.", waitNote: "Usually 1–2 minutes. If it hasn't arrived in 30 minutes, check Ripio: if it didn't leave, your money is still there.", next: 'Continue',
+  doneTitle: "You're set, {n}!", doneBody: 'Write to Arbolito to change or send money. For example:', ex1: 'change 100 dollars to pesos', ex2: 'send 20 dollars to mom', optional: 'Optional', autoTitle: 'Let Arbolito act for you', goChat: 'Talk to Arbolito', seeAccount: 'See my account',
+  hello: 'Hi, {n}', totalIn: 'Your money, in {c}', onlyHere: 'Your pesos and reais only show in Arbolito. MiniPay shows just your dollars.', aChange: 'Change', aSend: 'Send', aAdd: 'Add money', aWithdraw: 'Withdraw', askPh: 'Ask Arbolito…', balances: 'Your balances', activity: 'Activity', seeReceipts: 'See receipts',
+  actChange: 'You changed reais to pesos', actIn: 'You got paid by Agência Sol', actSend: 'You sent to Martín', actAdd: 'You added from Ripio', today: 'Today', yesterday: 'Yesterday',
+  emptyTitle: "You don't have money in Arbolito yet", emptyBody: 'Add dollars with MiniPay, or pesos and reais from Ripio.', emptyAct: 'Your activity will show here, each with its receipt.', addMoney: 'Add money', offline: "You're offline. Showing balances from 3 minutes ago.", pausedHome: "Arbolito is paused: it won't do anything automatically.", autoPromo: 'Have it convert your pay or pay rent on its own, within your limits.',
+  tabHome: 'Home', tabChat: 'Chat', tabReceipts: 'Receipts', tabSettings: 'Settings',
+  mpTitle: 'Confirm transaction', mpReject: 'Reject', mpConfirm: 'Confirm', mpApp: 'App', mpAction: 'Action', mpAmount: 'Amount', mpFee: 'Network fee', mpFeeV: '< US$ 0.01',
+  detTitle: 'Details', detNote: 'No Arbolito fee during beta. The network fee is paid automatically, in dollars.',
+  hChange: 'Change', hQuote: 'Your quote', hAlts: 'Alternatives', hSend: 'Send', hSendTo: 'Send to {n}', hAddContact: 'New contact', hReceipt: 'Receipt', hAuto: 'Arbolito for you', hSecurity: 'Limits & security', hWithdraw: 'Withdraw', hAdd: 'Add money',
+  chPay: 'You pay', chGet: 'You get', available: 'Available', all: 'All', searching: 'Finding the best rate…', insufficient: 'Not enough balance', review: 'See quote',
+  forX: 'for {x}', rate: 'Rate', vsOff: 'vs official', route: 'How we do it', route2: 'In 2 steps through the best market: {a} → dollars → {b}.', route1: 'Direct, in 1 step, through the best market.', minimum: 'Guaranteed minimum', minNote: "If the price drops below this, it doesn't happen and no money moves.", expiresIn: 'Expires in {s}s', expiresEnd: 'When it expires, we get a new one.', confirmMP: 'Confirm in MiniPay', alts: 'See alternatives', details: 'See details', saved: '{x} more than official', mpNext: 'MiniPay will show you the operation to confirm.',
+  qLoadT: 'Finding the best rate', qLoadB: 'Comparing 3 routes. One second.',
+  expired: 'This quote expired', expiredB: 'Prices move fast. No money moved.', refresh: 'Get a new quote',
+  changed: 'The price changed', changedB: 'You now get {x}, {d} less. Only confirm if it works for you.', confirmNew: 'Confirm new price in MiniPay',
+  noMarket: 'No market right now for {a} → {b}', noMarketB: 'This happens for a few minutes when markets are busy. No money moved.', notifyMe: 'Tell me when there is', tryAgain: 'Try again', notifyToast: "Done. We'll message you in the chat.",
+  processing: 'Changing your money', procNote: "You can close Arbolito: we'll tell you here and on Telegram when it's done.", pA: 'Confirmed in MiniPay', pB: 'Changing {a} to {b}', pC: 'Saving your receipt', pS: 'Sending to {n}',
+  doneT: 'Done. You got {x}', doneSub: 'for {y}', seeReceipt: 'See receipt', backHome: 'Back to home',
+  failedT: "We couldn't make the change", failedB: 'No money moved. Your {y} is still in your account.', failedWhy: 'The price fell below your guaranteed minimum, so we stopped it.', newQuote: 'Get a new quote',
+  cancelT: 'You cancelled in MiniPay', cancelB: 'No money moved. Your {y} is still in your account.', backToQuote: 'Quote again',
+  altB: 'For {y}, this is what each route would give you. We picked the best.', altChosen: 'Chosen', altA: 'Via dollars, 2 steps', altBk: 'Direct, 1 step', altC: 'Bank, official rate',
+  sendTitle: 'Who are you sending to?', search: 'Search name or number', addContact: 'Add contact', fromPhone: "Pick from your phone's contacts", sendEmptyT: 'No contacts yet', sendEmptyB: 'For safety, Arbolito only sends to people you saved. We find them by phone number.', receives: 'Gets {c}', recvX: '{n} gets', reviewSend: 'Review', sendLbl: 'You send', arrives: 'Arrives in seconds in their MiniPay.', sentT: 'Sent', sentB: '{n} got {x}', notifyContact: 'Tell them on WhatsApp', cancel: 'Cancel', phoneLbl: 'Phone number', nameLbl: 'Name', lookupOk: 'Has MiniPay', recvIn: 'Gets', saveContact: 'Save contact',
+  conT: 'Let Arbolito act for you', con1: 'It only changes money within your account and pays {k} contacts you chose.', con2: 'Up to {op} per operation and {day} per day.', con3: 'Changed money always comes back to your account. Nobody else can withdraw it.', con4: 'Expires in 30 days. Pause or revoke anytime.', conNever: 'It can never', conNever1: 'Withdraw your money or send to someone new.', turnOn: 'Turn on in MiniPay', conCan: 'Can', conCant: "Can't", conCan1: 'Change between pesos, reais and dollars', conCan2: 'Pay your {k} contacts', conCan3: 'Up to {op} each · {day} a day', conNo1: 'Withdraw your money', conNo2: 'Send to someone new', conNo3: 'Raise your limits', conSlip: 'Permission for Arbolito', conHolder: 'Holder', conExp: 'Expires', conSign: 'Signed with one MiniPay confirmation',
+  toastCopied: 'Copied', toastMP: 'Opening MiniPay…', toastShare: 'Receipt link copied', toastRefreshed: 'We refreshed the quote', toastWA: 'Opening WhatsApp…',
+}
+};
+
+const T2 = {
+es: { altsShort: 'Alternativas', recording: 'Grabando… soltá para enviar', voice: 'Mandar audio', official: 'Oficial', bestMarket: 'por el mejor mercado', cPre: 'Por {x} recibís', cBetter: 'Es {p} mejor que el oficial: {s} más.', cMin: 'Pase lo que pase, recibís al menos {m}. Si no, no se hace.', cValid: 'Este precio vale {s} s más', noMarketTip: 'Te avisamos en el chat apenas vuelva. Mientras, tu plata queda donde está.', altNote: 'Los montos ya incluyen costos de mercado. Arbolito no cobra comisión durante la beta.', receiptSaved: 'Comprobante guardado. Cualquiera puede verificarlo.', verified: 'Verificado', chatHi: 'Hola, {n}. Decime qué querés cambiar o enviar. Podés escribir o mandar un audio.', chatAsk: 'pasá 100 dólares a pesos', chip2: 'mandale 20 dólares a mamá', chatProc: 'Haciendo el cambio… te aviso acá.', chatTgToo: 'También te lo mandé a Telegram.', expiredShort: 'Venció', pW: 'Retirando a Ripio' },
+pt: { altsShort: 'Alternativas', recording: 'Gravando… solte para enviar', voice: 'Enviar áudio', official: 'Oficial', bestMarket: 'pelo melhor mercado', cPre: 'Por {x} você recebe', cBetter: 'É {p} melhor que o oficial: {s} a mais.', cMin: 'Aconteça o que acontecer, você recebe pelo menos {m}. Senão, não acontece.', cValid: 'Este preço vale mais {s} s', noMarketTip: 'Avisamos no chat assim que voltar. Enquanto isso, seu dinheiro fica onde está.', altNote: 'Os valores já incluem custos de mercado. O Arbolito não cobra comissão durante a beta.', receiptSaved: 'Comprovante salvo. Qualquer pessoa pode verificar.', verified: 'Verificado', chatHi: 'Olá, {n}. Diga o que quer trocar ou enviar. Pode escrever ou mandar um áudio.', chatAsk: 'troca 200 reais por pesos', chip2: 'manda 200 reais pra Lucía', chatProc: 'Fazendo a troca… aviso aqui.', chatTgToo: 'Também mandei no Telegram.', expiredShort: 'Expirou', pW: 'Sacando para o Ripio' },
+en: { altsShort: 'Alternatives', recording: 'Recording… release to send', voice: 'Send voice note', official: 'Official', bestMarket: 'through the best market', cPre: 'For {x} you get', cBetter: "That's {p} better than official: {s} more.", cMin: "Whatever happens, you get at least {m}. Otherwise it doesn't go through.", cValid: 'This price holds for {s}s more', noMarketTip: "We'll message you as soon as it's back. Meanwhile, your money stays put.", altNote: 'Amounts already include market costs. Arbolito charges no fee during beta.', receiptSaved: 'Receipt saved. Anyone can verify it.', verified: 'Verified', chatHi: 'Hi {n}. Tell me what to change or send. Type or send a voice note.', chatAsk: 'change 100 dollars to pesos', chip2: 'send 20 dollars to mom', chatProc: "Changing it now… I'll tell you here.", chatTgToo: 'Also sent to your Telegram.', expiredShort: 'Expired', pW: 'Withdrawing to Ripio' },
+};
+
+const T3 = {
+es: { sendSafety: 'Arbolito solo envía a contactos que guardaste. Los encontramos por número de teléfono.', addNote: 'Tomás recibe en reales aunque vos pagues en dólares o pesos. Arbolito hace el cambio.', aboutTo: 'Estás por enviar', to: 'Para', arrivesL: 'Llega', autoEx1T: 'Día de cobro', autoEx2T: 'Cada mes', autoEx3T: 'Alerta de precio', autoOpt: 'Es opcional. Sin esto, Arbolito igual funciona: confirmás cada operación en MiniPay.', recTag: 'Recomendado', limNote2: 'Lo cambiás cuando quieras en Límites y seguridad, con una confirmación en MiniPay.', limitsL: 'Límites', contactsL: 'Puede pagarle a' },
+pt: { sendSafety: 'O Arbolito só envia para contatos que você salvou. Encontramos pelo número de celular.', addNote: 'O contato recebe na moeda escolhida, mesmo que você pague em outra. O Arbolito faz a troca.', aboutTo: 'Você vai enviar', to: 'Para', arrivesL: 'Chega', autoEx1T: 'Dia de pagamento', autoEx2T: 'Todo mês', autoEx3T: 'Alerta de preço', autoOpt: 'É opcional. Sem isso, o Arbolito funciona igual: você confirma cada operação no MiniPay.', recTag: 'Recomendado', limNote2: 'Você muda quando quiser em Limites e segurança, com uma confirmação no MiniPay.', limitsL: 'Limites', contactsL: 'Pode pagar',
+  autoIntroB: 'O Arbolito faz coisas sozinho, quando você não está olhando:', auto1: 'Pagar sua equipe: no dia 5, envia reais e eles recebem pesos.', auto2: 'Enviar todo mês para quem você escolher.', auto3: 'Trocar quando o preço chegar ao que você quer.', autoOn: 'Ativar', notNow: 'Agora não', limT: 'Até quanto pode mover sem perguntar?', limB: 'Acima disso, sempre pergunta.', limLow: 'Cuidadoso', limMid: 'Recomendado', limHigh: 'Amplo', perOp: 'por operação', perDay: 'por dia', ctT: 'Para quem pode pagar?', ctB: 'Só para estes contatos. Para incluir alguém, vai perguntar.', autoDoneT: 'O Arbolito já pode agir por você', autoDoneB: 'Dentro dos seus limites e só com seus contatos. Avisamos tudo o que ele fizer.', setRule: 'Criar minha primeira regra' },
+en: { sendSafety: 'Arbolito only sends to contacts you saved. We find them by phone number.', addNote: 'Tomás gets reais even if you pay in dollars or pesos. Arbolito does the change.', aboutTo: "You're about to send", to: 'To', arrivesL: 'Arrives', autoEx1T: 'Payday', autoEx2T: 'Every month', autoEx3T: 'Rate alert', autoOpt: 'Optional. Without it Arbolito still works: you confirm each operation in MiniPay.', recTag: 'Recommended', limNote2: 'Change it anytime in Limits & security, with one MiniPay confirmation.', limitsL: 'Limits', contactsL: 'Can pay',
+  autoIntroB: 'Arbolito does things on its own, while you are not looking:', auto1: 'Split your pay: when dollars arrive, it moves part to pesos.', auto2: 'Pay rent or send to your mom every month.', auto3: 'Change when the rate hits the one you want.', autoOn: 'Turn on', notNow: 'Not now', limT: 'How much can it move without asking?', limB: 'Above this, it always asks.', limLow: 'Careful', limMid: 'Recommended', limHigh: 'Roomy', perOp: 'per operation', perDay: 'per day', ctT: 'Who can it pay?', ctB: "Only these contacts. To add someone else, it'll ask you.", autoDoneT: 'Arbolito can now act for you', autoDoneB: "Within your limits and only with your contacts. We'll tell you everything it does.", setRule: 'Create my first rule' },
+};
+
+const LIGHT = { '--bg': '#f2f3f7', '--surface': 'rgba(255,255,255,.72)', '--surface2': '#e6e8ef', '--text': '#0b1220', '--muted': '#4a5368', '--line': 'rgba(11,18,32,.12)', '--cardBd': 'rgba(11,18,32,.85)', '--ink': '#0b1220', '--paper': '#f2f3f7', '--brand': '#0b1220', '--onBrand': '#ffffff', '--a1': 'oklch(0.6 0.24 350)', '--a2': 'oklch(0.5 0.22 265)', '--a3': 'oklch(0.89 0.2 125)', '--save': 'oklch(0.47 0.14 140)', '--saveBg': 'oklch(0.93 0.13 125)', '--warn': 'oklch(0.55 0.2 350)', '--warnBg': 'oklch(0.95 0.04 350)', '--warnText': 'oklch(0.42 0.17 350)', '--danger': 'oklch(0.5 0.2 25)', '--dangerBg': 'oklch(0.95 0.03 25)', '--ARSbg': 'oklch(0.92 0.05 240)', '--ARSfg': 'oklch(0.42 0.14 255)', '--BRLbg': 'oklch(0.93 0.13 125)', '--BRLfg': 'oklch(0.38 0.1 135)', '--USDbg': 'oklch(0.93 0.05 350)', '--USDfg': 'oklch(0.45 0.19 350)', '--c1': 'oklch(0.6 0.24 350)', '--c2': 'oklch(0.89 0.2 125)', '--c3': 'oklch(0.5 0.22 265)', '--bubble': '#0b1220', '--onBubble': '#f2f3f7', '--botBubble': 'rgba(255,255,255,.8)', '--host': '#ffffff', '--hostLine': '#e6e6e6', '--hostText': '#202124', '--hostMuted': '#5f6368', '--mpBg': '#ffffff', '--mpText': '#202124', '--mpMuted': '#5f6368', '--mpLine': '#e2e2e2', backgroundImage: 'radial-gradient(420px 300px at 110% -5%, oklch(0.92 0.06 350 / .7), transparent 70%), radial-gradient(380px 300px at -10% 105%, oklch(0.95 0.1 125 / .7), transparent 70%)' };
+const DARK = { '--bg': '#0b1220', '--surface': 'rgba(255,255,255,.06)', '--surface2': '#1a2234', '--text': '#f2f3f7', '--muted': '#a3abbf', '--line': 'rgba(242,243,247,.1)', '--cardBd': 'rgba(242,243,247,.28)', '--ink': '#f2f3f7', '--paper': '#0b1220', '--brand': 'oklch(0.89 0.2 125)', '--onBrand': '#0b1220', '--a1': 'oklch(0.72 0.2 350)', '--a2': 'oklch(0.7 0.16 265)', '--a3': 'oklch(0.89 0.2 125)', '--save': 'oklch(0.89 0.2 125)', '--saveBg': 'oklch(0.32 0.07 125)', '--warn': 'oklch(0.75 0.17 350)', '--warnBg': 'oklch(0.3 0.08 350)', '--warnText': 'oklch(0.88 0.08 350)', '--danger': 'oklch(0.75 0.15 25)', '--dangerBg': 'oklch(0.3 0.07 25)', '--ARSbg': 'oklch(0.32 0.07 255)', '--ARSfg': 'oklch(0.85 0.09 250)', '--BRLbg': 'oklch(0.34 0.08 125)', '--BRLfg': 'oklch(0.92 0.15 125)', '--USDbg': 'oklch(0.32 0.08 350)', '--USDfg': 'oklch(0.86 0.1 350)', '--c1': 'oklch(0.72 0.2 350)', '--c2': 'oklch(0.89 0.2 125)', '--c3': 'oklch(0.7 0.16 265)', '--bubble': '#f2f3f7', '--onBubble': '#0b1220', '--botBubble': 'rgba(255,255,255,.07)', '--host': '#1f1f1f', '--hostLine': '#2c2c2c', '--hostText': '#e8eaed', '--hostMuted': '#9aa0a6', '--mpBg': '#202124', '--mpText': '#e8eaed', '--mpMuted': '#9aa0a6', '--mpLine': '#3c4043', backgroundImage: 'radial-gradient(420px 300px at 110% -5%, oklch(0.4 0.12 350 / .35), transparent 70%), radial-gradient(380px 300px at -10% 105%, oklch(0.45 0.12 125 / .25), transparent 70%)' };
+
+const fill = (s, m) => String(s).replace(/\{(\w+)\}/g, (_, k) => (m[k] ?? ''));
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const lang = props.lang || 'es';
+    const P = PERSONA[lang];
+    this.state = { screen: props.screen || 'welcome', lang, from: P.from, to: P.to, amount: props.amount || P.amt, sendAmt: P.sendAmt, contact: 0, secs: props.seconds ?? 48, sheet: props.sheet || null, sheetKind: props.sheetKind || 'change', preset: 'mid', autoCts: [true, true, false, false], paused: props.paused || false, autoOn: props.autoOn || false, chat: props.chatStage || 'quote', chatVoice: props.chatVoice ?? true, chatText: null, proof: false, toast: null, flow: props.flow || 'change' };
+    this.scrollRef = React.createRef();
+  }
+  live() { return this.props.interactive ?? true; }
+  componentDidMount() { if (this.live()) this.iv = setInterval(() => this.tick(), 1000); this.enter(this.state.screen); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.to); clearTimeout(this.tt); clearTimeout(this.ct); }
+  componentDidUpdate(pp, ps) {
+    if (pp.screen !== this.props.screen || pp.resetKey !== this.props.resetKey) { const P = PERSONA[this.state.lang]; this.setState({ screen: this.props.screen, sheet: null, chat: this.props.chatStage || 'quote', secs: 48, amount: P.amt, sendAmt: P.sendAmt, from: P.from, to: P.to }); }
+    if (pp.lang !== this.props.lang) this.setLang(this.props.lang);
+    if (ps.screen !== this.state.screen) { this.enter(this.state.screen); if (this.scrollRef.current) this.scrollRef.current.scrollTop = 0; }
+  }
+  setLang(lang) { const P = PERSONA[lang]; this.setState({ lang, from: P.from, to: P.to, amount: P.amt, sendAmt: P.sendAmt, contact: 0, sheet: null }); }
+  enter(s) {
+    if (!this.live()) return;
+    clearTimeout(this.to);
+    if (s === 'quote-loading') this.to = setTimeout(() => this.setState({ screen: 'quote', secs: 48 }), 1100);
+    if (s === 'processing') this.to = setTimeout(() => { const f = this.state.flow; this.setState({ screen: f === 'send' ? 'send-done' : f === 'withdraw' ? 'withdraw-waiting' : 'done' }); }, 2400);
+    if (s === 'home-loading') this.to = setTimeout(() => this.setState({ screen: 'home' }), 1200);
+    if (s === 'send-quote') this.setState({ secs: 48 });
+  }
+  tick() {
+    if (!this.live() || this.state.sheet) return;
+    const { screen, chat, secs } = this.state;
+    const timed = screen === 'quote' || screen === 'send-quote' || (screen === 'chat' && chat === 'quote');
+    if (!timed) return;
+    if (secs > 1) return this.setState({ secs: secs - 1 });
+    if (screen === 'quote') this.setState({ screen: 'quote-expired' });
+    else if (screen === 'send-quote') { this.setState({ secs: 48 }); this.toast(this.t().toastRefreshed); }
+    else this.setState({ chat: 'expired' });
+  }
+  t() { const l = this.state.lang; return { ...T.es, ...T2.es, ...(typeof T3 !== 'undefined' ? T3.es : {}), ...T[l], ...T2[l], ...(typeof T3 !== 'undefined' ? T3[l] : {}) }; }
+  toast(msg) { clearTimeout(this.tt); this.setState({ toast: msg }); this.tt = setTimeout(() => this.setState({ toast: null }), 2200); }
+  go(screen, extra) { this.setState({ screen, sheet: null, ...(extra || {}) }); }
+  fmt(n, c, dec) { const d = dec ?? 2; return SYM[c] + ' ' + n.toLocaleString(LOC[this.state.lang], { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  dispAmt(str, c) { const [i, d] = String(str).split('.'); const sep = this.state.lang === 'en' ? '.' : ','; return SYM[c] + ' ' + Number(i || 0).toLocaleString(LOC[this.state.lang]) + (String(str).includes('.') ? sep + (d || '') : ''); }
+  press(field, k) {
+    let v = this.state[field];
+    if (k === 'del') v = v.length > 1 ? v.slice(0, -1) : '0';
+    else if (k === '.') { if (!v.includes('.')) v = v + '.'; }
+    else { if (v.includes('.') && v.split('.')[1].length >= 2) return; if (v.replace('.', '').length >= 8) return; v = v === '0' ? k : v + k; }
+    this.setState({ [field]: v });
+  }
+  quote(from, to, amt) {
+    const recv = amt * R[from] / R[to];
+    const pct = to === 'ARS' && OFF[from] ? OFF[from] : from === 'ARS' && OFF[to] ? OFF[to] : null;
+    const rate = R[from] / R[to];
+    const rateStr = rate >= 1 ? '1 ' + SYM[from] + ' = ' + this.fmt(rate, to) : '1 ' + SYM[to] + ' = ' + this.fmt(1 / rate, from);
+    const two = (from === 'BRL' && to === 'ARS') || (from === 'ARS' && to === 'BRL');
+    return { recv, pct, rateStr, two, usd: amt * R[from] / R.USD, saved: pct ? recv * (1 - 1 / (1 + pct / 100)) : 0, off: pct ? recv / (1 + pct / 100) : recv, min: recv * 0.995 };
+  }
+  cycle(which) {
+    const order = ['BRL', 'USD', 'ARS'];
+    const cur = this.state[which]; let nx = order[(order.indexOf(cur) + 1) % 3];
+    const other = which === 'from' ? 'to' : 'from';
+    const upd = { [which]: nx };
+    if (nx === this.state[other]) upd[other] = cur;
+    this.setState(upd);
+  }
+  openMP(kind) { this.setState({ sheet: 'mp', sheetKind: kind }); }
+  mpConfirm() {
+    const k = this.state.sheetKind;
+    if (k === 'chat') { this.setState({ sheet: null, chat: 'proc' }); clearTimeout(this.ct); this.ct = setTimeout(() => this.setState({ chat: 'done' }), 2200); return; }
+    if (k === 'auto') return this.go('auto-on', { autoOn: true, paused: false });
+    if (k === 'revoke') return this.go('home', { autoOn: false, paused: false });
+    this.go('processing', { flow: k });
+  }
+  mpReject() {
+    const k = this.state.sheetKind;
+    if (k === 'chat') return this.setState({ sheet: null, chat: 'cancel' });
+    if (k === 'auto' || k === 'revoke') return this.setState({ sheet: null });
+    this.go('cancelled', { flow: k });
+  }
+  chatSend(voice) {
+    if (!this.live()) return;
+    clearTimeout(this.ct);
+    this.setState({ chat: voice ? 'rec' : 'typing', chatVoice: !!voice });
+    this.ct = setTimeout(() => { this.setState({ chat: 'typing' }); this.ct = setTimeout(() => this.setState({ chat: 'quote', secs: 48 }), 900); }, voice ? 1800 : 300);
+  }
+  btn(label, onClick, kind) {
+    const k = kind || 'primary';
+    const base = { minHeight: 54, width: '100%', borderRadius: 999, fontSize: 17, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 16px', border: 0, textAlign: 'center' };
+    const st = k === 'busy' ? { ...base, background: 'var(--surface2)', color: 'var(--muted)', cursor: 'default' }
+      : k === 'off' ? { ...base, background: 'var(--surface2)', color: 'var(--muted)', cursor: 'not-allowed' }
+      : k === 'danger' ? { ...base, background: 'var(--danger)', color: 'var(--onBrand)' }
+      : k === 'quiet' ? { ...base, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--line)' }
+      : { ...base, background: 'var(--brand)', color: 'var(--onBrand)' };
+    return { label, onClick: k === 'off' || k === 'busy' ? undefined : onClick, style: st, spin: k === 'busy' ? this.spin(18) : null };
+  }
+  spin(sz, color) { return React.createElement('span', { style: { width: sz, height: sz, borderRadius: '50%', border: '2.5px solid ' + (color || 'currentColor'), borderRightColor: 'transparent', display: 'inline-block', animation: 'arbSpin .8s linear infinite', flex: 'none' } }); }
+
+  renderVals() {
+    const st = this.state, t = this.t(), lang = st.lang, P = PERSONA[lang];
+    const isDark = (this.props.theme || 'light') === 'dark';
+    const min = this.props.size === 'min';
+    const scr = st.screen;
+    const is = { [scr.replace(/-/g, '_')]: true };
+    is.homeAny = ['home', 'home-loading', 'home-empty', 'home-offline'].includes(scr);
+    is.receiptsAny = scr === 'receipts' || scr === 'receipts-empty';
+    is.quoteAny = ['quote', 'quote-expired', 'quote-changed'].includes(scr);
+    const qv = this.props.quoteVariant || 'a', cv = this.props.consentVariant || 'a', rv = this.props.receiptVariant || 'a';
+    is.qa = qv === 'a'; is.qb = qv === 'b'; is.qc = qv === 'c'; is.ca = cv === 'a'; is.cb = cv === 'b'; is.ra = rv === 'a'; is.rb = rv === 'b';
+    const go = (s, x) => () => this.go(s, x);
+    const toast = (m) => () => this.toast(m);
+    const fmt = (n, c, d) => this.fmt(n, c, d);
+    const pctFmt = (p) => '+' + p.toLocaleString(LOC[lang], { minimumFractionDigits: 2 }) + '%';
+
+    // balances
+    const bal = scr === 'home-empty' ? { ARS: 0, BRL: 0, USD: 0 } : P.bal;
+    const disp = P.disp;
+    const total = Object.keys(bal).reduce((s, c) => s + bal[c] * R[c] / R[disp], 0);
+    const badge = (c, sz) => ({ width: sz || 40, height: sz || 40, flex: 'none', borderRadius: '50%', background: `var(--${c}bg)`, color: `var(--${c}fg)`, display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${c === 'ARS' ? 15 : 12}px/1 'JetBrains Mono',monospace` });
+    const muted = scr === 'home-offline' || scr === 'home-loading';
+    const bals = ['ARS', 'BRL', 'USD'].map(c => ({ glyph: GLY[c], badge: badge(c), name: CN[lang][c], code: c === 'USD' ? 'USD · ' + (lang === 'en' ? 'also in MiniPay' : lang === 'pt' ? 'também no MiniPay' : 'también en MiniPay') : c, amt: scr === 'home-loading' ? '—' : fmt(bal[c], c), eq: c === disp ? '' : '≈ ' + fmt(bal[c] * R[c] / R[disp], disp, 0), amtStyle: { fontSize: 17, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: muted ? 'var(--muted)' : 'var(--text)' } }));
+    const actsRaw = lang === 'pt'
+      ? [{ title: t.actSend, sub: t.today + ' · 10:42', amt: '−' + fmt(200, 'BRL'), pos: false }, { title: t.actAdd, sub: t.yesterday + ' · 18:10', amt: '+' + fmt(5000, 'BRL'), pos: true }]
+      : [{ title: t.actChange, sub: t.today + ' · 10:42', amt: '+' + fmt(3177.41, 'ARS'), pos: true }, { title: t.actIn, sub: t.today + ' · 09:15', amt: '+' + fmt(1200, 'BRL'), pos: true }, { title: t.actSend, sub: t.yesterday + ' · 20:03', amt: '−' + fmt(45000, 'ARS'), pos: false }, { title: t.actAdd, sub: '7 oct · 11:30', amt: '+' + fmt(500, 'USD'), pos: true }];
+    const acts = scr === 'home-empty' ? [] : actsRaw.map(a => ({ ...a, amtStyle: { fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: a.pos ? 'var(--save)' : 'var(--text)' } }));
+    const actions = [{ glyph: '⇄', label: t.aChange, onClick: go('change') }, { glyph: '↗', label: t.aSend, onClick: go('send') }, { glyph: '+', label: t.aAdd, onClick: go('add') }, { glyph: '↓', label: t.aWithdraw, onClick: go('withdraw') }];
+
+    // change quote
+    const amt = parseFloat(st.amount) || 0;
+    const q = this.quote(st.from, st.to, amt);
+    const over = amt > (P.bal[st.from] || 0);
+    const secsShown = st.secs;
+    const pctW = Math.max(0, Math.min(100, (secsShown / 48) * 100));
+    const cd = { text: fill(t.expiresIn, { s: secsShown }), bar: { height: 4, width: pctW + '%', background: secsShown <= 10 ? 'var(--warn)' : 'var(--save)', borderRadius: 2, transition: 'width 1s linear' }, low: secsShown <= 10 };
+    const routeTxt = q.two ? fill(t.route2, { a: CL[lang][st.from], b: CL[lang][st.to] }) : t.route1;
+    const Q = { pay: fmt(amt, st.from), get: fmt(q.recv, st.to), forPay: fill(t.forX, { x: fmt(amt, st.from) }), rate: q.rateStr, pct: q.pct ? pctFmt(q.pct) : '—', hasPct: !!q.pct, saved: q.pct ? fill(t.saved, { x: fmt(q.saved, st.to, 0) }) : '', min: fmt(q.min, st.to), route: routeTxt, off: fmt(q.off, st.to), savedAmt: fmt(q.saved, st.to, 0),
+      offW: { height: 10, borderRadius: 5, background: 'var(--muted)', opacity: .45, width: (q.pct ? 100 / (1 + q.pct / 100) : 100) + '%' }, fromCode: SYM[st.from], toCode: SYM[st.to],
+      changedGet: fmt(q.recv * 0.9977, st.to), changedDiff: fmt(q.recv * 0.0023, st.to), steps: q.two ? [SYM[st.from], 'US$', SYM[st.to]] : [SYM[st.from], SYM[st.to]] };
+    const expiredNow = scr === 'quote-expired';
+    if (expiredNow) { cd.text = t.expiredShort; cd.bar.width = '0%'; }
+    cd.style = { font: "600 13px/1 'JetBrains Mono',monospace", color: cd.low || expiredNow ? 'var(--warn)' : 'var(--muted)' };
+    cd.pill = { font: "600 13px/1 'JetBrains Mono',monospace", padding: '8px 11px', borderRadius: 20, background: cd.low || expiredNow ? 'var(--c2)' : 'color-mix(in oklab,currentColor 14%,transparent)', color: cd.low || expiredNow ? '#1d211c' : 'inherit' };
+    cd.short = expiredNow ? t.expiredShort : secsShown + ' s';
+    cd.long = expiredNow ? t.expired : fill(t.cValid, { s: secsShown });
+    Q.shownGet = scr === 'quote-changed' ? Q.changedGet : Q.get;
+    Q.stepsV = Q.steps.map((l, i, a) => ({ l, arrow: i < a.length - 1 ? '→' : '' }));
+    Q.cPre = fill(t.cPre, { x: Q.pay });
+    Q.cBetter = Q.hasPct ? fill(t.cBetter, { p: Q.pct, s: Q.savedAmt }) : '';
+    Q.cMin = fill(t.cMin, { m: Q.min });
+    const fromBadge = badge(st.from, 36), toBadge = badge(st.to, 36);
+    const keysField = scr === 'send-amount' ? 'sendAmt' : 'amount';
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'].map(k => ({ label: k === 'del' ? '⌫' : k === '.' ? (lang === 'en' ? '.' : ',') : k, onClick: () => this.press(keysField, k) }));
+    const chips = [10, 50, 200].map(v => ({ label: SYM[st.from] + ' ' + v, onClick: () => this.setState({ amount: String(v) }) }));
+
+    // send
+    const contacts = CONTACTS[lang].map((c, i) => ({ ...c, initial: c.n[0], sub: fill(t.receives, { c: CL[lang][c.cur] }) + (c.tag ? ' · ' + c.tag : ''), onClick: () => this.go('send-amount', { contact: i }), badge: badge(c.cur, 32), glyph: GLY[c.cur] }));
+    const C = CONTACTS[lang][st.contact] || CONTACTS[lang][0];
+    const sAmt = parseFloat(st.sendAmt) || 0;
+    const sq = this.quote(P.sendFrom, C.cur, sAmt);
+    const S = { fromGlyph: GLY[P.sendFrom], toGlyph: GLY[C.cur], toNameC: CN[lang][C.cur], pctLine: sq.pct ? '· ' + pctFmt(sq.pct) + ' ' + t.vsOff : '', sentFor: fill(t.doneSub, { y: fmt(sAmt, P.sendFrom) }), name: C.n, first: C.n.split(' ')[0], ph: C.ph, initial: C.n[0], pay: fmt(sAmt, P.sendFrom), payDisp: this.dispAmt(st.sendAmt, P.sendFrom), get: fmt(sq.recv, C.cur), recvLbl: fill(t.recvX, { n: C.n.split(' ')[0] }), rate: P.sendFrom === C.cur ? '' : sq.rateStr, fromName: CN[lang][P.sendFrom], toName: CL[lang][C.cur], sentB: fill(t.sentB, { n: C.n.split(' ')[0], x: fmt(sq.recv, C.cur) }), fromBadge: badge(P.sendFrom, 36), toBadge: badge(C.cur, 36), avail: fmt(P.bal[P.sendFrom], P.sendFrom), pct: sq.pct ? pctFmt(sq.pct) : '' };
+
+    // processing steps
+    const flow = st.flow;
+    const procSteps = flow === 'send'
+      ? [{ l: t.pA, done: true }, { l: fill(t.pS, { n: S.first }), done: false }, { l: t.pC, done: false }]
+      : flow === 'withdraw' ? [{ l: t.pA, done: true }, { l: 'Enviando a tu cuenta Ripio', done: false }, { l: t.pC, done: false }]
+      : [{ l: t.pA, done: true }, { l: fill(t.pB, { a: CL[lang][st.from], b: CL[lang][st.to] }), done: false }, { l: t.pC, done: false }];
+    const procView = procSteps.map((p, i) => ({ l: p.l, icon: p.done ? '✓' : i === 1 ? this.spin(16) : '', dot: { width: 28, height: 28, flex: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, background: p.done ? 'var(--save)' : 'var(--surface2)', color: p.done ? 'var(--onBrand)' : 'var(--save)' }, txt: { fontSize: 16, color: p.done || i === 1 ? 'var(--text)' : 'var(--muted)', fontWeight: i === 1 ? 700 : 500 } }));
+
+    // MiniPay sheet rows (approximation of what MiniPay shows)
+    const k = st.sheetKind;
+    const mpRows = k === 'send' ? [{ k: t.mpApp, v: 'arbolito.app' }, { k: t.mpAction, v: lang === 'en' ? 'Send' : 'Enviar' }, { k: t.mpAmount, v: sAmt.toLocaleString(LOC[lang], { minimumFractionDigits: 2 }) + ' ' + TOK[P.sendFrom] }, { k: t.mpFee, v: t.mpFeeV }]
+      : k === 'auto' ? [{ k: t.mpApp, v: 'arbolito.app' }, { k: t.mpAction, v: lang === 'en' ? 'Grant permission' : lang === 'pt' ? 'Conceder permissão' : 'Dar permiso' }, { k: lang === 'en' ? 'Limit' : 'Límite', v: 'US$ 25 / US$ 100' }, { k: t.mpFee, v: t.mpFeeV }]
+      : k === 'revoke' ? [{ k: t.mpApp, v: 'arbolito.app' }, { k: t.mpAction, v: 'Revocar permiso' }, { k: t.mpFee, v: t.mpFeeV }]
+      : k === 'chat' ? [{ k: t.mpApp, v: 'arbolito.app' }, { k: t.mpAction, v: 'Swap' }, { k: t.mpAmount, v: lang === 'pt' ? '200,00 wBRL → wARS' : (lang === 'en' ? '100.00' : '100,00') + ' USDT → wARS' }, { k: t.mpFee, v: t.mpFeeV }]
+      : [{ k: t.mpApp, v: 'arbolito.app' }, { k: t.mpAction, v: 'Swap' }, { k: t.mpAmount, v: amt.toLocaleString(LOC[lang], { minimumFractionDigits: 2 }) + ' ' + TOK[st.from] + ' → ' + TOK[st.to] }, { k: t.mpFee, v: t.mpFeeV }];
+    const detRows = [{ k: lang === 'en' ? 'Market costs' : lang === 'pt' ? 'Custos de mercado' : 'Costos de mercado', v: '0,02% · ' + (lang === 'en' ? 'in the rate' : 'incluido') }, { k: lang === 'en' ? 'Arbolito fee' : lang === 'pt' ? 'Comissão Arbolito' : 'Comisión Arbolito', v: lang === 'en' ? 'Free in beta' : lang === 'pt' ? 'Grátis na beta' : 'Gratis en la beta' }, { k: lang === 'en' ? 'Network fee' : lang === 'pt' ? 'Taxa de rede' : 'Costo de red', v: '< US$ 0,01 · USDT' }, { k: lang === 'en' ? 'Route' : 'Ruta', v: q.two ? TOK[st.from] + ' → USDT → ' + TOK[st.to] : TOK[st.from] + ' → ' + TOK[st.to] }, { k: lang === 'en' ? 'Tolerance' : 'Tolerancia', v: '0,5%' }, { k: lang === 'en' ? 'Network' : 'Red', v: 'Celo' }];
+
+    // header for flow screens
+    const H = {
+      add: [t.hAdd, 'welcome'], 'add-ripio': [t.hAdd, 'add'], change: [t.hChange, 'home'], 'quote-loading': [t.hQuote, 'change'], quote: [t.hQuote, 'change'], 'quote-expired': [t.hQuote, 'change'], 'quote-changed': [t.hQuote, 'change'], 'quote-nomarket': [t.hQuote, 'change'], alts: [t.hAlts, 'quote'],
+      send: [t.hSend, 'home'], 'send-empty': [t.hSend, 'home'], 'send-add': [t.hAddContact, 'send'], 'send-amount': [fill(t.hSendTo, { n: S.first }), 'send'], 'send-quote': [fill(t.hSendTo, { n: S.first }), 'send-amount'],
+      'auto-intro': [t.hAuto, 'home'], 'auto-limits': [t.hAuto, 'auto-intro'], 'auto-contacts': [t.hAuto, 'auto-limits'], 'auto-consent': [t.hAuto, 'auto-contacts'], security: [t.hSecurity, 'settings'], revoke: [t.hSecurity, 'security'], receipt: [t.hReceipt, 'receipts'], withdraw: [t.hWithdraw, 'home'], contacts: ['Contactos', 'settings'],
+    };
+    const steps = { 'auto-intro': '1/4', 'auto-limits': '2/4', 'auto-contacts': '3/4', 'auto-consent': '4/4' };
+    const hdr = H[scr] ? { show: true, title: H[scr][0], onBack: go(H[scr][1]), step: steps[scr] || '' } : { show: false };
+
+    // footer actions
+    const B = (l, f, kk) => this.btn(l, f, kk);
+    const A = {
+      'no-minipay': { p: B(t.openMP, toast(t.toastMP)) },
+      'conn-fail': { p: B(t.retry, go('home-loading')) },
+      welcome: { p: B(t.start, go('add')) },
+      add: { s: { label: t.later, onClick: go('done-ob') } },
+      'add-ripio': { p: B(t.openRipio + ' ↗', go('add-waiting')), s: { label: t.didIt, onClick: go('add-waiting') } },
+      'add-waiting': { p: B(t.next, go('done-ob')) },
+      'done-ob': { p: B(t.goChat, go('chat', { chat: 'empty' })), s: { label: t.seeAccount, onClick: go('home') } },
+      change: { p: amt <= 0 ? B(t.review, null, 'off') : over ? B(t.insufficient, null, 'off') : B(t.review, go('quote-loading')) },
+      'quote-loading': { p: B(t.searching, null, 'busy') },
+      quote: { note: t.mpNext, p: B(t.confirmMP, () => this.openMP('change')), s: { label: t.alts, onClick: go('alts') } },
+      'quote-expired': { p: B(t.refresh, go('quote-loading')), s: { label: t.cancel, onClick: go('change') } },
+      'quote-changed': { p: B(t.confirmNew, () => this.openMP('change')), s: { label: t.cancel, onClick: go('change') } },
+      'quote-nomarket': { p: B(t.notifyMe, toast(t.notifyToast)), s: { label: t.tryAgain, onClick: go('quote-loading') } },
+      alts: { p: B(t.backToQuote, go('quote')) },
+      processing: { p: B(t.processing + '…', null, 'busy') },
+      done: { p: B(t.seeReceipt, go('receipt')), s: { label: t.backHome, onClick: go('home') } },
+      failed: { p: B(t.newQuote, go('quote-loading')), s: { label: t.backHome, onClick: go('home') } },
+      cancelled: { p: B(t.backToQuote, go(flow === 'send' ? 'send-quote' : 'quote-loading')), s: { label: t.backHome, onClick: go('home') } },
+      'send-empty': { p: B(t.addContact, go('send-add')) },
+      'send-add': { p: B(t.saveContact, go('send-amount', { contact: 0 })) },
+      'send-amount': { p: sAmt <= 0 ? B(t.reviewSend, null, 'off') : B(t.reviewSend, go('send-quote')) },
+      'send-quote': { note: t.mpNext, p: B(t.confirmMP, () => this.openMP('send')), s: { label: t.cancel, onClick: go('send') } },
+      'send-done': { p: B(t.seeReceipt, go('receipt')), s: { label: t.notifyContact, onClick: toast(t.toastWA) } },
+      'auto-intro': { p: B(t.autoOn || 'Activar', go('auto-limits')), s: { label: t.notNow || 'Ahora no', onClick: go('home') } },
+      'auto-limits': { p: B(t.next, go('auto-contacts')) },
+      'auto-contacts': { p: B(t.next, go('auto-consent')) },
+      'auto-consent': { note: t.mpNext, p: B(t.turnOn, () => this.openMP('auto')), s: { label: t.cancel, onClick: go('home') } },
+      'auto-on': { p: B(t.setRule || 'Crear mi primera regla', go('chat', { chat: 'empty' })), s: { label: t.backHome, onClick: go('home') } },
+      revoke: { p: B('Revocar en MiniPay', () => this.openMP('revoke'), 'danger'), s: { label: t.cancel, onClick: go('security') } },
+      receipt: { p: B(lang === 'en' ? 'Share receipt' : lang === 'pt' ? 'Compartilhar comprovante' : 'Compartir comprobante', toast(t.toastShare), 'quiet') },
+      withdraw: { note: t.mpNext, p: B('Confirmar en MiniPay', () => this.openMP('withdraw')) },
+      'withdraw-waiting': { p: B(t.backHome, go('home')) },
+    };
+    const af = A[scr];
+    const act = af ? { show: true, p: af.p || null, s: af.s || null, note: af.note || '' } : { show: false };
+
+    // tabs
+    const tabScreens = { home: 0, 'home-loading': 0, 'home-empty': 0, 'home-offline': 0, chat: 1, receipts: 2, 'receipts-empty': 2, settings: 3 };
+    const ti = tabScreens[scr];
+    const tabs = ti === undefined ? { show: false, items: [] } : { show: true, items: [[t.tabHome, 'home'], [t.tabChat, 'chat'], [t.tabReceipts, 'receipts'], [t.tabSettings, 'settings']].map(([l, s], i) => ({ label: l, onClick: go(s), style: { minHeight: 48, border: 0, borderRadius: 14, fontSize: 14, fontWeight: i === ti ? 800 : 600, background: i === ti ? 'var(--surface2)' : 'transparent', color: i === ti ? 'var(--text)' : 'var(--muted)' } })) };
+
+    const langs = [['es', 'Español (Argentina)'], ['pt', 'Português (Brasil)'], ['en', 'English']].map(([c, l]) => ({ label: l, check: c === lang ? '✓' : '', onClick: () => this.setLang(c), style: { minHeight: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', borderRadius: 14, border: c === lang ? '2px solid var(--save)' : '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', fontSize: 17, fontWeight: 600 } }));
+
+    const root = { width: min ? 376 : 412, height: min ? 656 : 892, ...(isDark ? DARK : LIGHT) };
+
+    return {
+      rootStyle: root, appBg: { height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg)', backgroundImage: (isDark ? DARK : LIGHT).backgroundImage, color: 'var(--text)', fontFamily: "'Manrope',system-ui,sans-serif", position: 'relative', overflow: 'hidden' }, isDark, fw: min ? 376 : 412, fh: min ? 656 : 892, hostShow: scr !== 'no-minipay', is, t, hdr, act, tabs, toast: st.toast, scrollRef: this.scrollRef,
+      s: { doneTitle: fill(t.doneTitle, { n: P.name }), hello: fill(t.hello, { n: P.name }), initial: P.name[0], totalIn: fill(t.totalIn, { c: CL[lang][disp] }), total: scr === 'home-empty' ? fmt(0, disp) : fmt(total, disp), phone: P.phone, name: P.name, cn: CN[lang], dispName: CN[lang][disp] + ' (' + disp + ')' },
+      totalStyle: { fontSize: 34, fontWeight: 800, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums', opacity: muted ? .6 : 1, lineHeight: 1.1 },
+      notLoading: scr !== 'home-loading', paused: st.paused && is.homeAny, showAutoPromo: !st.autoOn && scr === 'home', bals, acts, hasActs: acts.length > 0, actions,
+      spinBig: this.spin(26, 'var(--save)'), spinSm: this.spin(16, 'var(--save)'),
+      openLang: () => this.setState({ sheet: 'lang' }), closeSheet: () => this.setState({ sheet: null }), openDetails: () => this.setState({ sheet: 'details' }),
+      sheetLang: st.sheet === 'lang', sheetMP: st.sheet === 'mp', sheetDetails: st.sheet === 'details', langs, mp: { rows: mpRows }, detRows,
+      mpConfirm: () => this.mpConfirm(), mpReject: () => this.mpReject(),
+      addCash: toast(t.toastMP), goRipio: go('add-ripio'), goAuto: go('auto-intro'), goSettings: go('settings'), goSecurity: go('security'), goChat: go('chat'), goAdd: go('add'), goReceipt: go('receipt'), goReceipts: go('receipts'),
+      Q, cd, fromBadge, toBadge, fromGlyph: GLY[st.from], toGlyph: GLY[st.to], fromName: CN[lang][st.from], toName: CN[lang][st.to], payDisp: this.dispAmt(st.amount, st.from), avail: fmt(P.bal[st.from] || 0, st.from), over, keys, chips,
+      cycleFrom: () => this.cycle('from'), cycleTo: () => this.cycle('to'), swap: () => this.setState({ from: st.to, to: st.from }), setAll: () => this.setState({ amount: String(P.bal[st.from] || 0) }),
+      contacts, S, procView, flow, flowSend: flow === 'send',
+      noMarketT: fill(t.noMarket, { a: CL[lang][st.from], b: CL[lang][st.to] }), changedB: fill(t.changedB, { x: Q.changedGet, d: Q.changedDiff }), doneT: fill(t.doneT, { x: Q.get }), doneSub: fill(t.doneSub, { y: Q.pay }), failedB: fill(t.failedB, { y: flow === 'send' ? S.pay : Q.pay }), cancelB: fill(t.cancelB, { y: flow === 'send' ? S.pay : Q.pay }), altB: fill(t.altB, { y: Q.pay }),
+      alts: [{ l: t.altA, v: Q.get, chosen: true }, { l: t.altBk, v: fmt(q.recv * 0.9946, st.to), chosen: false }, { l: t.altC, v: Q.off, chosen: false }].map(a => ({ ...a, tag: a.chosen ? t.altChosen : '', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '16px', borderRadius: 16, background: 'var(--surface)', border: a.chosen ? '2px solid var(--save)' : '1px solid var(--line)' } })),
+      chatPh: t.askPh, cardDim: { opacity: expiredNow ? 0.45 : 1, transition: 'opacity .3s' }, goChange: go('change'),
+      procTitle: flow === 'send' ? fill(t.pS, { n: S.first }) : flow === 'withdraw' ? t.pW : t.processing, procSummary: flow === 'send' ? S.pay + ' → ' + S.get : Q.pay + ' → ' + Q.get,
+      ...this.chatVals(t, lang, P),
+      ...this.autoVals(t, lang, P, fmt),
+    };
+  }
+  chatVals(t, lang, P) {
+    const st = this.state, stage = st.chat;
+    const from = lang === 'pt' ? 'BRL' : 'USD', amt = lang === 'pt' ? 200 : 100;
+    const q = this.quote(from, 'ARS', amt);
+    const fmt = (n, c, d) => this.fmt(n, c, d);
+    const pct = '+' + q.pct.toLocaleString(LOC[lang], { minimumFractionDigits: 2 }) + '%';
+    const low = st.secs <= 10;
+    const refresh = () => { clearTimeout(this.ct); this.setState({ chat: 'typing' }); this.ct = setTimeout(() => this.setState({ chat: 'quote', secs: 48 }), 900); };
+    const msgs = [{ bot: true, text: fill(t.chatHi, { n: P.name }) }];
+    if (stage !== 'empty' && stage !== 'rec') {
+      const said = st.chatText || t.chatAsk;
+      msgs.push(st.chatVoice ? { voice: true, text: '“' + said + '”' } : { user: true, text: said });
+      if (stage === 'typing') msgs.push({ typing: true });
+      else {
+        const mono = { font: "500 14px/1.4 'JetBrains Mono',monospace", textAlign: 'right' };
+        msgs.push({ quote: true, get: fmt(q.recv, 'ARS'), forPay: fill(t.forX, { x: fmt(amt, from) }),
+          cd: stage === 'quote' ? fill(t.expiresIn, { s: st.secs }) : stage === 'expired' ? t.expiredShort : '',
+          cdStyle: { font: "600 13px/1 'JetBrains Mono',monospace", color: low || stage === 'expired' ? 'var(--warn)' : 'var(--muted)' },
+          bar: { height: 4, width: stage === 'quote' ? (st.secs / 48 * 100) + '%' : '0%', background: low ? 'var(--warn)' : 'var(--save)', transition: 'width 1s linear' },
+          rows: [{ k: t.rate, v: q.rateStr, style: mono }, { k: t.vsOff, v: pct + ' · ' + fill(t.saved, { x: fmt(q.saved, 'ARS', 0) }), style: { fontWeight: 700, color: 'var(--save)', textAlign: 'right' } }, { k: t.route, v: q.two ? fill(t.route2, { a: CL[lang][from], b: 'pesos' }) : t.route1, style: { textAlign: 'right', textWrap: 'pretty' } }, { k: t.minimum, v: fmt(q.min, 'ARS'), style: mono }],
+          live: stage === 'quote', expired: stage === 'expired', used: stage === 'proc' || stage === 'done',
+          onConfirm: () => this.openMP('chat'), onAlts: () => this.go('alts', { from, to: 'ARS', amount: String(amt) }), onCancel: () => this.setState({ chat: 'cancel' }), onRefresh: refresh });
+        if (stage === 'proc') msgs.push({ proc: true, text: t.chatProc });
+        if (stage === 'done') msgs.push({ done: true, title: fill(t.doneT, { x: fmt(q.recv, 'ARS') }), text: fill(t.doneSub, { y: fmt(amt, from) }) + ' · ' + pct + ' ' + t.vsOff + '. ' + t.chatTgToo });
+        if (stage === 'cancel') msgs.push({ cancel: true, text: t.cancelT + '. ' + t.noMoneyMoved, onRefresh: refresh });
+      }
+    }
+    const chips = [{ label: t.chatAsk, onClick: () => { this.setState({ chatText: null }); this.chatSend(false); } }, { label: t.chip2, onClick: () => this.go('send-amount', { contact: 0 }) }];
+    return { chat: { day: t.today, msgs, suggest: stage === 'empty', chips, recording: stage === 'rec', notRecording: stage !== 'rec', onMic: () => this.chatSend(true) } };
+  }
+  autoVals(t, lang, P, fmt) {
+    const st = this.state, disp = P.disp;
+    const loc = (u) => disp === 'USD' ? '' : '≈ ' + fmt(u * R.USD / R[disp], disp, 0);
+    const presets = [['low', t.limLow], ['mid', t.limMid], ['high', t.limHigh]].map(([k, l]) => {
+      const [op, day] = PRESETS[k]; const on = st.preset === k;
+      return { label: l, rec: k === 'mid' ? t.recTag : '', op: 'US$ ' + op + ' ' + t.perOp, day: 'US$ ' + day + ' ' + t.perDay, opL: loc(op), dayL: loc(day), onClick: () => this.setState({ preset: k }),
+        style: { display: 'flex', gap: 14, alignItems: 'flex-start', padding: 16, borderRadius: 18, border: on ? '2px solid var(--save)' : '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: '100%' },
+        dot: { flex: 'none', marginTop: 2, width: 22, height: 22, borderRadius: '50%', boxSizing: 'border-box', border: on ? '7px solid var(--save)' : '2px solid var(--line)' } };
+    });
+    const [op, day] = PRESETS[st.preset];
+    const sw = (on) => ({ sw: { flex: 'none', width: 52, height: 32, borderRadius: 16, background: on ? 'var(--save)' : 'var(--surface2)', border: on ? 0 : '1px solid var(--line)', position: 'relative', transition: 'background .2s', boxSizing: 'border-box' }, knob: { position: 'absolute', top: 3, left: on ? 23 : 3, width: 26, height: 26, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.25)', transition: 'left .2s' } });
+    const cts = CONTACTS[lang].map((c, i) => ({ n: c.n, sub: c.ph, ini: c.n[0], on: !!st.autoCts[i], onClick: () => { const a = [...st.autoCts]; a[i] = !a[i]; this.setState({ autoCts: a }); }, ...sw(!!st.autoCts[i]) }));
+    const onCts = cts.filter(c => c.on);
+    const A2 = { con1: fill(t.con1, { k: onCts.length }), con2: fill(t.con2, { op: 'US$ ' + op + (disp === 'USD' ? '' : ' (' + loc(op) + ')'), day: 'US$ ' + day }), conCan2: fill(t.conCan2, { k: onCts.length }), conCan3: fill(t.conCan3, { op: 'US$ ' + op, day: 'US$ ' + day }), opS: 'US$ ' + op, dayS: 'US$ ' + day, allowed: onCts.map(c => c.n.split(' ')[0]).join(', ') || '—' };
+    const paused = st.paused, on = st.autoOn;
+    const sec = { ...sw(paused),
+      tag: paused ? 'En pausa' : on ? 'Activo' : 'Apagado', short: paused ? 'En pausa' : on ? 'Activo' : 'Apagado',
+      title: paused ? 'Arbolito no hace nada automático' : on ? 'Arbolito puede actuar por vos' : 'Arbolito solo actúa cuando confirmás',
+      sub: paused ? 'Tus reglas quedan guardadas. Reactivalo cuando quieras.' : on ? 'Hasta US$ 25 por operación y US$ 100 por día, con ' + A2.allowed + '. Vence el 10 nov 2026.' : 'Cada operación la confirmás en MiniPay.',
+      card: { display: 'flex', flexDirection: 'column', gap: 6, borderRadius: 18, padding: '16px 18px', background: paused ? 'var(--warnBg)' : on ? 'var(--saveBg)' : 'var(--surface2)', color: paused ? 'var(--warnText)' : on ? 'var(--save)' : 'var(--text)' } };
+    const receiptsList = [
+      { title: 'R$ 10,00 → ARS 3.177,41', sub: 'Hoy · 10:42 · Cambio', pct: '+5,24%' },
+      { title: 'US$ 20,00 → ARS 32.160,00', sub: 'Ayer · 20:03 · Envío a Graciela', pct: '+4,08%' },
+      { title: 'US$ 100,00 → ARS 160.800,00', sub: '8 oct · 09:12 · Cambio', pct: '+4,08%' },
+      { title: 'R$ 1.200,00 → ARS 381.288,00', sub: '1 oct · 08:30 · Regla: día de cobro', pct: '+5,24%' },
+    ];
+    return { presets, cts, A2, sec, receiptsList,
+      togglePause: () => { this.setState({ paused: !paused }); this.toast(paused ? 'Arbolito reactivado' : 'Arbolito en pausa'); },
+      pauseInstead: () => { this.go('security', { paused: true }); this.toast('Arbolito en pausa'); },
+      goLimits: () => this.go('auto-limits'), goAutoContacts: () => this.go('auto-contacts'), goRevoke: () => this.go('revoke'), goSend: () => this.go('send'), goSendAdd: () => this.go('send-add'), pickPhone: () => this.toast(lang === 'en' ? 'Opening your contacts…' : lang === 'pt' ? 'Abrindo seus contatos…' : 'Abriendo tus contactos…'),
+      toggleProof: () => this.setState({ proof: !st.proof }), proofOpen: !!st.proof, proofLabel: st.proof ? 'Ocultar detalles técnicos' : 'Ver detalles técnicos',
+    };
+  }
+}
+</script>
+</body>
+</html>

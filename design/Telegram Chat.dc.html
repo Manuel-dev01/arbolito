@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f2f3f7;font-family:'Manrope',system-ui,sans-serif;color:#0b1220}a{color:#0b1220}a:hover{opacity:.7}</style>
+</helmet>
+<section id="turn4" style="padding:64px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;flex-direction:column;gap:10px;max-width:980px">
+    <div style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#4a5368">Turno 4 · Telegram, el segundo canal</div>
+    <h1 style="margin:0;font:400 64px/1 'Instrument Serif',serif;letter-spacing:-.025em">Chat, voice, quotes and receipts in Telegram. Money moves only in MiniPay.</h1>
+    <p style="margin:0;font-size:18px;line-height:1.55;color:#4a5368;text-wrap:pretty">Bots can only send formatted text (bold, italic, code, links, strikethrough) and inline buttons, so the brand lives in the copy and the structure. Every quote's main button is <b>Confirmar en MiniPay</b>: it opens the mini app at that exact quote, and the bot edits its own message as the state changes. Chat chrome is a neutral stand-in, not Telegram's real UI. Quote card variations: <a href="#4a">4a</a> ledger, <a href="#4b">4b</a> compact.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <sc-for list="{{ phones }}" as="p" hint-placeholder-count="6">
+      <div id="{{ p.id }}" style="display:flex;flex-direction:column;gap:12px;width:412px;flex:none">
+        <div style="display:flex;gap:10px;align-items:center"><span style="font:700 13px/1 'JetBrains Mono',monospace;background:#0b1220;color:#fff;padding:6px 9px;border-radius:6px">{{ p.id }}</span><span style="flex:1;min-width:0;font-size:17px;line-height:1.3;font-weight:800">{{ p.label }}</span></div>
+        <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ p.dark }}" hint-size="412px,892px">
+          <div style="{{ p.wrap }}">
+            <sc-if value="{{ p.chat }}">
+            <div style="flex:none;display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--hdr);border-bottom:1px solid var(--sep)">
+              <span style="font-size:20px;width:28px;color:var(--text)">←</span>
+              <span style="width:40px;height:40px;border-radius:50%;background:#0b1220;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 64 64"><rect x="28.5" y="34" width="7" height="24" rx="3.5" fill="#f2f3f7"></rect><circle cx="21" cy="31" r="11" fill="oklch(0.72 0.2 350)"></circle><circle cx="43" cy="31" r="11" fill="oklch(0.89 0.2 125)"></circle><circle cx="32" cy="17" r="12" fill="oklch(0.7 0.16 265)"></circle></svg></span>
+              <span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:700;color:var(--text)">Arbolito</span><span style="font-size:13px;color:var(--hint)">bot</span></span>
+              <span style="font-size:20px;color:var(--text)">⋮</span>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:12px 10px">
+              <sc-for list="{{ p.msgs }}" as="m" hint-placeholder-count="3">
+                <div style="{{ m.wrap }}">
+                  <div style="{{ m.bubble }}">
+                    <sc-if value="{{ m.voice }}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px">▶</span><span style="display:flex;gap:2px;align-items:center;flex:1"><span style="width:3px;height:10px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:18px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:12px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:20px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:8px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:16px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:12px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:6px;background:var(--accent);border-radius:2px"></span><span style="width:3px;height:14px;background:var(--accent);border-radius:2px"></span></span><span style="font:500 12px/1 'JetBrains Mono',monospace;color:var(--hint)">0:03</span></div></sc-if>
+                    <div style="white-space:pre-wrap;font-size:16px;line-height:1.42;text-wrap:pretty"><sc-for list="{{ m.segs }}" as="s" hint-placeholder-count="2"><span style="{{ s.st }}">{{ s.t }}</span></sc-for></div>
+                    <div style="display:flex;justify-content:flex-end;gap:6px;font-size:12px;color:var(--hint);margin-top:2px"><span>{{ m.meta }}</span></div>
+                  </div>
+                  <sc-for list="{{ m.rows }}" as="row" hint-placeholder-count="1">
+                    <div style="display:flex;gap:4px;margin-top:4px">
+                      <sc-for list="{{ row }}" as="b" hint-placeholder-count="2"><span style="{{ b.st }}">{{ b.t }}</span></sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--hdr);border-top:1px solid var(--sep)"><span style="flex:1;min-height:44px;border-radius:22px;background:var(--field);display:flex;align-items:center;padding:0 16px;color:var(--hint);font-size:16px">Mensaje</span><span style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center"><span style="width:10px;height:16px;border-radius:5px;background:#fff"></span></span></div>
+            </sc-if>
+            <sc-if value="{{ p.link }}">
+            <div style="flex:none;height:48px;display:flex;align-items:center;padding:0 4px;background:#fff;border-bottom:1px solid #e6e6e6"><span style="width:44px;text-align:center;font-size:20px">←</span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font:600 15px/1.1 system-ui,Roboto,sans-serif">Arbolito</span><span style="font:400 12px/1.1 'JetBrains Mono',monospace;color:#5f6368">arbolito.app/vincular</span></span><span style="width:44px;text-align:center;font-size:20px">⋮</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:18px;padding:28px 22px 16px;background:#f2f3f7 radial-gradient(420px 300px at 110% -5%,oklch(0.92 0.06 350 / .7),transparent 70%)">
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:44px;border-radius:50%;background:#0b1220;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 64 64"><rect x="28.5" y="34" width="7" height="24" rx="3.5" fill="#f2f3f7"></rect><circle cx="21" cy="31" r="11" fill="oklch(0.72 0.2 350)"></circle><circle cx="43" cy="31" r="11" fill="oklch(0.89 0.2 125)"></circle><circle cx="32" cy="17" r="12" fill="oklch(0.7 0.16 265)"></circle></svg></span><span style="font-size:22px;font-weight:300;color:#4a5368">+</span><span style="width:44px;height:44px;border-radius:50%;background:#e6e8ef;display:flex;align-items:center;justify-content:center;font-weight:800">L</span></div>
+              <h2 style="margin:0;font:400 40px/1.02 'Instrument Serif',serif;letter-spacing:-.025em">Conectá Telegram con tu MiniPay</h2>
+              <p style="margin:0;font-size:17px;line-height:1.5;color:#4a5368">La cuenta <b style="color:#0b1220">@lucia.dg</b> quiere usar Arbolito desde Telegram.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:16px 18px"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font-size:15px;line-height:1.35;color:#0b1220;font-weight:600">¿Ves el mismo código en Telegram?</span><span style="font-size:14px;line-height:1.35;color:#4a5368">Si no, no conectes.</span></span><span style="font:600 30px/1 'JetBrains Mono',monospace;letter-spacing:.12em">4821</span></div>
+              <div style="display:flex;flex-direction:column;border-top:1px solid rgba(11,18,32,.12)">
+                <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(11,18,32,.12);font-size:16px;line-height:1.45"><span style="color:oklch(0.47 0.14 140);font-weight:800">✓</span><span>Desde Telegram pedís cotizaciones, mandás audios y recibís tus comprobantes.</span></div>
+                <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(11,18,32,.12);font-size:16px;line-height:1.45"><span style="color:oklch(0.47 0.14 140);font-weight:800">✓</span><span>Para mover plata, siempre confirmás acá, en MiniPay.</span></div>
+                <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(11,18,32,.12);font-size:16px;line-height:1.45"><span style="color:oklch(0.47 0.14 140);font-weight:800">✓</span><span>Lo desconectás cuando quieras en Ajustes.</span></div>
+              </div>
+            </div>
+            <div style="flex:none;display:flex;flex-direction:column;gap:6px;padding:12px 16px;background:rgba(242,243,247,.9);border-top:1px solid rgba(11,18,32,.12)"><span style="min-height:54px;border-radius:999px;background:#0b1220;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">Conectar</span><span style="min-height:48px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">No fui yo</span></div>
+            </sc-if>
+          </div>
+        </x-import>
+        <div style="font-size:15px;line-height:1.5;color:#4a5368;text-wrap:pretty">{{ p.caption }}</div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const LIGHT = { '--wall': '#dfe5e1', '--hdr': '#ffffff', '--sep': 'rgba(0,0,0,.08)', '--text': '#0b1220', '--hint': '#5f6b7a', '--in': '#ffffff', '--out': '#e3f1ff', '--accent': '#2f6fd6', '--field': '#f0f2f5', '--btn': 'rgba(30,40,50,.42)', '--code': 'rgba(11,18,32,.07)', '--link': '#1f5fbf' };
+const DARK = { '--wall': '#0e1621', '--hdr': '#17212b', '--sep': 'rgba(255,255,255,.06)', '--text': '#f2f3f7', '--hint': '#8b9bab', '--in': '#182533', '--out': '#2b5278', '--accent': '#5aa0e8', '--field': '#242f3d', '--btn': 'rgba(255,255,255,.12)', '--code': 'rgba(255,255,255,.08)', '--link': '#7cb8ff' };
+
+const parse = (str) => {
+  const out = [];
+  str.split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|~~[^~]+~~|\[[^\]]+\])/).forEach(p => {
+    if (!p) return;
+    if (p.startsWith('**')) out.push({ t: p.slice(2, -2), st: { fontWeight: 800 } });
+    else if (p.startsWith('__')) out.push({ t: p.slice(2, -2), st: { fontStyle: 'italic' } });
+    else if (p.startsWith('`')) out.push({ t: p.slice(1, -1), st: { fontFamily: "'JetBrains Mono',monospace", fontSize: 14, background: 'var(--code)', padding: '1px 4px', borderRadius: 4 } });
+    else if (p.startsWith('~~')) out.push({ t: p.slice(2, -2), st: { textDecoration: 'line-through', opacity: .6 } });
+    else if (p.startsWith('[')) out.push({ t: p.slice(1, -1), st: { color: 'var(--link)', textDecoration: 'underline', textUnderlineOffset: 2 } });
+    else out.push({ t: p, st: {} });
+  });
+  return out;
+};
+
+const PHONES = [
+  { id: '4.1', label: '/start · bienvenida', caption: 'First message. Linking MiniPay is the only setup, and the bot says why it is needed.', msgs: [
+    { me: true, text: '/start', time: '10:02' },
+    { text: 'Hola, Lucía. Soy **Arbolito**, tu cambista: cambio y mando pesos, reales y dólares al mejor precio del momento, y cada operación tiene su comprobante.\n\nPara mover tu plata necesito tu **MiniPay**. Se conecta una sola vez y tu plata siempre se confirma ahí.', time: '10:02', rows: [['Conectá tu MiniPay ↗'], ['¿Qué es MiniPay?']] },
+  ] },
+  { id: '4.2', link: true, label: 'Conectá tu MiniPay · en MiniPay', caption: 'The button opens Arbolito inside MiniPay. A 4-digit code in both places stops someone else from linking a stolen Telegram session. No transaction is needed.' },
+  { id: '4.3', label: 'Conectado', caption: 'The bot confirms with a masked phone number (never an address) and suggests the first thing to try.', msgs: [
+    { text: 'Tu código: `4821`\nConfirmalo en MiniPay para conectar.', time: '10:03', rows: [['Abrir MiniPay ↗']] },
+    { text: '**Listo, conectado.** ✓\nTelegram ya usa tu MiniPay **+54 9 11 •••• 4107**.\n\nProbá escribirme __pasá 100 dólares a pesos__ o mandame un audio.', time: '10:04' },
+  ] },
+  { id: '4a', label: 'Cotización · ledger', caption: 'Variation 4a. Line items like a receipt; rate and minimum in code style so they read as exact numbers. Countdown sits last, next to the buttons.', msgs: [
+    { me: true, text: 'pasá 100 dólares a pesos', time: '10:42' },
+    { text: 'Recibís **ARS 160.800,00**\npor US$ 100,00\n\nCotización  `1 US$ = ARS 1.608`\nvs oficial  **+4,08%** · ARS 6.300 más\nRuta  directo, por el mejor mercado\nMínimo garantizado  `ARS 159.996,00`\n\n⏱ Vence en **48 s**. Después te paso otra.', time: '10:42', rows: [['Confirmar en MiniPay ↗'], ['Ver alternativas', 'Cancelar']] },
+  ] },
+  { id: '4b', lang: 'pt', label: 'Cotação · compacta (pt-BR, áudio)', caption: 'Variation 4b. One headline sentence, then one line of detail. The voice note is transcribed and echoed first so the user can check what was understood.', msgs: [
+    { me: true, voice: true, text: '🎙️ “manda 200 reais pra Lucía”', time: '09:15' },
+    { text: '🎙️ Entendi: __enviar R$ 200 para Lucía Gómez__\n\n**Lucía recebe ARS 63.548,00**\npor R$ 200,00 · **+5,24%** vs oficial\nTrocamos em 2 passos pelo melhor mercado. Mínimo garantido `ARS 63.230,26`.\n\n⏱ Expira em 48 s', time: '09:15', rows: [['Confirmar no MiniPay ↗'], ['Ver alternativas', 'Cancelar']] },
+  ] },
+  { id: '4.4', label: 'Venció', caption: 'The bot edits the same message, so an old Confirmar can never be tapped. The new quote is one tap away.', msgs: [
+    { me: true, text: 'pasá 100 dólares a pesos', time: '10:42' },
+    { text: '~~Recibís ARS 160.800,00 por US$ 100,00~~\n\n**Esta cotización venció.** No se movió plata.', time: '10:43 · editado', rows: [['Pedir nueva cotización']] },
+  ] },
+  { id: '4.5', label: 'Procesando → listo', caption: 'After MiniPay confirms, the quote message turns into the status line, and the receipt arrives as a new message.', msgs: [
+    { text: 'Recibís **ARS 160.800,00** por US$ 100,00\n✓ Confirmado en MiniPay. Cambiando…', time: '10:42 · editado' },
+    { text: '**Listo.** Recibiste **ARS 160.800,00** por US$ 100,00.\n+4,08% vs oficial · ARS 6.300 más que al oficial.\n\nComprobante [arbolito.app/r/A7F3-29]\nCualquiera puede verificarlo.', time: '10:43', rows: [['Ver comprobante ↗', 'Compartir']] },
+  ] },
+  { id: '4.6', label: 'Falló', caption: 'The failure leads with "No se movió plata", then says where the money is, why it failed, and what to do next.', msgs: [
+    { text: '**No pudimos hacer el cambio. No se movió plata.**\nTus US$ 100,00 siguen en tu MiniPay.\n\nEl precio cayó debajo del mínimo garantizado, así que lo frenamos.', time: '10:43', rows: [['Pedir nueva cotización']] },
+  ] },
+  { id: '4.7', label: 'Cancelado en MiniPay · sin mercado', caption: 'Two more end states. Both say no money moved, and both offer a next step.', msgs: [
+    { text: 'Cancelaste en MiniPay. **No se movió plata.**', time: '10:44', rows: [['Volver a cotizar']] },
+    { me: true, text: 'cambiá 500 reales a pesos', time: '03:12' },
+    { text: 'Ahora no hay mercado para **reales → pesos**. Pasa unos minutos cuando hay mucho movimiento. **No se movió plata.**', time: '03:12', rows: [['Avisame cuando haya', 'Probar en 5 min']] },
+  ] },
+  { id: '4.8', dark: true, label: 'Avisos automáticos (oscuro)', caption: 'What "Dejá que Arbolito actúe por vos" looks like in practice: every automatic action is reported with its rule, amount and receipt, and the pause button is always there.', msgs: [
+    { text: '**Regla: día de cobro**\nEntraron **US$ 1.200** de Acme Inc.\nPasé US$ 300 a pesos: recibiste **ARS 482.400,00** (+4,08%).\nComprobante [arbolito.app/r/C2D9-11]', time: '08:30', rows: [['Ver comprobante ↗', 'Pausar reglas']] },
+    { text: 'Llegaron **ARS 50.000,00** desde Ripio. Ya están en tu cuenta Arbolito.', time: '11:05' },
+  ] },
+  { id: '4.9', lang: 'en', label: 'English sample', caption: 'Same ledger card in English. Strings stay short enough to fit two buttons on a row.', msgs: [
+    { me: true, text: 'change 100 dollars to pesos', time: '10:42' },
+    { text: 'You get **ARS 160,800.00**\nfor US$ 100.00\n\nRate  `1 US$ = ARS 1,608`\nvs official  **+4.08%** · ARS 6,300 more\nRoute  direct, best market\nGuaranteed minimum  `ARS 159,996.00`\n\n⏱ Expires in **48 s**.', time: '10:42', rows: [['Confirm in MiniPay ↗'], ['See alternatives', 'Cancel']] },
+  ] },
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    const phones = PHONES.map(p => {
+      const vars = p.dark ? DARK : LIGHT;
+      const wrap = { ...vars, height: '100%', display: 'flex', flexDirection: 'column', background: p.link ? '#f2f3f7' : 'var(--wall)', backgroundImage: p.link ? 'none' : `radial-gradient(circle at 20px 20px, ${p.dark ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.04)'} 2px, transparent 2.5px)`, backgroundSize: '28px 28px', fontFamily: "'Manrope',system-ui,sans-serif", color: 'var(--text)' };
+      const msgs = (p.msgs || []).map(m => ({
+        voice: !!m.voice, segs: parse(m.voice ? m.text.replace('🎙️ ', '') : m.text), meta: m.time + (m.me ? ' ✓✓' : ''),
+        wrap: { display: 'flex', flexDirection: 'column', alignSelf: m.me ? 'flex-end' : 'flex-start', maxWidth: m.me ? '78%' : '88%' },
+        bubble: { background: m.me ? 'var(--out)' : 'var(--in)', color: 'var(--text)', padding: '8px 12px 6px', borderRadius: m.me ? '16px 16px 4px 16px' : '16px 16px 16px 4px', boxShadow: '0 1px 1px rgba(0,0,0,.08)' },
+        rows: (m.rows || []).map(r => r.map(t => ({ t, st: { flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 10px', borderRadius: 10, background: 'var(--btn)', color: '#fff', fontSize: 15, fontWeight: 600, backdropFilter: 'blur(6px)' } }))),
+      }));
+      return { ...p, dark: !!p.dark, chat: !p.link, link: !!p.link, wrap, msgs };
+    });
+    return { phones };
+  }
+}
+</script>
+</body>
+</html>

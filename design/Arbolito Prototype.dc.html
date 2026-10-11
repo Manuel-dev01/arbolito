@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f2f3f7 radial-gradient(900px 600px at 100% 0%,oklch(0.93 0.06 350 / .6),transparent 70%);font-family:'Manrope',system-ui,sans-serif;color:#0b1220}button{font-family:inherit;cursor:pointer}a{color:#2c6b3f}a:hover{color:#0b1220}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;justify-content:center;padding:40px 24px;box-sizing:border-box">
+  <dc-import name="Arbolito Mini App" screen="{{ screen }}" chat-stage="{{ chatStage }}" reset-key="{{ nonce }}" theme="{{ theme }}" lang="{{ lang }}" quote-variant="{{ qv }}" consent-variant="{{ cv }}" receipt-variant="{{ rv }}" interactive="{{ true }}" hint-size="412px,892px"></dc-import>
+  <div style="width:340px;max-width:100%;display:flex;flex-direction:column;gap:24px;padding-top:8px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#4a5368">Prototipo · MiniPay Mini App</div>
+      <h1 style="margin:0;font-family:'Instrument Serif',serif;font-size:44px;line-height:1;font-weight:400;letter-spacing:-.025em">Arbolito, clickable</h1>
+      <p style="margin:0;font-size:16px;line-height:1.5;color:#4a5368">Everything inside the phone works. Quotes count down for real: wait 48 s to see one expire. The grey sheet stands in for MiniPay's confirmation; try both Confirmar and Rechazar.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#4a5368">Empezar desde</div>
+      <sc-for list="{{ starts }}" as="s" hint-placeholder-count="5">
+        <button onClick="{{ s.onClick }}" style="text-align:left;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;border:1.5px solid rgba(11,18,32,.85);background:rgba(255,255,255,.6);color:#0b1220" style-hover="background:#fff"><span style="font-size:16px;font-weight:700">{{ s.label }}</span><span style="font-size:14px;line-height:1.4;color:#4a5368">{{ s.path }}</span></button>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#4a5368">Tema e idioma</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <sc-for list="{{ toggles }}" as="g" hint-placeholder-count="5"><button onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button></sc-for>
+      </div>
+    </div>
+    <div style="font-size:14px;line-height:1.5;color:#4a5368">Quote, consent and receipt variants are in the Tweaks panel. See every static state in <a href="Mini App Screens.dc.html">Mini App Screens</a>.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;quoteVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;consentVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;receiptVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;],&quot;default&quot;:&quot;a&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { screen: 'welcome', chatStage: 'empty', nonce: 0, theme: 'light', lang: 'es' };
+  start(screen, chatStage) { this.setState(s => ({ screen, chatStage: chatStage || 'empty', nonce: s.nonce + 1 })); }
+  renderVals() {
+    const st = this.state;
+    const starts = [
+      { label: 'Onboarding', path: 'Bienvenida → Agregar plata → Ripio → Esperando → Listo', onClick: () => this.start('welcome') },
+      { label: 'Cambiar plata', path: 'Monto → Cotización (48 s) → MiniPay → Procesando → Listo o Cancelado', onClick: () => this.start('change') },
+      { label: 'Chat', path: 'Tocá una sugerencia o el micrófono → tarjeta de cotización → MiniPay', onClick: () => this.start('chat', 'empty') },
+      { label: 'Enviar a un contacto', path: 'Contacto → Monto → "Graciela recibe" → MiniPay → Enviado', onClick: () => this.start('send') },
+      { label: 'Dejá que Arbolito actúe por vos', path: 'Qué hace → Límites → Contactos → Permiso → MiniPay', onClick: () => this.start('auto-intro') },
+      { label: 'Inicio', path: 'Saldos, acciones, actividad, pestañas', onClick: () => this.start('home') },
+    ];
+    const tg = (label, on, onClick) => ({ label, onClick, style: { minHeight: 44, padding: '0 14px', borderRadius: 22, border: on ? '2px solid #0b1220' : '1px solid rgba(11,18,32,.25)', background: on ? '#0b1220' : '#ffffff', color: on ? '#ffffff' : '#0b1220', fontSize: 15, fontWeight: 600 } });
+    const toggles = [
+      tg('Claro', st.theme === 'light', () => this.setState({ theme: 'light' })),
+      tg('Oscuro', st.theme === 'dark', () => this.setState({ theme: 'dark' })),
+      tg('ES', st.lang === 'es', () => this.setState({ lang: 'es' })),
+      tg('PT', st.lang === 'pt', () => this.setState({ lang: 'pt' })),
+      tg('EN', st.lang === 'en', () => this.setState({ lang: 'en' })),
+    ];
+    return { ...st, starts, toggles, qv: this.props.quoteVariant || 'a', cv: this.props.consentVariant || 'a', rv: this.props.receiptVariant || 'a' };
+  }
+}
+</script>
+</body>
+</html>

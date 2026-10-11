@@ -1,0 +1,101 @@
+/*
+ * Arbolito design tokens: "Ink, glass and fluo" (design/Arbolito Design System.dc.html).
+ * One token set for the landing, the MiniPay mini app and the public pages.
+ * Accent colours are signals, never decoration: pink = live/attention, lime = savings/verified,
+ * blue = links/secondary data. Fonts come from next/font in layout.tsx (--font-serif/sans/mono).
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Type families */
+  --fD: var(--font-serif), "Instrument Serif", Georgia, serif; /* display, headlines, amounts */
+  --fS: var(--font-sans), "Manrope", system-ui, sans-serif; /* everything you act on */
+  --fM: var(--font-mono), "JetBrains Mono", ui-monospace, monospace; /* rates, IDs, fingerprints */
+  --dW: 400;
+  --dLS: -0.03em;
+
+  /* Colour: light */
+  --bg: #f2f3f7;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: #e6e8ef;
+  --ink: #0b1220;
+  --text: #0b1220;
+  --muted: #4a5368;
+  --card-border: rgba(11, 18, 32, 0.85);
+  --hairline: rgba(11, 18, 32, 0.1);
+  --a1: oklch(0.6 0.24 350); /* live / attention (pink) */
+  --a2: oklch(0.5 0.22 265); /* link / secondary data (blue) */
+  --a3: oklch(0.89 0.2 125); /* savings / verified bg (lime) */
+  --save-text: oklch(0.47 0.14 140);
+  --save-bg: oklch(0.93 0.13 125);
+  --attention-bg: oklch(0.95 0.04 350);
+  --attention-text: oklch(0.42 0.17 350);
+  --danger: oklch(0.5 0.2 25);
+  --danger-bg: oklch(0.95 0.03 25);
+  --primary-bg: #0b1220;
+  --primary-text: #ffffff;
+
+  /* Currency badges: tinted, with a strong glyph */
+  --ars-bg: oklch(0.92 0.05 240);
+  --ars-fg: oklch(0.42 0.14 255);
+  --brl-bg: oklch(0.93 0.13 125);
+  --brl-fg: oklch(0.38 0.1 135);
+  --usd-bg: oklch(0.93 0.05 350);
+  --usd-fg: oklch(0.45 0.19 350);
+
+  /* Spacing (4-pt base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-12: 48px;
+
+  /* Shape and depth */
+  --r-pill: 999px;
+  --r-card: 22px;
+  --r-tag: 6px;
+  --bd-card: 1.5px solid var(--card-border);
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-blur: blur(18px);
+  --shadow-float: 0 30px 60px -30px rgba(11, 18, 32, 0.35);
+  --shadow-sheet: 0 -10px 30px rgba(11, 18, 32, 0.15);
+
+  /* Sizes */
+  --tap: 44px;
+  --btn-h: 54px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;
+    --surface: rgba(255, 255, 255, 0.06);
+    --surface-2: #1a2234;
+    --text: #f2f3f7;
+    --muted: #a3abbf;
+    --card-border: rgba(242, 243, 247, 0.28);
+    --hairline: rgba(242, 243, 247, 0.12);
+    --a1: oklch(0.72 0.2 350);
+    --a2: oklch(0.7 0.16 265);
+    --a3: oklch(0.89 0.2 125);
+    --save-text: oklch(0.89 0.2 125);
+    --save-bg: oklch(0.32 0.07 125);
+    --attention-bg: oklch(0.3 0.08 350);
+    --attention-text: oklch(0.85 0.1 350);
+    --danger: oklch(0.75 0.15 25);
+    --danger-bg: oklch(0.3 0.08 25);
+    /* In dark, lime is the primary button, with ink text on it. */
+    --primary-bg: oklch(0.89 0.2 125);
+    --primary-text: #0b1220;
+    --glass: rgba(11, 18, 32, 0.55);
+    --shadow-sheet: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Amounts use tabular figures everywhere. */
+.amount,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

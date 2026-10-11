@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./arb-coins.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Archivo:wght@400;500;600;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0}body{overflow-x:hidden}button{font-family:inherit;cursor:pointer}a{color:inherit;text-decoration-thickness:1.5px;text-underline-offset:3px}a:hover{opacity:.7}@keyframes lpMarq{to{transform:translateX(-50%)}}@keyframes lpSpin{to{transform:rotate(360deg)}}@keyframes lpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes lpPulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="{{ rootStyle }}">
+
+<sc-if value="{{ coinGlass }}"><x-import component-from-global-scope="arb-coins" preset="glass" track='[["#hero",0.5,0.02,1.15],["#como",0.62,0.32,0.62],["#calc",-0.7,0.28,0.55],["#recibo",-0.72,0.42,0.5],["#numeros",1.6,0.2,0.6],["#confianza",0.58,-0.05,0.95],["#faq",-0.75,0.3,0.5],["#pie",0.0,0.3,1.1]]' hint-size="0px,0px"></x-import></sc-if>
+<sc-if value="{{ coinFluo }}"><x-import component-from-global-scope="arb-coins" preset="fluo" track='[["#hero",0.5,0.02,1.15],["#como",0.62,0.32,0.62],["#calc",-0.7,0.28,0.55],["#recibo",-0.72,0.42,0.5],["#numeros",1.6,0.2,0.6],["#confianza",0.58,-0.05,0.95],["#faq",-0.75,0.3,0.5],["#pie",0.0,0.3,1.1]]' hint-size="0px,0px"></x-import></sc-if>
+
+<div style="position:relative;z-index:1">
+
+<header style="position:sticky;top:0;z-index:20;display:flex;justify-content:center;padding:14px 20px">
+  <nav style="width:100%;max-width:1240px;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 8px 8px 20px;background:var(--navBg);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--rPill);box-shadow:var(--shSm)">
+    <a href="#hero" style="text-decoration:none;display:flex;align-items:center;gap:8px"><span style="display:flex;gap:2px"><span style="width:9px;height:9px;border-radius:50%;background:var(--a1)"></span><span style="width:9px;height:9px;border-radius:50%;background:var(--a3)"></span><span style="width:9px;height:9px;border-radius:50%;background:var(--a2)"></span></span><span style="font:800 22px/1 'Manrope';letter-spacing:-.045em">arbolito</span></a>
+    <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+      <a href="#como" style="text-decoration:none;font-size:15px;font-weight:600;padding:10px 12px;white-space:nowrap">Cómo funciona</a>
+      <a href="#calc" style="text-decoration:none;font-size:15px;font-weight:600;padding:10px 12px;white-space:nowrap">Calculadora</a>
+      <a href="#recibo" style="text-decoration:none;font-size:15px;font-weight:600;padding:10px 12px;white-space:nowrap">Comprobantes</a>
+      <a href="#numeros" style="text-decoration:none;font-size:15px;font-weight:600;padding:10px 12px;white-space:nowrap">En vivo</a>
+      <a href="#hero" style="text-decoration:none;background:var(--btn);color:var(--btnInk);font-size:15px;font-weight:700;padding:12px 18px;border-radius:var(--rPill);white-space:nowrap;border:var(--btnBd);box-shadow:var(--btnSh)">Abrir en MiniPay</a>
+    </div>
+  </nav>
+</header>
+
+<section id="hero" style="position:relative;min-height:calc(100vh - 80px);display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding:24px 0 0">
+  <div style="width:100%;max-width:1240px;margin:0 auto;padding:0 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px;flex:1">
+    <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:500 13px/1.6 'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.04em;white-space:nowrap"><span>ARS · BRL · USD</span><span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:var(--a1);animation:lpPulse 1.6s infinite"></span>EN VIVO · ACTUALIZADO HACE 12 S</span></div>
+    <h1 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(64px,11.5vw,184px);line-height:.86;letter-spacing:var(--dLS);max-width:9ch;text-wrap:balance">El cambista <i style="font-style:var(--ital);color:var(--a1)">que vive</i> en tu chat.</h1>
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-bottom:28px">
+      <div style="max-width:480px;display:flex;flex-direction:column;gap:20px">
+        <p style="margin:0;font-size:20px;line-height:1.5;text-wrap:pretty">Pedile por texto o audio que cambie o mande pesos, reales y dólares. Busca el mejor precio del momento y te da un comprobante que lo prueba.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"><a href="#hero" style="text-decoration:none;background:var(--btn);color:var(--btnInk);font-size:18px;font-weight:700;padding:18px 26px;border-radius:var(--rPill);border:var(--btnBd);box-shadow:var(--btnSh)">Abrir en MiniPay</a><a href="#hero" style="font-size:17px;font-weight:600;padding:12px 4px">o escribile a @arbolitoo_bot</a></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;width:320px;max-width:100%">
+        <div style="background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:18px;display:flex;flex-direction:column;gap:6px;animation:lpBob 5s ease-in-out infinite">
+          <span style="display:flex;justify-content:space-between;font:600 12px/1 'JetBrains Mono',monospace;color:var(--muted)"><span>RECIBÍS</span><span style="white-space:nowrap">VENCE EN {{ heroSecs }} S</span></span>
+          <span style="font-family:var(--fD);font-weight:var(--dW);font-size:42px;line-height:1;letter-spacing:var(--dLS)">ARS 3.177,41</span>
+          <span style="font-size:15px;color:var(--muted)">por R$ 10,00 · <b style="background:var(--a3);color:#0b1220;padding:1px 6px;border-radius:var(--rTag)">+5,24%</b> vs oficial</span>
+        </div>
+        <div style="background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:12px 14px;display:flex;gap:12px;align-items:center;animation:lpBob 5.6s ease-in-out .9s infinite"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">✓</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:800;font-size:15px">Comprobante verificado</span><span style="font:400 12px/1.2 'JetBrains Mono',monospace;color:var(--muted)">huella 9f3a…c71e · registro público</span></span></div>
+      </div>
+    </div>
+  </div>
+  <div style="overflow:hidden;background:var(--tickBg);color:var(--tickInk);border-top:var(--bdStrong);border-bottom:var(--bdStrong)">
+    <div style="display:flex;width:max-content;gap:56px;padding:16px 0;white-space:nowrap;font:600 17px/1 'JetBrains Mono',monospace;letter-spacing:.02em;animation:lpMarq 30s linear infinite">
+      <sc-for list="{{ ticker }}" as="k" hint-placeholder-count="12"><span>{{ k }}</span></sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="como" style="padding:120px 20px 80px">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:48px">
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:640px">
+      <span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);white-space:nowrap">01 — CÓMO FUNCIONA</span>
+      <h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(44px,6vw,88px);line-height:.95;letter-spacing:var(--dLS);text-wrap:balance">Tres pasos. <i style="font-style:var(--ital)">Cero</i> jerga.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:18px;background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:24px">
+        <span style="font-family:var(--fD);font-weight:var(--dW);font-size:96px;line-height:.8;color:var(--a1)">1</span>
+        <h3 style="margin:0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.02em">Decile qué querés</h3>
+        <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">Escribí o mandá un audio, en español, portugués o inglés.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;padding-top:6px"><span style="background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:16px">pasá 100 dólares a pesos</span><span style="background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:15px;font-style:italic;opacity:.85">audio 0:03 · "manda 200 reais pra Lucía"</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px;background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:24px;margin-top:var(--stagger)">
+        <span style="font-family:var(--fD);font-weight:var(--dW);font-size:96px;line-height:.8;color:var(--a2)">2</span>
+        <h3 style="margin:0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.02em">Mirá el precio</h3>
+        <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">Arbolito compara mercados y te muestra cuánto recibís, contra el oficial. El precio vale 48 segundos.</p>
+        <div style="display:flex;flex-direction:column;gap:6px;border-top:var(--bdDash);padding-top:12px"><span style="font-family:var(--fD);font-weight:var(--dW);font-size:36px;letter-spacing:var(--dLS)">ARS 160.800</span><span style="font-size:15px;color:var(--muted)">por US$ 100 · +4,08% vs oficial</span><span style="height:4px;background:var(--line);border-radius:2px;margin-top:6px"><span style="display:block;height:4px;width:70%;background:var(--a1);border-radius:2px"></span></span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px;background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:24px;margin-top:var(--stagger2)">
+        <span style="font-family:var(--fD);font-weight:var(--dW);font-size:96px;line-height:.8;color:var(--a1)">3</span>
+        <h3 style="margin:0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.02em">Confirmá en MiniPay</h3>
+        <p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted)">Un toque en tu billetera. La plata llega en segundos, con su comprobante. Si algo falla, no se mueve nada.</p>
+        <div style="position:relative;height:150px;border-radius:var(--r);overflow:hidden;background:var(--illoBg);border:var(--bd)"><img src="assets/ref-exchange.png" alt="Dos personas intercambiando monedas" style="position:absolute;width:118%;left:-9%;top:-14%;filter:var(--illoF);mix-blend-mode:var(--illoB)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="calc" style="padding:100px 20px">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:40px">
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end;text-align:right">
+      <span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);white-space:nowrap">02 — CUÁNTO AHORRÁS</span>
+      <h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(44px,6vw,88px);line-height:.95;letter-spacing:var(--dLS);max-width:12ch;text-wrap:balance">Hacé la cuenta <i style="font-style:var(--ital)">vos.</i></h2>
+    </div>
+    <div style="background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:clamp(20px,4vw,48px);display:flex;flex-direction:column;gap:32px">
+      <div style="font-family:var(--fD);font-weight:var(--dW);font-size:clamp(32px,4.6vw,64px);line-height:1.12;letter-spacing:var(--dLS);text-wrap:pretty">
+        Si cambiás
+        <span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle;border-bottom:3px solid var(--a1);padding:0 6px"><span>{{ calc.sym }}</span><input type="text" inputmode="decimal" value="{{ calc.raw }}" onChange="{{ calc.onInput }}" aria-label="Monto" style="width:5.2ch;font:inherit;letter-spacing:inherit;color:inherit;background:transparent;border:0;outline:none;padding:0"></span>
+        a pesos, recibís <span style="background:var(--a3);color:#0b1220;padding:0 10px;border-radius:var(--rTag);white-space:nowrap">{{ calc.get }}</span>.
+        Son <span style="color:var(--a1);white-space:nowrap">{{ calc.more }}</span> más que al oficial.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <span style="font-size:15px;color:var(--muted);margin-right:4px">Tenés</span>
+        <sc-for list="{{ calc.curs }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+        <sc-for list="{{ calc.presets }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.onClick }}" style="min-height:44px;padding:0 14px;border-radius:var(--rPill);border:var(--bdSoft);background:transparent;color:var(--ink);font:500 15px/1 'JetBrains Mono',monospace">{{ p.label }}</button></sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ calc.bars }}" as="b" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:minmax(90px,150px) 1fr minmax(120px,auto);gap:14px;align-items:center">
+            <span style="{{ b.lStyle }}">{{ b.label }}</span>
+            <span style="height:14px;background:var(--line);border-radius:var(--rTag);overflow:hidden"><span style="{{ b.bar }}"></span></span>
+            <span style="{{ b.vStyle }}">{{ b.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:14px;line-height:1.5;color:var(--muted)">{{ calc.note }}</div>
+    </div>
+  </div>
+</section>
+
+<section id="recibo" style="padding:100px 20px">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:48px">
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+      <span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);white-space:nowrap">03 — LA PRUEBA</span>
+      <h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(44px,6vw,88px);line-height:.95;letter-spacing:var(--dLS);max-width:16ch;text-wrap:balance">Cada operación tiene un comprobante que <i style="font-style:var(--ital);color:var(--a1)">cualquiera</i> puede verificar.</h2>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:clamp(24px,8vw,180px);justify-content:center;align-items:flex-start">
+      <div style="width:340px;max-width:100%;transform:rotate(-3deg);background:var(--paperC);color:#0d0d0d;border:var(--bdTicket);box-shadow:var(--sh);font-family:'JetBrains Mono',monospace;display:flex;flex-direction:column">
+        <div style="padding:18px 20px;display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:1.5px dashed #0d0d0d55"><span style="font:800 22px/1 'Manrope';letter-spacing:-.045em">arbolito</span><span style="font-size:13px">COMPROBANTE #A7F3-29</span><span style="font-size:13px;color:#555">11.10.2026 · 10:42:07</span></div>
+        <div style="padding:14px 20px;display:flex;flex-direction:column;gap:9px;font-size:14px;border-bottom:1.5px dashed #0d0d0d55">
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">PAGASTE</span><span>R$ 10,00</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">RECIBISTE</span><span style="font-weight:600">ARS 3.177,41</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">COTIZACIÓN</span><span>317,74</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">VS OFICIAL</span><span>+5,24%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">RUTA</span><span>R$ → US$ → ARS</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#555">COMISIÓN</span><span>0,00</span></div>
+        </div>
+        <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:#555">AHORRASTE</span><span style="font:800 30px/1 'Manrope';letter-spacing:-.03em">ARS 158</span></div>
+      </div>
+      <div style="width:520px;max-width:100%;display:flex;flex-direction:column;gap:18px">
+        <div style="{{ ver.card }}">
+          <div style="display:flex;gap:16px;align-items:center">
+            <span style="{{ ver.badge }}">{{ ver.icon }}</span>
+            <span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:24px;font-weight:800;letter-spacing:-.02em">{{ ver.title }}</span><span style="font-size:16px;line-height:1.45;color:var(--muted)">{{ ver.sub }}</span></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;font:500 13px/1.5 'JetBrains Mono',monospace;word-break:break-all">
+            <div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--rTag);background:var(--codeBg)"><span style="color:var(--muted)">CALCULADA AHORA, EN TU NAVEGADOR</span><span>{{ ver.local }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--rTag);background:var(--codeBg)"><span style="color:var(--muted)">REGISTRADA EN CELO · BLOQUE 31.204.877</span><span>9f3a6c0e…b2d841c71e</span></div>
+          </div>
+          <button onClick="{{ ver.onClick }}" style="align-self:flex-start;min-height:48px;padding:0 20px;border-radius:var(--rPill);background:var(--btn);color:var(--btnInk);border:var(--btnBd);box-shadow:var(--btnSh);font-size:16px;font-weight:700">{{ ver.cta }}</button>
+        </div>
+        <p style="margin:0;font-size:16px;line-height:1.55;color:var(--muted);text-wrap:pretty">Lucía ve "Ahorraste ARS 158". Un auditor ve la misma cuenta hecha de nuevo y comparada con lo que quedó registrado en público. Nadie puede cambiar un comprobante después.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="numeros" style="padding:100px 20px;background:var(--darkBg);color:var(--darkInk)">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:40px">
+    <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:12px"><span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;opacity:.7">04 — EN VIVO</span><h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(44px,6vw,88px);line-height:.95;letter-spacing:var(--dLS)">Los números, <i style="font-style:var(--ital);color:var(--a3)">con prueba.</i></h2></div>
+      <span style="display:flex;align-items:center;gap:8px;font:500 13px/1 'JetBrains Mono',monospace;opacity:.8"><span style="width:8px;height:8px;border-radius:50%;background:var(--a3);animation:lpPulse 1.6s infinite"></span>SE ACTUALIZA CADA MINUTO · DATOS DE EJEMPLO</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:color-mix(in oklab,currentColor 18%,transparent);border:1px solid color-mix(in oklab,currentColor 18%,transparent)">
+      <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="6">
+        <a href="#numeros" style="text-decoration:none;background:var(--darkBg);padding:24px;display:flex;flex-direction:column;gap:10px;min-height:150px">
+          <span style="font:500 13px/1.3 'JetBrains Mono',monospace;opacity:.7;letter-spacing:.04em">{{ m.k }}</span>
+          <span style="font-family:var(--fD);font-weight:var(--dW);font-size:52px;line-height:1;letter-spacing:var(--dLS);font-variant-numeric:tabular-nums">{{ m.v }}</span>
+          <span style="margin-top:auto;font:500 13px/1 'JetBrains Mono',monospace;color:var(--a3)">{{ m.proof }} ↗</span>
+        </a>
+      </sc-for>
+    </div>
+    <a href="#numeros" style="align-self:flex-start;font-size:17px;font-weight:700">Ver todas las métricas →</a>
+  </div>
+</section>
+
+<section id="confianza" style="padding:120px 20px">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:56px">
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:620px"><span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);white-space:nowrap">05 — TU PLATA, TUS REGLAS</span><h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(44px,6vw,88px);line-height:.95;letter-spacing:var(--dLS);text-wrap:balance">Rápido como el de la calle. <i style="font-style:var(--ital)">Sin dudas.</i></h2></div>
+    <div style="display:flex;flex-direction:column;max-width:760px">
+      <sc-for list="{{ trust }}" as="s" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:72px 1fr;gap:20px;padding:24px 0;border-top:var(--bdRule)">
+          <span style="font:600 14px/1.6 'JetBrains Mono',monospace;color:var(--a1)">{{ s.n }}</span>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:clamp(24px,2.6vw,34px);font-weight:800;letter-spacing:-.02em;line-height:1.1">{{ s.t }}</span><span style="font-size:17px;line-height:1.5;color:var(--muted);text-wrap:pretty">{{ s.d }}</span></div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="align-self:flex-end;position:relative;width:min(460px,100%);aspect-ratio:617/581;border-radius:var(--r);overflow:hidden;background:var(--illoBg);border:var(--bd);box-shadow:var(--sh)">
+      <img src="assets/ref-counter.png" alt="Una cambista contando billetes" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:var(--illoF);mix-blend-mode:var(--illoB)">
+      <span style="position:absolute;left:12px;bottom:12px;font:600 11px/1 'JetBrains Mono',monospace;background:#fff;color:#0d0d0d;padding:6px 8px;border-radius:4px">ILUSTRACIÓN DE REFERENCIA · A ENCARGAR</span>
+      <span style="position:absolute;right:-24px;top:-24px;width:150px;height:150px;animation:lpSpin 16s linear infinite"><svg viewBox="0 0 200 200" width="150" height="150"><circle cx="100" cy="100" r="96" fill="var(--a3)" stroke="#0d0d0d" stroke-width="3"></circle><defs><path id="lpc" d="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0"></path></defs><text font-family="Archivo" font-weight="800" font-size="19" letter-spacing="3" fill="#0d0d0d"><textPath href="#lpc">TU PLATA · TUS LÍMITES · TU PLATA · TUS LÍMITES · </textPath></text></svg></span>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding:80px 20px 120px">
+  <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center"><span style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--muted);white-space:nowrap">06 — PREGUNTAS</span><h2 style="margin:0;font-family:var(--fD);font-weight:var(--dW);font-size:clamp(40px,5vw,72px);line-height:.95;letter-spacing:var(--dLS)">Lo que todos preguntan</h2></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ faq }}" as="f" hint-placeholder-count="5">
+        <div style="background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:var(--bd);border-radius:var(--r);box-shadow:var(--shSm);overflow:hidden">
+          <button onClick="{{ f.onClick }}" aria-expanded="{{ f.open }}" style="width:100%;min-height:64px;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 22px;border:0;background:transparent;color:var(--ink);text-align:left;font-size:19px;font-weight:700"><span style="flex:1;min-width:0">{{ f.q }}</span><span style="{{ f.iconStyle }}">+</span></button>
+          <sc-if value="{{ f.open }}"><div style="padding:0 22px 20px;font-size:17px;line-height:1.55;color:var(--muted);text-wrap:pretty">{{ f.a }}</div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<footer id="pie" style="padding:40px 20px 28px;border-top:var(--bdStrong);overflow:hidden">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:28px">
+    <div style="font-family:var(--fD);font-weight:var(--dW);font-size:clamp(80px,19vw,300px);line-height:.8;letter-spacing:var(--dLS);text-align:center;padding-top:clamp(120px,22vw,300px)">arbolito<span style="color:var(--a1)">.</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:6px;background:var(--card);border:var(--bd);border-radius:var(--rPill);padding:4px">
+        <sc-for list="{{ langs }}" as="l" hint-placeholder-count="3"><button onClick="{{ l.onClick }}" style="{{ l.style }}">{{ l.label }}</button></sc-for>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:15px"><a href="#numeros">Métricas</a><a href="#recibo">Comprobantes</a><a href="#hero">Telegram</a><a href="#hero">Términos</a><a href="#hero">Privacidad</a></div>
+      <span style="font:500 13px/1.4 'JetBrains Mono',monospace;color:var(--muted)">Beta · sin comisión · funciona dentro de MiniPay</span>
+    </div>
+  </div>
+</footer>
+
+</div>
+<sc-if value="{{ toast }}"><div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;background:var(--ink);color:var(--bg);padding:14px 18px;border-radius:var(--rPill);font-size:15px;font-weight:600">{{ toast }}</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;skin&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mix&quot;,&quot;fluo&quot;,&quot;vidrio&quot;],&quot;default&quot;:&quot;mix&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const SKINS = {
+  mix: { '--bg': '#f2f3f7', '--ink': '#0b1220', '--muted': '#4a5368', '--line': 'rgba(11,18,32,.1)', '--a1': 'oklch(0.6 0.24 350)', '--a2': 'oklch(0.5 0.22 265)', '--a3': 'oklch(0.89 0.2 125)', '--fD': "'Instrument Serif', serif", '--dW': '400', '--dLS': '-.03em', '--ital': 'italic', '--card': 'rgba(255,255,255,.55)', '--navBg': 'rgba(255,255,255,.6)', '--blur': 'blur(18px) saturate(1.4)', '--bd': '1.5px solid rgba(11,18,32,.9)', '--bdSoft': '1.5px solid rgba(11,18,32,.25)', '--bdStrong': '1.5px solid #0b1220', '--bdDash': '1.5px dashed rgba(11,18,32,.25)', '--bdRule': '1.5px solid #0b1220', '--bdTicket': '1.5px solid #0b1220', '--r': '22px', '--rPill': '999px', '--rTag': '6px', '--sh': '0 30px 60px -30px rgba(11,18,32,.35)', '--shSm': '0 10px 30px -20px rgba(11,18,32,.3)', '--btn': '#0b1220', '--btnInk': '#fff', '--btnBd': '0', '--btnSh': 'none', '--tickBg': '#0b1220', '--tickInk': 'oklch(0.89 0.2 125)', '--illoBg': 'oklch(0.6 0.24 350)', '--illoF': 'grayscale(1) contrast(1.25)', '--illoB': 'multiply', '--paperC': '#ffffff', '--codeBg': 'rgba(11,18,32,.06)', '--darkBg': '#0b1220', '--darkInk': '#f2f3f7', '--stagger': '48px', '--stagger2': '96px', fontFamily: "'Manrope', system-ui, sans-serif" },
+  fluo: { '--bg': '#ffffff', '--ink': '#0d0d0d', '--muted': '#3d3d3d', '--line': 'rgba(13,13,13,.12)', '--a1': 'oklch(0.6 0.25 350)', '--a2': 'oklch(0.5 0.22 265)', '--a3': 'oklch(0.89 0.2 125)', '--fD': "'Instrument Serif', serif", '--dW': '400', '--dLS': '-.03em', '--ital': 'italic', '--card': '#ffffff', '--navBg': '#ffffff', '--blur': 'none', '--bd': '2px solid #0d0d0d', '--bdSoft': '2px solid #0d0d0d', '--bdStrong': '2px solid #0d0d0d', '--bdDash': '2px solid #0d0d0d', '--bdRule': '2px solid #0d0d0d', '--bdTicket': '2px solid #0d0d0d', '--r': '0px', '--rPill': '0px', '--rTag': '0px', '--sh': '8px 8px 0 #0d0d0d', '--shSm': '4px 4px 0 #0d0d0d', '--btn': 'oklch(0.5 0.22 265)', '--btnInk': '#fff', '--btnBd': '2px solid #0d0d0d', '--btnSh': '5px 5px 0 #0d0d0d', '--tickBg': 'oklch(0.89 0.2 125)', '--tickInk': '#0d0d0d', '--illoBg': 'oklch(0.6 0.25 350)', '--illoF': 'grayscale(1) contrast(1.3)', '--illoB': 'multiply', '--paperC': 'oklch(0.89 0.2 125)', '--codeBg': '#f1f1f1', '--darkBg': '#0d0d0d', '--darkInk': '#ffffff', '--stagger': '0px', '--stagger2': '0px', fontFamily: "'Archivo', system-ui, sans-serif" },
+  vidrio: { '--bg': '#eef1f6', '--ink': '#0b1220', '--muted': '#45506a', '--line': 'rgba(11,18,32,.08)', '--a1': 'oklch(0.5 0.2 275)', '--a2': 'oklch(0.55 0.13 220)', '--a3': 'oklch(0.89 0.2 125)', '--fD': "'Manrope', sans-serif", '--dW': '800', '--dLS': '-.055em', '--ital': 'normal', '--card': 'rgba(255,255,255,.5)', '--navBg': 'rgba(255,255,255,.55)', '--blur': 'blur(18px) saturate(1.4)', '--bd': '1px solid rgba(255,255,255,.85)', '--bdSoft': '1px solid rgba(11,18,32,.15)', '--bdStrong': '1px solid rgba(11,18,32,.1)', '--bdDash': '1px solid rgba(11,18,32,.08)', '--bdRule': '1px solid rgba(11,18,32,.12)', '--bdTicket': '1px solid rgba(255,255,255,.9)', '--r': '24px', '--rPill': '999px', '--rTag': '8px', '--sh': '0 30px 60px -30px rgba(11,18,32,.35)', '--shSm': '0 10px 30px -20px rgba(11,18,32,.3)', '--btn': '#0b1220', '--btnInk': '#fff', '--btnBd': '0', '--btnSh': 'none', '--tickBg': 'rgba(255,255,255,.45)', '--tickInk': '#0b1220', '--illoBg': 'linear-gradient(160deg,#e9e6ff,#f2ffd6)', '--illoF': 'none', '--illoB': 'normal', '--paperC': 'rgba(255,255,255,.75)', '--codeBg': 'rgba(11,18,32,.05)', '--darkBg': '#0b1220', '--darkInk': '#eef1f6', '--stagger': '40px', '--stagger2': '80px', fontFamily: "'Manrope', system-ui, sans-serif" },
+};
+const USD = { arb: 1608, oficial: 1545, mep: 1541, blue: 1555, ccl: 1610 };
+const BRL = { arb: 317.74, oficial: 302.89 };
+const f = (n, d = 0) => n.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+class Component extends DCLogic {
+  state = { cur: 'USD', raw: '500', faq: 0, ver: 'idle', hash: '', ops: 9731, heroSecs: 48, lang: 'es', toast: null };
+  componentDidMount() {
+    this.iv = setInterval(() => this.setState(s => ({ heroSecs: s.heroSecs <= 1 ? 48 : s.heroSecs - 1 })), 1000);
+    this.iv2 = setInterval(() => this.setState(s => ({ ops: s.ops + 1 })), 6000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearInterval(this.iv2); clearInterval(this.hv); clearTimeout(this.tt); }
+  verify() {
+    if (this.state.ver === 'run') return;
+    const target = '9f3a6c0e…b2d841c71e', hex = '0123456789abcdef'; let n = 0;
+    this.setState({ ver: 'run' });
+    clearInterval(this.hv);
+    this.hv = setInterval(() => {
+      n++;
+      const s = target.split('').map((ch, i) => ch === '…' ? '…' : i < n / 1.4 ? ch : hex[Math.floor(Math.random() * 16)]).join('');
+      if (n > 30) { clearInterval(this.hv); this.setState({ ver: 'ok', hash: target }); } else this.setState({ hash: s });
+    }, 45);
+  }
+  toast(m) { clearTimeout(this.tt); this.setState({ toast: m }); this.tt = setTimeout(() => this.setState({ toast: null }), 2200); }
+  renderVals() {
+    const st = this.state;
+    const skin = this.props.skin || 'mix';
+    const S = SKINS[skin] || SKINS.mix;
+    const rootStyle = { ...S, background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', position: 'relative' };
+    const amt = Math.max(0, parseFloat(String(st.raw).replace(/\./g, '').replace(',', '.')) || 0);
+    const R = st.cur === 'USD' ? USD : BRL;
+    const get = amt * R.arb, off = amt * R.oficial;
+    const pct = (R.arb / R.oficial - 1) * 100;
+    const rows = st.cur === 'USD'
+      ? [['Arbolito', R.arb, true], ['Oficial', USD.oficial], ['MEP', USD.mep], ['Blue', USD.blue], ['CCL (empresas)', USD.ccl]]
+      : [['Arbolito', R.arb, true], ['Oficial', BRL.oficial]];
+    const max = Math.max(...rows.map(r => r[1]));
+    const min = Math.min(...rows.map(r => r[1])) * 0.9;
+    const bars = rows.map(([label, rate, me]) => ({ label, value: 'ARS ' + f(amt * rate), lStyle: { fontSize: 16, fontWeight: me ? 800 : 500 }, vStyle: { font: `${me ? 700 : 500} 15px/1 'JetBrains Mono',monospace`, textAlign: 'right', whiteSpace: 'nowrap' }, bar: { display: 'block', height: 14, width: ((rate - min) / (max - min)) * 100 + '%', background: me ? 'var(--a1)' : 'color-mix(in oklab,var(--ink) 35%,transparent)', borderRadius: 'var(--rTag)', transition: 'width .4s' } }));
+    const pill = (on) => ({ minHeight: 44, padding: '0 16px', borderRadius: 'var(--rPill)', border: on ? '2px solid var(--ink)' : 'var(--bdSoft)', background: on ? 'var(--ink)' : 'transparent', color: on ? 'var(--bg)' : 'var(--ink)', fontSize: 15, fontWeight: 700 });
+    const calc = {
+      sym: st.cur === 'USD' ? 'US$' : 'R$', raw: st.raw, get: 'ARS ' + f(get), more: 'ARS ' + f(get - off),
+      onInput: (e) => this.setState({ raw: e.target.value.replace(/[^0-9.,]/g, '').slice(0, 9) }),
+      curs: [['USD', 'Dólares'], ['BRL', 'Reales']].map(([c, l]) => ({ label: l, onClick: () => this.setState({ cur: c }), style: pill(st.cur === c) })),
+      presets: (st.cur === 'USD' ? ['100', '500', '1.500'] : ['200', '1.000', '5.000']).map(v => ({ label: (st.cur === 'USD' ? 'US$ ' : 'R$ ') + v, onClick: () => this.setState({ raw: v }) })),
+      bars, note: `Precios de ejemplo de hoy (ARS por ${st.cur === 'USD' ? 'dólar' : 'real'}). Arbolito ${pct >= 0 ? '+' : ''}${f(pct, 2)}% vs oficial. Sin comisión durante la beta; los costos de mercado (0,01–0,02%) ya están en el precio.`,
+    };
+    const ok = st.ver === 'ok', run = st.ver === 'run';
+    const ver = {
+      title: ok ? 'Coincide. Es auténtico.' : run ? 'Calculando la huella…' : 'Verificalo vos',
+      sub: ok ? 'La huella que calculamos ahora es idéntica a la que quedó registrada en público el 11 oct.' : 'Recalculamos la huella del comprobante acá mismo y la comparamos con el registro público.',
+      local: run || ok ? st.hash : '— tocá el botón —', cta: ok ? 'Verificar de nuevo' : run ? 'Calculando…' : 'Recalcular huella',
+      icon: ok ? '✓' : run ? '…' : '?', onClick: () => this.verify(),
+      badge: { width: 56, height: 56, flex: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, background: ok ? 'var(--a3)' : 'var(--codeBg)', color: '#0b1220', transition: 'background .3s' },
+      card: { background: 'var(--card)', backdropFilter: 'var(--blur)', WebkitBackdropFilter: 'var(--blur)', border: ok ? '2px solid oklch(0.62 0.17 140)' : 'var(--bd)', borderRadius: 'var(--r)', boxShadow: 'var(--sh)', padding: 24, display: 'flex', flexDirection: 'column', gap: 18, transition: 'border-color .3s' },
+    };
+    const metrics = [
+      { k: 'USUARIOS', v: f(1284), proof: 'ver lista anónima' },
+      { k: 'OPERACIONES', v: f(st.ops), proof: 'última: #A7F3-29' },
+      { k: 'AHORRO MEDIANO VS OFICIAL', v: '+4,6%', proof: 'ver cálculo' },
+      { k: 'VOLUMEN · PESOS', v: 'ARS 412,8 M', proof: 'ver transacciones' },
+      { k: 'VOLUMEN · REALES', v: 'R$ 286.400', proof: 'ver transacciones' },
+      { k: 'VOLUMEN · DÓLARES', v: 'US$ 198.250', proof: 'ver transacciones' },
+      { k: 'COMPROBANTES VERIFICABLES', v: '100%', proof: 'verificar uno al azar' },
+      { k: 'ARBOLITO DESK · FILLS HOY', v: f(312), proof: 'ver /desk' },
+      { k: 'APPS QUE PAGAN LA API', v: '3', proof: 'ver pagos en USA₮' },
+    ];
+    const trust = [
+      { n: '01', t: 'Tu plata vive en tu MiniPay.', d: 'Arbolito no la guarda. Cuando cambia, la plata vuelve siempre a tu cuenta.' },
+      { n: '02', t: 'Vos ponés los límites.', d: 'Por ejemplo, hasta US$ 25 por operación y US$ 100 por día. Para más, te pregunta.' },
+      { n: '03', t: 'Lo pausás o lo revocás cuando quieras.', d: 'Pausar es al instante. Revocar es una confirmación en MiniPay.' },
+      { n: '04', t: 'Si algo falla, no se mueve nada.', d: 'Cada operación tiene un mínimo garantizado. Si el precio cae por debajo, no se hace.' },
+    ];
+    const qa = [
+      ['¿Cómo paso la plata a mi banco?', 'Los pesos y reales salen por Ripio: los mandás desde Arbolito a tu cuenta Ripio y de ahí a tu banco. Los dólares los retirás con la opción Retirar de MiniPay.'],
+      ['¿Cuánto cobra Arbolito?', 'Nada durante la beta. Los únicos costos son los del mercado (cerca de 0,01–0,02%) y ya están incluidos en el precio que ves. Lo que dice la cotización es lo que recibís.'],
+      ['¿En qué países funciona?', 'Donde funciona MiniPay: Argentina, Brasil, Chile, Colombia, Perú, Uruguay y México. Hoy cambiamos entre pesos argentinos, reales y dólares.'],
+      ['¿Necesito saber de cripto?', 'No. Hablás en pesos, reales y dólares, y confirmás en tu billetera como cualquier pago. Los detalles técnicos están en "Ver detalles", si te interesan.'],
+      ['¿Y si el precio cambia mientras confirmo?', 'Cada cotización vale 48 segundos y tiene un mínimo garantizado. Si el precio cae por debajo, la operación no se hace y tu plata no se mueve.'],
+    ];
+    const faq = qa.map(([q, a], i) => ({ q, a, open: st.faq === i, onClick: () => this.setState({ faq: st.faq === i ? -1 : i }), iconStyle: { flex: 'none', fontSize: 26, fontWeight: 400, transform: st.faq === i ? 'rotate(45deg)' : 'none', transition: 'transform .2s' } }));
+    const langs = [['es', 'Español'], ['pt', 'Português'], ['en', 'English']].map(([c, l]) => ({ label: l, onClick: () => { this.setState({ lang: c }); if (c !== 'es') this.toast(c === 'pt' ? 'Versão em português: próximo passo do design' : 'English version: next design step'); }, style: { minHeight: 44, padding: '0 16px', border: 0, borderRadius: 'var(--rPill)', background: st.lang === c ? 'var(--ink)' : 'transparent', color: st.lang === c ? 'var(--bg)' : 'var(--ink)', fontSize: 15, fontWeight: 700 } }));
+    const tick = ['1 US$ = ARS 1.608', '1 R$ = ARS 317,74', 'OFICIAL 1.545', 'MEP 1.541', 'CCL 1.610', 'BLUE 1.555', 'CRIPTO 1.608', 'CADA OPERACIÓN CON COMPROBANTE'];
+    return { rootStyle, coinGlass: skin !== 'fluo', coinFluo: skin === 'fluo', heroSecs: st.heroSecs, ticker: [...tick, ...tick], calc, ver, metrics, trust, faq, langs, toast: st.toast };
+  }
+}
+</script>
+</body>
+</html>

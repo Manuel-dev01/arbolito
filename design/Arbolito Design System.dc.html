@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f2f3f7;font-family:'Manrope',system-ui,sans-serif;color:#0b1220}a{color:#0b1220}a:hover{opacity:.7}</style>
+</helmet>
+<section id="ds" style="padding:64px;width:1320px;display:flex;flex-direction:column;gap:64px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:980px">
+    <div style="font:600 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#4a5368">Arbolito · Design system · Mix</div>
+    <h1 style="margin:0;font:400 80px/.95 'Instrument Serif',serif;letter-spacing:-.03em">Ink, glass and <i style="color:oklch(0.6 0.24 350)">fluo.</i></h1>
+    <p style="margin:0;font-size:18px;line-height:1.55;color:#4a5368;text-wrap:pretty">One token set for the landing, the MiniPay mini app and the public pages. Serif for things you read once and big: headlines and the amount you receive. Sans for everything you act on. Mono for anything that must be exact: rates, IDs, fingerprints. Accent colours are signals, never decoration: pink means live or attention, lime means savings and verified, blue means links and secondary data.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Colour</h2>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px">
+      <div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:22px;background:#f2f3f7;border:1.5px solid rgba(11,18,32,.85)">
+        <div style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">LIGHT · prefers-color-scheme: light</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <sc-for list="{{ lightSw }}" as="c" hint-placeholder-count="12"><div style="display:flex;flex-direction:column;gap:6px"><div style="{{ c.sw }}"></div><span style="font-size:14px;font-weight:700">{{ c.n }}</span><span style="font:400 12px/1.3 'JetBrains Mono',monospace;color:#4a5368">{{ c.v }}</span></div></sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:22px;background:#0b1220;color:#f2f3f7;border:1.5px solid rgba(242,243,247,.28)">
+        <div style="font:600 13px/1 'JetBrains Mono',monospace;color:#a3abbf">DARK · prefers-color-scheme: dark</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <sc-for list="{{ darkSw }}" as="c" hint-placeholder-count="12"><div style="display:flex;flex-direction:column;gap:6px"><div style="{{ c.sw }}"></div><span style="font-size:14px;font-weight:700">{{ c.n }}</span><span style="font:400 12px/1.3 'JetBrains Mono',monospace;color:#a3abbf">{{ c.v }}</span></div></sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:15px;line-height:1.5;color:#4a5368;max-width:980px">Contrast: body text on bg and surface is at least 7:1 in both themes, and muted text at least 4.5:1. Lime is only ever a background behind ink text (11:1), never a text colour on light. In dark, lime becomes the primary button, with ink text on it. Currency colours: pesos are blue, reais lime, dólares pink. They always sit as a tinted badge with a strong glyph, never as a fill behind body text.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Type</h2>
+    <div style="display:flex;flex-direction:column;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;overflow:hidden">
+      <sc-for list="{{ type }}" as="r" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:baseline;padding:18px 24px;border-bottom:1px solid rgba(11,18,32,.1)">
+          <span style="font:500 13px/1.5 'JetBrains Mono',monospace;color:#4a5368">{{ r.k }}</span>
+          <span style="{{ r.st }}">{{ r.s }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="font-size:15px;line-height:1.5;color:#4a5368;max-width:980px">Body text is never smaller than 16px; 14–15px is only for metadata. Amounts use tabular figures. Spanish runs about 30% longer than English, so headings use text-wrap: balance and buttons are allowed to wrap to two lines.</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Spacing</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:20px">
+        <sc-for list="{{ space }}" as="s" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:90px 60px 1fr;gap:12px;align-items:center"><span style="font:500 13px/1 'JetBrains Mono',monospace">{{ s.k }}</span><span style="font:400 13px/1 'JetBrains Mono',monospace;color:#4a5368">{{ s.v }}</span><span style="{{ s.bar }}"></span></div></sc-for>
+      </div>
+      <div style="font-size:15px;line-height:1.5;color:#4a5368">4-point base. Screen padding 16, card padding 16–20, gap between cards 12–16. Touch targets at least 44×44; primary buttons 54 tall.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Shape and depth</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="height:110px;border-radius:999px;background:#0b1220;color:#fff;display:flex;align-items:center;justify-content:center;font:500 13px/1.3 'JetBrains Mono',monospace;text-align:center">r-pill<br>999</div>
+        <div style="height:110px;border-radius:22px;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);display:flex;align-items:center;justify-content:center;font:500 13px/1.3 'JetBrains Mono',monospace;text-align:center">r-card 22<br>bd 1.5 ink</div>
+        <div style="height:110px;border-radius:6px;background:oklch(0.93 0.13 125);display:flex;align-items:center;justify-content:center;font:500 13px/1.3 'JetBrains Mono',monospace;text-align:center">r-tag 6</div>
+        <div style="height:110px;border-radius:22px;background:rgba(255,255,255,.55);backdrop-filter:blur(18px);border:1.5px solid rgba(11,18,32,.85);box-shadow:0 30px 60px -30px rgba(11,18,32,.35);display:flex;align-items:center;justify-content:center;font:500 13px/1.3 'JetBrains Mono',monospace;text-align:center;grid-column:span 2">glass: white 55–72% · blur 18 · shadow 0 30 60 −30</div>
+        <div style="height:110px;border-radius:22px 22px 0 0;background:#fff;box-shadow:0 -10px 30px rgba(11,18,32,.15);display:flex;align-items:center;justify-content:center;font:500 13px/1.3 'JetBrains Mono',monospace;text-align:center">sheet<br>r 22 top</div>
+      </div>
+      <div style="font-size:15px;line-height:1.5;color:#4a5368">Inside the mini app, blur is only used on the bottom action bar and sheets. Cards are solid at 72%, so cheap Android phones don't drop frames on slow connections.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Components</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start">
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">BUTTONS</span>
+        <div style="display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:18px">
+          <span style="min-height:54px;border-radius:999px;background:#0b1220;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">Confirmar en MiniPay</span>
+          <span style="min-height:54px;border-radius:999px;background:#fff;border:1.5px solid rgba(11,18,32,.85);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">Ver comprobante</span>
+          <span style="min-height:54px;border-radius:999px;background:#e6e8ef;color:#4a5368;display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:700"><span style="width:16px;height:16px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent"></span>Buscando el mejor precio…</span>
+          <span style="min-height:54px;border-radius:999px;background:oklch(0.5 0.2 25);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">Revocar en MiniPay</span>
+          <span style="min-height:48px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">Ver alternativas</span>
+          <span style="font-size:14px;line-height:1.45;color:#4a5368">Primary, secondary, busy (disabled with spinner), danger and text. One primary per screen. Any button that leads to MiniPay's sheet says "en MiniPay".</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">AMOUNT INPUT · CURRENCY PILL</span>
+        <div style="display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:15px;color:#4a5368">Pagás</span><span style="min-height:44px;display:flex;align-items:center;gap:8px;padding:0 12px 0 4px;border-radius:22px;border:1px solid rgba(11,18,32,.12);background:#f2f3f7;font-size:16px;font-weight:700"><span style="width:36px;height:36px;border-radius:50%;background:oklch(0.93 0.13 125);color:oklch(0.38 0.1 135);display:flex;align-items:center;justify-content:center;font:700 12px/1 'JetBrains Mono',monospace">R$</span>Reales ▾</span></div>
+          <div style="font:400 52px/1 'Instrument Serif',serif;letter-spacing:-.02em">R$ 200<span style="display:inline-block;width:2px;height:40px;background:oklch(0.6 0.24 350);margin-left:3px;vertical-align:-4px"></span></div>
+          <span style="font-size:14px;color:#4a5368">Disponible R$ 1.240,00 · <b style="color:oklch(0.47 0.14 140)">Todo</b></span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(11,18,32,.1)">
+            <span style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:#f2f3f7;font-size:14px;font-weight:700"><span style="width:28px;height:28px;border-radius:50%;background:oklch(0.92 0.05 240);color:oklch(0.42 0.14 255);display:flex;align-items:center;justify-content:center;font:700 13px/1 'JetBrains Mono'">$</span>Pesos</span>
+            <span style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:#f2f3f7;font-size:14px;font-weight:700"><span style="width:28px;height:28px;border-radius:50%;background:oklch(0.93 0.13 125);color:oklch(0.38 0.1 135);display:flex;align-items:center;justify-content:center;font:700 11px/1 'JetBrains Mono'">R$</span>Reales</span>
+            <span style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:#f2f3f7;font-size:14px;font-weight:700"><span style="width:28px;height:28px;border-radius:50%;background:oklch(0.93 0.05 350);color:oklch(0.45 0.19 350);display:flex;align-items:center;justify-content:center;font:700 10px/1 'JetBrains Mono'">US$</span>Dólares</span>
+          </div>
+          <span style="font-size:14px;line-height:1.45;color:#4a5368">Our own keypad, so the system keyboard never covers the action bar. The decimal key follows the locale ("," for es/pt, "." for en). Tapping the pill cycles the currency, and the other side swaps if they would clash.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">QUOTE CARD</span>
+        <div style="background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;overflow:hidden">
+          <div style="height:4px;background:#e6e8ef"><div style="width:82%;height:4px;background:oklch(0.47 0.14 140)"></div></div>
+          <div style="padding:16px 18px 12px;display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;font-size:15px;color:#4a5368"><span>Recibís</span><span style="font:600 13px/1 'JetBrains Mono'">Vence en 41 s</span></span><span style="font:400 44px/1.05 'Instrument Serif',serif;letter-spacing:-.02em">ARS 3.177,41</span><span style="font-size:15px;color:#4a5368">por R$ 10,00</span></div>
+          <div style="padding:0 18px 12px;display:flex;flex-direction:column;font-size:15px">
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px dashed rgba(11,18,32,.2)"><span style="color:#4a5368">Cotización</span><span style="font-family:'JetBrains Mono';font-size:14px">1 R$ = ARS 317,74</span></div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px dashed rgba(11,18,32,.2)"><span style="color:#4a5368">vs oficial</span><span style="font-weight:800;background:oklch(0.93 0.13 125);padding:1px 6px;border-radius:6px">+5,24% · ARS 158</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px dashed rgba(11,18,32,.2)"><span style="color:#4a5368">Ruta</span><span style="text-align:right">2 pasos, por el mejor mercado</span></div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px dashed rgba(11,18,32,.2)"><span style="color:#4a5368">Mínimo garantizado</span><span style="font-family:'JetBrains Mono';font-size:14px">ARS 3.161,52</span></div>
+          </div>
+        </div>
+        <span style="font-size:14px;line-height:1.45;color:#4a5368">The same content order in the Mini App, the in-app chat and Telegram. The bar and timer turn pink in the last 10 seconds. When the quote expires, the card dims and the action becomes "Pedir nueva cotización".</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">BALANCE ROW · CONTACT ROW</span>
+        <div style="background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;border-bottom:1px solid rgba(11,18,32,.1)"><span style="width:40px;height:40px;border-radius:50%;background:oklch(0.92 0.05 240);color:oklch(0.42 0.14 255);display:flex;align-items:center;justify-content:center;font:700 15px/1 'JetBrains Mono'">$</span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">Pesos</span><span style="font:400 13px/1 'JetBrains Mono';color:#4a5368">ARS</span></span><span style="font-size:17px;font-weight:700">ARS 182.450,00</span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;border-bottom:1px solid rgba(11,18,32,.1)"><span style="width:40px;height:40px;border-radius:50%;background:oklch(0.93 0.05 350);color:oklch(0.45 0.19 350);display:flex;align-items:center;justify-content:center;font:700 12px/1 'JetBrains Mono'">US$</span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">Dólares</span><span style="font:400 13px/1 'JetBrains Mono';color:#4a5368">USD · también en MiniPay</span></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700">US$ 860,00</span><span style="font-size:14px;color:#4a5368">≈ ARS 1.382.880</span></span></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:68px"><span style="width:44px;height:44px;border-radius:50%;background:#e6e8ef;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700">G</span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:600">Graciela Gómez</span><span style="font-size:14px;color:#4a5368">Recibe pesos · Mamá</span><span style="font:400 13px/1.3 'JetBrains Mono';color:#4a5368">+54 9 351 412-7781</span></span><span style="width:32px;height:32px;border-radius:50%;background:oklch(0.92 0.05 240);color:oklch(0.42 0.14 255);display:flex;align-items:center;justify-content:center;font:700 13px/1 'JetBrains Mono'">$</span></div>
+        </div>
+        <span style="font-size:14px;line-height:1.45;color:#4a5368">Balances always show both currencies: their own, then the equivalent in the display currency. Contacts are a person, a phone number and the currency they receive in, never an address.</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">RECEIPT CARD · VERIFICATION BADGE</span>
+        <div style="background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px">
+          <span style="font-size:15px;color:#4a5368">Ahorraste</span>
+          <span style="font:400 56px/1 'Instrument Serif',serif;letter-spacing:-.02em">ARS 158</span>
+          <span style="font-size:15px;color:#4a5368">R$ 10,00 → ARS 3.177,41 · 11 oct, 10:42</span>
+          <div style="display:flex;gap:12px;align-items:center;background:oklch(0.93 0.13 125);border-radius:16px;padding:12px 14px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:#0b1220;color:oklch(0.89 0.2 125);display:flex;align-items:center;justify-content:center;font-weight:800">✓</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:800">Verificado</span><span style="font-size:14px;line-height:1.35">Coincide con el registro público. <u>Ver detalles</u></span></span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font:600 12px/1 'JetBrains Mono';background:oklch(0.93 0.13 125);padding:6px 8px;border-radius:6px">✓ Verificado</span><span style="font:600 12px/1 'JetBrains Mono';background:#e6e8ef;color:#4a5368;padding:6px 8px;border-radius:6px">… Registrando</span><span style="font:600 12px/1 'JetBrains Mono';background:oklch(0.95 0.04 350);color:oklch(0.42 0.17 350);padding:6px 8px;border-radius:6px">! No coincide</span></div>
+        </div>
+        <span style="font-size:14px;line-height:1.45;color:#4a5368">The badge has three states. "Registrando" covers the seconds before the fingerprint lands on-chain. Hex values only appear behind "Ver detalles".</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font:600 13px/1 'JetBrains Mono',monospace;color:#4a5368">STATUS · TOASTS · BANNERS</span>
+        <div style="display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:18px">
+          <div style="background:#0b1220;color:#f2f3f7;padding:14px 16px;border-radius:14px;font-size:15px;font-weight:500">Link del comprobante copiado</div>
+          <div style="background:oklch(0.95 0.04 350);color:oklch(0.42 0.17 350);padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.4"><b>Esta cotización venció.</b> No se movió plata.</div>
+          <div style="align-self:flex-start;background:oklch(0.93 0.13 125);padding:10px 14px;border-radius:12px;font-size:17px;font-weight:800">No se movió plata.</div>
+          <div style="display:flex;gap:10px;align-items:center"><span style="width:44px;height:44px;border-radius:50%;background:oklch(0.47 0.14 140);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">✓</span><span style="width:44px;height:44px;border-radius:50%;background:oklch(0.95 0.03 25);color:oklch(0.5 0.2 25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">✕</span><span style="width:44px;height:44px;border-radius:50%;background:#e6e8ef;color:#4a5368;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">↺</span><span style="width:44px;height:44px;border-radius:50%;background:#e6e8ef;display:flex;align-items:center;justify-content:center"><span style="width:20px;height:20px;border-radius:50%;border:2.5px solid oklch(0.47 0.14 140);border-right-color:transparent"></span></span><span style="font-size:14px;line-height:1.4;color:#4a5368">done · failed · cancelled · waiting</span></div>
+          <span style="font-size:14px;line-height:1.45;color:#4a5368">Every flow ends in one of these four states. Failed and cancelled always show the lime "No se movió plata" chip.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">MiniPay platform mapping</h2>
+      <div style="display:flex;flex-direction:column;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;overflow:hidden">
+        <sc-for list="{{ platform }}" as="r" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(11,18,32,.1);font-size:15px;line-height:1.45"><span style="font-weight:700">{{ r.k }}</span><span style="color:#4a5368">{{ r.v }}</span></div></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 style="margin:0;font:400 44px/1 'Instrument Serif',serif">Telegram mapping</h2>
+      <div style="display:flex;flex-direction:column;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;overflow:hidden">
+        <sc-for list="{{ telegram }}" as="r" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(11,18,32,.1);font-size:15px;line-height:1.45"><span style="font-weight:700">{{ r.k }}</span><span style="color:#4a5368">{{ r.v }}</span></div></sc-for>
+      </div>
+      <h2 style="margin:16px 0 0;font:400 44px/1 'Instrument Serif',serif">Handoff</h2>
+      <div style="font-size:15px;line-height:1.6;color:#4a5368;background:rgba(255,255,255,.72);border:1.5px solid rgba(11,18,32,.85);border-radius:22px;padding:18px">Ship the tokens as CSS custom properties on <span style="font-family:'JetBrains Mono'">:root</span> and <span style="font-family:'JetBrains Mono'">@media (prefers-color-scheme: dark)</span>, which works with the current plain-CSS Next.js app. I recommend Tailwind v4 on top (<span style="font-family:'JetBrains Mono'">@theme</span> reads the same variables), so components stay inline-styled and consistent. Fonts: Instrument Serif 400, Manrope 400–800 and JetBrains Mono 400–600 through next/font, subset to Latin with display: swap. The 3D coin (three.js) only loads on the landing, and only when <span style="font-family:'JetBrains Mono'">prefers-reduced-motion</span> is off.</div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const sw = (bg, n, v, border) => ({ n, v, sw: { height: 64, borderRadius: 14, background: bg, border: border || '1px solid rgba(128,128,128,.25)' } });
+    const lightSw = [
+      sw('#f2f3f7', 'bg', '#f2f3f7'), sw('rgba(255,255,255,.72)', 'surface', 'white 72%'), sw('#e6e8ef', 'surface-2', '#e6e8ef'), sw('#0b1220', 'ink · text', '#0b1220'),
+      sw('#4a5368', 'muted', '#4a5368'), sw('rgba(11,18,32,.85)', 'card-border', 'ink 85%'), sw('oklch(0.6 0.24 350)', 'a1 · live', 'oklch .60 .24 350'), sw('oklch(0.89 0.2 125)', 'a3 · save bg', 'oklch .89 .20 125'),
+      sw('oklch(0.5 0.22 265)', 'a2 · link', 'oklch .50 .22 265'), sw('oklch(0.47 0.14 140)', 'save · text', 'oklch .47 .14 140'), sw('oklch(0.95 0.04 350)', 'attention bg', 'oklch .95 .04 350'), sw('oklch(0.5 0.2 25)', 'danger', 'oklch .50 .20 25'),
+    ];
+    const darkSw = [
+      sw('#0b1220', 'bg', '#0b1220'), sw('rgba(255,255,255,.06)', 'surface', 'white 6%'), sw('#1a2234', 'surface-2', '#1a2234'), sw('#f2f3f7', 'text', '#f2f3f7'),
+      sw('#a3abbf', 'muted', '#a3abbf'), sw('rgba(242,243,247,.28)', 'card-border', 'white 28%'), sw('oklch(0.72 0.2 350)', 'a1 · live', 'oklch .72 .20 350'), sw('oklch(0.89 0.2 125)', 'brand · save', 'oklch .89 .20 125'),
+      sw('oklch(0.7 0.16 265)', 'a2 · link', 'oklch .70 .16 265'), sw('oklch(0.32 0.07 125)', 'save bg', 'oklch .32 .07 125'), sw('oklch(0.3 0.08 350)', 'attention bg', 'oklch .30 .08 350'), sw('oklch(0.75 0.15 25)', 'danger', 'oklch .75 .15 25'),
+    ];
+    const serif = "'Instrument Serif',serif", sans = "'Manrope',sans-serif", mono = "'JetBrains Mono',monospace";
+    const type = [
+      { k: 'display · serif 400 · 96/0.9', s: 'El cambista que vive en tu chat.', st: { font: `400 96px/.9 ${serif}`, letterSpacing: '-.03em' } },
+      { k: 'h1 · serif 400 · 40/1.02', s: 'Dejá que Arbolito actúe por vos', st: { font: `400 40px/1.02 ${serif}`, letterSpacing: '-.025em' } },
+      { k: 'amount · serif 400 · 44', s: 'ARS 3.177,41', st: { font: `400 44px/1 ${serif}`, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' } },
+      { k: 'title · sans 700 · 18', s: 'Tu cotización', st: { font: `700 18px/1.3 ${sans}` } },
+      { k: 'body · sans 400 · 17/1.5', s: 'Al mejor precio del momento, con un comprobante que lo prueba.', st: { font: `400 17px/1.5 ${sans}` } },
+      { k: 'body-s · sans 400 · 16/1.45', s: 'Recibe pesos · Mamá', st: { font: `400 16px/1.45 ${sans}` } },
+      { k: 'button · sans 700 · 17', s: 'Confirmar en MiniPay', st: { font: `700 17px/1 ${sans}` } },
+      { k: 'meta · sans 400 · 14', s: 'Hoy · 10:42', st: { font: `400 14px/1.4 ${sans}`, color: '#4a5368' } },
+      { k: 'data · mono 500 · 14', s: '1 R$ = ARS 317,74 · #A7F3-29', st: { font: `500 14px/1.4 ${mono}` } },
+    ];
+    const space = [['s-1', 4], ['s-2', 8], ['s-3', 12], ['s-4', 16], ['s-5', 20], ['s-6', 24], ['s-8', 32], ['s-12', 48]].map(([k, v]) => ({ k, v: v + 'px', bar: { height: 12, width: v * 4, background: '#0b1220', borderRadius: 3 } }));
+    const platform = [
+      { k: 'Theme', v: 'MiniPay injects no theme. We follow prefers-color-scheme, and switch live if the system changes.' },
+      { k: 'Wallet', v: 'Connected automatically: no sign-in and no "connecting" state. The only wallet message is the connection-failed screen; outside MiniPay we show "Abrí Arbolito desde MiniPay".' },
+      { k: 'Identity', v: 'Phone number, masked when shown (+54 9 11 •••• 4107). Never 0x addresses on primary screens.' },
+      { k: 'Approval', v: 'MiniPay\'s native "confirm transaction" sheet is the only approval step. We design the screen before it, plus processing, done, failed and cancelled after it.' },
+      { k: 'Fees', v: 'Network fees are paid in dollars automatically. CELO is never shown, and there is never a "buy gas" step. Fee details only appear in "Ver detalles".' },
+      { k: 'Navigation', v: 'MiniPay owns the back button. Ours is an in-app ‹ in each flow header, kept in sync with history.pushState so both behave the same. Links open in the same view.' },
+      { k: 'Viewport', v: '360×640 minimum, single column, no horizontal scroll, safe-area insets on the bottom bar.' },
+      { k: 'Slow networks', v: 'Shell renders first with cached balances, then figures load in. Images are lazy-loaded, and the mini app ships no 3D.' },
+    ];
+    const telegram = [
+      { k: 'Formatting', v: 'Bold for the amount received and for "No se movió plata". Code for rates and minimums. Italic for transcripts. Strikethrough for expired quotes.' },
+      { k: 'Buttons', v: 'Row 1: the primary action ("Confirmar en MiniPay ↗", a deep link to the exact quote). Row 2: up to two secondary actions.' },
+      { k: 'State changes', v: 'The bot edits its own message (shown as "editado"), so an old quote can never be confirmed. Receipts and results arrive as new messages.' },
+      { k: 'Voice', v: 'Echo the transcript first ("🎙️ Entendí: …"), then reply in the language that was spoken.' },
+      { k: 'Linking', v: 'One-time "Conectá tu MiniPay": a 4-digit code shown in both apps, then confirmed with one tap in MiniPay.' },
+      { k: 'Emoji', v: 'Only ⏱ (countdown), 🎙️ (voice) and ✓ (done). No decorative emoji.' },
+      { k: 'Length', v: 'A quote fits on one phone screen in all three languages. Spanish is the length budget.' },
+    ];
+    return { lightSw, darkSw, type, space, platform, telegram };
+  }
+}
+</script>
+</body>
+</html>
