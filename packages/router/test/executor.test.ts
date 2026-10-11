@@ -133,7 +133,9 @@ function fakeChain(o: ChainOpts = {}) {
     },
     waitForTransactionReceipt: async ({ hash }: { hash: Hex }) => {
       const r = receipts.get(hash);
-      if (!r) throw new Error("Timed out while waiting for transaction");
+      // Like viem: a tx that never confirms surfaces as WaitForTransactionReceiptTimeoutError
+      // (sendGuarded keeps polling through other, transient RPC errors).
+      if (!r) throw Object.assign(new Error("Timed out while waiting for transaction"), { name: "WaitForTransactionReceiptTimeoutError" });
       return r;
     },
     getTransactionReceipt: async ({ hash }: { hash: Hex }) => {

@@ -264,10 +264,14 @@ contract ArbolitoSessionExecutorForkTest is Test {
     }
 
     // ------------------------------------------------------------------ wBRL: cardinality 1
-    function test_wbrl_lowCardinality_fallsBackToSignedReference() public {
+    /// The wBRL/USDT pool's cardinality was 1 when this was written; on 2026-10-11 its
+    /// cardinalityNext was raised to 64 on mainnet, so the outage no longer happens naturally.
+    /// Force it (observe reverts "OLD", as a cardinality-1 pool does after a fresh swap) to keep
+    /// proving the fallback to an admin-signed reference.
+    function test_wbrl_twapUnavailable_fallsBackToSignedReference() public {
         (,,, uint16 card,,,) = IPoolF(WBRL_POOL).slot0();
         console2.log("wBRL pool observationCardinality", card);
-        _pokeWbrlPool(); // any swap in the last 600 s makes observe(600) revert "OLD" when cardinality = 1
+        vm.mockCallRevert(WBRL_POOL, abi.encodeWithSelector(IPoolF.observe.selector), bytes("OLD"));
         (bool ok,) = guard.twapQuote(WBRL_POOL, WBRL, USDT, 10e18);
         assertFalse(ok);
         bytes memory path = abi.encodePacked(WBRL, uint24(100), USDT);
@@ -286,8 +290,9 @@ contract ArbolitoSessionExecutorForkTest is Test {
         _swap(path, 10e18, 0);
         _swap(path, 10e18, floor);
 
-        // Once 600 s pass with no swap, the cardinality-1 oracle covers the window again (it
-        // extrapolates the current tick), and the expired reference no longer applies.
+        // When the oracle answers again (and 600 s later the reference has expired), the TWAP
+        // path is back.
+        vm.clearMockedCalls();
         vm.warp(block.timestamp + 601);
         (ok,) = guard.twapQuote(WBRL_POOL, WBRL, USDT, 10e18);
         assertTrue(ok);
