@@ -30,7 +30,7 @@ import {
   type WalletClient,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import { POOLS, TOKENS, CONTRACTS, findRepoRoot } from "@arbolito/config";
+import { POOLS, TOKENS, CONTRACTS, findRepoRoot, loadEnv } from "@arbolito/config";
 import {
   FORK_ATTRIBUTION_CODE,
   MemoryLedger,
@@ -117,7 +117,8 @@ describe("ArbolitoGuard v2: MiniPay EOA + operator", () => {
     const res = await sendGuarded({ mode: "fork", publicClient, walletClient: wallets.get(from.address)!, to, data, usdMicros, purpose, ledger });
     expect(res.receipt.status).toBe("success");
     const tx = await publicClient.getTransaction({ hash: res.hash });
-    expect(attributionCodes(tx.input)).toContain(FORK_ATTRIBUTION_CODE);
+    // Fork sends carry the real code when one is configured, else the placeholder.
+    expect(attributionCodes(tx.input)).toContain(loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE);
     gasReport.push(`${purpose}: gasUsed ${res.receipt.gasUsed}`);
     return res;
   }
