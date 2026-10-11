@@ -111,3 +111,30 @@ describe("sendGuarded guards", () => {
     ).rejects.toThrow(CapExceededError);
   });
 });
+
+describe("waitForReceiptResilient", () => {
+  it("rides out transient RPC errors and returns the receipt", async () => {
+    const { waitForReceiptResilient } = await import("../src");
+    let calls = 0;
+    const client = {
+      waitForTransactionReceipt: async () => {
+        calls++;
+        if (calls < 3) throw Object.assign(new Error("RPC Request failed."), { name: "HttpRequestError" });
+        return { status: "success", blockNumber: 1n } as never;
+      },
+    } as unknown as PublicClient;
+    const r = await waitForReceiptResilient(client, `0x${"ab".repeat(32)}`, 20_000);
+    expect(r.status).toBe("success");
+    expect(calls).toBe(3);
+  }, 30_000);
+
+  it("gives up at the deadline and never pretends success", async () => {
+    const { waitForReceiptResilient } = await import("../src");
+    const client = {
+      waitForTransactionReceipt: async () => {
+        throw Object.assign(new Error("RPC Request failed."), { name: "HttpRequestError" });
+      },
+    } as unknown as PublicClient;
+    await expect(waitForReceiptResilient(client, `0x${"ab".repeat(32)}`, 1_000)).rejects.toThrow(/RPC Request failed/);
+  }, 30_000);
+});

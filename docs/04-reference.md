@@ -47,7 +47,9 @@ Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs; onchain ent
 
 **TWAP oracle depth** (read 2026-10-09, `slot0().observationCardinality`; used by `ArbolitoSessionExecutor`'s 10-minute minOut floor):
 - wARS/USDT and USA₮/USDT 0.01%: cardinality **1200** (next 1200). With ≤ 1 observation per 1 s block that always spans ≥ 20 min, so `observe([600, 0])` works.
-- wBRL/USDT 0.01%: cardinality **1** (next 1). `observe([600, 0])` reverts `OLD` for 10 min after any swap that moves the tick, and otherwise just returns the current tick. The guard then needs an admin-signed reference price. Growing it is a permissionless `increaseObservationCardinalityNext(n)` on the pool (roughly 20–25k gas per slot, paid once). It's a mainnet tx and needs a go-ahead.
+- wBRL/USDT 0.01%: cardinality **1** (next 1). `observe([600, 0])` reverts `OLD` for 10 min after any swap that moves the tick, and otherwise just returns the current tick. The guard then needs an admin-signed reference price. Growing it is a permissionless `increaseObservationCardinalityNext(n)` on the pool (roughly 20–25k gas per slot, paid once).
+  - **Done 2026-10-11** (founder-approved): `cardinalityNext` 1 → **64**, tx [`0x4706ee55…4dab`](https://celoscan.io/tx/0x4706ee5531188078be4c67b995b1d037196b57ebf80438eeff6d6f2828674dab), 1,430,446 gas ≈ 0.29 CELO, tagged `celo_e054d92430a5`. Cardinality grows into it as new observations are written.
+  - Why 64: the pool had **0 swaps in the prior ~3 h**, so 64 slots is a wide margin for the 10-min window (`pnpm grow:oracle` can raise it later).
 
 There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not found at the 100/500/3000/10000 fee tiers against USDT, USDC, USDm, BRLm or CELO (scan of wARS, wBRL, wCOP and wMXN).
 

@@ -96,6 +96,27 @@ export interface GuardedSendResult {
 const forkLedger = new MemoryLedger();
 
 /**
+ * waitForTransactionReceipt that survives transient RPC errors until the deadline. Read-only,
+ * so retrying is safe; it never re-sends. Why: on mainnet a forno blip right after broadcast
+ * made a landed tx look failed ("RPC Request failed" for 0x4706ee55…, which succeeded).
+ */
+export async function waitForReceiptResilient(client: PublicClient, hash: Hex, timeoutMs: number): Promise<TransactionReceipt> {
+  const deadline = Date.now() + timeoutMs;
+  let lastErr: unknown;
+  for (;;) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw lastErr ?? new Error(`No receipt for ${hash} within ${timeoutMs} ms`);
+    try {
+      return await client.waitForTransactionReceipt({ hash, timeout: remaining });
+    } catch (err) {
+      lastErr = err;
+      if ((err as Error).name === "WaitForTransactionReceiptTimeoutError") throw err;
+      await new Promise((r) => setTimeout(r, Math.min(3_000, Math.max(0, deadline - Date.now()))));
+    }
+  }
+}
+
+/**
  * Gas estimate (which simulates the call), retried a few times. Read-only, so retrying is safe.
  * Why: forno is load-balanced; right after our previous tx (e.g. an approve) a node that hasn't
  * seen it yet makes the next call revert (we hit "STF" on mainnet). A genuine revert still fails
@@ -185,7 +206,7 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
 
   let receipt: TransactionReceipt;
   try {
-    receipt = await p.publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+    receipt = await waitForReceiptResilient(p.publicClient, hash, 120_000);
   } catch (err) {
     // Broadcast but unconfirmed: keep the reservation (it may still land) and hand back the hash.
     const msg = (err as { shortMessage?: string }).shortMessage ?? (err as Error).message;

@@ -23,7 +23,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "db:generate": "pnpm --filter @arbolito/db db:generate",
     "db:migrate": "pnpm --filter @arbolito/db db:migrate",
-    "test:db": "vitest run --project db"
+    "test:db": "vitest run --project db",
+    "grow:oracle": "node scripts/run.mjs grow-oracle"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

@@ -15,6 +15,7 @@ const ENTRIES = {
   "register-8004": "scripts/register-8004.ts",
   "reanchor-receipt": "scripts/reanchor-receipt.ts",
   "verify-receipt": "scripts/verify-receipt.ts",
+  "grow-oracle": "scripts/grow-oracle.ts",
 };
 
 const name = process.argv[2];
