@@ -1,0 +1,14 @@
+.git
+**/node_modules
+.env
+.env.*
+!.env.example
+.arbolito
+.self
+.vercel
+.claude/worktrees
+contracts/out
+contracts/cache
+contracts/lib
+apps/web/.next
+**/*.log
