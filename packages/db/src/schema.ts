@@ -15,12 +15,14 @@ const updatedAt = () =>
 
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
-  telegramId: bigint({ mode: "bigint" }).notNull().unique(),
+  /** Null for MiniPay-only users; set when the user talks to the Telegram bot (or links it). */
+  telegramId: bigint({ mode: "bigint" }).unique(),
   telegramUsername: text(),
   displayName: text(),
   /** es | pt | en */
   language: text().notNull().default("es"),
-  walletAddress: text(),
+  /** Lowercased wallet address. For MiniPay users this is their MiniPay wallet (unique). */
+  walletAddress: text().unique(),
   /** smart | server_eoa (decided in the Phase 2 wallet spike) */
   walletKind: text(),
   /** Per-user caps in micro-USD. Product defaults: $25 per action, $100/day. */
@@ -137,3 +139,52 @@ export const messages = pgTable(
   (t) => [index("messages_user_created_idx").on(t.userId, t.createdAt)],
 );
 
+
+/**
+ * A quote shown in the MiniPay Mini App (or chat) and its lifecycle. The server only ever
+ * prepares unsigned calls; the user's own wallet sends them. See apps/web/src/lib/miniapp/contract.ts.
+ */
+export const miniappQuotes = pgTable(
+  "miniapp_quotes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Lowercased wallet the quote is for (may be unknown at quote time). */
+    account: text(),
+    fromSym: text().notNull(),
+    toSym: text().notNull(),
+    amountIn: atomic().notNull(),
+    /** Serialized route, alternatives and references (bigints as decimal strings). */
+    payload: jsonb().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    /** quoted | prepared | submitted | expired | failed */
+    status: text().notNull().default("quoted"),
+    /**
+     * What /prepare returned (calls, firm rfqId, Textile claim token). The claim token is a
+     * bearer capability: server-side only, never returned to clients or logged.
+     */
+    prepared: jsonb(),
+    receiptId: uuid(),
+    error: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("miniapp_quotes_account_idx").on(t.account, t.createdAt)],
+);
+
+/** "Conectá tu MiniPay": a short-lived 4-digit code the bot shows, confirmed from the Mini App. */
+export const linkCodes = pgTable(
+  "link_codes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    code: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    /** Wallet that confirmed the code. */
+    account: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("link_codes_code_idx").on(t.code, t.expiresAt)],
+);

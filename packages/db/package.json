@@ -14,10 +14,11 @@
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "drizzle-kit": "^0.31.11"
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "tsx migrate.ts"
   }
 }
