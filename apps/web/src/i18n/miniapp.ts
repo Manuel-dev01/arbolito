@@ -32,7 +32,7 @@ const es = {
   qLoadT: "Buscando el mejor precio", qLoadB: "Comparamos varios caminos. Tarda un segundo.",
   expired: "Esta cotización venció", expiredB: "Los precios se mueven rápido. No se movió plata.", refresh: "Pedir nueva cotización",
   changed: "El precio cambió", changedB: "Ahora recibís {x}, {d} menos. Confirmá solo si te sirve.", confirmNew: "Confirmar nuevo precio en MiniPay",
-  noMarket: "Ahora no hay mercado para {a} → {b}", noMarketB: "Pasa por unos minutos cuando hay mucho movimiento. No se movió plata.", notifyMe: "Avisame cuando haya", tryAgain: "Probar de nuevo", notifyToast: "Listo. Te avisamos en el chat.",
+  noMarket: "Ahora no hay mercado para {a} → {b}", noMarketB: "Pasa por unos minutos cuando hay mucho movimiento. No se movió plata.", notifyMe: "Avisame cuando haya", tryAgain: "Probar de nuevo", notifyToast: "Listo. Te avisamos en el chat.", noMarketTip: "Te avisamos en el chat apenas vuelva. Mientras, tu plata queda donde está.",
   processing: "Haciendo el cambio", procNote: "Podés cerrar Arbolito: te avisamos acá y en Telegram cuando termine.", pA: "Confirmado en MiniPay", pB: "Cambiando {a} a {b}", pC: "Guardando tu comprobante", pS: "Enviando a {n}", pProof: "Firmá una vez en MiniPay para el mercado",
   doneT: "Listo. Recibiste {x}", doneSub: "por {y}", seeReceipt: "Ver comprobante", backHome: "Volver al inicio",
   failedT: "No pudimos hacer el cambio", failedB: "No se movió plata. Tus {y} siguen en tu cuenta.", failedWhy: "El precio cayó por debajo de tu mínimo garantizado, así que lo frenamos.", newQuote: "Pedir nueva cotización",
@@ -60,7 +60,7 @@ const es = {
   tgQuoteT: "Tu cotización de Telegram", tgQuoteB: "Preparando la operación para que la confirmes en MiniPay…",
   chatHi: "Hola{n}. Decime qué querés cambiar o enviar. Podés escribir o mandar un audio.", chatAsk: "pasá 100 dólares a pesos", chip2: "mandale 20 dólares a mamá", chatProc: "Haciendo el cambio… te aviso acá.", chatTgToo: "También te lo mandé a Telegram.", expiredShort: "Venció", recording: "Grabando… soltá para enviar", voice: "Mandar audio", send: "Enviar", altsShort: "Alternativas", micDenied: "No pudimos usar el micrófono. Escribile a Arbolito.", chatErr: "No te pude responder. Probá de nuevo.", heard: "Entendí: {t}",
   errNotReady: "Esto todavía no está disponible. No se movió plata.", errRate: "Muchos pedidos seguidos. Esperá unos segundos.", errUpstream: "Algo falló de nuestro lado. No se movió plata. Probá de nuevo.", errOffline: "Sin conexión. Probá de nuevo cuando vuelva.", errGeneric: "No pudimos hacerlo. No se movió plata.",
-  toastMP: "Abriendo MiniPay…", toastWA: "Abriendo WhatsApp…", toastContacts: "Abriendo tus contactos…", noContactPicked: "No elegiste ningún contacto.",
+  toastMP: "Abriendo MiniPay…", toastRefreshed: "Actualizamos la cotización", toastCancelled: "Cancelaste en MiniPay. No se movió plata.", toastSaved: "Contacto guardado", autoNeedsBal: "Para calcular tus límites en pesos y reales necesitamos tus saldos. Probá de nuevo en unos segundos.", toastWA: "Abriendo WhatsApp…", toastContacts: "Abriendo tus contactos…", noContactPicked: "No elegiste ningún contacto.",
 };
 
 export type MiniDict = typeof es;
@@ -89,7 +89,7 @@ const pt: MiniDict = {
   qLoadT: "Buscando o melhor preço", qLoadB: "Comparamos vários caminhos. Leva um segundo.",
   expired: "Esta cotação expirou", expiredB: "Os preços mudam rápido. Nenhum dinheiro foi movido.", refresh: "Pedir nova cotação",
   changed: "O preço mudou", changedB: "Agora você recebe {x}, {d} a menos. Confirme só se servir.", confirmNew: "Confirmar novo preço no MiniPay",
-  noMarket: "Agora não há mercado para {a} → {b}", noMarketB: "Acontece por alguns minutos quando há muito movimento. Nenhum dinheiro foi movido.", notifyMe: "Me avise quando houver", tryAgain: "Tentar de novo", notifyToast: "Pronto. Avisamos no chat.",
+  noMarket: "Agora não há mercado para {a} → {b}", noMarketB: "Acontece por alguns minutos quando há muito movimento. Nenhum dinheiro foi movido.", notifyMe: "Me avise quando houver", tryAgain: "Tentar de novo", notifyToast: "Pronto. Avisamos no chat.", noMarketTip: "Avisamos no chat assim que voltar. Enquanto isso, seu dinheiro fica onde está.",
   processing: "Fazendo a troca", procNote: "Pode fechar o Arbolito: avisamos aqui e no Telegram quando terminar.", pA: "Confirmado no MiniPay", pB: "Trocando {a} por {b}", pC: "Salvando seu comprovante", pS: "Enviando para {n}", pProof: "Assine uma vez no MiniPay para o mercado",
   doneT: "Pronto. Você recebeu {x}", doneSub: "por {y}", seeReceipt: "Ver comprovante", backHome: "Voltar ao início",
   failedT: "Não conseguimos fazer a troca", failedB: "Nenhum dinheiro foi movido. Seus {y} continuam na sua conta.", failedWhy: "O preço caiu abaixo do mínimo garantido, então paramos.", newQuote: "Pedir nova cotação",
@@ -117,7 +117,7 @@ const pt: MiniDict = {
   tgQuoteT: "Sua cotação do Telegram", tgQuoteB: "Preparando a operação para você confirmar no MiniPay…",
   chatHi: "Olá{n}. Diga o que quer trocar ou enviar. Pode escrever ou mandar um áudio.", chatAsk: "troca 200 reais por pesos", chip2: "manda 200 reais pra Lucía", chatProc: "Fazendo a troca… aviso aqui.", chatTgToo: "Também mandei no Telegram.", expiredShort: "Expirou", recording: "Gravando… solte para enviar", voice: "Enviar áudio", send: "Enviar", altsShort: "Alternativas", micDenied: "Não conseguimos usar o microfone. Escreva para o Arbolito.", chatErr: "Não consegui responder. Tente de novo.", heard: "Entendi: {t}",
   errNotReady: "Isto ainda não está disponível. Nenhum dinheiro foi movido.", errRate: "Muitos pedidos seguidos. Espere alguns segundos.", errUpstream: "Algo falhou do nosso lado. Nenhum dinheiro foi movido. Tente de novo.", errOffline: "Sem conexão. Tente de novo quando voltar.", errGeneric: "Não conseguimos fazer. Nenhum dinheiro foi movido.",
-  toastMP: "Abrindo o MiniPay…", toastWA: "Abrindo o WhatsApp…", toastContacts: "Abrindo seus contatos…", noContactPicked: "Você não escolheu nenhum contato.",
+  toastMP: "Abrindo o MiniPay…", toastRefreshed: "Atualizamos a cotação", toastCancelled: "Você cancelou no MiniPay. Nenhum dinheiro foi movido.", toastSaved: "Contato salvo", autoNeedsBal: "Para calcular seus limites em pesos e reais precisamos dos seus saldos. Tente de novo em alguns segundos.", toastWA: "Abrindo o WhatsApp…", toastContacts: "Abrindo seus contatos…", noContactPicked: "Você não escolheu nenhum contato.",
 };
 
 const en: MiniDict = {
@@ -144,7 +144,7 @@ const en: MiniDict = {
   qLoadT: "Finding the best rate", qLoadB: "Comparing several routes. One second.",
   expired: "This quote expired", expiredB: "Prices move fast. No money moved.", refresh: "Get a new quote",
   changed: "The price changed", changedB: "You now get {x}, {d} less. Only confirm if it works for you.", confirmNew: "Confirm new price in MiniPay",
-  noMarket: "No market right now for {a} → {b}", noMarketB: "This happens for a few minutes when markets are busy. No money moved.", notifyMe: "Tell me when there is", tryAgain: "Try again", notifyToast: "Done. We'll message you in the chat.",
+  noMarket: "No market right now for {a} → {b}", noMarketB: "This happens for a few minutes when markets are busy. No money moved.", notifyMe: "Tell me when there is", tryAgain: "Try again", notifyToast: "Done. We'll message you in the chat.", noMarketTip: "We'll message you as soon as it's back. Meanwhile, your money stays put.",
   processing: "Changing your money", procNote: "You can close Arbolito: we'll tell you here and on Telegram when it's done.", pA: "Confirmed in MiniPay", pB: "Changing {a} to {b}", pC: "Saving your receipt", pS: "Sending to {n}", pProof: "Sign once in MiniPay for the market",
   doneT: "Done. You got {x}", doneSub: "for {y}", seeReceipt: "See receipt", backHome: "Back to home",
   failedT: "We couldn't make the change", failedB: "No money moved. Your {y} is still in your account.", failedWhy: "The price fell below your guaranteed minimum, so we stopped it.", newQuote: "Get a new quote",
@@ -172,7 +172,7 @@ const en: MiniDict = {
   tgQuoteT: "Your quote from Telegram", tgQuoteB: "Preparing the operation for you to confirm in MiniPay…",
   chatHi: "Hi{n}. Tell me what to change or send. Type or send a voice note.", chatAsk: "change 100 dollars to pesos", chip2: "send 20 dollars to mom", chatProc: "Changing it now… I'll tell you here.", chatTgToo: "Also sent to your Telegram.", expiredShort: "Expired", recording: "Recording… release to send", voice: "Send voice note", send: "Send", altsShort: "Alternatives", micDenied: "We couldn't use the microphone. Type to Arbolito instead.", chatErr: "I couldn't answer. Try again.", heard: "I heard: {t}",
   errNotReady: "This isn't available yet. No money moved.", errRate: "Too many requests in a row. Wait a few seconds.", errUpstream: "Something failed on our side. No money moved. Try again.", errOffline: "You're offline. Try again when you're back.", errGeneric: "We couldn't do it. No money moved.",
-  toastMP: "Opening MiniPay…", toastWA: "Opening WhatsApp…", toastContacts: "Opening your contacts…", noContactPicked: "You didn't pick a contact.",
+  toastMP: "Opening MiniPay…", toastRefreshed: "We refreshed the quote", toastCancelled: "You cancelled in MiniPay. No money moved.", toastSaved: "Contact saved", autoNeedsBal: "We need your balances to set limits in pesos and reais. Try again in a few seconds.", toastWA: "Opening WhatsApp…", toastContacts: "Opening your contacts…", noContactPicked: "You didn't pick a contact.",
 };
 
 const DICTS: Record<Lang, MiniDict> = { es, pt, en };
