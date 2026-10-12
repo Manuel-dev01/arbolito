@@ -85,6 +85,14 @@ export const QuoteResponse = z.object({
 });
 export type QuoteResponse = z.infer<typeof QuoteResponse>;
 
+// ── GET /api/miniapp/quotes/open?account=0x… ───────────────────────────────
+/**
+ * The user's most recent still-open quote (status quoted, unexpired), e.g. one created from
+ * Telegram. MiniPay's mini-app deeplink (link.minipay.xyz/miniapp?id=…) may drop our query
+ * params, so on open the Mini App resumes this instead of relying on ?quote=.
+ */
+export const OpenQuoteResponse = z.object({ quote: QuoteResponse.nullable() });
+
 // ── POST /api/miniapp/prepare ──────────────────────────────────────────────
 /** Turn a live quote into calls for the user's wallet. Textile routes take a firm quote here. */
 export const TakerProof = z.object({ nonce: Hex, issuedAt: z.number().int(), signature: Hex, scheme: z.enum(["eip712", "eip191"]) });
