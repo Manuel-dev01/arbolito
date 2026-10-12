@@ -10,7 +10,7 @@ import { ActionBar, Logo, NoMoneyMoved } from "../ui";
  * confirms it. No message signing (MiniPay rule); proof format is TBD by the backend (contract `proof?`).
  */
 export function LinkScreen() {
-  const { t, api, account, go, showError } = useApp();
+  const { t, api, account, showError } = useApp();
   const [code] = useState(() => {
     const c = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") ?? "" : "";
     return /^\d{4}$/.test(c) ? c : null;
@@ -91,5 +91,4 @@ export function LinkScreen() {
       />
     </>
   );
-  void go;
 }
