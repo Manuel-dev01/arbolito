@@ -420,12 +420,25 @@ export function Done() {
           </div>
         ) : null}
         <ReceiptChip receiptId={exec.receiptId} />
+        <MiniPayReceiptLink />
       </div>
     </Frame>
   );
 }
 
-const minipayReceipt = (hash: string) => `https://link.minipay.xyz/receipt?tx=${hash}`;
+const minipayReceipt = (hash: string, celebrate = false) => `https://link.minipay.xyz/receipt?tx=${hash}${celebrate ? "&celebrate" : ""}`;
+
+/** MiniPay's own transaction receipt (deeplink), next to our verifiable receipt. */
+export function MiniPayReceiptLink() {
+  const { t, exec, openLink, mock, toast } = useApp();
+  const hash = exec.result?.kind === "done" ? exec.result.hashes.at(-1) : undefined;
+  if (!hash) return null;
+  return (
+    <button type="button" className="mp-link inline" style={{ alignSelf: "flex-start" }} onClick={() => (mock ? toast(t.toastMP) : openLink(minipayReceipt(hash, true)))}>
+      {t.seeInMP} ↗
+    </button>
+  );
+}
 
 export function Failed() {
   const app = useApp();

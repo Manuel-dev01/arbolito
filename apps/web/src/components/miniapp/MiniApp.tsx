@@ -14,7 +14,7 @@ import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Q
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
 import { mapApiError, type ClientErrorCode } from "../../lib/miniapp/client/errors";
 import { executeCalls, executeQuote, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
-import { DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
+import { atomicToTyped, DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
 import {
   createMockServer,
   createMockWallet,
@@ -45,6 +45,8 @@ interface Boot {
   lang: string | null;
   fail: MockFail | null;
   chat: string | null;
+  /** Mock only: /quotes/open returns a waiting Telegram quote. */
+  resume: boolean;
 }
 
 function readBoot(): Boot {
@@ -57,6 +59,7 @@ function readBoot(): Boot {
     lang: p.get("lang"),
     fail: MOCK_FAILS.includes(fail as MockFail) ? (fail as MockFail) : null,
     chat: p.get("chat"),
+    resume: p.get("resume") === "1",
   };
 }
 
@@ -66,7 +69,10 @@ type Env =
   | { phase: "conn-fail" }
   | { phase: "ready"; mock: boolean; account: Address; api: ApiClient; wallet: Wallet; store: Store; persona: { name: string; phone: string } | null; scenario: MockScenario };
 
-const EMPTY_EXEC: ExecState = { flow: "change", stage: null, result: null, total: 0, from: null, to: null, amountIn: null, expectedOut: null, contactName: null, receiptId: null };
+/** A quote's input as an API/keypad amount ("10", "10.5"). Quotes come from 2-decimal typed amounts. */
+const amountOf = (q: Quote) => atomicToTyped(BigInt(q.amountIn), DECIMALS[q.from]);
+
+const EMPTY_EXEC: ExecState ={ flow: "change", stage: null, result: null, total: 0, from: null, to: null, amountIn: null, expectedOut: null, contactName: null, receiptId: null };
 
 export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [lang, setLangState] = useState<Lang>("es");
@@ -152,7 +158,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
 
     if (b.mock) {
       const alias = b.state ? STATE_ALIASES[b.state] : undefined;
-      const scenario: MockScenario = { ...(alias?.scenario ?? {}), fail: b.fail };
+      const scenario: MockScenario = { ...(alias?.scenario ?? {}), fail: b.fail, openQuote: b.resume };
       const server = createMockServer(scenario);
       const api = createApiClient({ fetch: server.fetch });
       const store = createStore(memoryKV());
@@ -305,7 +311,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (m.kind === "no-market") return go("quote-nomarket", { replace: true });
       if (m.kind === "price-changed" && q && kind === "change") {
         try {
-          const amount = fmtNumber(BigInt(q.amountIn), DECIMALS[q.from], "en", 6).replace(/,/g, "").replace(/\.?0+$/, "");
+          const amount = amountOf(q);
           const q2 = await ready.api.quote({ from: q.from, to: q.to, amount, account: ready.account, lang });
           setCh({ prev: q, quote: q2, quoteAt: Date.now() });
           return go("quote-changed", { replace: true });
@@ -610,7 +616,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const m = chat.msgs.find((x) => x.id === msgId);
       if (!m || m.kind !== "quote") return;
       const q = m.quote;
-      const amount = fmtNumber(BigInt(q.amountIn), DECIMALS[q.from], "en", 6).replace(/,/g, "").replace(/\.?0+$/, "");
+      const amount = amountOf(q);
       setChat((c) => ({ ...c, msgs: [...c.msgs, { id: newId(), kind: "typing" }] }));
       try {
         const q2 = await ready.api.quote({ from: q.from, to: q.to, amount, account: ready.account, lang });
@@ -652,17 +658,36 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (b.quoteId) {
         window.history.replaceState({ mp: "tg-quote" }, "");
         setScreen("tg-quote");
+        // Show the quote it opens: the account's open quote when it matches, else GET /quote/:id (TODO(contract)).
         let q: Quote | null = null;
         try {
-          q = await ready.api.quoteById(b.quoteId);
-          setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null });
-          go("quote", { replace: true });
+          const open = await ready.api.openQuote(ready.account);
+          q = open && open.quoteId === b.quoteId ? open : await ready.api.quoteById(b.quoteId);
         } catch {
           q = null;
+        }
+        if (q) {
+          setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null });
+          go("quote", { replace: true });
         }
         // Straight to prepare → MiniPay's sheet. The sheet is still the user's approval.
         void runQuote(q, b.quoteId);
         return;
+      }
+      // MiniPay's mini-app deeplink may drop ?quote=, so resume the account's open quote (from Telegram).
+      // It opens on the quote card; the user confirms with one tap and MiniPay's sheet.
+      try {
+        const open = await ready.api.openQuote(ready.account);
+        if (open && Date.parse(open.expiresAt) > Date.now() + 3_000) {
+          ready.store.setOnboarded(ready.account);
+          setCh({ quote: open, quoteAt: Date.now(), from: open.from, to: open.to, prev: null, amount: amountOf(open) });
+          window.history.replaceState({ mp: "home" }, "");
+          setScreen("home");
+          go("quote");
+          return;
+        }
+      } catch {
+        /* no open quote (or endpoint not deployed yet): normal launch */
       }
       const pr = ready.store.pendingRipio(ready.account);
       const first: Screen = pr && Date.now() - pr.at < 30 * 60_000 ? "add-waiting" : ready.store.onboarded(ready.account) ? "home" : "welcome";

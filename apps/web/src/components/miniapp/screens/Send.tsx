@@ -9,7 +9,7 @@ import { isPositive } from "../../../lib/miniapp/client/keypad";
 import { newId, type Contact } from "../../../lib/miniapp/client/store";
 import { Frame, useApp, useNow } from "../context";
 import { Badge, CountdownBar, CountdownText } from "../ui";
-import { CurPill, Keypad, ReceiptChip } from "./Change";
+import { CurPill, Keypad, MiniPayReceiptLink, ReceiptChip } from "./Change";
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const first = (name: string) => name.split(" ")[0] ?? name;
@@ -334,6 +334,7 @@ export function SendDone() {
           <div style={{ fontSize: 16, color: "var(--muted)" }}>{fill(t.doneSub, { y: pay })}</div>
         </div>
         {exec.receiptId ? <ReceiptChip receiptId={exec.receiptId} /> : null}
+        <MiniPayReceiptLink />
       </div>
     </Frame>
   );

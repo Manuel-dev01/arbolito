@@ -39,7 +39,8 @@ export function Welcome() {
   );
 }
 
-export const ADD_CASH_URL = "https://link.minipay.xyz/add_cash?tokens=USDT,USDC";
+/** MiniPay Add Cash deeplink (docs.minipay.xyz → Deeplinks). */
+export const ADD_CASH_URL = "https://link.minipay.xyz/add_cash?tokens=USDT,USDC,USDM";
 
 export function AddMoney() {
   const { t, go, openLink, toast, mock } = useApp();

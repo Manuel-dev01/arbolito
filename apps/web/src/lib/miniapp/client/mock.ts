@@ -19,6 +19,8 @@ export interface MockScenario {
   noContacts?: boolean;
   paused?: boolean;
   autoOn?: boolean;
+  /** /quotes/open returns a fresh quote once (a Telegram quote waiting to be confirmed). */
+  openQuote?: boolean;
   fail?: MockFail | null;
 }
 
@@ -224,6 +226,12 @@ export function createMockServer(scenario: MockScenario) {
       const q = mockQuote(body.from as Sym, body.to as Sym, String(body.amount));
       quotes.set(q.quoteId, q);
       return json(200, q);
+    }
+    if (path === "/quotes/open") {
+      if (!scenario.openQuote || !firstTime("open")) return json(200, { quote: null });
+      const q = mockQuote("USDT", "wARS", "100");
+      quotes.set(q.quoteId, q);
+      return json(200, { quote: q });
     }
     const byId = /^\/quote\/([0-9a-f-]{36})$/.exec(path);
     if (byId) {
