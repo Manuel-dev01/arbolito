@@ -2,15 +2,23 @@
  * Bot persistence against the real Postgres (vitest `db` project). Uses throwaway Telegram
  * ids and deletes its users afterwards (contacts/pending/messages cascade).
  */
-import { afterAll, describe, expect, it } from "vitest";
-import { inArray } from "drizzle-orm";
-import { closeDb, getDb, users } from "@arbolito/db";
+import { randomBytes, randomInt } from "node:crypto";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { eq, inArray } from "drizzle-orm";
+import type { Api } from "grammy";
+import { closeDb, getDb, linkCodes, users } from "@arbolito/db";
 import type { ChatMessage } from "@arbolito/llm";
+import { LINK_CODE_TTL_MS } from "../src/link";
+import { Linker } from "../src/linking";
+import { makeLinks } from "../src/links";
 import {
   addContact,
   appendHistory,
+  countActiveCodes,
+  createLinkCode,
   createPending,
   findContact,
+  getLinkCode,
   getPending,
   listContacts,
   loadHistory,
@@ -94,5 +102,71 @@ describe("history", () => {
     // A window that would start mid-turn is trimmed to the next user message.
     const tail = await loadHistory(db, u.id, 3);
     expect(tail[0]?.role ?? "user").toBe("user");
+  });
+});
+
+describe("link codes", () => {
+  /** What the web backend does on /api/miniapp/link/confirm (simulated here). */
+  async function confirmFromMiniApp(codeId: string, userId: string, account: string) {
+    await db.update(linkCodes).set({ usedAt: new Date(), account }).where(eq(linkCodes.id, codeId));
+    await db.update(users).set({ walletAddress: account }).where(eq(users.id, userId));
+  }
+  const randomWallet = () => `0x${randomBytes(20).toString("hex")}`;
+
+  it("creates a 4-digit code with a 10-minute expiry, unused", async () => {
+    const u = await newUser(10);
+    const before = Date.now();
+    const c = await createLinkCode(db, u.id);
+    expect(c.code).toMatch(/^\d{4}$/);
+    expect(c.usedAt).toBeNull();
+    expect(c.account).toBeNull();
+    expect(c.expiresAt.getTime()).toBeGreaterThanOrEqual(before + LINK_CODE_TTL_MS);
+    expect(c.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + LINK_CODE_TTL_MS);
+  });
+
+  it("a new code retires the user's previous one", async () => {
+    const u = await newUser(11);
+    const first = await createLinkCode(db, u.id);
+    const second = await createLinkCode(db, u.id);
+    expect((await getLinkCode(db, first.id))!.expiresAt.getTime()).toBeLessThanOrEqual(Date.now());
+    expect((await getLinkCode(db, second.id))!.expiresAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("never hands out a code that is active for someone else", async () => {
+    const a = await newUser(12);
+    const b = await newUser(13);
+    const ca = await createLinkCode(db, a.id);
+    // b's random source first proposes a's active code; allocation must skip it.
+    let calls = 0;
+    const rand = (min: number, max: number) => (calls++ === 0 ? Number(ca.code) : randomInt(min, max));
+    const cb = await createLinkCode(db, b.id, { rand });
+    expect(calls).toBeGreaterThanOrEqual(2);
+    expect(cb.code).not.toBe(ca.code);
+    expect(await countActiveCodes(db, ca.code)).toBe(1);
+  });
+
+  it("allocations racing each other still yield distinct active codes", async () => {
+    const racers = await Promise.all([14, 15, 16, 17, 18].map((o) => newUser(o)));
+    const codes = await Promise.all(racers.map((u) => createLinkCode(db, u.id)));
+    expect(new Set(codes.map((c) => c.code)).size).toBe(codes.length);
+  });
+
+  it("full lifecycle: code shown, confirmed in MiniPay, bot polls and confirms with the masked wallet", async () => {
+    const u = await newUser(19);
+    const wallet = randomWallet();
+    const sendMessage = vi.fn(async (_chat: number, _text: string, _o?: unknown) => ({ message_id: 501 }));
+    const editMessageText = vi.fn(async (..._a: unknown[]) => true);
+    const linker = new Linker({ db, api: { sendMessage, editMessageText } as unknown as Api, links: makeLinks("https://mini.example"), pollMs: 100 });
+    await linker.start(777, u, "es");
+    const [, codeText] = sendMessage.mock.calls[0]!;
+    const code = /<code>(\d{4})<\/code>/.exec(codeText)![1]!;
+    const [row] = await db.select().from(linkCodes).where(eq(linkCodes.userId, u.id)).orderBy(linkCodes.createdAt);
+    expect(row!.code).toBe(code);
+
+    await confirmFromMiniApp(row!.id, u.id, wallet);
+    await vi.waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(2), { timeout: 5_000, interval: 50 });
+    expect(sendMessage.mock.calls[1]![1]).toContain(`<b>${wallet.slice(0, 6)}…${wallet.slice(-4)}</b>`);
+    expect(editMessageText.mock.calls[0]![2]).toContain("✓ Usado.");
+    linker.stop();
   });
 });
