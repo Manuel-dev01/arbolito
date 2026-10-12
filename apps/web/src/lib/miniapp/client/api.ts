@@ -137,23 +137,30 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     return parsed.data;
   }
 
+  /** Validates a request body against the contract before sending; a bad body never leaves the phone. */
+  function req<T extends z.ZodType>(schema: T, body: unknown): z.infer<T> {
+    const r = schema.safeParse(body);
+    if (!r.success) throw new ApiFailure("bad_request", 0, "request does not match the contract");
+    return r.data;
+  }
+
   const q = (account: string) => `?account=${encodeURIComponent(account)}`;
 
   return {
     rates: () => call(RatesResponse, "/rates"),
     balances: (account) => call(BalancesResponse, `/balances${q(account)}`),
-    quote: (req) => call(QuoteResponse, "/quote", { method: "POST", body: QuoteRequest.parse(req) }),
+    quote: async (r) => call(QuoteResponse, "/quote", { method: "POST", body: req(QuoteRequest, r) }),
     quoteById: (id) => call(QuoteResponse, `/quote/${encodeURIComponent(id)}`),
-    prepare: (req) => call(PrepareResponse, "/prepare", { method: "POST", body: PrepareRequest.parse(req) }),
-    submit: (req) => call(SubmitResponse, "/submit", { method: "POST", body: SubmitRequest.parse(req) }),
+    prepare: async (r) => call(PrepareResponse, "/prepare", { method: "POST", body: req(PrepareRequest, r) }),
+    submit: async (r) => call(SubmitResponse, "/submit", { method: "POST", body: req(SubmitRequest, r) }),
     receipt: (id) => call(ReceiptResponse, `/receipt/${encodeURIComponent(id)}`),
-    autonomyPlan: (req) => call(CallsResponse, "/autonomy/plan", { method: "POST", body: AutonomyPlanRequest.parse(req) }),
+    autonomyPlan: async (r) => call(CallsResponse, "/autonomy/plan", { method: "POST", body: req(AutonomyPlanRequest, r) }),
     autonomyStatus: (account) => call(AutonomyStatus, `/autonomy/status${q(account)}`),
-    revokePlan: (req) => call(CallsResponse, "/autonomy/revoke-plan", { method: "POST", body: RevokePlanRequest.parse(req) }),
+    revokePlan: async (r) => call(CallsResponse, "/autonomy/revoke-plan", { method: "POST", body: req(RevokePlanRequest, r) }),
     autonomyPause: (account, paused) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: { account, paused } }),
-    chat: (req) => call(ChatResponse, "/chat", { method: "POST", body: ChatRequest.parse(req) }),
-    linkConfirm: (req) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: LinkConfirmRequest.parse(req) }),
-    sendPrepare: (req) => call(SendPrepareResponse, "/send/prepare", { method: "POST", body: SendPrepareRequest.parse(req) }),
+    chat: async (r) => call(ChatResponse, "/chat", { method: "POST", body: req(ChatRequest, r) }),
+    linkConfirm: async (r) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: req(LinkConfirmRequest, r) }),
+    sendPrepare: async (r) => call(SendPrepareResponse, "/send/prepare", { method: "POST", body: req(SendPrepareRequest, r) }),
   };
 }
 

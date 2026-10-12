@@ -23,7 +23,7 @@ export interface MockScenario {
 }
 
 /** Clearly fake demo account (never a real wallet). */
-export const MOCK_ACCOUNT: Address = "0x5a1c1a0000000000000000000000000000a4b0";
+export const MOCK_ACCOUNT: Address = "0x5a1c1a000000000000000000000000000000a4b0";
 
 /** ARS per one unit of each currency. */
 const R: Record<Cur, number> = { ARS: 1, BRL: 317.74119, USD: 1608 };
