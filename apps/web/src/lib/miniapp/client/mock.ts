@@ -182,6 +182,8 @@ export function createMockServer(scenario: MockScenario) {
   const polls = new Map<string, number>();
   const once = new Set<string>();
   const firstTime = (k: string) => (once.has(k) ? false : (once.add(k), true));
+  /** Quote ids reported through /reject (tests read this). */
+  const rejected: string[] = [];
   let autoOn = !!scenario.autoOn;
   let paused = !!scenario.paused;
 
@@ -226,6 +228,10 @@ export function createMockServer(scenario: MockScenario) {
       const q = mockQuote(body.from as Sym, body.to as Sym, String(body.amount));
       quotes.set(q.quoteId, q);
       return json(200, q);
+    }
+    if (path === "/reject") {
+      rejected.push(String(body.quoteId));
+      return json(200, { quoteId: body.quoteId, status: "failed" });
     }
     if (path === "/quotes/open") {
       if (!scenario.openQuote || !firstTime("open")) return json(200, { quote: null });
@@ -376,6 +382,7 @@ export function createMockServer(scenario: MockScenario) {
   return {
     fetch: (input: string, init?: RequestInit) => handle(input, init),
     receiptIndex: (): ReceiptIndexEntry[] => (scenario.noReceipts ? [] : seeded.index),
+    rejected,
   };
 }
 

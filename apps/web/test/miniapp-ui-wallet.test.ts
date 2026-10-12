@@ -133,7 +133,7 @@ describe("execute flow against the mock server", () => {
     const api = createApiClient({ fetch: server.fetch });
     const sheets: string[] = [];
     const wallet = createMockWallet({ lang: "es", fail, confirm: async (r) => (sheets.push(`${r.kind}:${r.label}`), answer) });
-    return { api, wallet, sheets };
+    return { api, wallet, sheets, server };
   };
 
   it("quotes R$ 10 → ARS 3.177,41 and runs prepare → send → submit", async () => {
@@ -159,10 +159,29 @@ describe("execute flow against the mock server", () => {
     const a = setup(null, false);
     const qa = await a.api.quote({ from: "wBRL", to: "wARS", amount: "10" });
     expect((await executeQuote({ api: a.api, wallet: a.wallet, retryDelayMs: 0 }, qa.quoteId)).kind).toBe("cancelled");
+    // The rejection is reported to POST /reject (best-effort, fire-and-forget).
+    await new Promise((r) => setTimeout(r, 400));
+    expect(a.server.rejected).toEqual([qa.quoteId]);
     const b = setup("revert");
     const qb = await b.api.quote({ from: "wBRL", to: "wARS", amount: "10" });
     expect(await executeQuote({ api: b.api, wallet: b.wallet, retryDelayMs: 0 }, qb.quoteId)).toMatchObject({ kind: "failed", reason: "reverted" });
   }, 15_000);
+
+  it("resumes an open quote once via GET /quotes/open (parsed against the contract)", async () => {
+    const server = createMockServer({ openQuote: true });
+    const api = createApiClient({ fetch: server.fetch });
+    const q = await api.openQuote(MOCK_ACCOUNT);
+    expect(q?.from).toBe("USDT");
+    expect(await api.openQuote(MOCK_ACCOUNT)).toBeNull();
+    expect(await createApiClient({ fetch: createMockServer({}).fetch }).openQuote(MOCK_ACCOUNT)).toBeNull();
+  });
+
+  it("maps a missing route (404) to not_ready, and a non-contract body to bad_response", async () => {
+    const notFound = createApiClient({ fetch: async () => new Response("<html>404</html>", { status: 404 }) });
+    await expect(notFound.sendPrepare({ account: MOCK_ACCOUNT, recipient: MOCK_ACCOUNT, from: "USDT", to: "wARS", amount: "1" })).rejects.toMatchObject({ code: "not_ready" });
+    const junk = createApiClient({ fetch: async () => new Response(JSON.stringify({ hello: 1 }), { status: 200 }) });
+    await expect(junk.rates()).rejects.toMatchObject({ code: "bad_response" });
+  });
 
   it("surfaces contract error codes before anything is sent", async () => {
     const { api, wallet, sheets } = setup("price_changed");

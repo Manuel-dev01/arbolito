@@ -14,11 +14,8 @@ export interface Eip1193Provider {
   isMiniPay?: boolean;
 }
 
-declare global {
-  interface Window {
-    ethereum?: Eip1193Provider;
-  }
-}
+/** The injected provider, read without a global `Window` augmentation (other pages declare their own). */
+const injected = (): { ethereum?: Eip1193Provider } | undefined => (typeof window === "undefined" ? undefined : (window as unknown as { ethereum?: Eip1193Provider }));
 
 export const CELO_CHAIN_ID = 42220;
 /** Public RPC for receipts (never a keyed server URL). */
@@ -49,7 +46,7 @@ export function pickFeeCurrency(balances: { sym: Sym; amount: string }[] | undef
 export type Environment = { kind: "minipay"; provider: Eip1193Provider } | { kind: "none" };
 
 /** MiniPay injects window.ethereum with isMiniPay. Any other wallet counts as "open from MiniPay". */
-export function detectMiniPay(w: { ethereum?: Eip1193Provider } | undefined = typeof window === "undefined" ? undefined : window): Environment {
+export function detectMiniPay(w: { ethereum?: Eip1193Provider } | undefined = injected()): Environment {
   const eth = w?.ethereum;
   return eth && eth.isMiniPay === true ? { kind: "minipay", provider: eth } : { kind: "none" };
 }

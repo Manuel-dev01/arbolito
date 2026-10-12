@@ -84,15 +84,24 @@ function outcomeToResult(o: SendOutcome): ExecResult | null {
   return null;
 }
 
+/** Tells the backend the user declined in MiniPay (best-effort; it moves no money and never blocks the UI). */
+function reportRejection(deps: ExecDeps, quoteId: string): void {
+  deps.api.reject({ quoteId, account: deps.wallet.account, code: 4001 }).catch(() => {});
+}
+
 export async function executeQuote(deps: ExecDeps, quoteId: string): Promise<ExecResult> {
   let prepared: Prepared;
   try {
     prepared = await prepareWithProof(deps, quoteId);
   } catch (e) {
-    if (isUserRejection(e)) return { kind: "cancelled" };
+    if (isUserRejection(e)) {
+      reportRejection(deps, quoteId);
+      return { kind: "cancelled" };
+    }
     return { kind: "api-error", code: e instanceof ApiFailure ? e.code : "network" };
   }
   const outcome = await sendWithStages(deps, prepared.calls);
+  if (outcome.kind === "cancelled") reportRejection(deps, quoteId);
   const bad = outcomeToResult(outcome);
   if (bad) return bad;
   deps.onStage?.({ stage: "submitting", hashes: outcome.hashes });

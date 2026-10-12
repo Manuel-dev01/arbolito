@@ -86,6 +86,11 @@ export interface ApiClient {
   autonomyPause(account: string, paused: boolean): Promise<{ paused: boolean }>;
   chat(req: z.input<typeof ChatRequest>): Promise<ChatReply>;
   linkConfirm(req: z.input<typeof LinkConfirmRequest>): Promise<LinkResult>;
+  /**
+   * POST /api/miniapp/reject (backend route outside the shared contract): MiniPay's sheet was
+   * declined (4001). Marks the quote failed / rejected_in_minipay so Telegram's card follows.
+   */
+  reject(req: { quoteId: string; account: string; code?: number }): Promise<{ quoteId: string; status: string }>;
   /** TODO(contract): see SendPrepareRequest. */
   sendPrepare(req: SendPrepareRequest): Promise<Calls & { expectedOut: string; minOut: string }>;
 }
@@ -100,6 +105,9 @@ export interface ApiOptions {
 
 const SendPrepareResponse = CallsResponse.extend({ expectedOut: z.string().regex(/^\d+$/), minOut: z.string().regex(/^\d+$/) });
 const PauseResponse = z.object({ paused: z.boolean() });
+/** Mirrors lib/miniapp/server/reject.ts (server-only module, so not imported here). */
+const RejectRequest = z.object({ quoteId: z.string().uuid(), account: z.string().regex(/^0x[0-9a-fA-F]{40}$/), code: z.number().int().optional() });
+const RejectResponse = z.object({ quoteId: z.string().uuid(), status: z.string() });
 
 export function createApiClient(opts: ApiOptions = {}): ApiClient {
   const base = opts.base ?? "/api/miniapp";
@@ -164,6 +172,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     autonomyPause: (account, paused) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: { account, paused } }),
     chat: async (r) => call(ChatResponse, "/chat", { method: "POST", body: req(ChatRequest, r) }),
     linkConfirm: async (r) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: req(LinkConfirmRequest, r) }),
+    reject: async (r) => call(RejectResponse, "/reject", { method: "POST", body: req(RejectRequest, r) }),
     sendPrepare: async (r) => call(SendPrepareResponse, "/send/prepare", { method: "POST", body: req(SendPrepareRequest, r) }),
   };
 }
