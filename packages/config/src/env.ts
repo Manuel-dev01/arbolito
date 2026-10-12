@@ -79,6 +79,16 @@ export const envSchema = z.object({
 
   // Web
   PUBLIC_BASE_URL: opt(z.string().url()),
+
+  // MiniPay Mini App backend (apps/web)
+  /** Hot key that anchors receipts (ArbolitoReceipts emitter). Gas only; never holds user funds. */
+  ANCHOR_PRIVATE_KEY: opt(privateKey),
+  /** Anchor receipts from /api/miniapp/submit. Off unless explicitly "true". */
+  ANCHOR_ENABLED: bool.default(false),
+  /** ArbolitoGuard v2 (autonomy). Unset = autonomy endpoints answer not_ready. */
+  GUARD_ADDRESS: opt(address),
+  /** Operator the guard authorizes for autonomous swaps/sends (Arbolito's operator EOA). */
+  ARBOLITO_OPERATOR_ADDRESS: opt(address),
 });
 
 export type Env = z.infer<typeof envSchema>;
