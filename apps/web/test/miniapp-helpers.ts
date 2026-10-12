@@ -91,6 +91,11 @@ export class MemoryStore implements MiniappStore {
     const q = this.quotes.find((x) => x.id === id);
     return q ? structuredClone(q) : undefined;
   }
+  async latestOpenQuote(account: string, now: Date) {
+    const open = this.quotes.filter((q) => q.account === account.toLowerCase() && q.status === "quoted" && q.expiresAt > now);
+    const q = open[open.length - 1]; // inserted in order: last = newest
+    return q ? structuredClone(q) : undefined;
+  }
   async updateQuote(id: string, patch: QuotePatch, fromStatus?: readonly string[]) {
     const q = this.quotes.find((x) => x.id === id);
     if (!q || (fromStatus && !fromStatus.includes(q.status))) return false;

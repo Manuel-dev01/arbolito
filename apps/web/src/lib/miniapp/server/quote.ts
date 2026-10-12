@@ -6,7 +6,7 @@ import { plan, toAtomic, type Quote, type Reference, type Route } from "@arbolit
 import { SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, noRoute } from "./errors";
-import { encodePayload } from "./serde";
+import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
 
 /** How long a quote card stays confirmable. */
@@ -122,6 +122,16 @@ export function toQuoteResponse(row: Pick<QuoteRow, "id" | "expiresAt">, q: Plan
     })),
     references: q.references.map(({ name, pair, rate, source, at }) => ({ name, pair, rate, source, at })),
   };
+}
+
+/**
+ * GET /quotes/open?account=: the account's newest quote still `quoted` and unexpired, so the Mini
+ * App can resume a quote made from Telegram (MiniPay's deeplink may drop our query params).
+ */
+export async function openQuote(deps: MiniappDeps, account: Address): Promise<{ quote: z.infer<typeof QuoteResponse> | null }> {
+  const row = await deps.store().latestOpenQuote(account.toLowerCase(), new Date(deps.now()));
+  if (!row) return { quote: null };
+  return { quote: toQuoteResponse(row, decodePayload(row.payload)) };
 }
 
 /** POST /quote: plan, store the quote (≈60 s) and map it to the contract. */

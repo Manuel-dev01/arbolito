@@ -28,6 +28,8 @@ export interface MiniappStore {
 
   insertQuote(q: NewQuote): Promise<QuoteRow>;
   getQuote(id: string): Promise<QuoteRow | undefined>;
+  /** The account's newest quote still `quoted` and unexpired at `now` (e.g. one made from Telegram). */
+  latestOpenQuote(account: string, now: Date): Promise<QuoteRow | undefined>;
   /** Applies the patch only while the status is one of `fromStatus` (atomic). True if a row changed. */
   updateQuote(id: string, patch: QuotePatch, fromStatus?: readonly string[]): Promise<boolean>;
 
@@ -95,6 +97,16 @@ export class DrizzleStore implements MiniappStore {
 
   async getQuote(id: string) {
     const [row] = await this.db.select().from(miniappQuotes).where(eq(miniappQuotes.id, id)).limit(1);
+    return row;
+  }
+
+  async latestOpenQuote(account: string, now: Date) {
+    const [row] = await this.db
+      .select()
+      .from(miniappQuotes)
+      .where(and(eq(miniappQuotes.account, account.toLowerCase()), eq(miniappQuotes.status, "quoted"), gt(miniappQuotes.expiresAt, now)))
+      .orderBy(desc(miniappQuotes.createdAt))
+      .limit(1);
     return row;
   }
 

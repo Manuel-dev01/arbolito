@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { TOKENS } from "@arbolito/config";
 import { GET as balancesRoute } from "../src/app/api/miniapp/balances/route";
 import { GET as rateRoute } from "../src/app/api/miniapp/rates/route";
+import { GET as openRoute } from "../src/app/api/miniapp/quotes/open/route";
 import { GET as receiptRoute } from "../src/app/api/miniapp/receipt/[id]/route";
-import { BalancesResponse, RatesResponse } from "../src/lib/miniapp/contract";
+import { BalancesResponse, OpenQuoteResponse, QuoteResponse, RatesResponse } from "../src/lib/miniapp/contract";
+import { prepareQuote } from "../src/lib/miniapp/server/prepare";
+import { createQuote } from "../src/lib/miniapp/server/quote";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { getBalances } from "../src/lib/miniapp/server/market";
@@ -48,6 +51,32 @@ describe("GET /balances and /rates", () => {
     const nodb = await receiptRoute(new Request("https://x"), params(crypto.randomUUID()));
     expect(nodb.status).toBe(503);
     expect((await nodb.json()).error.code).toBe("not_ready");
+  });
+});
+
+describe("GET /quotes/open", () => {
+  it("resumes the account's newest open quote, and null once it is prepared or expired", async () => {
+    const rig = makeRig();
+    setDeps(rig.deps);
+    const get = async (account: string) => {
+      const res = await openRoute(new Request(`https://arbolito.test/api/miniapp/quotes/open?account=${account}`));
+      expect(res.status).toBe(200);
+      return OpenQuoteResponse.parse(await res.json()).quote;
+    };
+    expect(await get(ACCOUNT)).toBeNull();
+    await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "1", account: ACCOUNT });
+    rig.clock.now += 1_000;
+    const newer = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "2", account: ACCOUNT.toUpperCase().replace("0X", "0x") });
+    await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "3" }); // anonymous: never resumed
+    const open = await get(ACCOUNT);
+    expect(open).toEqual(newer);
+    expect(QuoteResponse.parse(open).amountIn).toBe("2000000");
+
+    await prepareQuote(rig.deps, { quoteId: newer.quoteId, account: ACCOUNT });
+    expect((await get(ACCOUNT))!.amountIn).toBe("1000000");
+    rig.clock.now += 60_000;
+    expect(await get(ACCOUNT)).toBeNull();
+    expect((await openRoute(new Request("https://arbolito.test/api/miniapp/quotes/open?account=nope"))).status).toBe(400);
   });
 });
 
