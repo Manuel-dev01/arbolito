@@ -11,7 +11,7 @@ import type { ChatMessage } from "@arbolito/llm";
 export type UserRow = typeof users.$inferSelect;
 export type QuoteRow = typeof miniappQuotes.$inferSelect;
 export type NewQuote = Pick<typeof miniappQuotes.$inferInsert, "account" | "fromSym" | "toSym" | "amountIn" | "payload" | "expiresAt">;
-export type QuotePatch = Partial<Pick<QuoteRow, "status" | "prepared" | "receiptId" | "error" | "account">>;
+export type QuotePatch = Partial<Pick<QuoteRow, "status" | "prepared" | "receiptId" | "error" | "account" | "expiresAt">>;
 export type ReceiptRow = typeof receipts.$inferSelect;
 export type NewReceipt = typeof receipts.$inferInsert;
 export type LinkCodeRow = typeof linkCodes.$inferSelect;

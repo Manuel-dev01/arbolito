@@ -99,7 +99,9 @@ export async function submitQuote(deps: MiniappDeps, req: z.infer<typeof SubmitR
     if (existing) return existingResponse(deps, existing);
   }
   if (row.status === "quoted") throw badRequest("Prepare this quote before submitting.", 409);
-  if (row.status !== "prepared" && row.status !== "submitted") throw quoteExpired();
+  // A prepared quote later marked failed (e.g. a reported MiniPay rejection) still registers if
+  // its txs verify onchain: the chain is the source of truth for what happened.
+  if (row.status !== "prepared" && row.status !== "submitted" && !(row.status === "failed" && row.prepared)) throw quoteExpired();
   const prepared = row.prepared as Prepared | null;
   if (!prepared) throw badRequest("Prepare this quote before submitting.", 409);
   if (!deps.attributionCode) throw notReady("ATTRIBUTION_CODE is not configured.");

@@ -12,6 +12,7 @@ import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { prepareQuote, type Prepared } from "../src/lib/miniapp/server/prepare";
 import { createQuote } from "../src/lib/miniapp/server/quote";
 import { getMiniappReceipt } from "../src/lib/miniapp/server/receipt";
+import { rejectQuote } from "../src/lib/miniapp/server/reject";
 import { submitQuote } from "../src/lib/miniapp/server/submit";
 import { ACCOUNT, CLAIM, CODE, REACTOR, SWAP_DATA, T0, firmQuote, makeRig, mineCalls, usdtToWars, wallet, type TestRig } from "./miniapp-helpers";
 
@@ -170,15 +171,34 @@ describe("Uniswap: quote → prepare → submit", () => {
     rig.uni.pairs["USDT>wARS"] = usdtToWars(1590n); // -0.6%, beyond the 0.5% slippage
     const f = await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }));
     expect([f.code, f.status]).toEqual(["price_changed", 409]);
-    expect(rig.store.quotes[0]!.status).toBe("quoted");
+    // The bot reads miniapp_quotes: the quote is over, with error price_changed.
+    expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "price_changed", prepared: null });
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("quote_expired");
+  });
 
+  it("accepts a re-quote that moved but stays above the shown minimum", async () => {
+    const rig = makeRig();
+    const q = await quoted(rig);
     rig.uni.pairs["USDT>wARS"] = usdtToWars(1595n); // -0.31%: still above the minimum
     const p = await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
     expect(p.expectedOut).toBe((15_950n * E18).toString());
     expect(p.minOut).toBe(q.minOut);
+    expect(p.expiresAt).toBe(q.expiresAt);
   });
 
-  it("refuses an expired quote, another wallet's quote and an unknown one", async () => {
+  it("prepares a quote only once, and only while it is `quoted`", async () => {
+    const rig = makeRig();
+    const q = await quoted(rig);
+    await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("quote_expired");
+
+    // Cancelled from Telegram (the bot sets expired / cancelled_in_telegram).
+    const q2 = await quoted(rig);
+    rig.store.quotes.find((x) => x.id === q2.quoteId)!.status = "expired";
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q2.quoteId, account: wallet.address }))).code).toBe("quote_expired");
+  });
+
+  it("refuses an expired quote (marking it expired), another wallet's quote and an unknown one", async () => {
     const rig = makeRig();
     const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10", account: wallet.address });
     expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: "0x2222222222222222222222222222222222222222" }))).status).toBe(403);
@@ -186,6 +206,16 @@ describe("Uniswap: quote → prepare → submit", () => {
     rig.clock.now += 61_000;
     const f = await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }));
     expect([f.code, f.status]).toEqual(["quote_expired", 410]);
+    expect(rig.store.quotes[0]).toMatchObject({ status: "expired", error: "expired" });
+  });
+
+  it("marks a quote rejected in MiniPay as failed", async () => {
+    const rig = makeRig();
+    const q = await quoted(rig);
+    await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
+    const r = await rejectQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, code: 4001 });
+    expect(r).toEqual({ quoteId: q.quoteId, status: "failed" });
+    expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "rejected_in_minipay" });
   });
 
   it("needs ATTRIBUTION_CODE to prepare anything", async () => {
@@ -260,9 +290,8 @@ describe("Textile: 409 proof → firm quote → submit", () => {
     // Stored server-side only.
     expect((rig.store.quotes[0]!.prepared as Prepared & { claimToken: string }).claimToken).toBe(CLAIM);
 
-    // A second prepare while the firm quote is live reuses it (no new inventory lock).
-    const again = await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
-    expect(again.calls).toEqual(p.calls);
+    // A second prepare is refused: it would lock more maker inventory.
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("quote_expired");
     expect(rig.textile.requests).toHaveLength(1);
 
     const hashes = mineCalls(rig, p.calls, { delivered: { token: wARS.address, amount: 17_000n * E18 } });
@@ -318,20 +347,63 @@ describe("Textile: 409 proof → firm quote → submit", () => {
     const f = await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, takerProof: { nonce: body.nonce, issuedAt: body.issuedAt, signature, scheme: "eip712" } }));
     expect(f.code).toBe("price_changed");
     expect(rig.textile.cancels).toEqual(["rfq-1"]);
-    expect(rig.store.quotes[0]!.prepared).toBeNull();
+    expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "price_changed", prepared: null });
+  });
+
+  it("clamps the prepared deadline to the quote's own expiresAt", async () => {
+    const rig = makeRig();
+    const q = await textileQuote(rig);
+    rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, 17_000n * E18, 120_000); // firm outlives the card
+    const body = await challenge(rig, q.quoteId);
+    const signature = await wallet.signTypedData(takerControlTypedData(wallet.address, 42220, body.nonce as Hex, body.issuedAt));
+    const p = await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, takerProof: { nonce: body.nonce, issuedAt: body.issuedAt, signature, scheme: "eip712" } });
+    expect(p.expiresAt).toBe(q.expiresAt);
+    // Firm sooner than the card: the stored expiresAt follows the firm deadline.
+    const rig2 = makeRig();
+    rig2.textile.hasPartnerKey = true;
+    const q2 = await textileQuote(rig2);
+    const p2 = await prepareQuote(rig2.deps, { quoteId: q2.quoteId, account: wallet.address });
+    expect(p2.expiresAt).toBe(new Date(T0 + 55_000).toISOString());
+    expect(rig2.store.quotes[0]!.expiresAt.toISOString()).toBe(p2.expiresAt);
   });
 
   it("cancels a firm quote that is about to expire, or bound to another taker", async () => {
+    const run = async (firm: TestRig["textile"]["firm"]) => {
+      const rig = makeRig();
+      rig.textile.hasPartnerKey = true;
+      const q = await textileQuote(rig);
+      rig.textile.firm = firm;
+      const f = await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }));
+      expect(rig.textile.cancels).toEqual(["rfq-1"]);
+      return { code: f.code, quote: rig.store.quotes[0]! };
+    };
+    const soon = await run((p) => firmQuote(p.taker, p.sellAmount, 17_000n * E18, 10_000));
+    expect(soon.code).toBe("quote_expired");
+    expect(soon.quote).toMatchObject({ status: "failed", error: "firm_quote_expiring" });
+    const other = await run((p) => firmQuote("0x3333333333333333333333333333333333333333", p.sellAmount, 17_000n * E18));
+    expect(other.code).toBe("upstream");
+    expect(other.quote).toMatchObject({ status: "failed", error: "textile_bad_quote" });
+  });
+
+  it("leaves the quote retryable on a transient Textile failure", async () => {
     const rig = makeRig();
+    rig.textile.hasPartnerKey = true;
     const q = await textileQuote(rig);
-    rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, 17_000n * E18, 10_000);
-    const body = await challenge(rig, q.quoteId);
-    const signature = await wallet.signTypedData(takerControlTypedData(wallet.address, 42220, body.nonce as Hex, body.issuedAt));
-    const proof = { nonce: body.nonce, issuedAt: body.issuedAt, signature, scheme: "eip712" as const };
-    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, takerProof: proof }))).code).toBe("quote_expired");
-    rig.textile.firm = (p) => firmQuote("0x3333333333333333333333333333333333333333", p.sellAmount, 17_000n * E18);
-    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, takerProof: proof }))).code).toBe("upstream");
-    expect(rig.textile.cancels).toEqual(["rfq-1", "rfq-1"]);
+    rig.textile.firm = () => {
+      throw new Error("socket hang up");
+    };
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("upstream");
+    expect(rig.store.quotes[0]!.status).toBe("quoted");
+  });
+
+  it("a MiniPay rejection releases the firm quote's inventory", async () => {
+    const rig = makeRig();
+    rig.textile.hasPartnerKey = true;
+    const q = await textileQuote(rig);
+    await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
+    await rejectQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, code: 4001 });
+    expect(rig.textile.cancels).toEqual(["rfq-1"]);
+    expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "rejected_in_minipay" });
   });
 
   it("skips the proof with a partner key, and reads status (no retry) when /submit fails", async () => {
@@ -354,6 +426,8 @@ describe("Textile: 409 proof → firm quote → submit", () => {
     const q = await textileQuote(rig);
     rig.deps.textileEnabled = false;
     expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("not_ready");
+    expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "textile_disabled" });
+    expect(rig.textile.requests).toHaveLength(0);
   });
 });
 

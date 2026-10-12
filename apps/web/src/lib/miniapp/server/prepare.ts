@@ -79,9 +79,16 @@ export async function loadLiveQuote(deps: MiniappDeps, store: MiniappStore, quot
   return row;
 }
 
-function assertNotExpired(deps: MiniappDeps, row: QuoteRow) {
-  if (row.status === "expired" || row.status === "failed" || deps.now() > row.expiresAt.getTime()) throw quoteExpired();
-}
+/**
+ * Failures that end a quote: /prepare marks it `failed` with this `error` (the Telegram bot reads
+ * miniapp_quotes to keep its cards in sync). Transient failures (network, a needed proof) leave
+ * it `quoted` so the user can retry within its expiry.
+ */
+const quoteError = new WeakMap<ApiFailure, string>();
+const final = (f: ApiFailure, error: string): ApiFailure => {
+  quoteError.set(f, error);
+  return f;
+};
 
 /** Chains the Uniswap adapter through the route's legs at the latest block. Null if any leg can't quote. */
 async function requoteUniswap(deps: MiniappDeps, route: Route): Promise<bigint | null> {
@@ -157,7 +164,7 @@ function textileCode(err: TextileApiError): string {
 
 async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address, row: QuoteRow): Promise<PreparedUniswap> {
   const fresh = await requoteUniswap(deps, route);
-  if (fresh === null || fresh < route.minOut) throw priceChanged();
+  if (fresh === null || fresh < route.minOut) throw final(priceChanged(), "price_changed");
   const [approve, swap] = buildRouteCalls(route, account) as [
     { to: Address; data: Hex; value: bigint; label: string },
     { to: Address; data: Hex; value: bigint; label: string },
@@ -180,6 +187,8 @@ async function prepareTextile(
   route: Route,
   account: Address,
   proof: z.infer<typeof TakerProof> | undefined,
+  /** The quote's own expiresAt (ms): the prepared deadline never runs past it. */
+  quoteDeadlineMs: number,
 ): Promise<PreparedTextile> {
   const leg = route.legs[0]!;
   if (!deps.textile.hasPartnerKey) {
@@ -202,33 +211,34 @@ async function prepareTextile(
     if (err instanceof TextileApiError) {
       const code = textileCode(err);
       if (err.status === 401 || code === "proof_of_control_required") throw takerProofChallenge(deps, account, "Textile needs a fresh wallet proof. Sign again.");
-      if (code === "corridor_unavailable") throw noRoute();
-      if (err.status >= 400 && err.status < 500) throw badRequest(`Textile declined the firm quote (${code}).`, 422);
+      if (code === "corridor_unavailable") throw final(noRoute(), "no_route");
+      if (err.status >= 400 && err.status < 500) throw final(badRequest(`Textile declined the firm quote (${code}).`, 422), `textile_${code}`);
     }
     logError("prepare textile request", err);
     throw upstream("Textile did not answer. Nothing moved; try again.");
   }
 
-  if (firm.status !== "quoted" || !firm.quote || !firm.transactions) throw noRoute("No maker can fill this size right now.");
+  if (firm.status !== "quoted" || !firm.quote || !firm.transactions) throw final(noRoute("No maker can fill this size right now."), "no_route");
   const q = firm.quote;
   const swapTx = firm.transactions.swap;
   const reactor = CONTRACTS.textile.limitOrderReactor;
   const buyAmount = BigInt(q.buyAmount);
   const takerPays = BigInt(q.takerPays);
 
-  const cancel = async (failure: ApiFailure): Promise<never> => {
+  const cancel = async (failure: ApiFailure, error: string): Promise<never> => {
     await deps.textile.cancel(firm.rfqId, firm.claimToken).catch((e: unknown) => logTextileError("prepare textile cancel", e));
-    throw failure;
+    throw final(failure, error);
   };
   // Same checks as executeRoute, before anything reaches the wallet. Any failure releases the inventory.
-  if (!eq(q.taker, account)) await cancel(upstream("Textile bound the quote to another wallet."));
-  if (BigInt(q.sellAmount) !== route.amountIn) await cancel(upstream("Textile quoted a different size."));
-  if (takerPays > route.amountIn) await cancel(upstream("Textile asked for more than the amount."));
-  if (!eq(q.spender, reactor) || !eq(swapTx.to, reactor)) await cancel(upstream("Textile returned an unexpected contract."));
-  if (swapTx.chainId !== deps.chainId || BigInt(swapTx.value) !== 0n) await cancel(upstream("Textile returned an unexpected transaction."));
-  if (buyAmount < route.minOut) await cancel(priceChanged());
-  const expiresMs = parseExpiry(q.expiresAt);
-  if (expiresMs - deps.now() < FIRM_MARGIN_MS) await cancel(quoteExpired("The firm quote is about to expire. Ask for a new one."));
+  if (!eq(q.taker, account)) await cancel(upstream("Textile bound the quote to another wallet."), "textile_bad_quote");
+  if (BigInt(q.sellAmount) !== route.amountIn) await cancel(upstream("Textile quoted a different size."), "textile_bad_quote");
+  if (takerPays > route.amountIn) await cancel(upstream("Textile asked for more than the amount."), "textile_bad_quote");
+  if (!eq(q.spender, reactor) || !eq(swapTx.to, reactor)) await cancel(upstream("Textile returned an unexpected contract."), "textile_bad_quote");
+  if (swapTx.chainId !== deps.chainId || BigInt(swapTx.value) !== 0n) await cancel(upstream("Textile returned an unexpected transaction."), "textile_bad_quote");
+  if (buyAmount < route.minOut) await cancel(priceChanged(), "price_changed");
+  // Effective deadline: the firm quote's expiry, clamped to the quote card's own expiresAt.
+  const expiresMs = Math.min(parseExpiry(q.expiresAt), quoteDeadlineMs);
+  if (expiresMs - deps.now() < FIRM_MARGIN_MS) await cancel(quoteExpired("The firm quote is about to expire. Ask for a new one."), "firm_quote_expiring");
 
   const calls: StoredCall[] = [];
   if ((await allowance(deps, leg.quote.tokenIn, account, q.spender as Address)) < takerPays) {
@@ -268,25 +278,34 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
   const account = req.account.toLowerCase() as Address;
   const store = deps.store();
   const row = await loadLiveQuote(deps, store, req.quoteId, account);
-  if (row.status === "submitted") throw badRequest("This quote was already executed.", 409);
-
-  const existing = row.prepared as Prepared | null;
-  // A live firm Textile quote is reused: re-requesting would lock more maker inventory.
-  if (row.status === "prepared" && existing?.kind === "textile" && Date.parse(existing.expiresAt) - deps.now() >= FIRM_MARGIN_MS) {
-    return toResponse(row.id, existing);
+  // Only a `quoted` quote can be prepared: prepared, submitted, failed, or cancelled from Telegram
+  // (expired / cancelled_in_telegram) all mean "ask for a new quote".
+  if (row.status !== "quoted") throw quoteExpired();
+  if (deps.now() > row.expiresAt.getTime()) {
+    await store.updateQuote(row.id, { status: "expired", error: "expired" }, ["quoted"]);
+    throw quoteExpired();
   }
-  assertNotExpired(deps, row);
 
   const { route } = decodePayload(row.payload);
   const kind = routeKind(route);
   let prepared: Prepared;
-  if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row);
-  else if (kind === "textile") {
-    if (!deps.textileEnabled) throw notReady("Textile execution is not enabled yet.");
-    prepared = await prepareTextile(deps, route, account, req.takerProof);
-  } else throw noRoute("This route can't be executed from a wallet in one go.");
+  try {
+    if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row);
+    else if (kind === "textile") {
+      if (!deps.textileEnabled) throw final(notReady("Textile execution is not enabled yet."), "textile_disabled");
+      prepared = await prepareTextile(deps, route, account, req.takerProof, row.expiresAt.getTime());
+    } else throw final(noRoute("This route can't be executed from a wallet in one go."), "no_route");
+  } catch (err) {
+    const error = err instanceof ApiFailure ? quoteError.get(err) : undefined;
+    if (error) await store.updateQuote(row.id, { status: "failed", error }, ["quoted"]);
+    throw err;
+  }
 
-  const ok = await store.updateQuote(row.id, { status: "prepared", prepared, account }, ["quoted", "prepared"]);
+  const ok = await store.updateQuote(
+    row.id,
+    { status: "prepared", prepared, account, ...(Date.parse(prepared.expiresAt) < row.expiresAt.getTime() ? { expiresAt: new Date(prepared.expiresAt) } : {}) },
+    ["quoted"],
+  );
   if (!ok) {
     if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((e: unknown) => logTextileError("prepare cancel", e));
     throw badRequest("This quote changed state; ask for a new one.", 409);
