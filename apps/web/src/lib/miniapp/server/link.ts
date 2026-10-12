@@ -1,0 +1,52 @@
+import type { Address } from "viem";
+import type { z } from "zod";
+import type { LinkConfirmRequest, LinkConfirmResponse } from "../contract";
+import type { MiniappDeps } from "./deps";
+import { badRequest, rateLimited } from "./errors";
+
+/** Code guesses allowed per wallet and per IP in a 10-minute window (4 digits = 10,000 codes). */
+const LINK_LIMIT_ACCOUNT = 5;
+const LINK_LIMIT_IP = 20;
+const LINK_WINDOW_MS = 10 * 60_000;
+
+/**
+ * POST /link/confirm: "Conectá tu MiniPay". The bot shows a 4-digit code; the Mini App confirms it
+ * for the wallet MiniPay injected. Sets users.wallet_address (lowercased) on the Telegram user.
+ * If a MiniPay-only user already owns that wallet, its receipts and chat history move to the
+ * Telegram user and the duplicate is deleted. The code is single-use.
+ *
+ * TODO(minipay-check): `proof` is optional for now. The /minipay-check results decide how a
+ * wallet proves ownership here (personal_sign of the code, or a 0-value tagged tx) without an
+ * auth-style sign-in; until then a guessed code could link someone else's Telegram to this
+ * wallet, which the rate limits and the code shown in both apps make unlikely but not impossible.
+ */
+export async function confirmLink(
+  deps: MiniappDeps,
+  req: z.infer<typeof LinkConfirmRequest>,
+  ip: string,
+): Promise<z.infer<typeof LinkConfirmResponse>> {
+  const account = req.account.toLowerCase() as Address;
+  if (!deps.limiter.take(`link:acct:${account}`, LINK_LIMIT_ACCOUNT, LINK_WINDOW_MS) || !deps.limiter.take(`link:ip:${ip}`, LINK_LIMIT_IP, LINK_WINDOW_MS)) {
+    throw rateLimited("Too many attempts. Wait a few minutes and ask the bot for a new code.");
+  }
+  const now = new Date(deps.now());
+
+  return deps.store().transaction(async (store) => {
+    const [code] = await store.activeLinkCodes(req.code, now);
+    if (!code) throw badRequest("That code is wrong or expired. Ask the bot for a new one.");
+    const tgUser = await store.userById(code.userId);
+    if (!tgUser) throw badRequest("That code is wrong or expired. Ask the bot for a new one.");
+    const telegramName = tgUser.displayName ?? (tgUser.telegramUsername ? `@${tgUser.telegramUsername}` : null);
+
+    const owner = await store.userByWallet(account);
+    if (owner && owner.id !== tgUser.id) {
+      if (owner.telegramId !== null) throw badRequest("This wallet is already linked to another Telegram account.", 409);
+      // MiniPay-only duplicate: fold it into the Telegram user, then free the wallet.
+      await store.moveUserData(owner.id, tgUser.id);
+      await store.deleteUser(owner.id);
+    }
+    if (!(await store.useLinkCode(code.id, account, now))) throw badRequest("That code was just used. Ask the bot for a new one.");
+    if (tgUser.walletAddress !== account) await store.setUserWallet(tgUser.id, account);
+    return { linked: true, telegramName };
+  });
+}
