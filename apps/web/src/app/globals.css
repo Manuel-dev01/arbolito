@@ -368,6 +368,11 @@ body {
     padding: 0;
     gap: 0;
   }
+  & .section,
+  & .hero,
+  & [id] {
+    scroll-margin-top: 88px;
+  }
   & .section {
     position: relative;
     padding: clamp(64px, 10vw, 112px) 16px;
@@ -618,8 +623,8 @@ body {
   stroke-dasharray: 2 5;
 }
 .pub .coin-arc-text {
-  font: 700 15px var(--fM);
-  letter-spacing: 2px;
+  font: 700 12.5px var(--fM);
+  letter-spacing: 1px;
   fill: #0b1220;
 }
 .pub .coin-glyph {
@@ -1197,8 +1202,11 @@ body {
     border-radius: 50%;
     background: var(--save-text);
   }
-  & .limits-btn {
-    align-self: flex-start;
+  & .limits-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
     margin-top: 8px;
   }
   & .spin-badge {
@@ -1499,14 +1507,14 @@ body {
     font-size: 14px;
   }
   & .pair-tile b {
-    font-size: 20px;
+    font-size: clamp(16px, 4.8vw, 20px);
     font-weight: 800;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
   }
   & .pair-tile .mono {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
   & .vtag {
     display: inline-flex;

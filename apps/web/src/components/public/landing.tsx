@@ -450,7 +450,6 @@ export function Trust({ lang }: { lang: Lang }) {
             <div className="card glass limits" aria-hidden="true">
               <div className="limits-head">
                 <b>{t.limitsTitle}</b>
-                <span className="tag-soft mono">{t.limitsExample}</span>
               </div>
               <div className="limits-row">
                 <span className="muted">{t.perOp}</span>
@@ -467,7 +466,10 @@ export function Trust({ lang }: { lang: Lang }) {
                   {t.active}
                 </span>
               </div>
-              <span className="btn btn-secondary btn-sm limits-btn">{t.pause}</span>
+              <div className="limits-foot">
+                <span className="btn btn-secondary btn-sm">{t.pause}</span>
+                <span className="tag-soft mono">{t.limitsExample}</span>
+              </div>
             </div>
             <svg className="spin-badge" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
               <circle cx="100" cy="100" r="96" />
