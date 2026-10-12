@@ -7,8 +7,8 @@ import type { ToolDefinition } from "./client";
  * model is generated from them, and the same schemas validate the model's arguments.
  *
  * Autonomy policy (docs/02-product-spec.md): there is deliberately NO tool that moves funds.
- * prepare_convert / prepare_send only create a pending confirmation card; money moves only
- * after the user taps Confirm, which the bot handles outside the LLM.
+ * prepare_convert / prepare_send only create a quote card; money moves only when the user
+ * confirms it in their own MiniPay wallet, outside the LLM.
  */
 
 export const TOKEN_SYMBOLS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
@@ -102,9 +102,9 @@ const descriptions: Record<ToolName, string> = {
   get_quote:
     "Get live quotes for converting `amount` of `from` into `to`: best route, alternatives and the official reference rate. Read-only; reserves nothing. Use it for every rate you mention.",
   prepare_convert:
-    "Prepare a conversion for the user to confirm. Creates a pending confirmation card with a firm quote and [Confirm]/[Cancel] buttons. It does NOT execute anything: money moves only if the user taps Confirm.",
+    "Prepare a conversion for the user to confirm. Creates a quote card the user confirms in their own MiniPay wallet. It does NOT execute anything: money moves only when the user confirms in MiniPay.",
   prepare_send:
-    "Prepare a payment to a saved contact or to an address the user typed. Creates a pending confirmation card. It does NOT send anything: money moves only if the user taps Confirm.",
+    "Prepare a payment to a saved contact or to an address the user typed. Creates a card the user confirms in their own MiniPay wallet. It does NOT send anything: money moves only when the user confirms in MiniPay.",
   add_contact: "Save a contact (name + 0x address) that the user dictated in this chat.",
   list_contacts: "List the user's saved contacts. Read-only.",
   get_receipt: "Fetch a verifiable receipt of a past transaction by id. Read-only.",

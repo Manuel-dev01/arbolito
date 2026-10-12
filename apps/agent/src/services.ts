@@ -2,36 +2,33 @@ import type { PublicClient } from "viem";
 import { loadEnv } from "@arbolito/config";
 import { makePublicClient } from "@arbolito/chain";
 import { getDb, type Db } from "@arbolito/db";
-import { TextileRfqAdapter, UniswapV3Adapter, fetchReferences, type RefsResult, type VenueAdapter } from "@arbolito/router";
+import { createMiniAppClient, type MiniAppClient } from "./api";
+import { makeLinks, type Links } from "./links";
 
 /** Process-wide singletons for the bot. */
 export interface Services {
   db: Db;
+  /** Read-only chain access (balances of the linked wallet). */
   chain: PublicClient;
-  adapters: VenueAdapter[];
-  references(blockNumber: bigint): Promise<RefsResult>;
+  /** The web backend's Mini App API: quotes and receipts, shared with the mini app. */
+  miniapp: MiniAppClient;
+  /** Links into the mini app; null when neither MINI_APP_URL nor PUBLIC_BASE_URL is set. */
+  links: Links | null;
+  /** PUBLIC_BASE_URL (receipt links). */
+  baseUrl: string | undefined;
 }
 
 let services: Services | undefined;
 
-/** Reference rates move slowly; caching them for 30s keeps a quote well under the 4s budget. */
-const REFS_TTL_MS = 30_000;
-
 export function getServices(): Services {
   if (services) return services;
   const env = loadEnv();
-  const chain = makePublicClient();
-  let cache: { at: number; value: RefsResult } | undefined;
   services = {
     db: getDb(env.DATABASE_URL),
-    chain,
-    adapters: [new UniswapV3Adapter(chain), new TextileRfqAdapter()],
-    async references(blockNumber) {
-      if (cache && Date.now() - cache.at < REFS_TTL_MS) return cache.value;
-      const value = await fetchReferences(chain, blockNumber);
-      cache = { at: Date.now(), value };
-      return value;
-    },
+    chain: makePublicClient(),
+    miniapp: createMiniAppClient({ baseUrl: env.PUBLIC_BASE_URL }),
+    links: makeLinks(env.MINI_APP_URL ?? env.PUBLIC_BASE_URL),
+    baseUrl: env.PUBLIC_BASE_URL,
   };
   return services;
 }

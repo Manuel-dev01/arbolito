@@ -215,6 +215,18 @@ From the Ripio team via the hackathon channel, 2026-10-08.
 - **Design:** the Ripio integration goes behind an adapter. Deep links are the default, and API or sandbox access is optional if credentials arrive. The onchain part stays real on Celo mainnet.
 - Ripio serves 6M+ users in LatAm.
 
+## MiniPay (primary surface, verified from docs.minipay.xyz 2026-10-12)
+- **Availability:** standalone Android/iOS in AR, BR, CL, CO, PE, UY, MX (and NG, KE, GH, ZA…).
+- **Assets:** the wallet holds and shows only USDm, USDC and USDT; gas is paid in stablecoins (MiniPay may override `feeCurrency`). The provider is injected as `window.ethereum` (`isMiniPay`) and auto-connects: no connect button, no sign-in, and no auth-style message signing.
+- **Deeplinks** (`https://link.minipay.xyz/…`):
+  - `add_cash[?tokens=USDM,USDT,USDC]`
+  - `miniapp?id=<Discover listing UUID>`: opens a mini app. The only supported way, and **it requires an approved Discover listing**.
+  - `browse?url=` is deprecated: its whitelist isn't maintained for new mini-app domains.
+  - `discover`, `receipt?tx=…[&celebrate]`, `qr`, `invite_friends`, `balance`
+  - **Consequence:** until Arbolito is listed, links from Telegram open in the phone's browser (the app shows "Abrí Arbolito desde MiniPay"). Testing uses Developer Mode → "Load test page".
+  - Query params passed through `miniapp?id=` are undocumented, so the Telegram "Confirmar en MiniPay" link may need the mini app to resume the user's latest open quote by wallet.
+- **Listing:** submit through MiniPay's submission form (name, URL, 512×512 icon). It's curated (review → test → feedback → approval). Requirements: auto-connect, HTTPS, mobile-optimised, clear errors.
+
 ## Self Agent ID SDK
 - `@selfxyz/agent-sdk` 0.2.1 (repo selfxyz/self-agent-id, BUSL-1.1).
 - **CLI:** `self-agent register init|open|wait`. It **defaults to testnet**, so pass `--network mainnet`.
