@@ -1,34 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { zeroAddress } from "viem";
-import { TOKENS } from "@arbolito/config";
-import type { Reference, Route } from "@arbolito/router";
-import { cardData, cardKeyboard, parseCardData, renderAlternatives, renderCard } from "../src/card";
-import { langFromTelegram, t } from "../src/i18n";
+import { parseQuoteArgs } from "../src/bot";
+import { copy, esc, langFromTelegram, t } from "../src/i18n";
+import { formatAtomic, formatPct, formatRate, maskWallet, money } from "../src/money";
 import { rampLink } from "../src/ripio";
-import { deserializeRoute, serializeRoute } from "../src/serde";
-
-const { wBRL, wARS, USDT } = TOKENS;
-const route: Route = {
-  id: "3f2c1a9e-8b7d-4c6e-9f10-112233445566",
-  label: "wBRL →[uniswap 0.01%] USDT →[uniswap 0.01%] wARS",
-  legs: [
-    {
-      quote: { venue: "uniswap_v3", tokenIn: wBRL.address, tokenOut: USDT.address, amountIn: 10n * 10n ** 18n, amountOut: 1_980_000n, blockNumber: 1n, firm: false, raw: { gasEstimate: 1n }, meta: { fee: 100 } },
-      minOut: 1_970_100n,
-    },
-    {
-      quote: { venue: "uniswap_v3", tokenIn: USDT.address, tokenOut: wARS.address, amountIn: 1_980_000n, amountOut: 3_177_411_908_400_035_561_279n, blockNumber: 1n, firm: false, raw: {}, meta: { fee: 100 } },
-      minOut: 3_161_524_848_857_035_383_472n,
-    },
-  ],
-  tokenIn: wBRL.address,
-  tokenOut: wARS.address,
-  amountIn: 10n * 10n ** 18n,
-  expectedOut: 3_177_411_908_400_035_561_279n,
-  minOut: 3_161_524_848_857_035_383_472n,
-  taker: zeroAddress,
-};
-const refs: Reference[] = [{ name: "official", pair: "BRL/ARS", rate: "302.8944", source: "x", at: "y" }];
 
 describe("ripio deep links", () => {
   const addr = "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c";
@@ -50,51 +24,34 @@ describe("ripio deep links", () => {
   });
 });
 
-describe("card", () => {
-  it("round-trips callback data and rejects anything else", () => {
-    expect(parseCardData(cardData(route.id, "c"))).toEqual({ id: route.id, op: "c" });
-    expect(parseCardData(cardData(route.id, "alt"))).toEqual({ id: route.id, op: "alt" });
-    expect(parseCardData("a:not-a-uuid:c")).toBeNull();
-    expect(parseCardData(`a:${route.id}:drain`)).toBeNull();
-    expect(cardData(route.id, "alt").length).toBeLessThanOrEqual(64);
+describe("money formatting", () => {
+  it("formats atomic amounts per locale, rounding down", () => {
+    expect(money("wARS", 160_800n * 10n ** 18n, "es")).toBe("ARS 160.800,00");
+    expect(money("wARS", 160_800n * 10n ** 18n, "en")).toBe("ARS 160,800.00");
+    expect(money("USDT", 100_000_000n, "pt")).toBe("US$ 100,00");
+    expect(money("wBRL", "199999999999999999999", "es")).toBe("R$ 199,99");
+    expect(money("USDC", 1n, "en")).toBe("US$ 0.00");
+    expect(formatAtomic(-6_300n * 10n ** 18n, 18, 0, "es")).toBe("-6.300");
   });
-
-  it("renders amounts, the route, vs-official and the expiry in each language", () => {
-    const es = renderCard({ route, references: refs, lang: "es", ttlSeconds: 48 });
-    expect(es).toContain("Recibís <b>3,177.41 wARS</b> por 10 wBRL");
-    expect(es).toContain("wBRL → USDT (Uniswap) → wARS (Uniswap)");
-    expect(es).toMatch(/Vs\. oficial: <b>\+\d+\.\d{2}%<\/b>/);
-    expect(es).toContain("vence en 48s");
-    expect(renderCard({ route, references: refs, lang: "en", ttlSeconds: 5 })).toContain("You get <b>3,177.41 wARS</b> for 10 wBRL");
-    expect(renderCard({ route, references: refs, lang: "pt", ttlSeconds: 5 })).toContain("Você recebe");
-  });
-
-  it("omits the comparison when there is no official reference", () => {
-    expect(renderCard({ route, references: [], lang: "es", ttlSeconds: 5 })).not.toContain("oficial");
-  });
-
-  it("escapes HTML in route labels", () => {
-    const alt = { ...route, legs: [{ ...route.legs[0]!, quote: { ...route.legs[0]!.quote, venue: "textile_rfq" as const } }] };
-    expect(renderAlternatives(route, [alt], "es")).not.toMatch(/<(?!\/?b>)/);
-  });
-
-  it("offers alternatives only when there are some", () => {
-    const withAlts = cardKeyboard(route.id, "es", true).inline_keyboard.flat().map((b) => b.text);
-    const without = cardKeyboard(route.id, "es", false).inline_keyboard.flat().map((b) => b.text);
-    expect(withAlts).toEqual(["Confirmar", "Ver alternativas", "Cancelar"]);
-    expect(without).toEqual(["Confirmar", "Cancelar"]);
+  it("formats rates, percentages and wallets", () => {
+    expect(formatRate("1608.4", "es")).toBe("1.608");
+    expect(formatRate("317.7412", "es")).toBe("317,74");
+    expect(formatRate("0.000621", "en")).toBe("0.000621");
+    expect(formatRate("garbage", "en")).toBe("0");
+    expect(formatPct(4.08, "es")).toBe("+4,08%");
+    expect(formatPct(-0.44, "en")).toBe("-0.44%");
+    expect(maskWallet("0x7e0316b2533F6dF2E651295A9B11481BB8346c3c")).toBe("0x7e03…6c3c");
+    expect(maskWallet("<b>")).toBe("…");
   });
 });
 
-describe("serde", () => {
-  it("round-trips a route through JSON with bigints intact", () => {
-    const back = deserializeRoute(JSON.parse(JSON.stringify(serializeRoute(route))));
-    expect(back.amountIn).toBe(route.amountIn);
-    expect(back.expectedOut).toBe(route.expectedOut);
-    expect(back.minOut).toBe(route.minOut);
-    expect(back.legs[1]!.quote.amountOut).toBe(route.legs[1]!.quote.amountOut);
-    expect(back.legs[0]!.minOut).toBe(route.legs[0]!.minOut);
-    expect(back.legs[0]!.quote.blockNumber).toBe(1n);
+describe("/quote arguments", () => {
+  it("accepts symbols in any case and a decimal amount", () => {
+    expect(parseQuoteArgs("wBRL wARS 200")).toEqual({ from: "wBRL", to: "wARS", amount: "200" });
+    expect(parseQuoteArgs("  usdt   wars  10,5 ")).toEqual({ from: "USDT", to: "wARS", amount: "10.5" });
+  });
+  it("rejects unknown tokens, same-token pairs, zero, junk and extra words", () => {
+    for (const bad of ["", "wBRL wARS", "DOGE wARS 1", "wARS wARS 1", "wBRL wARS 0", "wBRL wARS -5", "wBRL wARS 1e9", "wBRL wARS 2 now"]) expect(parseQuoteArgs(bad)).toBeNull();
   });
 });
 
@@ -105,11 +62,17 @@ describe("i18n", () => {
     expect(langFromTelegram(undefined)).toBe("es");
     expect(langFromTelegram("fr")).toBe("es");
   });
-  it("never tells the user money moved in error copy", () => {
-    for (const lang of ["es", "pt", "en"] as const) {
-      expect(t("error", lang)).toMatch(/No se movió|Nenhum dinheiro|No money moved/);
-      expect(t("walletNotReady", lang)).toMatch(/no moví nada|nada foi movido|nothing moved/);
-    }
+  it("says no money moved, in bold, in every error line", () => {
+    for (const lang of ["es", "pt", "en"] as const)
+      for (const key of ["error", "rateLimited", "quoteBad"] as const) expect(t(key, lang)).toMatch(/<b>(No se movió plata|Nenhum dinheiro foi movido|No money moved)\.<\/b>/);
+  });
+  it("echoes voice transcripts in italics, escaped, in the spoken language", () => {
+    expect(copy.voiceEcho("es", esc("pasá <100> dólares"))).toBe("🎙️ Entendí: <i>pasá &lt;100&gt; dólares</i>");
+    expect(copy.voiceEcho("pt", "manda 200 reais")).toBe("🎙️ Entendi: <i>manda 200 reais</i>");
+    expect(copy.voiceEcho("en", "hi")).toBe("🎙️ I heard: <i>hi</i>");
+  });
+  it("has no wallet-not-ready path any more", () => {
+    expect(() => t("walletNotReady" as never, "es")).toThrow();
   });
 });
 

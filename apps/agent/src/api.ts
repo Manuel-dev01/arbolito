@@ -58,8 +58,10 @@ export function createMiniAppClient(opts: MiniAppClientOptions): MiniAppClient {
   }
 
   return {
-    quote(req) {
-      const body = QuoteRequest.parse(req);
+    async quote(req) {
+      const parsed = QuoteRequest.safeParse(req);
+      if (!parsed.success) throw new MiniAppApiError("bad_request", 0, "quote request does not match the contract");
+      const body = parsed.data;
       return call("/api/miniapp/quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }, QuoteResponse);
     },
     receipt(id) {
