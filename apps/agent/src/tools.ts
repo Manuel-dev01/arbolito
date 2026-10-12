@@ -1,44 +1,61 @@
 import type { Address } from "viem";
-import { TOKENS, loadEnv, tokenByAddress, type TokenSymbol } from "@arbolito/config";
+import { TOKENS } from "@arbolito/config";
 import { formatUsd } from "@arbolito/chain";
-import { effectiveRate, erc20Abi, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
-import { TOKEN_SYMBOLS, ToolUserError, type AgentCard, type ToolHandlers } from "@arbolito/llm";
-import { NoRouteError, quote } from "./quotes";
+import { erc20Abi, fmtAmount } from "@arbolito/router";
+import { TOKEN_SYMBOLS, ToolUserError, type AgentCard, type ToolHandlers, type ToolOutput } from "@arbolito/llm";
+import { MiniAppApiError } from "./api";
+import type { QuoteResponse } from "./contract";
+import type { CardFlow, CreateResult } from "./flow";
+import { copy, type Lang } from "./i18n";
+import { maskWallet, money, rateLine } from "./money";
 import { rampLink } from "./ripio";
-import { serializeRoute } from "./serde";
 import type { Services } from "./services";
-import { addContact, createPending, findContact, getReceipt, listContacts, type User } from "./store";
+import { addContact, findContact, getReceipt, listContacts, type User } from "./store";
 
-/** How long a quote card stays confirmable. */
-export const QUOTE_TTL_MS = 60_000;
+/** Card kinds the bot renders after the reply, besides "convert" and "send" (pending ids). */
+export const LINK_CARD: AgentCard = { kind: "link", id: "link" };
+export const noMarketCard = (from: string, to: string, amount: string): AgentCard => ({ kind: "no_market", id: "-", data: { from, to, amount } });
 
-const NO_WALLET = "The user has no wallet yet. They create it in the Arbolito app (Mini App); until then nothing can be checked or moved.";
+/** Unlinked user asked for something that needs their wallet: show the linking prompt. */
+const NOT_LINKED: ToolOutput = {
+  data: {
+    status: "not_linked",
+    note: "The user hasn't connected their MiniPay wallet yet. A 'Conectá tu MiniPay' button is shown below your reply; it takes one tap and a 4-digit code. Nothing can be checked or moved until then.",
+  },
+  card: LINK_CARD,
+};
 
-function summarize(q: Awaited<ReturnType<typeof quote>>) {
-  const r = q.route;
-  const [base, qt] = [fiatOf(tokenByAddress(r.tokenIn).symbol), fiatOf(tokenByAddress(r.tokenOut).symbol)];
-  const rate = effectiveRate(r.tokenIn, r.amountIn, r.tokenOut, r.expectedOut);
-  const official = referenceRate(q.references, "official", base, qt);
+const CONFIRM_NOTE = "A card is shown with a 'Confirmar en MiniPay' button that opens the Arbolito mini app at this exact quote. The user confirms there, in their own MiniPay wallet. Nothing has moved. The quote expires in about a minute.";
+
+function summarize(q: QuoteResponse, lang: Lang) {
   return {
-    youPay: fmtAmount(r.tokenIn, r.amountIn),
-    youGet: fmtAmount(r.tokenOut, r.expectedOut),
-    guaranteedMinimum: fmtAmount(r.tokenOut, r.minOut),
-    rate: `1 ${base} = ${rate.toPrecision(6)} ${qt}`,
-    vsOfficialPercent: official ? Number(((rate / official - 1) * 100).toFixed(2)) : null,
-    route: r.label,
+    youPay: money(q.from, q.amountIn, lang),
+    youGet: money(q.to, q.expectedOut, lang),
+    guaranteedMinimum: money(q.to, q.minOut, lang),
+    rate: rateLine(q.from, q.to, q.rate, lang),
+    vsOfficialPercent: q.vsOfficial ? q.vsOfficial.pct : null,
+    route: copy.route(lang, q.steps),
     alternativesConsidered: q.alternatives.length,
+    expiresInSeconds: Math.max(0, Math.round((Date.parse(q.expiresAt) - Date.now()) / 1000)),
   };
 }
 
+/** A failed quote, as the model should see it. no_route also gets the "no market" card. */
+function quoteFailure(r: Extract<CreateResult, { ok: false }>, from: string, to: string, amount: string): ToolOutput {
+  if (r.error === "noMarket") {
+    return { data: { status: "no_route", note: "No market can quote this pair and size right now. A message saying so, with a retry button, is shown. Nothing moved." }, card: noMarketCard(from, to, amount) };
+  }
+  const why = r.error === "rateLimited" ? "Too many quotes in a short time; ask the user to wait a minute." : r.error === "quoteBad" ? "The backend rejected the amount or pair." : "The quote service failed. Nothing moved.";
+  throw new ToolUserError(why, r.error);
+}
 
-/** Tool handlers bound to one user. Nothing here moves funds: prepare_* only create a card to confirm. */
-export function buildHandlers(s: Services, user: User): ToolHandlers {
-  const env = loadEnv();
-  const base = (env.PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+/** Tool handlers bound to one user. Nothing here moves funds: prepare_* only create a card. */
+export function buildHandlers(s: Services, flow: CardFlow, user: User): ToolHandlers {
+  const base = (s.baseUrl ?? "").replace(/\/$/, "");
 
   return {
     async get_balances() {
-      if (!user.walletAddress) throw new ToolUserError(NO_WALLET, "no_wallet");
+      if (!user.walletAddress) return NOT_LINKED;
       const owner = user.walletAddress as Address;
       const results = await s.chain.multicall({
         allowFailure: true,
@@ -48,62 +65,45 @@ export function buildHandlers(s: Services, user: User): ToolHandlers {
         const r = results[i];
         return { token: sym, amount: r?.status === "success" ? fmtAmount(TOKENS[sym].address, r.result as bigint) : "unavailable" };
       });
-      return { data: { wallet: owner, balances } };
+      return { data: { wallet: `linked MiniPay ${maskWallet(owner)}`, balances } };
     },
 
-    async get_quote(args) {
+    async get_quote(args, ctx) {
       try {
-        return { data: summarize(await quote(s, args.from, args.to, args.amount, user.walletAddress)) };
+        const q = await s.miniapp.quote({ from: args.from, to: args.to, amount: args.amount, lang: ctx.language, ...(user.walletAddress ? { account: user.walletAddress } : {}) });
+        return { data: summarize(q, ctx.language) };
       } catch (err) {
-        if (err instanceof NoRouteError) throw new ToolUserError("No market can quote that pair and size right now.", "no_route");
+        if (err instanceof MiniAppApiError && err.code === "no_route") throw new ToolUserError("No market can quote that pair and size right now.", "no_route");
+        if (err instanceof MiniAppApiError && err.code === "rate_limited") throw new ToolUserError("Too many quotes in a short time; ask the user to wait a minute.", "rate_limited");
         throw err;
       }
     },
 
-    async prepare_convert(args) {
-      let q;
-      try {
-        q = await quote(s, args.from, args.to, args.amount, user.walletAddress);
-      } catch (err) {
-        if (err instanceof NoRouteError) throw new ToolUserError("No market can quote that pair and size right now.", "no_route");
-        throw err;
-      }
-      const pending = await createPending(
-        s.db,
-        user.id,
-        "convert",
-        { route: serializeRoute(q.route), alternatives: q.alternatives.slice(0, 5).map(serializeRoute), references: q.references as never },
-        QUOTE_TTL_MS,
-      );
-      const card: AgentCard = { kind: "convert", id: pending.id };
-      return {
-        data: { status: "pending_confirmation", note: "A card with Confirm/Cancel buttons is shown to the user. Nothing has moved.", ...summarize(q) },
-        card,
-      };
+    async prepare_convert(args, ctx) {
+      const r = await flow.createConvert(user, ctx.language, { kind: "convert", from: args.from, to: args.to, amount: args.amount });
+      if (!r.ok) return quoteFailure(r, args.from, args.to, args.amount);
+      return { data: { status: "pending_confirmation", note: CONFIRM_NOTE, ...summarize(r.quote!, ctx.language) }, card: { kind: "convert", id: r.pendingId } };
     },
 
-    async prepare_send(args) {
+    async prepare_send(args, ctx) {
       const contact = args.recipient.startsWith("0x") ? null : await findContact(s.db, user.id, args.recipient);
       const to = args.recipient.startsWith("0x") ? args.recipient : contact?.address;
       if (!to) throw new ToolUserError(`No saved contact named "${args.recipient}". Ask the user for the address and save it with add_contact.`, "unknown_contact");
-      const destination = (args.destinationToken ?? args.token) as TokenSymbol;
-      let payload: Record<string, unknown> = { to, token: args.token, amount: args.amount, contactName: contact?.name ?? null };
-      let summary: Record<string, unknown> = { recipient: contact?.name ?? to, amount: `${args.amount} ${args.token}` };
-      if (destination !== args.token) {
-        let q;
-        try {
-          q = await quote(s, args.token, destination, args.amount, user.walletAddress);
-        } catch (err) {
-          if (err instanceof NoRouteError) throw new ToolUserError("No market can convert that amount for the send right now.", "no_route");
-          throw err;
-        }
-        payload = { ...payload, route: serializeRoute(q.route), references: q.references as never };
-        summary = { ...summary, recipientGets: fmtAmount(q.route.tokenOut, q.route.expectedOut), ...summarize(q) };
-      }
-      const pending = await createPending(s.db, user.id, "send", payload as never, QUOTE_TTL_MS);
+      const receive = args.destinationToken && args.destinationToken !== args.token ? args.destinationToken : undefined;
+      const r = await flow.createSend(user, ctx.language, {
+        kind: "send",
+        recipient: contact?.name ?? to,
+        to,
+        amount: args.amount,
+        token: args.token,
+        ...(receive ? { receive } : {}),
+      });
+      if (!r.ok) return quoteFailure(r, args.token, receive ?? args.token, args.amount);
+      const summary: Record<string, unknown> = { recipient: contact?.name ?? to, amount: `${args.amount} ${args.token}` };
+      if (r.quote) Object.assign(summary, { recipientGets: money(r.quote.to, r.quote.expectedOut, ctx.language), ...summarize(r.quote, ctx.language) });
       return {
-        data: { status: "pending_confirmation", note: "A card with Confirm/Cancel buttons is shown to the user. Nothing has moved.", ...summary },
-        card: { kind: "send", id: pending.id },
+        data: { status: "pending_confirmation", note: "A card is shown with a 'Confirmar en MiniPay' button that opens the Arbolito mini app's send screen, prefilled. The user reviews and confirms there. Nothing has moved.", ...summary },
+        card: { kind: "send", id: r.pendingId },
       };
     },
 
@@ -143,20 +143,20 @@ export function buildHandlers(s: Services, user: User): ToolHandlers {
     },
 
     async deposit_info(args) {
-      if (!user.walletAddress) throw new ToolUserError(NO_WALLET, "no_wallet");
+      if (!user.walletAddress) return NOT_LINKED;
       const tokens = args.token ? [args.token] : (["wARS", "wBRL", "USDT"] as const);
       return {
         data: {
           address: user.walletAddress,
           network: "Celo",
           ripio: tokens.map((t) => ({ token: t, link: rampLink({ direction: "on", token: t, address: user.walletAddress! }) })),
-          other: "USDT, USDC or USA₮ can also be sent to this address on the Celo network.",
+          other: "USDT, USDC or USA₮ can also be sent to this MiniPay address on the Celo network.",
         },
       };
     },
 
     async withdraw_guide(args) {
-      if (!user.walletAddress) throw new ToolUserError(NO_WALLET, "no_wallet");
+      if (!user.walletAddress) return NOT_LINKED;
       const token = args.token ?? "wARS";
       return {
         data: {
@@ -169,8 +169,9 @@ export function buildHandlers(s: Services, user: User): ToolHandlers {
     async help() {
       return {
         data: {
-          can: ["check balances", "quote and convert pesos, reais and dollars", "send to saved contacts, converting if needed", "show receipts", "deposit and cash-out links via Ripio"],
+          can: ["check balances of the linked MiniPay wallet", "quote and convert pesos, reais and dollars (confirmed in MiniPay)", "send to saved contacts, converting if needed (confirmed in MiniPay)", "show receipts", "deposit and cash-out links via Ripio", "voice notes"],
           tokens: TOKEN_SYMBOLS,
+          linked: !!user.walletAddress,
         },
       };
     },
