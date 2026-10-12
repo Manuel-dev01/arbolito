@@ -82,7 +82,7 @@ const es = {
       s3Sheet: "Confirmá en MiniPay",
       s3Line: (a: string, b: string) => `${a} → ${b}`,
       s3Confirm: "Confirmar",
-      s3Chip: "Si algo falla, no se movió plata.",
+      s3Chip: "Si falla, no se mueve plata.",
     },
     calc: {
       kicker: "02 — Cuánto ahorrás",
@@ -459,7 +459,7 @@ const pt: Messages = {
       s3Sheet: "Confirme no MiniPay",
       s3Line: (a, b) => `${a} → ${b}`,
       s3Confirm: "Confirmar",
-      s3Chip: "Se algo falhar, nenhum dinheiro se move.",
+      s3Chip: "Se falhar, nada se move.",
     },
     calc: {
       kicker: "02 — Quanto você economiza",
@@ -834,7 +834,7 @@ const en: Messages = {
       s3Sheet: "Confirm in MiniPay",
       s3Line: (a, b) => `${a} → ${b}`,
       s3Confirm: "Confirm",
-      s3Chip: "If anything fails, no money moves.",
+      s3Chip: "If it fails, no money moves.",
     },
     calc: {
       kicker: "02 — What you save",
