@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Coin } from "../components/public/coin";
 import { CalcBody, CalcSection, CalcSkeleton, Faq, Hero, LiveLine, Numbers, pickShowcase, ProofBody, ProofSkeleton, ReceiptSection, Steps, TickerBand, Ticker, Trust } from "../components/public/landing";
@@ -6,6 +7,11 @@ import { getLang, messages } from "../i18n/messages";
 import { listReceiptsCached } from "../lib/cached";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const t = messages(getLang((await searchParams).lang)).meta;
+  return { title: { absolute: t.title }, description: t.description };
+}
 
 /**
  * Landing, per design/Arbolito Landing.dc.html: hero, cómo, calc, recibo, números, confianza,

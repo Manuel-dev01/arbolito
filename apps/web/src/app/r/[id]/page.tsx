@@ -31,6 +31,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 const money = (amount: bigint, t: TokenRef, locale: Locale, signed = false) => formatMoney(amount, t.decimals, t.fiat, locale, { signed });
 
+/** The headline saving in whole units ("ARS 158", as in the design); exact cents stay in the title and the bars below. */
+const headline = (amount: bigint, decimals: number, fiat: string, locale: Locale) =>
+  amount >= 10n * 10n ** BigInt(decimals) ? `${fiatPrefix(fiat)} ${formatFixed(amount, decimals, locale, { dp: 0 })}` : formatMoney(amount, decimals, fiat, locale);
+
 /** "1 BRL = 317,74 ARS", flipped when the rate is below 1 so it stays readable (1 USD = 1.540 ARS, not 1 ARS = 0,00065 USD). */
 function rateText(rate: bigint, from: TokenRef, to: TokenRef, locale: Locale, t: Messages["receipt"]): string {
   if (rate === 0n) return "—";
@@ -169,7 +173,7 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
   const anchor = verification.result?.anchor ?? anchorLookup;
   const state = badgeState(!!rec.supersededBy, v.createdAt, verification);
 
-  const short = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ }).format(new Date(v.createdAt));
+  const short = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TZ }).format(new Date(v.createdAt));
   const long = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "long", timeZone: TZ }).format(new Date(v.createdAt));
   const officialPair = v.savings?.pair ?? `${v.tokenIn.fiat}/${v.tokenOut.fiat}`;
   const officialFiat = officialPair.split("/")[1] ?? v.tokenOut.fiat;
@@ -206,7 +210,9 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
         {v.savings && v.savings.delta > 0n ? (
           <>
             <span className="rc-label">{s.saved}</span>
-            <span className="rc-amount">{formatMoney(savedAbs, v.tokenOut.decimals, officialFiat, locale)}</span>
+            <span className="rc-amount" title={formatMoney(savedAbs, v.tokenOut.decimals, officialFiat, locale)}>
+              {headline(savedAbs, v.tokenOut.decimals, officialFiat, locale)}
+            </span>
             <span className="rc-sub">
               {s.savedVs(officialPair)} · {formatBps(v.savings.bps, locale)}
             </span>

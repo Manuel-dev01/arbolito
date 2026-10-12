@@ -19,7 +19,7 @@ const money = (amount: bigint, decimals: number, fiat: string, locale: Locale) =
 const whole = (amount: bigint, decimals: number, fiat: string, locale: Locale) => `${fiatPrefix(fiat)} ${formatFixed(amount, decimals, locale, { dp: 0 })}`;
 const shortHash = (h: string) => `${h.slice(0, 6)}…${h.slice(-4)}`;
 const dayMonth = (iso: string, locale: Locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: TZ }).format(new Date(iso));
-const clock = (iso: string, locale: Locale) => new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", timeZone: TZ }).format(new Date(iso));
+const clock = (iso: string, locale: Locale) => new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TZ }).format(new Date(iso));
 
 function ticketDate(iso: string): string {
   const p = Object.fromEntries(
