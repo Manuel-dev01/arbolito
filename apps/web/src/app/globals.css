@@ -1,7 +1,7 @@
 /*
  * Public site styles (landing, /r/:id, /metrics, /desk), per design/Arbolito Landing.dc.html and
- * design/Arbolito Design System.dc.html. Colours, type, spacing and shape come from tokens.css;
- * nothing here redefines a token. Everything except the element base is scoped under `.pub`
+ * design/Arbolito Design System.dc.html. Type, spacing and shape come from tokens.css;
+ * colours are pinned to the light "mix" skin (see below). Everything except the element base is scoped under `.pub`
  * (the public Shell's root), so it never leaks into the Mini App under /app.
  *
  * Local variables (no token exists for these; see the "mix" skin in the landing design):
@@ -45,15 +45,41 @@ body {
   overflow-x: clip;
   font-variant-numeric: tabular-nums;
 }
-@media (prefers-color-scheme: dark) {
-  .pub {
-    --pub-card: rgba(255, 255, 255, 0.06);
-    --pub-nav: rgba(11, 18, 32, 0.62);
-    --pub-bd-soft: 1.5px solid rgba(242, 243, 247, 0.25);
-    --pub-sh-sm: 0 10px 30px -20px rgba(0, 0, 0, 0.7);
-    --pub-code: rgba(242, 243, 247, 0.08);
-    --pub-dark-bg: #050912;
-  }
+/*
+ * The public site uses the landing design's light "mix" skin for everyone: the design has no
+ * dark variant for these pages, so the dark tokens from tokens.css are reset here. (The "En vivo"
+ * band and the ticker stay dark by design.)
+ */
+html:has(.pub),
+body:has(.pub) {
+  background: #f2f3f7;
+}
+.pub {
+  color-scheme: light;
+  --bg: #f2f3f7;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: #e6e8ef;
+  --text: #0b1220;
+  --muted: #4a5368;
+  --card-border: rgba(11, 18, 32, 0.85);
+  /* Re-declared so it picks up the light --card-border above (var() resolves where defined). */
+  --bd-card: 1.5px solid var(--card-border);
+  --hairline: rgba(11, 18, 32, 0.1);
+  --a1: oklch(0.6 0.24 350);
+  --a2: oklch(0.5 0.22 265);
+  --a3: oklch(0.89 0.2 125);
+  --save-text: oklch(0.47 0.14 140);
+  --save-bg: oklch(0.93 0.13 125);
+  --attention-bg: oklch(0.95 0.04 350);
+  --attention-text: oklch(0.42 0.17 350);
+  --danger: oklch(0.5 0.2 25);
+  --danger-bg: oklch(0.95 0.03 25);
+  --primary-bg: #0b1220;
+  --primary-text: #ffffff;
+  --glass: rgba(255, 255, 255, 0.55);
+  --shadow-sheet: 0 -10px 30px rgba(11, 18, 32, 0.15);
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* ───────────────────────────────────────── base */
@@ -472,9 +498,15 @@ body {
     flex-wrap: wrap;
     gap: 12px;
   }
-  & .hero-hint {
-    font-size: 15px;
-    color: var(--muted);
+  & .hero-tg {
+    font-size: 17px;
+    font-weight: 600;
+    padding: 12px 4px;
+  }
+  & .float-label-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
   }
   & .hero-cards {
     width: 320px;
@@ -569,83 +601,27 @@ body {
   }
 }
 
-/* ───────────────────────────────────────── the coin (CSS 3D, no JS) */
-.pub .coin-stage {
-  position: absolute;
-  z-index: 0;
-  top: 96px;
-  right: clamp(-24px, 3vw, 72px);
-  width: clamp(120px, 21vw, 300px);
-  aspect-ratio: 1;
-  perspective: 1000px;
-  pointer-events: none;
-}
-.pub .coin-bob {
-  width: 100%;
-  height: 100%;
-  animation: pubBob 6s ease-in-out infinite;
-}
-.pub .coin {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  animation: pubCoin 11s linear infinite;
-}
-.pub .coin-face {
-  position: absolute;
+/* ───────────────────────────────────────── the coins (three.js canvas, coins-scene.ts) */
+.pub .coin-canvas {
+  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  transform: translateZ(8px);
+  width: 100vw;
+  height: 100vh;
+  /* Below the page content inside <main> (its own stacking context), above <main>'s transparent background. */
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
-.pub .coin-back {
-  transform: rotateY(180deg) translateZ(8px);
+.pub .coin-canvas[data-ready] {
+  opacity: 1;
 }
-.pub .coin-rim {
-  position: absolute;
-  inset: 1.5%;
-  border-radius: 50%;
-  background: oklch(0.72 0.17 125);
-  border: 2px solid #0b1220;
-  transform: translateZ(calc((var(--i) - 4.5) * 1.6px));
-}
-.pub .coin-disc {
-  fill: var(--a3);
-  stroke: #0b1220;
-  stroke-width: 4;
-}
-.pub .coin-ring {
-  fill: none;
-  stroke: #0b1220;
-  stroke-width: 2;
-  stroke-dasharray: 2 5;
-}
-.pub .coin-arc-text {
-  font: 700 12.5px var(--fM);
-  letter-spacing: 1px;
-  fill: #0b1220;
-}
-.pub .coin-glyph {
-  font: 400 96px var(--fD);
-  fill: #0b1220;
-}
-.pub .coin-dot-1 {
-  fill: oklch(0.6 0.24 350);
-}
-.pub .coin-dot-2 {
-  fill: #0b1220;
-}
-.pub .coin-dot-3 {
-  fill: oklch(0.5 0.22 265);
-}
-@media (max-width: 640px) {
-  .pub .coin-stage {
-    top: 84px;
-    right: -28px;
-    width: 120px;
-  }
+/* Content sits above the coins, as in the design (cards are glass over them). */
+.pub > header,
+.pub > main,
+.pub > footer {
+  position: relative;
+  z-index: 1;
 }
 
 /* ───────────────────────────────────────── 01 steps */
@@ -1085,12 +1061,15 @@ body {
   & .tile-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-    gap: 1px;
-    background: color-mix(in oklab, currentColor 18%, transparent);
-    border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+    /* Hairlines drawn by the tiles themselves, so an unfilled last row stays clean. */
+    --tile-line: color-mix(in oklab, currentColor 18%, transparent);
+    border-top: 1px solid var(--tile-line);
+    border-left: 1px solid var(--tile-line);
   }
   & .tile {
     background: var(--pub-dark-bg);
+    border-right: 1px solid var(--tile-line);
+    border-bottom: 1px solid var(--tile-line);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -1869,14 +1848,14 @@ body {
   & .big-numbers {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-    gap: 1px;
-    background: var(--hairline);
+    /* Tiles draw their own hairlines (clipped at the card edge), so an unfilled last row stays clean. */
+    background: var(--bg);
     border: 1px solid var(--hairline);
     border-radius: var(--r-card);
     overflow: hidden;
   }
   & .big {
-    background: var(--bg);
+    box-shadow: 1px 0 0 var(--hairline), 0 1px 0 var(--hairline);
     padding: 22px;
     display: flex;
     flex-direction: column;
@@ -2113,10 +2092,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The coin only exists when motion is welcome. */
-  .pub .coin-stage {
-    display: none;
-  }
   .pub .ticker {
     overflow-x: auto;
   }

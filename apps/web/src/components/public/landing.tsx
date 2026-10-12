@@ -7,6 +7,7 @@ import { fiatPrefix, formatBps, formatFixed, formatMoney, formatRate, RATE_ONE, 
 import { computeMetrics } from "../../lib/metrics";
 import { buildReceiptView, resolveRate, type ReceiptView } from "../../lib/receipt-view";
 import { Calculator } from "./calculator";
+import { HeroQuote } from "./hero-quote";
 import { MINIPAY_URL, TELEGRAM_URL } from "./links";
 import { ProofCheck } from "./proof-check";
 import { pickShowcase } from "./public-data";
@@ -84,7 +85,53 @@ export function TickerBand({ items }: { items: string[] }) {
   );
 }
 
-export function Hero({ lang, showcase, live, ticker }: { lang: Lang; showcase?: ReceiptRecord; live: ReactNode; ticker: ReactNode }) {
+/** The real receipt as the hero card: shown while live rates load, or when they are down. */
+export function ReceiptFloat({ lang, showcase }: { lang: Lang; showcase?: ReceiptRecord }) {
+  const t = messages(lang).landing.hero;
+  const locale = LOCALE[lang];
+  if (!showcase) return null;
+  const v = buildReceiptView(showcase.bundle);
+  return (
+    <a className="card glass float-card bob" href={withLang(`/r/${showcase.id}`, lang)}>
+      <span className="float-label mono">{t.cardLabel(dayMonth(v.createdAt, locale))}</span>
+      <span className="amount-xl">{money(v.amountOut, v.tokenOut.decimals, v.tokenOut.fiat, locale)}</span>
+      <span className="muted">
+        {t.cardFor(money(v.amountIn, v.tokenIn.decimals, v.tokenIn.fiat, locale))}
+        {v.savings && v.savings.bps > 0 && (
+          <>
+            {" · "}
+            <b className="tag-lime">{formatBps(v.savings.bps, locale)}</b> {t.vsOfficial}
+          </>
+        )}
+      </span>
+    </a>
+  );
+}
+
+/** The design's live quote card: R$ 10 at the market rate right now, against the official rate. */
+export async function LiveQuote({ lang, showcase }: { lang: Lang; showcase?: ReceiptRecord }) {
+  const t = messages(lang).landing.hero;
+  const locale = LOCALE[lang];
+  const live = await liveReferences();
+  const rows = live ? calcRows(live.references).BRL : [];
+  const ours = rows.find((r) => r.key === "arbolito");
+  const off = rows.find((r) => r.key === "official");
+  if (!ours || !off) return <ReceiptFloat lang={lang} showcase={showcase} />;
+  const a = BigInt(ours.rate);
+  const o = BigInt(off.rate);
+  const bps = o === 0n ? 0n : ((a - o) * 10_000n) / o;
+  return (
+    <HeroQuote
+      label={t.quoteLabel}
+      expires={t.quoteExpires}
+      amount={money(10n * a, 18, "ARS", locale)}
+      sub={t.quoteFor(money(10n * 10n ** 18n, 18, "BRL", locale))}
+      pct={bps > 0n ? `${formatBps(bps, locale)} ${t.vsOfficial}` : null}
+    />
+  );
+}
+
+export function Hero({ lang, showcase, live, ticker, quote }: { lang: Lang; showcase?: ReceiptRecord; live: ReactNode; ticker: ReactNode; quote: ReactNode }) {
   const t = messages(lang).landing.hero;
   const locale = LOCALE[lang];
   const v = showcase ? buildReceiptView(showcase.bundle) : undefined;
@@ -103,27 +150,14 @@ export function Hero({ lang, showcase, live, ticker }: { lang: Lang; showcase?: 
               <a className="btn btn-primary btn-lg" href={MINIPAY_URL} rel="noopener">
                 {t.ctaMiniPay}
               </a>
-              <a className="btn btn-secondary btn-lg" href={TELEGRAM_URL} rel="noopener">
-                {t.ctaTelegram}
+              <a className="hero-tg" href={TELEGRAM_URL} rel="noopener">
+                {t.telegramHint}
               </a>
             </div>
-            <span className="hero-hint">{t.telegramHint}</span>
           </div>
           {v && showcase && (
             <div className="hero-cards">
-              <a className="card glass float-card bob" href={withLang(`/r/${showcase.id}`, lang)}>
-                <span className="float-label mono">{t.cardLabel(dayMonth(v.createdAt, locale))}</span>
-                <span className="amount-xl">{money(v.amountOut, v.tokenOut.decimals, v.tokenOut.fiat, locale)}</span>
-                <span className="muted">
-                  {t.cardFor(money(v.amountIn, v.tokenIn.decimals, v.tokenIn.fiat, locale))}
-                  {v.savings && v.savings.bps > 0 && (
-                    <>
-                      {" · "}
-                      <b className="tag-lime">{formatBps(v.savings.bps, locale)}</b> {t.vsOfficial}
-                    </>
-                  )}
-                </span>
-              </a>
+              {quote}
               <a className="card glass float-card float-proof bob bob-late" href={withLang(`/r/${showcase.id}#verificacion`, lang)}>
                 <span className="check-dot" aria-hidden="true">
                   ✓
@@ -391,6 +425,10 @@ export function Numbers({ lang, records }: { lang: Lang; records: ReceiptRecord[
       href: latest ? withLang(`/r/${latest.id}`, lang) : withLang("/metrics#receipts", lang),
     },
     { k: t.median, v: m.savingsArs.medianBps === undefined ? "—" : formatBps(m.savingsArs.medianBps, locale), proof: t.pCalc, href: withLang("/metrics#receipts", lang) },
+    ...(["ARS", "BRL"] as const).map((fiat) => {
+      const vol = m.volumeByToken.find((x) => x.token.fiat === fiat);
+      return { k: fiat === "ARS" ? t.volArs : t.volBrl, v: vol ? whole(vol.amount, vol.token.decimals, fiat, locale) : whole(0n, 0, fiat, locale), proof: t.pVolume, href: withLang("/metrics#by-token", lang) };
+    }),
     { k: t.volume, v: formatMoney(m.totalUsdMicros, 6, "USD", locale), proof: t.pVolume, href: withLang("/metrics#by-token", lang) },
     { k: t.receipts, v: String(m.receipts.length), proof: t.pVerify, href: latest ? withLang(`/r/${latest.id}#verificacion`, lang) : withLang("/metrics#receipts", lang) },
     { k: t.desk, v: t.soon, proof: t.pDesk, href: withLang("/desk", lang), soon: true },
