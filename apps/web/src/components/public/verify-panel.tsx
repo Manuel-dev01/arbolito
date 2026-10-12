@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPublicClient, http, type Address } from "viem";
 import { celo } from "viem/chains";
-import { messages, type Lang } from "../i18n/messages";
-import { canonicalJson, hashJsonText, routeIdToBytes32 } from "../lib/canonical";
-import { receiptsReadAbi, txUrl } from "../lib/receipts-abi";
-import type { Verification } from "../lib/chain";
+import { messages, type Lang } from "../../i18n/messages";
+import { canonicalJson, hashJsonText, routeIdToBytes32 } from "../../lib/canonical";
+import { receiptsReadAbi, txUrl } from "../../lib/receipts-abi";
+import type { Verification } from "../../lib/chain";
 
 type ChainCheck =
   | { state: "idle" | "checking" | "not_found" | "rpc_error" }
@@ -103,9 +103,9 @@ export function VerifyPanel({ lang, bundleJson, receiptsAddress, rpcUrl, downloa
 
   const sv = server.result;
   return (
-    <section className="card verify stack" id="verify" aria-labelledby="verify-title">
+    <section className="verify" id="verify" aria-labelledby="verify-title">
       <div>
-        <h2 id="verify-title">{t.title}</h2>
+        <h3 id="verify-title">{t.title}</h3>
         <p className="lead">{t.lead}</p>
       </div>
 
@@ -116,14 +116,14 @@ export function VerifyPanel({ lang, bundleJson, receiptsAddress, rpcUrl, downloa
         <textarea id="canonical" spellCheck={false} value={text} onChange={(e) => setText(e.target.value)} />
         <p className="small faint">{t.editHint}</p>
         <div className="row">
-          <button type="button" className="btn" onClick={copy}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={copy}>
             {copied ? t.copied : t.copy}
           </button>
-          <a className="btn" href={downloadHref} download>
+          <a className="btn btn-secondary btn-sm" href={downloadHref} download>
             {t.download}
           </a>
           {text !== initial && (
-            <button type="button" className="btn" onClick={() => setText(initial)}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setText(initial)}>
               {t.reset}
             </button>
           )}
@@ -157,7 +157,7 @@ export function VerifyPanel({ lang, bundleJson, receiptsAddress, rpcUrl, downloa
       </div>
 
       <div>
-        <h3>{t.serverTitle}</h3>
+        <h4>{t.serverTitle}</h4>
         {sv && sv.ok && <p className="pos">✓ {t.serverOk}</p>}
         {sv && !sv.ok && (
           <>
@@ -178,7 +178,7 @@ export function VerifyPanel({ lang, bundleJson, receiptsAddress, rpcUrl, downloa
         )}
       </div>
 
-      <details>
+      <details className="how">
         <summary>{t.howTitle}</summary>
         <ol className="steps">
           {t.howSteps.map((s) => (
