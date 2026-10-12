@@ -17,7 +17,7 @@ import {
 import type { PrepareRequest, PrepareResponse, TakerProof } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { ApiFailure, badRequest, noRoute, notFound, notReady, priceChanged, quoteExpired, upstream } from "./errors";
-import { logError } from "./http";
+import { logError, logTextileError } from "./http";
 import { routeKind } from "./quote";
 import { decodePayload } from "./serde";
 import type { MiniappStore, QuoteRow } from "./store";
@@ -217,7 +217,7 @@ async function prepareTextile(
   const takerPays = BigInt(q.takerPays);
 
   const cancel = async (failure: ApiFailure): Promise<never> => {
-    await deps.textile.cancel(firm.rfqId, firm.claimToken).catch((e: unknown) => logError("prepare textile cancel", e));
+    await deps.textile.cancel(firm.rfqId, firm.claimToken).catch((e: unknown) => logTextileError("prepare textile cancel", e));
     throw failure;
   };
   // Same checks as executeRoute, before anything reaches the wallet. Any failure releases the inventory.
@@ -288,7 +288,7 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
 
   const ok = await store.updateQuote(row.id, { status: "prepared", prepared, account }, ["quoted", "prepared"]);
   if (!ok) {
-    if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((e: unknown) => logError("prepare cancel", e));
+    if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((e: unknown) => logTextileError("prepare cancel", e));
     throw badRequest("This quote changed state; ask for a new one.", 409);
   }
   return toResponse(row.id, prepared);

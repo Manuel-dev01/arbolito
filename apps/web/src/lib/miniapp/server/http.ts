@@ -12,6 +12,15 @@ export function logError(where: string, err: unknown): void {
   console.error(`[miniapp] ${where}: ${scrub(msg).slice(0, 400)}`);
 }
 
+/**
+ * Errors from calls made with a Textile claim token: log the kind and HTTP status only, never the
+ * message or body (an upstream error could echo the token back).
+ */
+export function logTextileError(where: string, err: unknown): void {
+  const status = typeof (err as { status?: unknown })?.status === "number" ? ` ${(err as { status: number }).status}` : "";
+  console.error(`[miniapp] ${where}: ${err instanceof Error ? err.name : "error"}${status}`);
+}
+
 const NO_STORE = { "cache-control": "no-store" };
 
 export function errorResponse(f: ApiFailure): Response {

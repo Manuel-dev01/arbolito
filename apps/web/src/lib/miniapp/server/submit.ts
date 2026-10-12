@@ -6,7 +6,7 @@ import { receivedInTx, usdMicros, type Quote, type Route } from "@arbolito/route
 import type { SubmitRequest, SubmitResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, notReady, quoteExpired, upstream } from "./errors";
-import { logError } from "./http";
+import { logError, logTextileError } from "./http";
 import { loadLiveQuote, type Prepared, type PreparedTextile, type StoredCall } from "./prepare";
 import { decodePayload } from "./serde";
 import type { MiniappStore, ReceiptRow } from "./store";
@@ -62,7 +62,7 @@ async function reportTextile(deps: MiniappDeps, p: PreparedTextile, swapHash: He
   try {
     return { status: "submitted", statusAfter: (await deps.textile.submit(p.rfqId, p.claimToken, swapHash)).status };
   } catch (err) {
-    logError("submit textile report", err);
+    logTextileError("submit textile report", err);
     const statusAfter = await deps.textile
       .status(p.rfqId, p.claimToken)
       .then((s) => s.status)
