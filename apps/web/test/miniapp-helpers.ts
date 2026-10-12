@@ -99,15 +99,16 @@ export class MemoryStore implements MiniappStore {
   }
   async insertReceipt(r: NewReceipt) {
     if (this.receipts.some((x) => x.id === r.id || x.executionTx === r.executionTx || x.bundleHash === r.bundleHash)) return false;
+    const c = structuredClone(r);
     this.receipts.push({
-      userId: null,
-      anchorTx: null,
-      anchorBlock: null,
-      savingsBps: null,
-      supersededBy: null,
+      ...c,
+      userId: c.userId ?? null,
+      anchorTx: c.anchorTx ?? null,
+      anchorBlock: c.anchorBlock ?? null,
+      savingsBps: c.savingsBps ?? null,
+      supersededBy: c.supersededBy ?? null,
       createdAt: new Date(T0),
-      ...(structuredClone(r) as Omit<ReceiptRow, "createdAt">),
-    } as ReceiptRow);
+    });
     return true;
   }
   async getReceipt(id: string) {
@@ -140,7 +141,7 @@ export class MemoryStore implements MiniappStore {
     c.account = account.toLowerCase();
     return true;
   }
-  async transaction<T>(fn: (s: MiniappStore) => Promise<T>) {
+  async transaction<T>(fn: (s: MiniappStore) => Promise<T>): Promise<T> {
     return fn(this);
   }
 }
