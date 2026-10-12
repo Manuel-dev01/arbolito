@@ -19,7 +19,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const showcase = pickShowcase(records);
 
   return (
-    <Shell lang={lang} path="/" wide>
+    <Shell lang={lang} path="/" size="full">
       <Coin />
       <Hero
         lang={lang}

@@ -20,8 +20,9 @@ export function Brand({ lang }: { lang: Lang }) {
  * Public page shell: sticky glass nav, content, and the "pie" footer with the language switch.
  * `path` is the current path without ?lang, so the switch keeps the reader on the same page.
  * Everything public is scoped under `.pub` so it never leaks into the Mini App's styles.
+ * `size`: "m" reading width (receipts), "l" for dashboards, "full" for the landing's full-bleed sections.
  */
-export function Shell({ lang, path, children, wide = false }: { lang: Lang; path: string; children: ReactNode; wide?: boolean }) {
+export function Shell({ lang, path, children, size = "m" }: { lang: Lang; path: string; children: ReactNode; size?: "m" | "l" | "full" }) {
   const t = messages(lang);
   const onLanding = path === "/";
   const anchor = (id: string) => (onLanding ? `#${id}` : withLang(`/#${id}`, lang));
@@ -43,7 +44,7 @@ export function Shell({ lang, path, children, wide = false }: { lang: Lang; path
           </div>
         </nav>
       </header>
-      <main className={wide ? "main main-wide" : "main"}>{children}</main>
+      <main className={size === "full" ? "main main-wide" : size === "l" ? "main main-l" : "main"}>{children}</main>
       <footer className="pie" id="pie">
         <div className="pie-inner">
           <div className="pie-word" aria-hidden="true">

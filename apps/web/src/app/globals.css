@@ -360,6 +360,9 @@ body {
     flex-direction: column;
     gap: 16px;
   }
+  & .main-l {
+    max-width: 1120px;
+  }
   & .main-wide {
     max-width: none;
     padding: 0;
@@ -1727,6 +1730,18 @@ body {
   }
   & .details-card[open] > summary::after {
     transform: rotate(45deg);
+  }
+  & .vdetails > summary {
+    align-items: flex-start;
+    justify-content: flex-start;
+    font-size: 15px;
+    font-weight: 400;
+  }
+  & .vdetails > summary::after {
+    display: none;
+  }
+  & .vdetails[open] .vbadge-text u {
+    opacity: 0.7;
   }
   & .details-body {
     display: flex;
