@@ -63,6 +63,29 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-12: Design implemented end to end (Mini App, backend, public site, bot)
+**Shipped (merged to main, pushed; Vercel deploys from main):**
+- **Telegram bot:** HTTP quotes from the web API, "Confirmar en MiniPay" links, self-editing cards and `/conectar` wallet linking. LLM copy updated so money moves only when the user confirms in MiniPay.
+- **Mini App backend** (`/api/miniapp/*`): rates, balances, quote, quotes/open, prepare (with Textile `needs_taker_proof`), reject, submit (checks the sender, calls and attribution tag; `amountOut` from Transfer logs), receipt, autonomy status/plan/revoke-plan, chat (voice included), link/confirm. Also `/minipay-check` diagnostics.
+- **Mini App UI** (`/app`, `/app/link`): every design state, MiniPay auto-connect, stablecoin `feeCurrency` adapters, "No sabemos si se completó" on uncertain sends (never retries), demo mode only with `?mock=1`.
+- **Public site:** redesigned landing (live calculator, in-browser fingerprint check), receipt story page, metrics, and a `/desk` placeholder, in es/pt/en.
+- **Totals:** tsc clean, 359 vitest unit tests passing (1 skipped), web build green.
+
+**Blocked on the founder:**
+- Run `/minipay-check` in MiniPay Developer Mode. Submit rejects txs whose attribution tag MiniPay changes or strips, so this decides whether real submits work.
+- Vercel env vars: `ATTRIBUTION_CODE` (without it prepare and autonomy return `not_ready`), `DEEPSEEK_API_KEY` and `STT_API_KEY` for chat. Anchoring stays off until a funded anchor wallet is approved.
+- Guard v2 mainnet deploy (≈3.04M gas). MiniPay Discover listing (name, URL, 512×512 icon).
+
+**Open risks:**
+- The Textile eip191 proof text is unconfirmed against the live API, and the 12-hour grant is probably IP-bound. Keep `TEXTILE_RFQ_ENABLED=false` for MiniPay users.
+- The `account` field is unauthenticated; anyone can name any wallet, but nothing can move money. A wallet-signature proof on reject and link is still TODO.
+- Rate limits are in-memory, per server instance.
+- Nothing re-anchors receipts left `registering`.
+
+**Contract gaps flagged by the UI** (`TODO(contract)`): send-to-contact prepare, `GET /quote/:id`, instant autonomy pause, receipts list, phone → address lookup, no-market notify, in-app withdraw, link status.
+
+**Next:** close the send-to-contact and receipts-list gaps, redeploy the bot to Railway against the live quote API, then the wallet-signature proof once `/minipay-check` shows which signing methods MiniPay supports.
+
 ### 2026-10-11: MiniPay pivot, bot live, oracle grown, Textile answered
 **Shipped:**
 - **Bot live on Railway** (@arbolitoo_bot, private beta allowlist, no private keys on the host).
