@@ -93,18 +93,30 @@ importers:
 
   apps/web:
     dependencies:
+      '@arbolito/chain':
+        specifier: workspace:*
+        version: link:../../packages/chain
       '@arbolito/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@arbolito/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@arbolito/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@arbolito/proof':
         specifier: workspace:*
         version: link:../../packages/proof
+      '@arbolito/router':
+        specifier: workspace:*
+        version: link:../../packages/router
       '@vercel/functions':
         specifier: 3.9.11
         version: 3.9.11(ws@8.21.0)
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@types/pg@8.23.1)(pg@8.23.1)
       next:
         specifier: 16.4.0
         version: 16.4.0(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

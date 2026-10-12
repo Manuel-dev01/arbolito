@@ -12,6 +12,8 @@ export interface AnchorArgs {
   publicClient: PublicClient;
   walletClient: WalletClient;
   feeCurrency?: string;
+  /** Spend ledger for the anchoring wallet (defaults to sendGuarded's; serverless hosts pass a DB ledger). */
+  ledger?: GuardedSendParams["ledger"];
 }
 
 export interface AnchorResult {
@@ -35,6 +37,7 @@ export async function anchorBundle(a: AnchorArgs): Promise<AnchorResult> {
     usdMicros: 0n,
     purpose: `anchor receipt ${a.bundle.routeId}`,
     feeCurrency: a.feeCurrency,
+    ledger: a.ledger,
   });
   return { bundleHash: h, routeIdBytes32: rid, txHash: hash, blockNumber: receipt.blockNumber };
 }
