@@ -73,6 +73,8 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - `POST /v2/rfq/request`: firm quote bound to `taker`.
     - Keyless callers send `takerProof`: an EIP-712 `TakerControl{taker,chainId,nonce(bytes32),issuedAt(ms)}` under domain `{name:"Textile Taker Control",version:"1",chainId}`. It's valid for 60 s, and one verified proof covers that wallet and chain for ~12 h.
     - Smart-contract takers verify via **EIP-1271, including counterfactual ERC-6492**.
+    - **eip191 fallback** (`scheme: "eip191"`, `personal_sign`; valid 5 min; docs `api/v2/authentication.html`, read 2026-10-11). Textile rebuilds this text byte for byte, lines joined with `\n`: `Textile Taker Control` / `Version: 1` / `` / `Sign to prove you control this wallet so Textile can request a firm` / `quote for it. This does not approve any transfer, trade or allowance.` / `` / `Wallet: <taker, lowercased>` / `Chain: <chainId>` / `Nonce: <nonce, lowercased>` / `Issued at: <issuedAt ms>`. Code: `takerControlMessage` in `packages/router/src/textile/api.ts`. **Not yet exercised against the live API.**
+    - The ~12 h grant is tied to the **caller** (session, or client IP when anonymous), so for the Mini App it binds to our server's egress IP, not the user.
     - **Proof of funds:** the taker must hold the sell token.
     - Returns `claimToken` (once), `quote` and `transactions.{approval,swap}`. The call blocks for up to ~70 s, so set a 75 s client timeout.
   - **The taker broadcasts settlement:** approve `takerPays` of the sell token to `quote.spender` (normally the reactor), then send `transactions.swap`, an `executeBatch` across the makers in the bundle. Always use `transactions.swap`, never the top-level `encodedOrder`.
