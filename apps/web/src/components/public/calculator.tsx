@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { applyRate, formatFixed, parseDecimal, type Locale } from "../../lib/format";
-import type { CalcKey, CalcRows } from "./rates";
+import { applyRate, formatFixed, type Locale } from "../../lib/format";
+import { parseTyped } from "./parse-amount";
+import type { CalcKey, CalcRows } from "./public-data";
 
 export interface CalculatorLabels {
   pre: string;
@@ -22,17 +23,6 @@ const SYM: Record<Cur, string> = { USD: "US$", BRL: "R$" };
 const PRESETS: Record<Cur, bigint[]> = { USD: [100n, 500n, 1_500n], BRL: [200n, 1_000n, 5_000n] };
 const ONE = 10n ** 18n;
 const DEC = 18;
-
-/** Reads what the person typed with the locale's separators ("1.500,5" in es/pt, "1,500.5" in en) into 18-decimal atomic units. */
-export function parseTyped(raw: string, locale: Locale): bigint {
-  const plain = locale === "en-US" ? raw.replace(/,/g, "") : raw.replace(/\./g, "").replace(",", ".");
-  if (!/^\d+(\.\d*)?$|^\.\d+$/.test(plain)) return 0n;
-  try {
-    return parseDecimal(plain.endsWith(".") ? plain.slice(0, -1) : plain, DEC);
-  } catch {
-    return 0n;
-  }
-}
 
 const ars = (v: bigint, locale: Locale) => `ARS ${formatFixed(v, DEC, locale, { dp: 0 })}`;
 

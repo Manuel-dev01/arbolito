@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { bundleHash } from "@arbolito/proof";
 import { ExtLink, Shell } from "../../../components/public/shell";
+import { badgeState, type BadgeState } from "../../../components/public/public-data";
 import { VerifyPanel } from "../../../components/public/verify-panel";
 import { getLang, LOCALE, messages, withLang, type Lang, type Messages } from "../../../i18n/messages";
 import { anchorFor, getReceiptCached, verifyReceipt } from "../../../lib/cached";
@@ -16,8 +17,6 @@ type Props = {
 };
 
 const TZ = "America/Argentina/Buenos_Aires";
-/** A receipt younger than this whose hash is not anchored yet is "Registrando", not "No coincide". */
-const PENDING_WINDOW_MS = 15 * 60_000;
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -74,17 +73,6 @@ function Route({ route, lang, chosen }: { route: RouteView; lang: Lang; chosen?:
       ))}
     </div>
   );
-}
-
-type BadgeState = "verified" | "pending" | "mismatch" | "unavailable" | "superseded";
-
-function badgeState(superseded: boolean, createdAt: string, server: Awaited<ReturnType<typeof verifyReceipt>>): BadgeState {
-  if (superseded) return "superseded";
-  const r = server.result;
-  if (r?.ok) return "verified";
-  const fresh = Date.now() - Date.parse(createdAt) < PENDING_WINDOW_MS;
-  if (r) return !r.anchor && fresh ? "pending" : "mismatch";
-  return fresh ? "pending" : "unavailable";
 }
 
 const BADGE_ICON: Record<BadgeState, string> = { verified: "✓", pending: "…", mismatch: "!", unavailable: "…", superseded: "!" };

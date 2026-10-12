@@ -9,16 +9,11 @@ import { buildReceiptView, resolveRate, type ReceiptView } from "../../lib/recei
 import { Calculator } from "./calculator";
 import { MINIPAY_URL, TELEGRAM_URL } from "./links";
 import { ProofCheck } from "./proof-check";
+import { pickShowcase } from "./public-data";
 import { calcRows, liveReferences, type CalcRows } from "./rates";
 import { Display, Kicker } from "./shell";
 
 const TZ = "America/Argentina/Buenos_Aires";
-
-/** The receipt the landing shows: the newest active one with a positive saving, else the newest active one. */
-export function pickShowcase(records: ReceiptRecord[]): ReceiptRecord | undefined {
-  const active = records.filter((r) => !r.supersededBy);
-  return active.find((r) => r.bundle.savings && BigInt(r.bundle.savings.delta) > 0n) ?? active[0];
-}
 
 const money = (amount: bigint, decimals: number, fiat: string, locale: Locale) => formatMoney(amount, decimals, fiat, locale);
 const whole = (amount: bigint, decimals: number, fiat: string, locale: Locale) => `${fiatPrefix(fiat)} ${formatFixed(amount, decimals, locale, { dp: 0 })}`;
@@ -519,4 +514,4 @@ export function Faq({ lang }: { lang: Lang }) {
   );
 }
 
-export { LiveLine };
+export { LiveLine, pickShowcase };
