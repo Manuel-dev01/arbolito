@@ -103,23 +103,66 @@ export interface TradeParams {
   sellAmount: bigint;
 }
 
+/** A keyless taker's proof of control, signed by the taker wallet (here or in the user's own wallet). */
+export interface TakerProof {
+  nonce: Hex;
+  /** Unix milliseconds. */
+  issuedAt: number;
+  signature: Hex;
+  /** Omitted = eip712 (Textile's default). eip191 = personal_sign over takerControlMessage. */
+  scheme?: "eip712" | "eip191";
+}
+
+export const TAKER_CONTROL_TYPES = {
+  TakerControl: [
+    { name: "taker", type: "address" },
+    { name: "chainId", type: "uint256" },
+    { name: "nonce", type: "bytes32" },
+    { name: "issuedAt", type: "uint256" },
+  ],
+} as const;
+
+/** Fresh 32-byte nonce for a TakerControl challenge. */
+export const takerControlNonce = (): Hex => toHex(randomBytes(32));
+
+/**
+ * EIP-712 TakerControl under domain {name:"Textile Taker Control", version:"1", chainId}.
+ * Textile accepts it within 60 s of issuedAt (ms); one verified proof covers ~12 h per caller.
+ */
+export function takerControlTypedData(taker: Address, chainId: number, nonce: Hex, issuedAt: number) {
+  return {
+    domain: { name: "Textile Taker Control", version: "1", chainId },
+    types: TAKER_CONTROL_TYPES,
+    primaryType: "TakerControl" as const,
+    message: { taker, chainId: BigInt(chainId), nonce, issuedAt: BigInt(issuedAt) },
+  };
+}
+
+/**
+ * The eip191 (personal_sign) text Textile rebuilds byte for byte to recover the taker
+ * (docs.textilecredit.com/api/v2/authentication.html, "Hardware wallets: the eip191 encoding",
+ * read 2026-10-11). Valid for 5 minutes after issuedAt.
+ */
+export function takerControlMessage(taker: Address, chainId: number, nonce: Hex, issuedAt: number): string {
+  return [
+    "Textile Taker Control",
+    "Version: 1",
+    "",
+    "Sign to prove you control this wallet so Textile can request a firm",
+    "quote for it. This does not approve any transfer, trade or allowance.",
+    "",
+    `Wallet: ${taker.toLowerCase()}`,
+    `Chain: ${chainId}`,
+    `Nonce: ${nonce.toLowerCase()}`,
+    `Issued at: ${issuedAt}`,
+  ].join("\n");
+}
+
 /** EIP-712 TakerControl: proves the caller controls `taker` (keyless firm requests only). */
 export async function signTakerControl(account: LocalAccount, chainId: number, now = Date.now()) {
-  const nonce = toHex(randomBytes(32));
+  const nonce = takerControlNonce();
   const issuedAt = now; // Unix milliseconds
-  const signature = await account.signTypedData({
-    domain: { name: "Textile Taker Control", version: "1", chainId },
-    types: {
-      TakerControl: [
-        { name: "taker", type: "address" },
-        { name: "chainId", type: "uint256" },
-        { name: "nonce", type: "bytes32" },
-        { name: "issuedAt", type: "uint256" },
-      ],
-    },
-    primaryType: "TakerControl",
-    message: { taker: account.address, chainId: BigInt(chainId), nonce, issuedAt: BigInt(issuedAt) },
-  });
+  const signature = await account.signTypedData(takerControlTypedData(account.address, chainId, nonce, issuedAt));
   return { nonce, issuedAt, signature };
 }
 
@@ -129,6 +172,11 @@ export class TextileClient {
     private readonly apiKey = loadEnv().TEXTILE_API_KEY,
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
+
+  /** With a partner key, firm requests need no takerProof. */
+  get hasPartnerKey(): boolean {
+    return !!this.apiKey;
+  }
 
   private async call<T>(path: string, init: RequestInit & { timeoutMs?: number; claim?: string }, schema: z.ZodType<T>): Promise<T> {
     const headers: Record<string, string> = { "content-type": "application/json" };
@@ -155,7 +203,7 @@ export class TextileClient {
    * the taker is about to execute. Without a partner key, `account` signs TakerControl.
    * Server may block up to ~70s on a cold corridor; the client waits 75s per the docs.
    */
-  async request(p: TradeParams & { taker: Address; account?: LocalAccount }): Promise<TextileFirm> {
+  async request(p: TradeParams & { taker: Address; account?: LocalAccount; takerProof?: TakerProof }): Promise<TextileFirm> {
     const body: Record<string, unknown> = {
       chainId: p.chainId,
       sellToken: p.sellToken,
@@ -164,8 +212,14 @@ export class TextileClient {
       taker: p.taker,
     };
     if (!this.apiKey) {
-      if (!p.account) throw new Error("Keyless firm request needs the taker account to sign TakerControl");
-      body.takerProof = await signTakerControl(p.account, p.chainId);
+      if (p.takerProof) {
+        // Signed outside this process (e.g. by the user's MiniPay wallet); passed through as is.
+        const { nonce, issuedAt, signature, scheme } = p.takerProof;
+        body.takerProof = { nonce, issuedAt, signature, ...(scheme === "eip191" ? { scheme } : {}) };
+      } else {
+        if (!p.account) throw new Error("Keyless firm request needs a takerProof or the taker account to sign TakerControl");
+        body.takerProof = await signTakerControl(p.account, p.chainId);
+      }
     }
     return (await this.call("/rfq/request", { method: "POST", body: JSON.stringify(body), timeoutMs: 75_000 }, firmSchema)).data;
   }

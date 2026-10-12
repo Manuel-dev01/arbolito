@@ -10,10 +10,14 @@
     "typecheck": "next typegen && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@arbolito/chain": "workspace:*",
     "@arbolito/config": "workspace:*",
     "@arbolito/db": "workspace:*",
+    "@arbolito/llm": "workspace:*",
     "@arbolito/proof": "workspace:*",
+    "@arbolito/router": "workspace:*",
     "@vercel/functions": "3.9.11",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
