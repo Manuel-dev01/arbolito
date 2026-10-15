@@ -95,12 +95,23 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - `desk-stitch` runs Stitch v0.1.312, pinned to `sha-109ed6e`.
   - The RFQ session is accepted (LIVE).
 - **First fill:** sold 49.995 wBRL for 9.8677 USDT to an independent taker, tx `0x27d4ee67…`, at mid + 6 bps. See docs/10-desk-plan.md, including the honest P&L note (the inventory was bought on the thin Uniswap pool).
-- **Leftover:** an empty Railway project `snap-desk-feed`, created by mistake by a `railway up` from an unlinked folder. Deleting it is the founder's call.
+- **Cleanup:** the accidental Railway project `snap-desk-feed` was deleted with the founder's OK. Deploys now always pass `--project/--environment/--service`.
+- **Ledger (migration 0002):** `desk_fills`, `desk_snapshots` and `desk_state` in Neon. The feed service indexes the desk wallet's transfers every tick. A fill is a tx someone else sent that moves the soft asset and USDT in opposite directions; it is recorded with the fair price of the moment. Inventory and NAV snapshots run every 5 min.
+  - The first fill's fair price was recovered from Stitch's tick log: edge +6.00 bps.
+  - First NAV: $39.957 vs the $40 funded.
+- **Live `/desk` page:**
+  - per-corridor quoting status (fair, skew, our bid and ask, sources, breaker reason)
+  - fills with edge vs fair and tx links
+  - inventory at fair, and P&L vs the 40 USDT funded
+  - the strategy in plain words
+  - The landing's desk tile shows the real fill count.
+- **Risk officer:** `apps/desk/src/risk.ts`. An LLM reviews hourly signals (move, volatility, dispersion, holds, fills, average edge, inventory) every 15 min. It can only pause a corridor for 15–120 min, clamped in code; malformed output or a failed call does nothing. Off by default (`DESK_RISK_OFFICER`).
+- **Totals:** 388 vitest unit tests passing (1 skipped).
 
 **Next:**
-- Fills indexer and P&L ledger; turn the `/desk` page on with live quotes, fills and inventory.
+- Founder decision: enable the risk officer on Railway (needs `DEEPSEEK_API_KEY` on `desk-feed`; ~100 calls/day).
+- Watch fill quality: if edge goes negative, widen spreads.
 - Rebuild wBRL inventory at fair (the bid side does this on its own).
-- Risk officer, P1.
 - **Hosting:** a Railway service for the feed and Stitch.
 - **Organisers:** ask whether our app's users filling against our desk counts as self-trading.
 
