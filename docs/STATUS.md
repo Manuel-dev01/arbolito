@@ -90,8 +90,17 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Incident, nothing lost:** the first live run stopped before swap 3. A lagging node reported an allowance the previous swap had spent, so the approve was skipped and the swap failed simulation (`STF`) and was never sent. Fixed in `executeRoute`: allowance reads must be at or after the last confirmed block. A test reproduces the lag.
 - **Textile:** registered as maker `stitch-42220-bcb8b7dc` with `pnpm desk:stitch connect`. The confirmation link went to the founder's email. The credential is kept in `.arbolito/stitch/` (gitignored).
 
-**Blocked on the founder:**
-- Click Textile's confirmation link; then we re-run connect to take the corridor seats.
+- **Desk live on Railway:**
+  - `desk-feed` serves https://desk-feed-production.up.railway.app.
+  - `desk-stitch` runs Stitch v0.1.312, pinned to `sha-109ed6e`.
+  - The RFQ session is accepted (LIVE).
+- **First fill:** sold 49.995 wBRL for 9.8677 USDT to an independent taker, tx `0x27d4ee67…`, at mid + 6 bps. See docs/10-desk-plan.md, including the honest P&L note (the inventory was bought on the thin Uniswap pool).
+- **Leftover:** an empty Railway project `snap-desk-feed`, created by mistake by a `railway up` from an unlinked folder. Deleting it is the founder's call.
+
+**Next:**
+- Fills indexer and P&L ledger; turn the `/desk` page on with live quotes, fills and inventory.
+- Rebuild wBRL inventory at fair (the bid side does this on its own).
+- Risk officer, P1.
 - **Hosting:** a Railway service for the feed and Stitch.
 - **Organisers:** ask whether our app's users filling against our desk counts as self-trading.
 

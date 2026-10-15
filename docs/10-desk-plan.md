@@ -39,6 +39,16 @@ Stitch stays unmodified, in its own process (no AGPL entanglement). Arbolito ser
   - parsed the generated config and read both pools' prices from `/feed/<pair>`
   - posted nothing and sent nothing
 
+## Live (2026-10-15)
+- **Railway, project arbolito:**
+  - **`desk-feed`:** `Dockerfile.desk-feed`, public at `https://desk-feed-production.up.railway.app/feed/<pair>` (also `/state`, `/healthz`). Stitch accepts plain `http://` feeds only on localhost, so the feed is served over the public HTTPS domain.
+  - **`desk-stitch`:** image `ghcr.io/textile-protocol/textile-stitch:sha-109ed6e` (release v0.1.312), with `STITCH_CONFIG_TOML`, `STITCH_PRIVATE_KEY` and `STITCH_RFQ_API_KEY` as Railway variables.
+- **Maker** `stitch-42220-bcb8b7dc` (id `cmv9mwxsm00a3yx0veu44d0fc`): email confirmed and seated on every Celo corridor. Stitch only quotes the two pools in its config.
+- **First fill**, 2 minutes after start:
+  - Sold 49.995 wBRL for 9.867652 USDT (0.197373 USDT/wBRL = mid + 6 bps) to an independent taker `0x5dc2…b77f`.
+  - Tx [0x27d4ee67…](https://celoscan.io/tx/0x27d4ee6758a90f58881bdb16e3e546c09d16fe6edfbe252d418e4f4877779d2d), block 80,183,354. Settled through `0x96E4…12dE`.
+  - **Honest P&L note:** the wBRL inventory was bought on Uniswap at ~0.19787 USDT/wBRL (the thin pool), so this first round trip is about −0.25% (≈ −$0.025) against cost. The spread was earned against fair. Future inventory should be built at fair, through the bid side or Textile.
+
 ## Money and safety
 - **Desk wallet `0xBCB8…EdbE` (`DESK_PRIVATE_KEY`).** Only capped float lives there. `DESK_MAX_INVENTORY_USD` (500) is a ceiling, not a target.
 - **Inventory is capital at risk, not spend.** Stitch caps each side with a fixed liquidity (never `"max"`), and the wallet holds only what we fund.
