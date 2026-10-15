@@ -26,7 +26,8 @@
     "test:db": "vitest run --project db",
     "grow:oracle": "node scripts/run.mjs grow-oracle",
     "desk:feed": "node scripts/run.mjs desk-feed",
-    "desk:stitch-config": "node scripts/run.mjs desk-stitch-config"
+    "desk:stitch-config": "node scripts/run.mjs desk-stitch-config",
+    "desk:fund": "node scripts/run.mjs desk-fund"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
