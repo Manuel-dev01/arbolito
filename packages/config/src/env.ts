@@ -23,6 +23,8 @@ export const envSchema = z.object({
   OPS_PRIVATE_KEY: opt(privateKey),
   DESK_PRIVATE_KEY: opt(privateKey),
   DESK_MAX_INVENTORY_USD: z.coerce.number().positive().default(500),
+  DESK_ADDRESS: opt(address),
+  DESK_FEED_PORT: z.coerce.number().int().positive().default(8790),
   BUILD_MAX_ACTION_USD: z.coerce.number().positive().default(5),
   BUILD_MAX_DAILY_USD: z.coerce.number().positive().default(25),
 

@@ -24,7 +24,9 @@
     "db:generate": "pnpm --filter @arbolito/db db:generate",
     "db:migrate": "pnpm --filter @arbolito/db db:migrate",
     "test:db": "vitest run --project db",
-    "grow:oracle": "node scripts/run.mjs grow-oracle"
+    "grow:oracle": "node scripts/run.mjs grow-oracle",
+    "desk:feed": "node scripts/run.mjs desk-feed",
+    "desk:stitch-config": "node scripts/run.mjs desk-stitch-config"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
@@ -36,6 +38,7 @@
   "dependencies": {
     "@arbolito/chain": "workspace:*",
     "@arbolito/config": "workspace:*",
+    "@arbolito/desk": "workspace:*",
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
     "viem": "^2.57.3",

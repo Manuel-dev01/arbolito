@@ -14,6 +14,9 @@ importers:
       '@arbolito/config':
         specifier: workspace:*
         version: link:packages/config
+      '@arbolito/desk':
+        specifier: workspace:*
+        version: link:apps/desk
       '@arbolito/proof':
         specifier: workspace:*
         version: link:packages/proof
@@ -85,7 +88,20 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
-  apps/desk: {}
+  apps/desk:
+    dependencies:
+      '@arbolito/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@arbolito/router':
+        specifier: workspace:*
+        version: link:../../packages/router
+      viem:
+        specifier: ^2.57.3
+        version: 2.57.3(typescript@7.0.2)(zod@4.6.5)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
 
   apps/fx-api: {}
 

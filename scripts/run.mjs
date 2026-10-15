@@ -16,6 +16,8 @@ const ENTRIES = {
   "reanchor-receipt": "scripts/reanchor-receipt.ts",
   "verify-receipt": "scripts/verify-receipt.ts",
   "grow-oracle": "scripts/grow-oracle.ts",
+  "desk-feed": "scripts/desk-feed.ts",
+  "desk-stitch-config": "scripts/desk-stitch-config.ts",
 };
 
 const name = process.argv[2];
