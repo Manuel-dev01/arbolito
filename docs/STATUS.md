@@ -63,6 +63,35 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-15: Landing matches the design; Arbolito Desk feed built and dry-run against Stitch
+**Shipped (pushed to main):**
+- **Landing:**
+  - three.js coins follow the design's waypoints (y up, half-viewport units), turn over with the scroll (US$ on edge at the footer) and tint lavender to sage, with a hover lean and flick
+  - light "mix" skin everywhere
+  - live "Recibís · vence en 48 s" hero card
+  - the design's two illustrations, with the screenshot UI removed from the trust one
+- **Organiser guidance** recorded in 04-reference:
+  - **x402:** credit goes by `payTo` address; attribution tags aren't supported yet.
+  - **buy:** list the services used, with proof of payment.
+  - **Textile:** maker keys come from Stitch; vaults are beta.
+- **Desk scope** (docs/10-desk-plan.md): Stitch, unmodified, as the executor; our feed as the strategy.
+- **`apps/desk`:**
+  - **Feed:** multi-source weighted median with outlier rejection, a per-direction inventory skew that never crosses fair, and a circuit breaker that holds the old timestamp so Stitch stops quoting.
+  - **Tooling:** `pnpm desk:feed` (`/feed/<pair>`, `/state`, `/healthz`), `pnpm desk:stitch-config`, 19 unit tests.
+  - **Spreads:** devaluation-aware wARS spreads (14 bid / 5 ask, wARS target 30%) and wBRL 6/6. The competition is Stitch's ±1 bps template.
+  - **Verified:**
+    - a live read-only tick gave wARS 1,612.5 and wBRL 5.051
+    - Stitch v0.1.312 `--dry-run`, with a throwaway key, parsed our config and read both feeds; nothing was signed or sent
+- **Totals:** 378 vitest unit tests passing (1 skipped); tsc clean.
+
+**Blocked on the founder:**
+- **Desk funding:** proposed $40 USDT + $20 wARS + $20 wBRL in `0xBCB8…EdbE`.
+- **Textile registration:** `stitch connect` plus email verification.
+- **Hosting:** a Railway service for the feed and Stitch.
+- **Organisers:** ask whether our app's users filling against our desk counts as self-trading.
+
+**Next:** with approval, fund the desk wallet; send exact Permit2 approvals through `sendGuarded` (tagged); connect and go live at small caps. Then the fills indexer, P&L ledger and the live `/desk` page.
+
 ### 2026-10-12: Design implemented end to end (Mini App, backend, public site, bot)
 **Shipped (merged to main, pushed; Vercel deploys from main):**
 - **Telegram bot:** HTTP quotes from the web API, "Confirmar en MiniPay" links, self-editing cards and `/conectar` wallet linking. LLM copy updated so money moves only when the user confirms in MiniPay.

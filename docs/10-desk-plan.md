@@ -21,6 +21,24 @@ Stitch stays unmodified, in its own process (no AGPL entanglement). Arbolito ser
 5. **Risk officer (P1).** The existing DeepSeek risk officer reads regime signals and can only widen or pause: change the spreads with a Stitch restart, or trip the breaker. It never tightens below the floor.
 6. **Ledger and `/desk`.** Read fills from the reactor's events for the desk maker address, and mark-to-market P&L against the feed. Publish quotes, fills, inventory and P&L on the existing `/desk` page. This doubles as the "reasoning in the repo" for the originality score.
 
+## What building it showed (2026-10-15)
+- **The competition quotes ±1 bps.** Stitch's own Celo templates (`wars-usdt-celo.toml`, `wbrl-usdt-celo.toml`) quote 1 bps either side of Textile's `/price`, with `"max"` liquidity. That's almost certainly what the fixed-spread fillers run, so wide spreads would never win an RFQ.
+- **Starting spreads** are therefore single-digit (`apps/desk/src/corridors.ts`):
+  - **wBRL:** 6/6 bps.
+  - **wARS:** **14 bid / 5 ask**, deliberately asymmetric. The peso crawls ~1–2% a month, so wARS we buy costs a few bps a day to hold. We bid wider than we ask and target holding 30% of the corridor in wARS (vs 50% for wBRL). This **devaluation-aware pricing** is the strategy's main originality point.
+- **The skew is capped per direction:**
+  - shading down is capped at `sellOffset − floor`
+  - shading up at `buyOffset − floor`
+
+  So no quote crosses fair; the unit tests check this for every inventory level.
+- **Live feed, read-only tick, 2026-10-15:**
+  - wARS fair 1,612.5 ARS/USD (Textile, CCL and Uniswap agree within 25 bps).
+  - wBRL 5.051 (Textile, official cross and Uniswap).
+  - dolarapi updates only in Argentine market hours, so its crypto rate is accepted for up to 26 h at weight 1.
+- **Dry run:** Stitch v0.1.312 (official Windows build, checksum verified), run with a throwaway key against our feed:
+  - parsed the generated config and read both pools' prices from `/feed/<pair>`
+  - posted nothing and sent nothing
+
 ## Money and safety
 - **Desk wallet `0xBCB8…EdbE` (`DESK_PRIVATE_KEY`).** Only capped float lives there. `DESK_MAX_INVENTORY_USD` (500) is a ceiling, not a target.
 - **Inventory is capital at risk, not spend.** Stitch caps each side with a fixed liquidity (never `"max"`), and the wallet holds only what we fund.
@@ -35,8 +53,8 @@ Stitch stays unmodified, in its own process (no AGPL entanglement). Arbolito ser
 4. **Organisers' read on our own app's users** hitting the desk through Textile RFQ. They are real independent users, but worth confirming that doesn't count as self-trading.
 
 ## Build order (no money needed until step 4)
-1. `apps/desk`: the feed service (sources, median, skew, breaker), with unit tests and a `GET /api/desk/feed?pair=` endpoint.
-2. The Stitch config generator (`stitch.toml` per corridor: pools, `feed_url`, fixed caps, spreads).
-3. Local Stitch in `--dry-run` against the feed; a log review.
+1. **Done.** `apps/desk`: the feed service (sources, weighted median, skew, breaker) with 19 unit tests. `pnpm desk:feed` serves `/feed/<pair>`, `/state` and `/healthz`; `--once` runs a single read-only tick.
+2. **Done.** The Stitch config generator: `pnpm desk:stitch-config --feed-base <url>` (pools, per-pool `feed_url`, fixed caps, spreads; `[rfq]` is left to `stitch connect`).
+3. **Done.** Local Stitch `--dry-run` against the feed, as described above.
 4. **With approval:** fund the desk wallet, tagged exact Permit2 approvals, `stitch connect` plus your email verification, go live with small caps.
 5. Fills indexer, P&L ledger, `/desk` page live; then the risk officer and rebalancing.
