@@ -19,6 +19,7 @@ const ENTRIES = {
   "desk-feed": "scripts/desk-feed.ts",
   "desk-stitch-config": "scripts/desk-stitch-config.ts",
   "desk-fund": "scripts/desk-fund.ts",
+  "desk-stitch": "scripts/desk-stitch.ts",
 };
 
 const name = process.argv[2];

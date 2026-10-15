@@ -84,9 +84,14 @@ Update at the end of every work block: what shipped, what's blocked, what's next
     - Stitch v0.1.312 `--dry-run`, with a throwaway key, parsed our config and read both feeds; nothing was signed or sent
 - **Totals:** 378 vitest unit tests passing (1 skipped); tsc clean.
 
+**Desk set up later the same day (founder sent 40 USDT; gas from ops):**
+- **Inventory, onchain:** 20 USDT, 16,115.43 wARS (2 × 5 USDT on Uniswap) and 50.55 wBRL (2 × 5 USDT), all txs tagged. Bounded Permit2 approvals: 40 USDT, 32,000 wARS, 100 wBRL.
+- **Gas:** 0.27 CELO from ops; mainnet gas was 202.5 gwei.
+- **Incident, nothing lost:** the first live run stopped before swap 3. A lagging node reported an allowance the previous swap had spent, so the approve was skipped and the swap failed simulation (`STF`) and was never sent. Fixed in `executeRoute`: allowance reads must be at or after the last confirmed block. A test reproduces the lag.
+- **Textile:** registered as maker `stitch-42220-bcb8b7dc` with `pnpm desk:stitch connect`. The confirmation link went to the founder's email. The credential is kept in `.arbolito/stitch/` (gitignored).
+
 **Blocked on the founder:**
-- **Desk funding:** proposed $40 USDT + $20 wARS + $20 wBRL in `0xBCB8…EdbE`.
-- **Textile registration:** `stitch connect` plus email verification.
+- Click Textile's confirmation link; then we re-run connect to take the corridor seats.
 - **Hosting:** a Railway service for the feed and Stitch.
 - **Organisers:** ask whether our app's users filling against our desk counts as self-trading.
 

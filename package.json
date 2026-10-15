@@ -27,7 +27,8 @@
     "grow:oracle": "node scripts/run.mjs grow-oracle",
     "desk:feed": "node scripts/run.mjs desk-feed",
     "desk:stitch-config": "node scripts/run.mjs desk-stitch-config",
-    "desk:fund": "node scripts/run.mjs desk-fund"
+    "desk:fund": "node scripts/run.mjs desk-fund",
+    "desk:stitch": "node scripts/run.mjs desk-stitch"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
