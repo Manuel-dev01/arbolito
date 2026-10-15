@@ -30,6 +30,8 @@ export interface FairNow {
 
 export class DeskLedger {
   private lastSnapshot = 0;
+  /** Fills seen by this process, for the risk officer's window. */
+  private recent: { pair: string; at: number; edgeBps?: number }[] = [];
 
   constructor(
     private db: Db,
@@ -102,6 +104,8 @@ export class DeskLedger {
         .returning({ tx: deskFills.txHash });
       if (rows.length) {
         added++;
+        this.recent.push({ pair: f.pair, at: at.getTime(), edgeBps: fairPx === undefined ? undefined : edgeBps(f.side, f.price, fairPx) });
+        if (this.recent.length > 500) this.recent.shift();
         this.log(`fill ${f.pair} ${f.side} ${f.softAmount} soft for ${f.usdtAmount} USDT @ ${f.price}${fairPx ? ` (fair ${fairPx})` : ""} ${f.txHash}`);
       }
     }
@@ -126,6 +130,11 @@ export class DeskLedger {
       navMicros: nav === undefined ? null : nav.toString(),
     });
     this.lastSnapshot = now;
+  }
+
+  /** Fills seen in the last windowMs, by pair. */
+  recentFills(windowMs: number, now = Date.now()) {
+    return this.recent.filter((f) => now - f.at <= windowMs);
   }
 
   async latestSnapshot() {

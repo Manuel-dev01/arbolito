@@ -20,6 +20,9 @@ importers:
       '@arbolito/desk':
         specifier: workspace:*
         version: link:apps/desk
+      '@arbolito/llm':
+        specifier: workspace:*
+        version: link:packages/llm
       '@arbolito/proof':
         specifier: workspace:*
         version: link:packages/proof
@@ -99,6 +102,9 @@ importers:
       '@arbolito/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@arbolito/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@arbolito/router':
         specifier: workspace:*
         version: link:../../packages/router

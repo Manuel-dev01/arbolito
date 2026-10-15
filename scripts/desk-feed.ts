@@ -9,6 +9,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { loadEnv } from "@arbolito/config";
 import { makePublicClient } from "@arbolito/chain";
 import { getDb } from "@arbolito/db";
+import { createLlmClient } from "@arbolito/llm";
 import { CORRIDORS, DeskLedger, FeedService } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
@@ -33,9 +34,11 @@ if (hasFlag("once")) {
   const log = (l: string) => console.log(`${stamp()} ${l}`);
   // Fills and snapshots go to Postgres when DATABASE_URL is set (Railway); without it, the feed still runs.
   const ledger = address && env.DATABASE_URL ? new DeskLedger(getDb(), client, address, CORRIDORS, log) : undefined;
-  const svc = new FeedService({ client, port: env.DESK_FEED_PORT, deskAddress: address, ledger, log });
+  // The risk officer only runs when explicitly enabled (paid LLM calls, ~every 15 min).
+  const risk = env.DESK_RISK_OFFICER && env.DEEPSEEK_API_KEY ? { llm: createLlmClient(), model: env.RISK_OFFICER_MODEL } : undefined;
+  const svc = new FeedService({ client, port: env.DESK_FEED_PORT, deskAddress: address, ledger, risk, log });
   svc.start().then(
-    () => console.log(`desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}`),
+    () => console.log(`desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}; risk officer ${risk ? "on" : "off"}`),
     (e: Error) => {
       console.error(`failed: ${e.message}`);
       process.exitCode = 1;

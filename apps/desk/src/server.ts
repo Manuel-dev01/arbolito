@@ -15,6 +15,8 @@ import { fairValue } from "./fair";
 import { step, type Decision, type FeedState, type Published } from "./feed";
 import { corridorShares, readBalances, type Balances } from "./inventory";
 import type { DeskLedger, FairNow } from "./ledger";
+import type { LlmClient } from "@arbolito/llm";
+import { reviewRisk, windowStats, type CorridorSignals, type RiskDecision } from "./risk";
 import { observeAll } from "./sources";
 
 export interface FeedServiceOptions {
@@ -26,7 +28,11 @@ export interface FeedServiceOptions {
   log?: (line: string) => void;
   /** Records fills and inventory snapshots (needs deskAddress and a database). */
   ledger?: DeskLedger;
+  /** LLM risk officer: may pause a corridor for 15–120 min, nothing else (risk.ts). */
+  risk?: { llm: LlmClient; model: string; everyMs?: number };
 }
+
+const HOUR = 3_600_000;
 
 interface PairRuntime {
   state: FeedState;
@@ -45,6 +51,11 @@ export class FeedService {
   private lastErrors: string[] = [];
   private balances?: Balances;
   private running = false;
+  /** Last hour of healthy fair samples and breaker holds, per pair (for the risk officer). */
+  private history = new Map<string, { samples: { at: number; fiatPerUsd: number }[]; holds: number[]; dispersionBps?: number; share?: number }>();
+  /** Pauses set by the risk officer: until (ms) and why. */
+  private pauses = new Map<string, { until: number; reason: string }>();
+  private risk: { lastReviewAt?: string; lastError?: string; lastDecisions: RiskDecision[]; reviewing: boolean; nextAt: number } = { lastDecisions: [], reviewing: false, nextAt: 0 };
 
   constructor(private o: FeedServiceOptions) {
     this.corridors = o.corridors ?? CORRIDORS;
@@ -74,7 +85,22 @@ export class FeedService {
       for (const c of this.corridors) {
         const r = this.rt.get(c.pair)!;
         const prevAction = r.decisions.at(-1)?.action;
-        const res = step(c, r.state, fairs.get(c.pair)!, shares.get(c.pair), now);
+        let fair = fairs.get(c.pair)!;
+        const pause = this.pauses.get(c.pair);
+        if (pause && now >= pause.until) this.pauses.delete(c.pair);
+        else if (pause) fair = { ok: false, reason: `risk officer pause: ${pause.reason}`, used: fair.used, dropped: fair.dropped };
+        const res = step(c, r.state, fair, shares.get(c.pair), now);
+        const h = this.history.get(c.pair) ?? { samples: [], holds: [] };
+        const raw = fairs.get(c.pair)!;
+        if (raw.ok) {
+          h.samples.push({ at: now, fiatPerUsd: raw.fiatPerUsd });
+          h.dispersionBps = raw.dispersionBps;
+        }
+        if (res.decision.action === "hold") h.holds.push(now);
+        h.samples = h.samples.filter((x) => now - x.at <= HOUR);
+        h.holds = h.holds.filter((x) => now - x <= HOUR);
+        h.share = shares.get(c.pair);
+        this.history.set(c.pair, h);
         r.state = res.state;
         r.served = res.served;
         r.decisions.push(res.decision);
@@ -94,11 +120,57 @@ export class FeedService {
           errors.push(`ledger: ${(e as Error).message}`);
         }
       }
+      if (this.o.risk && now >= this.risk.nextAt && !this.risk.reviewing) {
+        this.risk.nextAt = now + (this.o.risk.everyMs ?? 15 * 60_000);
+        void this.reviewRisk(now);
+      }
       this.lastErrors = errors;
       if (errors.length) log(`sources: ${errors.join("; ")}`);
       this.lastTickAt = new Date(now).toISOString();
     } finally {
       this.running = false;
+    }
+  }
+
+  /** The signals the risk officer sees, per corridor. */
+  riskSignals(now = Date.now()): CorridorSignals[] {
+    const fills = this.o.ledger?.recentFills(HOUR, now) ?? [];
+    return this.corridors.map((c) => {
+      const h = this.history.get(c.pair);
+      const mine = fills.filter((f) => f.pair === c.pair);
+      const edges = mine.map((f) => f.edgeBps).filter((e): e is number => e !== undefined);
+      const pause = this.pauses.get(c.pair);
+      return {
+        pair: c.pair,
+        fairNow: h?.samples.at(-1)?.fiatPerUsd,
+        ...windowStats(h?.samples ?? []),
+        dispersionBps: h?.dispersionBps,
+        holds: h?.holds.length ?? 0,
+        share: h?.share === undefined ? undefined : Math.round(h.share * 1000) / 1000,
+        fills: mine.length,
+        avgEdgeBps: edges.length ? Math.round((edges.reduce((a, b) => a + b, 0) / edges.length) * 100) / 100 : undefined,
+        paused: pause && now < pause.until ? pause.reason : undefined,
+      };
+    });
+  }
+
+  /** One risk review in the background; applies only bounded pauses (and lifts its own). */
+  async reviewRisk(now = Date.now()): Promise<void> {
+    if (!this.o.risk) return;
+    this.risk.reviewing = true;
+    try {
+      const { decisions, error } = await reviewRisk(this.o.risk.llm, this.o.risk.model, this.riskSignals(now), this.corridors);
+      this.risk.lastReviewAt = new Date(now).toISOString();
+      this.risk.lastError = error;
+      this.risk.lastDecisions = decisions;
+      for (const d of decisions) {
+        if (d.action === "pause") this.pauses.set(d.pair, { until: now + d.minutes * 60_000, reason: d.reason });
+        else this.pauses.delete(d.pair); // "normal" lifts the officer's own pause; the breaker is separate
+        if (d.action === "pause") this.o.log?.(`risk officer: pause ${d.pair} for ${d.minutes} min (${d.reason})`);
+      }
+      if (error) this.o.log?.(`risk officer: no decision (${error})`);
+    } finally {
+      this.risk.reviewing = false;
     }
   }
 
@@ -110,6 +182,9 @@ export class FeedService {
     return {
       lastTickAt: this.lastTickAt ?? null,
       sourceErrors: this.lastErrors,
+      riskOfficer: this.o.risk
+        ? { enabled: true, lastReviewAt: this.risk.lastReviewAt ?? null, lastError: this.risk.lastError ?? null, decisions: this.risk.lastDecisions, pauses: Object.fromEntries([...this.pauses].map(([k, v]) => [k, { until: new Date(v.until).toISOString(), reason: v.reason }])) }
+        : { enabled: false },
       corridors: this.corridors.map((c) => {
         const r = this.rt.get(c.pair)!;
         return {

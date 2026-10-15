@@ -5,6 +5,7 @@ export * from "./feed";
 export * from "./fills";
 export * from "./inventory";
 export * from "./ledger";
+export * from "./risk";
 export * from "./server";
 export * from "./skew";
 export * from "./sources";

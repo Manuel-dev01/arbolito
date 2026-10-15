@@ -42,6 +42,7 @@
     "@arbolito/config": "workspace:*",
     "@arbolito/db": "workspace:*",
     "@arbolito/desk": "workspace:*",
+    "@arbolito/llm": "workspace:*",
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
     "viem": "^2.57.3",
