@@ -403,7 +403,7 @@ export function ProofSkeleton({ lang }: { lang: Lang }) {
 
 // ─────────────────────────────────────────────────────────────── 04 en vivo
 
-export function Numbers({ lang, records }: { lang: Lang; records: ReceiptRecord[] }) {
+export function Numbers({ lang, records, deskFills }: { lang: Lang; records: ReceiptRecord[]; deskFills?: number }) {
   const t = messages(lang).landing.numeros;
   const locale = LOCALE[lang];
   const m = computeMetrics(records);
@@ -423,7 +423,9 @@ export function Numbers({ lang, records }: { lang: Lang; records: ReceiptRecord[
     }),
     { k: t.volume, v: formatMoney(m.totalUsdMicros, 6, "USD", locale), proof: t.pVolume, href: withLang("/metrics#by-token", lang) },
     { k: t.receipts, v: String(m.receipts.length), proof: t.pVerify, href: latest ? withLang(`/r/${latest.id}#verificacion`, lang) : withLang("/metrics#receipts", lang) },
-    { k: t.desk, v: t.soon, proof: t.pDesk, href: withLang("/desk", lang), soon: true },
+    deskFills === undefined
+      ? { k: t.desk, v: t.soon, proof: t.pDesk, href: withLang("/desk", lang), soon: true }
+      : { k: t.deskFills, v: String(deskFills), proof: t.pDesk, href: withLang("/desk", lang) },
     { k: t.api, v: t.soon, proof: t.pApi, href: withLang("/metrics#soon", lang), soon: true },
   ];
   return (

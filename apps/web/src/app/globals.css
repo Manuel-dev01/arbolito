@@ -1897,6 +1897,54 @@ body:has(.pub) {
     font-size: 15px;
     color: var(--muted);
   }
+  & .desk-wide {
+    grid-column: 1 / -1;
+  }
+  & .desk-corridor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--hairline);
+  }
+  & .desk-corridor-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 17px;
+  }
+  & .desk-kv {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  & .desk-kv > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  & .desk-kv > div:last-child {
+    border-bottom: 0;
+  }
+  & .desk-kv dt {
+    color: var(--muted);
+  }
+  & .desk-kv dd {
+    margin: 0;
+    text-align: right;
+  }
+  & .desk-list {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
   & .empty-state {
     display: flex;
     gap: 12px;

@@ -46,10 +46,10 @@ describe("public site copy", () => {
     }
   });
 
-  it("names the MiniPay and Telegram CTAs and marks the desk as coming soon", () => {
+  it("names the MiniPay and Telegram CTAs and marks the desk as live", () => {
     expect(MESSAGES.es.landing.hero.ctaMiniPay).toBe("Abrir en MiniPay");
     expect(MESSAGES.es.landing.hero.ctaTelegram).toBe("Abrir en Telegram");
-    expect(MESSAGES.es.desk.kicker).toBe("Arbolito Desk · pronto");
+    expect(MESSAGES.es.desk.kicker).toBe("Arbolito Desk · en vivo");
     expect(MESSAGES.es.landing.hero.titleA + MESSAGES.es.landing.hero.titleB + MESSAGES.es.landing.hero.titleC).toBe("El cambista que vive en tu chat.");
   });
 

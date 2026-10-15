@@ -5,6 +5,7 @@ import { CalcBody, CalcSection, CalcSkeleton, Faq, Hero, LiveLine, LiveQuote, Re
 import { Shell } from "../components/public/shell";
 import { getLang, messages } from "../i18n/messages";
 import { listReceiptsCached } from "../lib/cached";
+import { loadDeskData } from "../lib/desk";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
 export default async function Home({ searchParams }: { searchParams: SearchParams }) {
   const lang = getLang((await searchParams).lang);
   const t = messages(lang).landing;
-  const { records } = await listReceiptsCached();
+  const [{ records }, desk] = await Promise.all([listReceiptsCached(), loadDeskData()]);
   const showcase = pickShowcase(records);
 
   return (
@@ -63,7 +64,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           )
         }
       />
-      <Numbers lang={lang} records={records} />
+      <Numbers lang={lang} records={records} deskFills={desk.db ? desk.stats.fills : undefined} />
       <Trust lang={lang} />
       <Faq lang={lang} />
     </Shell>

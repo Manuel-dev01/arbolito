@@ -25,6 +25,7 @@ export const envSchema = z.object({
   DESK_MAX_INVENTORY_USD: z.coerce.number().positive().default(500),
   DESK_ADDRESS: opt(address),
   DESK_FEED_PORT: z.coerce.number().int().positive().default(8790),
+  DESK_FEED_PUBLIC_URL: z.string().url().default("https://desk-feed-production.up.railway.app"),
   BUILD_MAX_ACTION_USD: z.coerce.number().positive().default(5),
   BUILD_MAX_DAILY_USD: z.coerce.number().positive().default(25),
 
