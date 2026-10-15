@@ -12,8 +12,8 @@
  * We bid wider than we ask and aim to hold less wARS (targetShare 0.3). These are starting
  * points to tune once live RFQ flow is visible.
  *
- * Caps are the proposed starting inventory ($40 USDT shared, ~$20 per soft side). They take
- * effect only after the founder approves funding the desk wallet; until then the desk is dry-run.
+ * Caps are the minimal starting inventory agreed 2026-10-15: US$ 10 per side per corridor
+ * (40 USDT funded; half swapped into wARS and wBRL). Larger caps need the founder's approval.
  */
 import { TOKENS } from "@arbolito/config";
 
@@ -76,8 +76,8 @@ export const CORRIDORS: readonly Corridor[] = [
     fiat: "ARS",
     buyOffsetBps: 14, // covers ~a day of peso crawl on what we buy
     sellOffsetBps: 5,
-    buyCapUsdt: usdt(20),
-    sellCapSoft: wad(32_000), // ≈ US$ 20 at ~1,600 ARS/USD
+    buyCapUsdt: usdt(10),
+    sellCapSoft: wad(16_000), // ≈ US$ 10 at ~1,600 ARS/USD
     sources: [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
       // dolarapi refreshes in Argentine market hours only; overnight it is ~14 h old. The peso
@@ -98,8 +98,8 @@ export const CORRIDORS: readonly Corridor[] = [
     fiat: "BRL",
     buyOffsetBps: 6,
     sellOffsetBps: 6,
-    buyCapUsdt: usdt(20),
-    sellCapSoft: wad(100), // ≈ US$ 20 at ~5.05 BRL/USD
+    buyCapUsdt: usdt(10),
+    sellCapSoft: wad(50), // ≈ US$ 10 at ~5.05 BRL/USD
     sources: [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
       { id: "dolar_official_cross", weight: 1, maxAgeMs: 26 * HOUR },
