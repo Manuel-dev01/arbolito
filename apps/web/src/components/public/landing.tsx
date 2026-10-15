@@ -220,16 +220,8 @@ export function Steps({ lang, showcase }: { lang: Lang; showcase?: ReceiptRecord
             <span className="step-n accent-pink">3</span>
             <h3>{t.s3.t}</h3>
             <p className="muted">{t.s3.d}</p>
-            <div className="sheet-mock" aria-hidden="true">
-              <span className="sheet-grip" />
-              <span className="sheet-title">{t.s3Sheet}</span>
-              {v && (
-                <span className="sheet-line mono">
-                  {t.s3Line(money(v.amountIn, v.tokenIn.decimals, v.tokenIn.fiat, locale), money(v.amountOut, v.tokenOut.decimals, v.tokenOut.fiat, locale))}
-                </span>
-              )}
-              <span className="sheet-btn">{t.s3Confirm}</span>
-              <span className="chip-lime">{t.s3Chip}</span>
+            <div className="illo illo-step">
+              <img src="/landing/ref-exchange.jpg" alt={t.s3Alt} width={1199} height={799} loading="lazy" decoding="async" />
             </div>
           </li>
         </ol>
@@ -472,53 +464,28 @@ export function Trust({ lang }: { lang: Lang }) {
           <Kicker>{t.kicker}</Kicker>
           <Display a={t.titleA} b={t.titleB} />
         </div>
-        <div className="trust-grid">
-          <ol className="trust-list">
-            {t.items.map((s, i) => (
-              <li key={s.t}>
-                <span className="trust-n mono">{String(i + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3>{s.t}</h3>
-                  <p className="muted">{s.d}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <div className="limits-wrap">
-            <div className="card glass limits" aria-hidden="true">
-              <div className="limits-head">
-                <b>{t.limitsTitle}</b>
+        <ol className="trust-list">
+          {t.items.map((s, i) => (
+            <li key={s.t}>
+              <span className="trust-n mono">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{s.t}</h3>
+                <p className="muted">{s.d}</p>
               </div>
-              <div className="limits-row">
-                <span className="muted">{t.perOp}</span>
-                <b>US$ 25</b>
-              </div>
-              <div className="limits-row">
-                <span className="muted">{t.perDay}</span>
-                <b>US$ 100</b>
-              </div>
-              <div className="limits-row">
-                <span className="muted">{t.state}</span>
-                <span className="limits-state">
-                  <span className="dot-live" />
-                  {t.active}
-                </span>
-              </div>
-              <div className="limits-foot">
-                <span className="btn btn-secondary btn-sm">{t.pause}</span>
-                <span className="tag-soft mono">{t.limitsExample}</span>
-              </div>
-            </div>
-            <svg className="spin-badge" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-              <circle cx="100" cy="100" r="96" />
-              <defs>
-                <path id="lpc" d="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0" />
-              </defs>
-              <text>
-                <textPath href="#lpc">{t.badge}</textPath>
-              </text>
-            </svg>
-          </div>
+            </li>
+          ))}
+        </ol>
+        <div className="illo illo-trust">
+          <img src="/landing/ref-counter.png" alt={t.illoAlt} width={583} height={578} loading="lazy" decoding="async" />
+          <svg className="spin-badge" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <circle cx="100" cy="100" r="96" />
+            <defs>
+              <path id="lpc" d="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0" />
+            </defs>
+            <text>
+              <textPath href="#lpc">{t.badge}</textPath>
+            </text>
+          </svg>
         </div>
       </div>
     </section>

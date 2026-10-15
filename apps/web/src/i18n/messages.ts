@@ -86,6 +86,7 @@ const es = {
       s3Line: (a: string, b: string) => `${a} → ${b}`,
       s3Confirm: "Confirmar",
       s3Chip: "Si falla, no se mueve plata.",
+      s3Alt: "Dos personas intercambiando monedas",
     },
     calc: {
       kicker: "02 — Cuánto ahorrás",
@@ -181,6 +182,7 @@ const es = {
       ],
       badge: "TU PLATA · TUS LÍMITES · TU PLATA · TUS LÍMITES · ",
       limitsTitle: "Tus límites",
+      illoAlt: "Una cambista contando billetes",
       limitsExample: "Ejemplo",
       perOp: "Por operación",
       perDay: "Por día",
@@ -469,6 +471,7 @@ const pt: Messages = {
       s3Line: (a, b) => `${a} → ${b}`,
       s3Confirm: "Confirmar",
       s3Chip: "Se falhar, nada se move.",
+      s3Alt: "Duas pessoas trocando moedas",
     },
     calc: {
       kicker: "02 — Quanto você economiza",
@@ -564,6 +567,7 @@ const pt: Messages = {
       ],
       badge: "SEU DINHEIRO · SEUS LIMITES · SEU DINHEIRO · SEUS LIMITES · ",
       limitsTitle: "Seus limites",
+      illoAlt: "Uma cambista contando notas",
       limitsExample: "Exemplo",
       perOp: "Por operação",
       perDay: "Por dia",
@@ -850,6 +854,7 @@ const en: Messages = {
       s3Line: (a, b) => `${a} → ${b}`,
       s3Confirm: "Confirm",
       s3Chip: "If it fails, no money moves.",
+      s3Alt: "Two people exchanging coins",
     },
     calc: {
       kicker: "02 — What you save",
@@ -945,6 +950,7 @@ const en: Messages = {
       ],
       badge: "YOUR MONEY · YOUR LIMITS · YOUR MONEY · YOUR LIMITS · ",
       limitsTitle: "Your limits",
+      illoAlt: "A money changer counting notes",
       limitsExample: "Example",
       perOp: "Per trade",
       perDay: "Per day",
