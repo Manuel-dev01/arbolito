@@ -1,0 +1,12 @@
+# Arbolito Desk pricing feed (apps/desk) that Stitch quotes from. Railway service "desk-feed".
+# Reads only (public prices, the desk wallet's balances via DESK_ADDRESS); holds no key.
+# Stitch reaches it over Railway's private network at http://desk-feed.railway.internal:8790.
+FROM node:22-slim
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NODE_ENV=production
+RUN npm install -g pnpm@11.1.2 && apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY . .
+# The root package (scripts/, tsx) and the workspace packages the feed imports; lockfile must match.
+RUN pnpm install --frozen-lockfile --filter "arbolito..." --prod=false
+USER node
+CMD ["pnpm", "exec", "tsx", "scripts/desk-feed.ts"]
