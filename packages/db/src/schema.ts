@@ -188,3 +188,60 @@ export const linkCodes = pgTable(
   },
   (t) => [index("link_codes_code_idx").on(t.code, t.expiresAt)],
 );
+
+// ── Arbolito Desk (apps/desk): fills, inventory snapshots, indexer cursor ──────────────
+
+/** A taker's settlement that moved the desk wallet's tokens: one row per transaction. */
+export const deskFills = pgTable(
+  "desk_fills",
+  {
+    txHash: text().primaryKey(),
+    blockNumber: bigint({ mode: "bigint" }).notNull(),
+    /** Block timestamp. */
+    at: timestamp({ withTimezone: true }).notNull(),
+    /** wars-usdt | wbrl-usdt */
+    pair: text().notNull(),
+    /** From the desk's side: buy = paid USDT for the soft asset; sell = sold the soft asset for USDT. */
+    side: text().notNull(),
+    softAmount: atomic().notNull(),
+    usdtAmount: atomic().notNull(),
+    /** Executed USDT per soft unit (decimal string). */
+    price: text().notNull(),
+    /** The feed's fair USDT per soft unit when the fill was seen; null when backfilled later. */
+    fairPrice: text(),
+    /** Price vs fair from the desk's side (positive = earned spread), bps. */
+    edgeBps: numeric({ precision: 12, scale: 2 }),
+    /** tx.from (the taker or its relayer) and tx.to (the settlement contract). */
+    taker: text().notNull(),
+    settlement: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("desk_fills_at_idx").on(t.at)],
+);
+
+/** Desk inventory and NAV (at the feed's fair prices) every few minutes. */
+export const deskSnapshots = pgTable(
+  "desk_snapshots",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    at: timestamp({ withTimezone: true }).notNull(),
+    blockNumber: bigint({ mode: "bigint" }).notNull(),
+    usdt: atomic().notNull(),
+    wars: atomic().notNull(),
+    wbrl: atomic().notNull(),
+    celo: atomic().notNull(),
+    /** Fair USDT per soft unit at the time (decimal strings); null when the feed was holding. */
+    fairWars: text(),
+    fairWbrl: text(),
+    /** USDT + soft at fair, micro-USD (CELO gas float excluded). */
+    navMicros: atomic(),
+  },
+  (t) => [index("desk_snapshots_at_idx").on(t.at)],
+);
+
+/** Small key/value state for the desk (e.g. the fills indexer's last scanned block). */
+export const deskState = pgTable("desk_state", {
+  key: text().primaryKey(),
+  value: jsonb().notNull(),
+  updatedAt: updatedAt(),
+});

@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "@arbolito/config": "workspace:*",
+    "@arbolito/db": "workspace:*",
     "@arbolito/router": "workspace:*",
+    "drizzle-orm": "^0.45.4",
     "viem": "^2.57.3",
     "zod": "^4.6.5"
   }

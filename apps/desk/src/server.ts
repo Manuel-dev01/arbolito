@@ -14,6 +14,7 @@ import { CORRIDORS, validateCorridor, type Corridor } from "./corridors";
 import { fairValue } from "./fair";
 import { step, type Decision, type FeedState, type Published } from "./feed";
 import { corridorShares, readBalances, type Balances } from "./inventory";
+import type { DeskLedger, FairNow } from "./ledger";
 import { observeAll } from "./sources";
 
 export interface FeedServiceOptions {
@@ -23,6 +24,8 @@ export interface FeedServiceOptions {
   corridors?: readonly Corridor[];
   tickMs?: number;
   log?: (line: string) => void;
+  /** Records fills and inventory snapshots (needs deskAddress and a database). */
+  ledger?: DeskLedger;
 }
 
 interface PairRuntime {
@@ -79,6 +82,17 @@ export class FeedService {
         const d = res.decision;
         if (d.action !== prevAction || d.action === "hold")
           log(`${c.pair} ${d.action}${d.reason ? ` (${d.reason})` : ""} fair=${d.fiatPerUsd?.toFixed(4) ?? "-"} skew=${d.skewBps ?? "-"}bps used=${d.used.join(",")}`);
+      }
+      if (this.o.ledger) {
+        // The ledger never blocks or breaks the feed: its errors are reported, not thrown.
+        const fairNow: FairNow = {};
+        for (const [pair, f] of fiat) fairNow[pair] = 1 / f;
+        try {
+          await this.o.ledger.indexFills(fairNow, now);
+          if (this.balances) await this.o.ledger.snapshot(this.balances, fairNow, now);
+        } catch (e) {
+          errors.push(`ledger: ${(e as Error).message}`);
+        }
       }
       this.lastErrors = errors;
       if (errors.length) log(`sources: ${errors.join("; ")}`);

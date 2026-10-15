@@ -8,7 +8,8 @@ import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { loadEnv } from "@arbolito/config";
 import { makePublicClient } from "@arbolito/chain";
-import { FeedService } from "@arbolito/desk";
+import { getDb } from "@arbolito/db";
+import { CORRIDORS, DeskLedger, FeedService } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -28,9 +29,13 @@ if (hasFlag("once")) {
 } else {
   const env = loadEnv();
   const address = deskAddress();
-  const svc = new FeedService({ client: makePublicClient(), port: env.DESK_FEED_PORT, deskAddress: address, log: (l) => console.log(`${stamp()} ${l}`) });
+  const client = makePublicClient();
+  const log = (l: string) => console.log(`${stamp()} ${l}`);
+  // Fills and snapshots go to Postgres when DATABASE_URL is set (Railway); without it, the feed still runs.
+  const ledger = address && env.DATABASE_URL ? new DeskLedger(getDb(), client, address, CORRIDORS, log) : undefined;
+  const svc = new FeedService({ client, port: env.DESK_FEED_PORT, deskAddress: address, ledger, log });
   svc.start().then(
-    () => console.log(`desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}`),
+    () => console.log(`desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}`),
     (e: Error) => {
       console.error(`failed: ${e.message}`);
       process.exitCode = 1;

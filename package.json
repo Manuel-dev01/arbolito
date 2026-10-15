@@ -40,6 +40,7 @@
   "dependencies": {
     "@arbolito/chain": "workspace:*",
     "@arbolito/config": "workspace:*",
+    "@arbolito/db": "workspace:*",
     "@arbolito/desk": "workspace:*",
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",

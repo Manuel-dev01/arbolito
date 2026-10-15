@@ -15,6 +15,13 @@
       "when": 1791738825047,
       "tag": "0001_black_molly_hayes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792085522049,
+      "tag": "0002_desk",
+      "breakpoints": true
     }
   ]
 }
