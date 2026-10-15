@@ -71,6 +71,12 @@ export interface ExecuteRouteParams {
   feeCurrency?: string;
   /** ERC-8021 code override (sendGuarded defaults to ATTRIBUTION_CODE). */
   attributionCode?: string;
+  /**
+   * Allowance reads are trusted only at or after this block (e.g. the last receipt of a previous
+   * route). A lagging RPC node once reported an allowance the previous swap had already spent,
+   * so the approve was skipped and the swap failed simulation (STF).
+   */
+  minBlock?: bigint;
   /** A firm quote must have at least this long left before its swap is broadcast. Default 15s. */
   expiryMarginMs?: number;
   onProgress?: (p: ExecutionProgress) => void;
@@ -209,6 +215,8 @@ export async function executeRoute(p: ExecuteRouteParams): Promise<ExecuteRouteR
 
   const legs: ExecutedLeg[] = [];
   const txs: ExecutionTx[] = [];
+  /** Newest block this flow has seen confirmed; allowance reads must be at least this fresh. */
+  let freshBlock = p.minBlock ?? 0n;
   const warnings: string[] = [];
   let valueCharged = false; // caps see the route's USD value once, on the first value-moving send
   let amountIn = route.amountIn;
@@ -240,6 +248,7 @@ export async function executeRoute(p: ExecuteRouteParams): Promise<ExecuteRouteR
         ledger: p.ledger,
       });
       if (valueMoving) valueCharged = true;
+      if (sent.receipt.blockNumber > freshBlock) freshBlock = sent.receipt.blockNumber;
       txs.push({ hash: sent.hash, label: call.label, leg, status: "confirmed" });
       return sent;
     } catch (err) {
@@ -266,8 +275,23 @@ export async function executeRoute(p: ExecuteRouteParams): Promise<ExecuteRouteR
     }
   };
 
-  const allowance = (token: Address, spender: Address) =>
-    p.publicClient.readContract({ address: token, abi: erc20Abi, functionName: "allowance", args: [taker, spender] });
+  /**
+   * The allowance as of a block at or after everything this flow has confirmed. If no fresh read
+   * can be had, report 0 so the caller approves again: an exact approval is harmless; a skipped
+   * one fails the swap.
+   */
+  const allowance = async (token: Address, spender: Address): Promise<bigint> => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const head = await p.publicClient.getBlockNumber({ cacheTime: 0 });
+        if (head >= freshBlock) return await p.publicClient.readContract({ address: token, abi: erc20Abi, functionName: "allowance", args: [taker, spender], blockNumber: head });
+      } catch {
+        // a node without that block yet; try again
+      }
+      await new Promise((r) => setTimeout(r, 1_000));
+    }
+    return 0n;
+  };
 
   const runUniswap = async (legIndexes: number[]): Promise<ExecutedLeg> => {
     const first = legIndexes[0]!;

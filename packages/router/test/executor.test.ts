@@ -93,6 +93,8 @@ interface ChainOpts {
   /** Return true to make the receipt wait time out (tx unknown onchain). */
   hang?: (tx: SentTx) => boolean;
   clientVersion?: string;
+  /** Blocks the RPC lags behind the chain head on each getBlockNumber call (a lagging node). */
+  lag?: () => bigint;
 }
 
 function fakeChain(o: ChainOpts = {}) {
@@ -100,7 +102,18 @@ function fakeChain(o: ChainOpts = {}) {
   const receipts = new Map<Hex, { status: "success" | "reverted"; logs: unknown[]; blockNumber: bigint; transactionHash: Hex }>();
   const inputs = new Map<Hex, Hex>();
   const allowances = new Map<string, bigint>();
+  /** Allowance history, so a read at an older block sees the older value (like a real node). */
+  const history: { block: bigint; key: string; value: bigint }[] = [];
   const akey = (token: Address, spender: Address) => `${token.toLowerCase()}-${spender.toLowerCase()}`;
+  const head = () => 100n + BigInt(sent.length);
+  const setAllowance = (key: string, value: bigint, block = head()) => {
+    allowances.set(key, value);
+    history.push({ block, key, value });
+  };
+  const allowanceAt = (key: string, block: bigint) => {
+    const hit = history.filter((h) => h.key === key && h.block <= block).at(-1);
+    return hit ? hit.value : (allowances.has(key) && !history.some((h) => h.key === key) ? allowances.get(key)! : 0n);
+  };
 
   const execute = (tx: SentTx) => {
     const logs: unknown[] = [];
@@ -111,6 +124,13 @@ function fakeChain(o: ChainOpts = {}) {
       const tokenOut = functionName === "exactInputSingle" ? prm.tokenOut! : (`0x${prm.path!.slice(-40)}` as Address);
       const out = Object.entries(o.uniOut ?? {}).find(([t]) => t.toLowerCase() === tokenOut.toLowerCase())?.[1];
       if (out === undefined || out < prm.amountOutMinimum) return { status: "reverted" as const, logs };
+      // Like a real ERC-20: the router's transferFrom spends the allowance (STF when short).
+      const inPrm = args[0] as { tokenIn?: Address; path?: Hex; amountIn: bigint };
+      const tokenIn = functionName === "exactInputSingle" ? inPrm.tokenIn! : (`0x${inPrm.path!.slice(2, 42)}` as Address);
+      const k = akey(tokenIn, ROUTER);
+      const have = allowances.get(k) ?? 0n;
+      if (have < inPrm.amountIn) return { status: "reverted" as const, logs };
+      setAllowance(k, have - inPrm.amountIn);
       logs.push(transferLog(tokenOut, ROUTER, prm.recipient, out));
     } else if (tx.to.toLowerCase() === REACTOR.toLowerCase()) {
       if (!o.reactorFill) return { status: "reverted" as const, logs };
@@ -118,7 +138,7 @@ function fakeChain(o: ChainOpts = {}) {
     } else {
       // An ERC-20 approve.
       const { args } = decodeFunctionData({ abi: erc20Abi, data: tx.data });
-      allowances.set(akey(tx.to, args[0] as Address), args[1] as bigint);
+      setAllowance(akey(tx.to, args[0] as Address), args[1] as bigint);
     }
     return { status: "success" as const, logs };
   };
@@ -127,9 +147,10 @@ function fakeChain(o: ChainOpts = {}) {
     getChainId: async () => 42220,
     request: async () => o.clientVersion ?? "anvil/v1.7.1",
     estimateGas: async () => 100_000n,
-    readContract: async ({ functionName, address, args }: { functionName: string; address: Address; args: [Address, Address] }) => {
+    getBlockNumber: async () => head() - (o.lag?.() ?? 0n),
+    readContract: async ({ functionName, address, args, blockNumber }: { functionName: string; address: Address; args: [Address, Address]; blockNumber?: bigint }) => {
       if (functionName !== "allowance") throw new Error(`unexpected read ${functionName}`);
-      return allowances.get(akey(address, args[1])) ?? 0n;
+      return blockNumber === undefined ? (allowances.get(akey(address, args[1])) ?? 0n) : allowanceAt(akey(address, args[1]), blockNumber);
     },
     waitForTransactionReceipt: async ({ hash }: { hash: Hex }) => {
       const r = receipts.get(hash);
@@ -159,7 +180,7 @@ function fakeChain(o: ChainOpts = {}) {
     },
   } as unknown as WalletClient;
 
-  return { publicClient, walletClient, sent, allowances };
+  return { publicClient, walletClient, sent, allowances, setAllowance, akey };
 }
 
 // ---------- fake Textile ----------
@@ -278,10 +299,25 @@ describe("executeRoute", () => {
 
   it("skips the approve when the allowance already covers the swap", async () => {
     const chain = fakeChain({ uniOut: { [USDT.address]: USDT_PLANNED } });
-    await executeRoute(params(route([uniBrlUsdt()]), chain));
-    const again = await executeRoute(params(route([uniBrlUsdt()]), chain));
-    expect(again.status).toBe("complete");
-    expect(chain.sent.map((t) => t.to)).toEqual([wBRL.address, ROUTER, ROUTER]);
+    chain.setAllowance(chain.akey(wBRL.address, ROUTER), 10n ** 30n, 0n);
+    const r = await executeRoute(params(route([uniBrlUsdt()]), chain));
+    expect(r.status).toBe("complete");
+    expect(chain.sent.map((t) => t.to)).toEqual([ROUTER]);
+  });
+
+  it("never trusts a lagging node's allowance: re-approves what the previous swap spent", async () => {
+    // Mainnet 2026-10-15: a node behind the head reported the allowance swap #2 had already used,
+    // the approve was skipped and swap #3 failed simulation (STF). With minBlock, the read waits
+    // for a node at or past the last confirmed block, sees 0, and approves.
+    let lagging = 3;
+    const chain = fakeChain({ uniOut: { [USDT.address]: USDT_PLANNED }, lag: () => (lagging-- > 0 ? 2n : 0n) });
+    const first = await executeRoute(params(route([uniBrlUsdt()]), chain));
+    expect(first.status).toBe("complete");
+    lagging = 3;
+    const lastBlock = 100n + BigInt(chain.sent.length);
+    const second = await executeRoute({ ...params(route([uniBrlUsdt()]), chain), minBlock: lastBlock });
+    expect(second.status).toBe("complete");
+    expect(chain.sent.map((t) => t.to)).toEqual([wBRL.address, ROUTER, wBRL.address, ROUTER]);
   });
 
   it("Uniswap → Textile: firm-quotes the actual leg-1 output, approves takerPays, sends the swap, submits the hash", async () => {
