@@ -476,7 +476,7 @@ export function Trust({ lang }: { lang: Lang }) {
           ))}
         </ol>
         <div className="illo illo-trust">
-          <img src="/landing/ref-counter.png" alt={t.illoAlt} width={583} height={578} loading="lazy" decoding="async" />
+          <img src="/landing/ref-counter.png" alt={t.illoAlt} width={573} height={568} loading="lazy" decoding="async" />
           <svg className="spin-badge" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
             <circle cx="100" cy="100" r="96" />
             <defs>
