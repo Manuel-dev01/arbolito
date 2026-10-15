@@ -105,6 +105,14 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - Permit2 0x000000000022D473030F116dDEE9F6B43aC78BA3
   - OperatorVaultFactory 0x88104decA449C797632AfdcA77A3140b24cD844A
   - VaultOrderExecutor 0x01b006d5c687bde182aa36F542f1f014144742e2
+- **Organisers, 2026-10-15 (swap venues for wFIAT on Celo):**
+  - Textile FX is the official swap partner from Ripio's Celo launch: app.textilecredit.com; the v2 RFQ API needs a key; address book at docs.textilecredit.com/protocol/address-book.html.
+  - Uniswap v3 wARS/USDT and wBRL/USDT pools (0.01%) are public but small: check the quote before larger swaps.
+  - Ripio ramps (ramp.ripio.com, bridge.ripio.com) go between local fiat and wFIAT.
+- **Maker key and vaults (Textile team, 2026-10-15):**
+  - A maker key comes from running Stitch and adding a corridor; the wizard's last step connects to Textile and verifies an email address.
+  - Vaults deploy at https://app.textilecredit.com/s/vaults/deploy. New vaults don't appear on /s/vaults by default.
+  - Stitch can connect a vault in the corridor's "Experimental" section; vaults are still beta and the flow is rough.
 - Fillers: **Stitch** (open source; macOS/Windows/Linux).
   - `stitch.toml`: buy/sell offset bps, liquidity per side (`"max"` or a fixed cap), `limit_taker_enabled`.
   - `stitch approve` sets Permit2 allowances.
@@ -132,6 +140,7 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - **Buyer (our agent paying others):** put our code in the payment payload under `extensions["builder-code"].info.s` (service), using `BuilderCodeClientExtension`.
   - **Limits:** v2 payments only, since v1 (including buy) has no extensions field. USDC, USDT and USA₮ come first; wARS, wBRL and wCOP (Permit2 path) follow later.
   - **Crediting meanwhile:** the gateway attributes settlements to the API key that made them, and **judges credit by `payTo` address**.
+  - **Organisers, 2026-10-15:** "For all x402 txs, we need your payTo wallet address. Attribution tags are not yet supported by x402." **The submission must list our FX API's `payTo` address.**
 
 ## buy (x402 marketplace)
 - Catalog (free): `https://gateway.usebuy.ai/v1/catalog`
@@ -159,6 +168,7 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - #4: `buy curl` exits 0 on non-x402 responses; old demo providers are suspended.
   - #5: the gateway returns x402Version 1 while the facilitator uses 2.
 - Get listed: open the "List your service" issue form in celo-org/buy-skill (curated).
+- **Judging, per organisers 2026-10-15:** the focus is a good agent that uses the services. **The submission must state which buy services we use and include proof of payments** (tx hashes or receipts). No attribution tag is needed for buy calls.
 
 ## ERC-4337 / thirdweb smart accounts (Celo mainnet, verified 2026-10-09)
 | Contract | Address | Notes |
