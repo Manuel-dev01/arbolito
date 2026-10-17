@@ -15,10 +15,14 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 const TZ = "America/Argentina/Buenos_Aires";
-const PAIRS: Record<string, { soft: "wARS" | "wBRL"; fiat: "ARS" | "BRL" }> = {
+const PAIRS: Record<string, { soft: "wARS" | "wBRL" | "USDC" | "USAT"; fiat: "ARS" | "BRL" | "USD" }> = {
   "wars-usdt": { soft: "wARS", fiat: "ARS" },
   "wbrl-usdt": { soft: "wBRL", fiat: "BRL" },
+  "usdc-usdt": { soft: "USDC", fiat: "USD" },
+  "usat-usdt": { soft: "USAT", fiat: "USD" },
 };
+/** A stable pair reads as "1 USDC = 1,0013 USDT"; a wFIAT pair as "ARS 1.613,94" per US$. */
+const usdtPer = (soft: string, px: number, locale: Locale) => `1 ${soft} = ${formatFixed(BigInt(Math.round(px * 1e4)), 4, locale, { dp: 4 })} USDT`;
 
 /** "1 US$ = ARS 1.613,94" style: fiat per USD with 2 decimals (4 for small rates like BRL). */
 const perUsd = (fiat: string, fiatPerUsd: number, locale: Locale) => {
@@ -35,8 +39,10 @@ function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof 
   if (!meta || !d) return null;
   const live = d.action === "publish" && !!c.served;
   // The served mid already carries the skew; Stitch quotes ± the side spreads around it.
-  const bid = c.served ? 1 / (c.served.price * (1 - c.params.buyOffsetBps / 10_000)) : undefined;
-  const ask = c.served ? 1 / (c.served.price * (1 + c.params.sellOffsetBps / 10_000)) : undefined;
+  // Prices in USDT per soft unit; wFIAT pairs are shown per US$ (inverted) below.
+  const bidPx = c.served ? c.served.price * (1 - c.params.buyOffsetBps / 10_000) : undefined;
+  const askPx = c.served ? c.served.price * (1 + c.params.sellOffsetBps / 10_000) : undefined;
+  const show = (px: number) => (meta.fiat === "USD" ? usdtPer(meta.soft, px, locale) : perUsd(meta.fiat, 1 / px, locale));
   return (
     <div className="desk-corridor">
       <div className="desk-corridor-head">
@@ -52,26 +58,26 @@ function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof 
         {d.fiatPerUsd !== undefined && (
           <div>
             <dt>{t.status.fair}</dt>
-            <dd className="mono">1 US$ = {perUsd(meta.fiat, d.fiatPerUsd, locale)}</dd>
+            <dd className="mono">{meta.fiat === "USD" ? usdtPer(meta.soft, 1 / d.fiatPerUsd, locale) : `1 US$ = ${perUsd(meta.fiat, d.fiatPerUsd, locale)}`}</dd>
           </div>
         )}
         <div>
           <dt>{t.status.skew}</dt>
           <dd className="mono">{formatBps(d.skewBps ?? 0, locale)}</dd>
         </div>
-        {bid !== undefined && ask !== undefined && (
+        {bidPx !== undefined && askPx !== undefined && (
           <>
             <div>
               <dt>
                 {t.status.bid} {meta.soft}
               </dt>
-              <dd className="mono">{perUsd(meta.fiat, bid, locale)}</dd>
+              <dd className="mono">{show(bidPx)}</dd>
             </div>
             <div>
               <dt>
                 {t.status.ask} {meta.soft}
               </dt>
-              <dd className="mono">{perUsd(meta.fiat, ask, locale)}</dd>
+              <dd className="mono">{show(askPx)}</dd>
             </div>
           </>
         )}
@@ -168,6 +174,7 @@ export default async function DeskPage({ searchParams }: Props) {
                   {view.fills.map((f) => {
                     const meta = PAIRS[f.pair];
                     const dec = meta ? TOKENS[meta.soft].decimals : 18;
+                    // (USDC and USA₮ have 6 decimals; wFIAT 18.)
                     return (
                       <tr key={f.txHash}>
                         <td className="nowrap">{time(f.at, locale)}</td>
@@ -176,7 +183,7 @@ export default async function DeskPage({ searchParams }: Props) {
                         <td className="num nowrap">
                           {formatFixed(BigInt(f.softAmount), dec, locale, { dp: 2, minDp: 0 })} {meta?.soft} · {usd(BigInt(f.usdtAmount))}
                         </td>
-                        <td className="num nowrap mono">{meta ? perUsd(meta.fiat, 1 / f.price, locale) : f.price}</td>
+                        <td className="num nowrap mono">{!meta ? f.price : meta.fiat === "USD" ? usdtPer(meta.soft, f.price, locale) : perUsd(meta.fiat, 1 / f.price, locale)}</td>
                         <td className={`num nowrap mono ${f.edgeBps !== null && f.edgeBps < 0 ? "neg" : "pos"}`}>{f.edgeBps === null ? "—" : formatBps(f.edgeBps, locale)}</td>
                         <td>
                           <ExtLink href={txUrl(f.txHash)} className="mono">
@@ -202,8 +209,10 @@ export default async function DeskPage({ searchParams }: Props) {
               {(
                 [
                   ["USD", "USDT", formatFixed(BigInt(s.usdt), 6, locale, { dp: 2 }), BigInt(s.usdt)],
-                  ["ARS", "wARS", formatFixed(BigInt(s.wars), 18, locale, { dp: 2 }), softUsd(s.wars, 18, s.fairWars)],
-                  ["BRL", "wBRL", formatFixed(BigInt(s.wbrl), 18, locale, { dp: 2 }), softUsd(s.wbrl, 18, s.fairWbrl)],
+                  ["ARS", "wARS", formatFixed(BigInt(s.wars), 18, locale, { dp: 2 }), softUsd(s.wars, 18, s.fairs["wars-usdt"] ?? s.fairWars)],
+                  ["BRL", "wBRL", formatFixed(BigInt(s.wbrl), 18, locale, { dp: 2 }), softUsd(s.wbrl, 18, s.fairs["wbrl-usdt"] ?? s.fairWbrl)],
+                  ...(s.usdc !== null ? ([["USD", "USDC", formatFixed(BigInt(s.usdc), 6, locale, { dp: 2 }), softUsd(s.usdc, 6, s.fairs["usdc-usdt"] ?? null)]] as const) : []),
+                  ...(s.usat !== null ? ([["USD", "USA₮", formatFixed(BigInt(s.usat), 6, locale, { dp: 2 }), softUsd(s.usat, 6, s.fairs["usat-usdt"] ?? null)]] as const) : []),
                 ] as const
               ).map(([fiat, sym, amount, inUsd]) => (
                 <div className="inv-row" key={sym}>

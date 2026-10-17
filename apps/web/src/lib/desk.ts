@@ -29,6 +29,10 @@ export interface DeskSnapshotRecord {
   usdt: string;
   wars: string;
   wbrl: string;
+  usdc: string | null;
+  usat: string | null;
+  /** Fair USDT per soft unit by pair (newer rows); older rows only have fairWars/fairWbrl. */
+  fairs: Record<string, number>;
   fairWars: number | null;
   fairWbrl: number | null;
   navMicros: string | null;
@@ -67,6 +71,9 @@ const snap = (r: typeof deskSnapshots.$inferSelect): DeskSnapshotRecord => ({
   usdt: r.usdt,
   wars: r.wars,
   wbrl: r.wbrl,
+  usdc: r.usdc,
+  usat: r.usat,
+  fairs: (r.fairs as Record<string, number> | null) ?? {},
   fairWars: r.fairWars === null ? null : Number(r.fairWars),
   fairWbrl: r.fairWbrl === null ? null : Number(r.fairWbrl),
   navMicros: r.navMicros,
