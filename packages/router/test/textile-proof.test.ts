@@ -49,7 +49,7 @@ describe("externally signed TakerControl proofs", () => {
 
   it("passes a wallet-signed proof through as is (scheme only for eip191)", async () => {
     const calls: Call[] = [];
-    const c = new TextileClient("https://x/v2", undefined, mockFetch(NO_QUOTE, calls));
+    const c = new TextileClient("https://x/v2", null, mockFetch(NO_QUOTE, calls));
     expect(c.hasPartnerKey).toBe(false);
     const proof = { nonce: `0x${"11".repeat(32)}` as const, issuedAt: 1_760_000_000_000, signature: "0xdead" as const };
     const trade = { chainId: 42220, sellToken: USDT.address, buyToken: wBRL.address, sellAmount: 1_000_000n, taker: account.address };

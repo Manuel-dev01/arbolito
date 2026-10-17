@@ -54,7 +54,7 @@ describe("TakerControl", () => {
 describe("TextileClient", () => {
   it("previews without credentials and parses the live shape", async () => {
     const calls: Call[] = [];
-    const c = new TextileClient("https://api.textilecredit.com/v2", undefined, mockFetch(200, PREVIEW, calls));
+    const c = new TextileClient("https://api.textilecredit.com/v2", null, mockFetch(200, PREVIEW, calls));
     const p = await c.preview({ chainId: 42220, sellToken: wBRL.address, buyToken: USDT.address, sellAmount: 200n * 10n ** 18n });
     expect(p.buyAmount).toBe("39685503");
     expect(calls[0]!.url).toBe("https://api.textilecredit.com/v2/rfq/preview");
@@ -70,7 +70,7 @@ describe("TextileClient", () => {
   it("adds takerProof on keyless firm requests, and not with a partner key", async () => {
     const firm = { data: { rfqId: "r1", claimToken: "c1", status: "no_quote", reason: "no_makers_online" } };
     const keyless: Call[] = [];
-    await new TextileClient("https://x/v2", undefined, mockFetch(200, firm, keyless)).request({
+    await new TextileClient("https://x/v2", null, mockFetch(200, firm, keyless)).request({
       chainId: 42220, sellToken: wBRL.address, buyToken: USDT.address, sellAmount: 10n ** 18n, taker: account.address, account,
     });
     const body = JSON.parse(keyless[0]!.init.body as string);
@@ -87,14 +87,14 @@ describe("TextileClient", () => {
 
   it("sends the claim token on submit and status", async () => {
     const calls: Call[] = [];
-    const c = new TextileClient("https://x/v2", undefined, mockFetch(200, { data: { rfqId: "r1", status: "submitted" } }, calls));
+    const c = new TextileClient("https://x/v2", null, mockFetch(200, { data: { rfqId: "r1", status: "submitted" } }, calls));
     await c.submit("r1", "claim-abc", `0x${"ab".repeat(32)}`);
     expect(calls[0]!.url).toBe("https://x/v2/rfq/r1/submit");
     expect((calls[0]!.init.headers as Record<string, string>)["x-rfq-claim"]).toBe("claim-abc");
   });
 
   it("raises a typed error on non-2xx", async () => {
-    const c = new TextileClient("https://x/v2", undefined, mockFetch(429, { error: { code: "rate_limited" } }));
+    const c = new TextileClient("https://x/v2", null, mockFetch(429, { error: { code: "rate_limited" } }));
     await expect(c.preview({ chainId: 42220, sellToken: wBRL.address, buyToken: USDT.address, sellAmount: 1n })).rejects.toBeInstanceOf(TextileApiError);
   });
 });
@@ -103,19 +103,19 @@ describe("TextileRfqAdapter", () => {
   const params = { tokenIn: wBRL.address, tokenOut: USDT.address, amountIn: 200n * 10n ** 18n, taker: account.address, blockNumber: 1n };
 
   it("maps a preview to an indicative quote", async () => {
-    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", undefined, mockFetch(200, PREVIEW))).quote(params);
+    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", null, mockFetch(200, PREVIEW))).quote(params);
     expect(q).toMatchObject({ venue: "textile_rfq", amountOut: 39_685_503n, firm: false });
   });
 
   it("returns null when there is no corridor", async () => {
     const body = { error: { code: "invalid_request", details: { reason: "corridor_unavailable" } } };
-    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", undefined, mockFetch(400, body))).quote(params);
+    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", null, mockFetch(400, body))).quote(params);
     expect(q).toBeNull();
   });
 
   it("refuses a preview that only partially covers the size", async () => {
     const partial = { data: { ...PREVIEW.data, sellAmount: "100000000000000000000" } };
-    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", undefined, mockFetch(200, partial))).quote(params);
+    const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", null, mockFetch(200, partial))).quote(params);
     expect(q).toBeNull();
   });
 });

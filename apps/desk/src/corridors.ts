@@ -12,19 +12,24 @@
  * We bid wider than we ask and aim to hold less wARS (targetShare 0.3). These are starting
  * points to tune once live RFQ flow is visible.
  *
- * Caps are the minimal starting inventory agreed 2026-10-15: US$ 10 per side per corridor
- * (40 USDT funded; half swapped into wARS and wBRL). Larger caps need the founder's approval.
+ * Caps (founder-approved): US$ 10 per side per corridor from 2026-10-15; wBRL buy side US$ 20 and
+ * the USDC/USDT and USA₮/USDT corridors from 2026-10-17 (another 40 USDT). Larger caps need approval.
+ *
+ * Stable corridors (USDC, USA₮ vs USDT) price off Textile with a fixed 1.00 peg as the second
+ * source: if a stablecoin drifts more than maxDevBps off its peg the sources disagree and the
+ * breaker stops quoting it, which doubles as a depeg guard.
  */
 import { TOKENS } from "@arbolito/config";
 
-export type Pair = "wars-usdt" | "wbrl-usdt";
+export type Pair = "wars-usdt" | "wbrl-usdt" | "usdc-usdt" | "usat-usdt";
 
 export type SourceId =
   | "textile_price" // Textile's own corridor price (what other fillers price off)
   | "uniswap_mid" // Celo Uniswap v3 pool mid (thin: low weight, mainly an alarm)
   | "dolar_crypto" // dolarapi "cripto" USD/ARS (where wARS actually trades)
   | "dolar_ccl" // dolarapi CCL USD/ARS
-  | "dolar_official_cross"; // dolarapi official USD/ARS ÷ BRL/ARS → USD/BRL
+  | "dolar_official_cross" // dolarapi official USD/ARS ÷ BRL/ARS → USD/BRL
+  | "peg"; // a stablecoin's 1.00 peg (stable corridors only)
 
 export interface SourceSpec {
   id: SourceId;
@@ -36,8 +41,8 @@ export interface SourceSpec {
 
 export interface Corridor {
   pair: Pair;
-  soft: "wARS" | "wBRL";
-  fiat: "ARS" | "BRL";
+  soft: "wARS" | "wBRL" | "USDC" | "USAT";
+  fiat: "ARS" | "BRL" | "USD";
   /** Stitch side spreads around our published mid. */
   buyOffsetBps: number;
   sellOffsetBps: number;
@@ -68,6 +73,7 @@ const MIN = 60_000;
 const HOUR = 60 * MIN;
 const usdt = (n: number) => BigInt(Math.round(n * 1e6));
 const wad = (n: number) => BigInt(Math.round(n)) * 10n ** 18n;
+const usd6 = usdt;
 
 export const CORRIDORS: readonly Corridor[] = [
   {
@@ -98,7 +104,7 @@ export const CORRIDORS: readonly Corridor[] = [
     fiat: "BRL",
     buyOffsetBps: 6,
     sellOffsetBps: 6,
-    buyCapUsdt: usdt(10),
+    buyCapUsdt: usdt(20), // raised 2026-10-17 to rebuild wBRL with idle USDT (founder OK)
     sellCapSoft: wad(50), // ≈ US$ 10 at ~5.05 BRL/USD
     sources: [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
@@ -111,6 +117,26 @@ export const CORRIDORS: readonly Corridor[] = [
     jumpConfirmMs: 30_000,
     skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 4, floorBps: 2 },
   },
+  ...(["USDC", "USAT"] as const).map(
+    (soft): Corridor => ({
+      pair: soft === "USDC" ? "usdc-usdt" : "usat-usdt",
+      soft,
+      fiat: "USD",
+      buyOffsetBps: 3,
+      sellOffsetBps: 3,
+      buyCapUsdt: usdt(10),
+      sellCapSoft: usd6(10),
+      sources: [
+        { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
+        { id: "peg", weight: 1, maxAgeMs: MIN },
+      ],
+      minSources: 2,
+      maxDevBps: 30, // depeg guard
+      jumpBps: 20,
+      jumpConfirmMs: 30_000,
+      skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 2, floorBps: 1 },
+    }),
+  ),
 ];
 
 /** Problems with a corridor's parameters; empty when it is safe to run. */
@@ -124,7 +150,8 @@ export function validateCorridor(c: Corridor): string[] {
   if (c.buyCapUsdt <= 0n || c.sellCapSoft <= 0n) errs.push(`${c.pair}: side caps must be positive and fixed`);
   if (c.minSources < 2) errs.push(`${c.pair}: minSources must be at least 2 (one source can't be cross-checked)`);
   if (c.sources.reduce((n, s) => n + (s.weight > 0 ? 1 : 0), 0) < c.minSources) errs.push(`${c.pair}: fewer weighted sources than minSources`);
-  if (TOKENS[c.soft].decimals !== 18 || TOKENS.USDT.decimals !== 6) errs.push(`${c.pair}: unexpected token decimals`);
+  const dec = TOKENS[c.soft].decimals;
+  if ((c.fiat === "USD" ? dec !== 6 : dec !== 18) || TOKENS.USDT.decimals !== 6) errs.push(`${c.pair}: unexpected token decimals`);
   return errs;
 }
 

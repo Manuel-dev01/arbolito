@@ -117,16 +117,19 @@ export class DeskLedger {
   async snapshot(b: Balances, fair: FairNow, now = Date.now()): Promise<void> {
     if (now - this.lastSnapshot < SNAPSHOT_EVERY_MS) return;
     const [blockNumber, celo] = await Promise.all([this.client.getBlockNumber(), this.client.getBalance({ address: this.desk })]);
-    const nav = navMicros(b, { wars: fair["wars-usdt"], wbrl: fair["wbrl-usdt"] });
+    const nav = navMicros(b, this.corridors, fair);
     await this.db.insert(deskSnapshots).values({
       at: new Date(now),
       blockNumber,
       usdt: b.USDT.toString(),
       wars: b.wARS.toString(),
       wbrl: b.wBRL.toString(),
+      usdc: b.USDC.toString(),
+      usat: b.USAT.toString(),
       celo: celo.toString(),
       fairWars: fair["wars-usdt"] === undefined ? null : String(fair["wars-usdt"]),
       fairWbrl: fair["wbrl-usdt"] === undefined ? null : String(fair["wbrl-usdt"]),
+      fairs: Object.fromEntries(Object.entries(fair).filter(([, v]) => v !== undefined)),
       navMicros: nav === undefined ? null : nav.toString(),
     });
     this.lastSnapshot = now;

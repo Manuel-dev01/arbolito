@@ -48,8 +48,10 @@ describe("edge and NAV", () => {
   });
 
   it("values soft inventory at fair, in micro-USD", () => {
-    expect(navMicros({ USDT: 20_000_000n, wARS: 16_000n * 10n ** 18n, wBRL: 50n * 10n ** 18n }, { wars: 1 / 1600, wbrl: 0.2 })).toBe(40_000_000n);
-    expect(navMicros({ USDT: 1n, wARS: 1n, wBRL: 0n }, { wbrl: 0.2 })).toBeUndefined(); // wARS held, no fair
-    expect(navMicros({ USDT: 5n, wARS: 0n, wBRL: 0n }, {})).toBe(5n);
+    const fair = { "wars-usdt": 1 / 1600, "wbrl-usdt": 0.2, "usdc-usdt": 1.001, "usat-usdt": 1 };
+    expect(navMicros({ USDT: 20_000_000n, wARS: 16_000n * 10n ** 18n, wBRL: 50n * 10n ** 18n }, CORRIDORS, fair)).toBe(40_000_000n);
+    expect(navMicros({ USDT: 0n, USDC: 10_000_000n, USAT: 5_000_000n }, CORRIDORS, fair)).toBe(15_010_000n); // 6-decimal stables
+    expect(navMicros({ USDT: 1n, wARS: 1n }, CORRIDORS, { "wbrl-usdt": 0.2 })).toBeUndefined(); // wARS held, no fair
+    expect(navMicros({ USDT: 5n }, CORRIDORS, {})).toBe(5n);
   });
 });

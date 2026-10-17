@@ -8,7 +8,7 @@ export function flagValue(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
-const VALUE_FLAGS = new Set(["--fee-currency", "--fork", "--receipts", "--uri"]);
+const VALUE_FLAGS = new Set(["--fee-currency", "--fork", "--receipts", "--uri", "--only", "--feed-base", "--bin"]);
 export const positional = () => process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !VALUE_FLAGS.has(all[i - 1] ?? ""));
 
 /** anvil dev key #0. Only ever used with --fork, where it is a throwaway. */

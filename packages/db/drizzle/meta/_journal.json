@@ -22,6 +22,13 @@
       "when": 1792085522049,
       "tag": "0002_desk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792214896466,
+      "tag": "0003_desk_stables",
+      "breakpoints": true
     }
   ]
 }

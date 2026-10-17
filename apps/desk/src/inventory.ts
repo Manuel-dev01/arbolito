@@ -8,15 +8,15 @@ import { TOKENS } from "@arbolito/config";
 import type { Corridor } from "./corridors";
 import { inventoryShare } from "./skew";
 
-export type Balances = Record<"USDT" | "wARS" | "wBRL", bigint>;
+export type Balances = Record<"USDT" | "wARS" | "wBRL" | "USDC" | "USAT", bigint>;
 
 export async function readBalances(client: PublicClient, owner: Address): Promise<Balances> {
-  const syms = ["USDT", "wARS", "wBRL"] as const;
+  const syms = ["USDT", "wARS", "wBRL", "USDC", "USAT"] as const;
   const res = await client.multicall({
     allowFailure: false,
     contracts: syms.map((s) => ({ address: TOKENS[s].address as Address, abi: erc20Abi, functionName: "balanceOf", args: [owner] }) as const),
   });
-  return { USDT: res[0]!, wARS: res[1]!, wBRL: res[2]! };
+  return { USDT: res[0]!, wARS: res[1]!, wBRL: res[2]!, USDC: res[3]!, USAT: res[4]! };
 }
 
 /** Soft-asset share for each corridor, valuing the soft side at the corridor's fair value. */

@@ -229,10 +229,15 @@ export const deskSnapshots = pgTable(
     usdt: atomic().notNull(),
     wars: atomic().notNull(),
     wbrl: atomic().notNull(),
+    /** Stable corridors (2026-10-17); null on older rows. */
+    usdc: atomic(),
+    usat: atomic(),
     celo: atomic().notNull(),
     /** Fair USDT per soft unit at the time (decimal strings); null when the feed was holding. */
     fairWars: text(),
     fairWbrl: text(),
+    /** Fair USDT per soft unit for every corridor, by pair (supersedes fairWars/fairWbrl). */
+    fairs: jsonb(),
     /** USDT + soft at fair, micro-USD (CELO gas float excluded). */
     navMicros: atomic(),
   },

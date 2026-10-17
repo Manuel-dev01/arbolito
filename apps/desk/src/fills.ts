@@ -61,11 +61,18 @@ export function edgeBps(side: Fill["side"], price: number, fair: number): number
   return Math.round(e * 1_000_000) / 100;
 }
 
-/** USDT + soft valued at fair, micro-USD. Undefined when a needed fair price is missing. */
-export function navMicros(b: { USDT: bigint; wARS: bigint; wBRL: bigint }, fair: { wars?: number; wbrl?: number }): bigint | undefined {
-  const soft = (amt: bigint, decimals: number, px?: number) => (amt === 0n ? 0 : px === undefined ? undefined : (Number(amt) / 10 ** decimals) * px);
-  const a = soft(b.wARS, TOKENS.wARS.decimals, fair.wars);
-  const r = soft(b.wBRL, TOKENS.wBRL.decimals, fair.wbrl);
-  if (a === undefined || r === undefined) return undefined;
-  return b.USDT + BigInt(Math.round((a + r) * 1e6));
+/**
+ * USDT + every corridor's soft asset valued at fair (USDT per soft, by pair), micro-USD.
+ * Undefined when a held asset has no fair price.
+ */
+export function navMicros(b: Partial<Record<Corridor["soft"], bigint>> & { USDT: bigint }, corridors: readonly Corridor[], fair: Record<string, number | undefined>): bigint | undefined {
+  let soft = 0;
+  for (const c of corridors) {
+    const amt = b[c.soft] ?? 0n;
+    if (amt === 0n) continue;
+    const px = fair[c.pair];
+    if (px === undefined) return undefined;
+    soft += (Number(amt) / 10 ** TOKENS[c.soft].decimals) * px;
+  }
+  return b.USDT + BigInt(Math.round(soft * 1e6));
 }

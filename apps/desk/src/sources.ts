@@ -18,7 +18,8 @@ async function getJson(url: string): Promise<unknown> {
   return res.json();
 }
 
-const textilePrice = z.object({ pair: z.string(), chainId: z.number(), price: z.number().positive(), timestamp: z.number() });
+// usat-usdt answers without chainId (and with source/unit), so chainId is optional.
+const textilePrice = z.object({ pair: z.string(), chainId: z.number().optional(), price: z.number().positive(), timestamp: z.number() });
 
 /** Textile's corridor price (USDT per soft) → fiat per USD. */
 export async function fetchTextile(pair: Corridor["pair"]): Promise<Observation[]> {
@@ -85,8 +86,9 @@ export async function observeAll(client: PublicClient, corridors: readonly Corri
   const byPair = new Map<string, Observation[]>();
   corridors.forEach((c, i) => {
     const obs = [...textile[i]!, ...dolar.filter((o) => c.sources.some((s) => s.id === o.source))];
-    const u = uni.get(c.fiat);
+    const u = c.fiat === "USD" ? undefined : uni.get(c.fiat);
     if (u) obs.push(u);
+    if (c.sources.some((s) => s.id === "peg")) obs.push({ source: "peg", fiatPerUsd: 1, at: Date.now() });
     byPair.set(c.pair, obs);
   });
   return { byPair, errors };

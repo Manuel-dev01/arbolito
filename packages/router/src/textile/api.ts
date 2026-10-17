@@ -169,7 +169,8 @@ export async function signTakerControl(account: LocalAccount, chainId: number, n
 export class TextileClient {
   constructor(
     private readonly base = loadEnv().TEXTILE_API_BASE.replace(/\/$/, ""),
-    private readonly apiKey = loadEnv().TEXTILE_API_KEY,
+    /** null = explicitly keyless (tests); undefined = TEXTILE_API_KEY from the environment. */
+    private readonly apiKey: string | null | undefined = loadEnv().TEXTILE_API_KEY,
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
 

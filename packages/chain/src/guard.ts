@@ -137,7 +137,7 @@ export const GUARD_TWAP_WINDOW_SECONDS = 600;
  */
 export function guardConstructorArgs(twapWindow = GUARD_TWAP_WINDOW_SECONDS) {
   const tokens: Address[] = [TOKENS.wARS.address, TOKENS.wBRL.address, TOKENS.USDT.address, TOKENS.USAT.address, TOKENS.USDC.address];
-  const pools: Address[] = POOLS.filter((p) => p.routable).map((p) => p.address);
+  const pools: Address[] = POOLS.filter((p) => p.guard).map((p) => p.address);
   return [CONTRACTS.uniswap.swapRouter02, CONTRACTS.uniswap.factory, CONTRACTS.textile.limitOrderReactor, twapWindow, tokens, pools] as const;
 }
 

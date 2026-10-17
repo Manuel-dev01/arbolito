@@ -44,6 +44,8 @@ Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs; onchain ent
 | wBRL/USDT | 0.01% | 0x01c3cf91cdf7b34181c7ec8566c0236951fea40f | 131.6K wBRL + 2.9K USDT | ~$28K (thin) |
 | USA₮/USDT | 0.01% | 0x070d575a713eaf5025462d0865fb0dac4b14bc38 | 63.8K USA₮ + 42.2K USDT | ~$106K |
 | USA₮/USDT | 0.05% | 0xae073a816117dcd1cc237fe4cb99f89f8f8bff4f | dust | — |
+| USDC/USDT | 0.01% | 0x1a810e0b6c2dd5629afa2f0c898b9512c6f78846 | 23.1K USDC + 164.7K USDT (2026-10-17, `factory.getPool`) | ~$188K (USDC scarce: trades ~13 bps over USDT) |
+| USDC/USDT | 0.05% / 0.30% | 0x2392ae4b…e233 / 0x9afac41c…64a1 | dust | — |
 
 **TWAP oracle depth** (read 2026-10-09, `slot0().observationCardinality`; used by `ArbolitoSessionExecutor`'s 10-minute minOut floor):
 - wARS/USDT and USA₮/USDT 0.01%: cardinality **1200** (next 1200). With ≤ 1 observation per 1 s block that always spans ≥ 20 min, so `observe([600, 0])` works.

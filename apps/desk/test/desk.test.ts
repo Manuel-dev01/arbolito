@@ -105,8 +105,9 @@ describe("inventory skew", () => {
         ["wbrl-usdt", 5],
       ]),
     );
-    // wARS: US$ 10 soft vs US$ 20 USDT → 1/3; wBRL: nothing held → 0.
-    expect(shares.get("wars-usdt")).toBeCloseTo(1 / 3, 6);
+    // USDT is split by buy cap (10 + 20 + 10 + 10 = 50): wARS counts 40 × 10/50 = 8 USDT,
+    // so US$ 10 of wARS vs 8 USDT → 10/18. wBRL: nothing held → 0.
+    expect(shares.get("wars-usdt")).toBeCloseTo(10 / 18, 6);
     expect(shares.get("wbrl-usdt")).toBe(0);
   });
 });

@@ -78,13 +78,14 @@ export const RISK_TOOL: ToolDefinition = {
   },
 };
 
-export const RISK_SYSTEM = `You are the risk officer of Arbolito Desk, a small market maker that answers Textile RFQs on Celo for wARS/USDT and wBRL/USDT from its own capped inventory (about US$ 10 per side).
+export const RISK_SYSTEM = `You are the risk officer of Arbolito Desk, a small market maker that answers Textile RFQs on Celo for wARS/USDT, wBRL/USDT, USDC/USDT and USA₮/USDT from its own capped inventory (US$ 10–20 per side). The stable pairs should sit within a few bps of 1.00.
 Pricing is automatic: a multi-source fair value, an inventory skew, and a circuit breaker that already stops quoting when sources are stale, disagree, or jump.
 Your only power is to PAUSE a corridor for ${MIN_PAUSE_MIN}–${MAX_PAUSE_MIN} minutes, or leave it NORMAL. You cannot tighten spreads, resize, or trade.
 Pause only for a concrete reason visible in the signals, for example:
 - fills keep landing at negative edge (we are being picked off by better-informed flow);
 - volatility or the price move over the last hour is far above normal for the pair (Argentine peso: a crawl of ~5 bps/day; real: a few tens of bps/day);
-- repeated breaker holds suggesting an unstable market.
+- repeated breaker holds suggesting an unstable market;
+- a stablecoin moving away from 1.00 (fairNow is fiat per USD; for USDC/USA₮ it should be ~1).
 Otherwise return NORMAL: a quiet market is the normal case. Keep reasons short and factual. Always call the decide tool once, covering every corridor.`;
 
 /** Parse and clamp the model's tool call; unknown pairs and malformed output are dropped. */

@@ -100,7 +100,7 @@ export const GUARD_V2_MAX_SLIPPAGE_BPS = 1000;
 /** Constructor args for Celo mainnet: SwapRouter02, the v3 factory, a 10-minute TWAP, five tokens, the routable 0.01% pools. */
 export function guardV2ConstructorArgs(twapWindow = GUARD_TWAP_WINDOW_SECONDS) {
   const tokens: Address[] = [TOKENS.wARS.address, TOKENS.wBRL.address, TOKENS.USDT.address, TOKENS.USAT.address, TOKENS.USDC.address];
-  const pools: Address[] = POOLS.filter((p) => p.routable).map((p) => p.address);
+  const pools: Address[] = POOLS.filter((p) => p.guard).map((p) => p.address);
   return [CONTRACTS.uniswap.swapRouter02, CONTRACTS.uniswap.factory, twapWindow, tokens, pools] as const;
 }
 

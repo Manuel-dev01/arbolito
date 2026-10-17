@@ -3,6 +3,7 @@
  *   pnpm desk:fund                     quotes only (no transaction)
  *   pnpm desk:fund --fork <rpc>        rehearse every step on an anvil fork
  *   pnpm desk:fund --live [--yes]      Celo mainnet
+ *   --only USDC,USAT                   limit inventory swaps to these soft assets (approvals still cover all)
  *
  * Resumable: it does only what is still missing. (The first live run, 2026-10-15, stopped after
  * the wARS swaps: a lagging node hid an allowance the previous swap had spent; see minBlock.)
@@ -19,7 +20,7 @@ import { CONTRACTS, TOKENS, loadEnv, txUrl } from "@arbolito/config";
 import { FileLedger, MemoryLedger, formatUsd, makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
 import { TextileClient, TextileRfqAdapter, UniswapV3Adapter, executableRoutes, executeRoute, fmtAmount, plan, textileFirmEnabled, usdMicros } from "@arbolito/router";
 import { CORRIDORS } from "@arbolito/desk";
-import { confirm, forkUrl, hasFlag, opsAccount, runMain } from "./lib/cli";
+import { confirm, flagValue, forkUrl, hasFlag, opsAccount, runMain } from "./lib/cli";
 
 const SWAP_USDT = 5_000_000n; // 5 USDT
 const MAX_SWAPS_PER_TOKEN = 2;
@@ -59,8 +60,10 @@ runMain(async () => {
   // ── the whole plan, quoted, before anything moves
   const usdt = TOKENS.USDT.address as Address;
   const textileFirm = textileFirmEnabled();
-  const swaps: ("wARS" | "wBRL")[] = [];
+  const only = flagValue("only")?.split(",").map((s) => s.trim().toLowerCase());
+  const swaps: (typeof CORRIDORS)[number]["soft"][] = [];
   for (const c of CORRIDORS) {
+    if (only && !only.includes(c.soft.toLowerCase())) continue;
     const planned = await plan({
       client: publicClient,
       adapters: [new UniswapV3Adapter(publicClient), new TextileRfqAdapter()],
