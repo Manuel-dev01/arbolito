@@ -118,7 +118,7 @@ export default async function DeskPage({ searchParams }: Props) {
         <section className="card desk-card" aria-labelledby="desk-status">
           <h2 id="desk-status">{t.status.t}</h2>
           <p>{t.status.d}</p>
-          {view.feed ? view.feed.corridors.map((c) => <CorridorStatus key={c.pair} c={c} lang={lang} />) : <p className="small muted">{t.unavailable}</p>}
+          {view.feed ? view.feed.corridors.filter((c) => c.params.live !== false).map((c) => <CorridorStatus key={c.pair} c={c} lang={lang} />) : <p className="small muted">{t.unavailable}</p>}
         </section>
 
         <section className="card desk-card" aria-labelledby="desk-pnl">

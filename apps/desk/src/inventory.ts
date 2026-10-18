@@ -8,20 +8,21 @@ import { TOKENS } from "@arbolito/config";
 import type { Corridor } from "./corridors";
 import { inventoryShare } from "./skew";
 
-export type Balances = Record<"USDT" | "wARS" | "wBRL" | "USDC" | "USAT", bigint>;
+export type Balances = Record<"USDT" | "wARS" | "wBRL" | "USDC" | "USAT" | "wCOP" | "wMXN", bigint>;
 
 export async function readBalances(client: PublicClient, owner: Address): Promise<Balances> {
-  const syms = ["USDT", "wARS", "wBRL", "USDC", "USAT"] as const;
+  const syms = ["USDT", "wARS", "wBRL", "USDC", "USAT", "wCOP", "wMXN"] as const;
   const res = await client.multicall({
     allowFailure: false,
     contracts: syms.map((s) => ({ address: TOKENS[s].address as Address, abi: erc20Abi, functionName: "balanceOf", args: [owner] }) as const),
   });
-  return { USDT: res[0]!, wARS: res[1]!, wBRL: res[2]!, USDC: res[3]!, USAT: res[4]! };
+  return { USDT: res[0]!, wARS: res[1]!, wBRL: res[2]!, USDC: res[3]!, USAT: res[4]!, wCOP: res[5]!, wMXN: res[6]! };
 }
 
 /** Soft-asset share for each corridor, valuing the soft side at the corridor's fair value. */
 export function corridorShares(b: Balances, corridors: readonly Corridor[], fiatPerUsd: Map<string, number>): Map<string, number | undefined> {
-  const totalCaps = corridors.reduce((s, c) => s + c.buyCapUsdt, 0n);
+  // USDT is shared only by the corridors Stitch actually quotes.
+  const totalCaps = corridors.filter((c) => c.live).reduce((s, c) => s + c.buyCapUsdt, 0n);
   const out = new Map<string, number | undefined>();
   for (const c of corridors) {
     const f = fiatPerUsd.get(c.pair);

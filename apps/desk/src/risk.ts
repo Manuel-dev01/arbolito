@@ -119,7 +119,9 @@ export async function reviewRisk(llm: LlmClient, model: string, signals: Corrido
         { role: "user", content: `Signals for the last hour (JSON):\n${JSON.stringify(signals)}` },
       ],
       tools: [RISK_TOOL],
-      toolChoice: { type: "function", function: { name: "decide" } },
+      // deepseek-v4-pro (thinking mode) rejects a forced tool_choice; "auto" plus the prompt's
+      // "always call decide" works, and no call is simply no decision.
+      toolChoice: "auto",
       temperature: 0,
       maxTokens: 400,
       timeoutMs: 45_000,

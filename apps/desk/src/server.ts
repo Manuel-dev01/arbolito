@@ -189,7 +189,7 @@ export class FeedService {
         const r = this.rt.get(c.pair)!;
         return {
           pair: c.pair,
-          params: { buyOffsetBps: c.buyOffsetBps, sellOffsetBps: c.sellOffsetBps, buyCapUsdt: c.buyCapUsdt.toString(), sellCapSoft: c.sellCapSoft.toString(), skew: c.skew },
+          params: { live: c.live, buyOffsetBps: c.buyOffsetBps, sellOffsetBps: c.sellOffsetBps, buyCapUsdt: c.buyCapUsdt.toString(), sellCapSoft: c.sellCapSoft.toString(), skew: c.skew },
           served: r.served ?? null,
           decisions: r.decisions.slice(-20),
         };

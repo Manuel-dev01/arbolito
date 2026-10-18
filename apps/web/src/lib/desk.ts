@@ -40,7 +40,7 @@ export interface DeskSnapshotRecord {
 
 export interface FeedCorridor {
   pair: string;
-  params: { buyOffsetBps: number; sellOffsetBps: number };
+  params: { live?: boolean; buyOffsetBps: number; sellOffsetBps: number };
   served: { price: number; timestamp: number } | null;
   decisions: { action: "publish" | "hold"; reason?: string; fiatPerUsd?: number; skewBps?: number; used: string[]; at: string }[];
 }

@@ -19,7 +19,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { CONTRACTS, TOKENS, loadEnv, txUrl } from "@arbolito/config";
 import { FileLedger, MemoryLedger, formatUsd, makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
 import { TextileClient, TextileRfqAdapter, UniswapV3Adapter, executableRoutes, executeRoute, fmtAmount, plan, textileFirmEnabled, usdMicros } from "@arbolito/router";
-import { CORRIDORS } from "@arbolito/desk";
+import { LIVE_CORRIDORS as CORRIDORS } from "@arbolito/desk";
 import { confirm, flagValue, forkUrl, hasFlag, opsAccount, runMain } from "./lib/cli";
 
 const SWAP_USDT = 5_000_000n; // 5 USDT

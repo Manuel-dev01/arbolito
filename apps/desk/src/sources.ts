@@ -57,6 +57,44 @@ export async function fetchDolar(): Promise<Observation[]> {
   return out.filter((o) => Number.isFinite(o.at));
 }
 
+const tickerRows = z.array(z.object({ ticker_id: z.string(), last_price: z.string(), bid: z.string(), ask: z.string() }));
+
+/** Textile /tickers maker levels for USDT_<fiat>: the mid when both sides quote, else the quoted side or last. */
+export async function fetchTextileTickers(): Promise<Map<string, Observation>> {
+  const base = loadEnv().TEXTILE_PUBLIC_BASE.replace(/\/$/, "");
+  const raw = (await getJson(`${base}/tickers`)) as unknown;
+  const rows = tickerRows.parse(Array.isArray(raw) ? raw : ((raw as { data?: unknown }).data ?? []));
+  const now = Date.now();
+  const out = new Map<string, Observation>();
+  for (const r of rows) {
+    const m = /^USDT_([A-Z]{3})$/.exec(r.ticker_id);
+    if (!m) continue;
+    const bid = Number(r.bid);
+    const ask = Number(r.ask);
+    const v = bid > 0 && ask > 0 ? (bid + ask) / 2 : ask > 0 ? ask : bid > 0 ? bid : Number(r.last_price);
+    if (v > 0) out.set(m[1]!, { source: "textile_ticker", fiatPerUsd: v, at: now });
+  }
+  return out;
+}
+
+const erApi = z.object({ result: z.literal("success"), time_last_update_unix: z.number(), rates: z.record(z.string(), z.number()) });
+
+/** ExchangeRate-API open access: daily USD rates (attribution required wherever shown). */
+export async function fetchErApi(): Promise<Map<string, Observation>> {
+  const j = erApi.parse(await getJson("https://open.er-api.com/v6/latest/USD"));
+  const at = j.time_last_update_unix * 1000;
+  return new Map(Object.entries(j.rates).map(([k, v]) => [k, { source: "er_api" as const, fiatPerUsd: v, at }]));
+}
+
+const frankfurter = z.object({ date: z.string(), rates: z.record(z.string(), z.number()) });
+
+/** ECB reference rates via Frankfurter (published ~16:00 CET on business days). */
+export async function fetchEcb(symbols: string[]): Promise<Map<string, Observation>> {
+  const j = frankfurter.parse(await getJson(`https://api.frankfurter.dev/v1/latest?base=USD&symbols=${symbols.join(",")}`));
+  const at = Date.parse(`${j.date}T15:00:00Z`);
+  return new Map(Object.entries(j.rates).map(([k, v]) => [k, { source: "ecb" as const, fiatPerUsd: v, at }]));
+}
+
 /** Celo Uniswap v3 pool mids (USD/ARS, USD/BRL), observed now. */
 export async function fetchUniswap(client: PublicClient): Promise<Map<string, Observation>> {
   const block = await client.getBlockNumber();
@@ -78,10 +116,18 @@ export async function observeAll(client: PublicClient, corridors: readonly Corri
       return empty;
     }
   };
-  const [dolar, uni, ...textile] = await Promise.all([
+  const uses = (id: SourceId) => corridors.some((c) => c.sources.some((s) => s.id === id));
+  const none = new Map<string, Observation>();
+  const ecbSymbols = corridors.filter((c) => c.sources.some((s) => s.id === "ecb")).map((c) => c.fiat);
+  const [dolar, uni, tickers, er, ecb, ...textile] = await Promise.all([
     safe("dolarapi", fetchDolar(), [] as Observation[]),
     safe("uniswap", fetchUniswap(client), new Map<string, Observation>()),
-    ...corridors.map((c) => safe(`textile ${c.pair}`, fetchTextile(c.pair), [] as Observation[])),
+    uses("textile_ticker") ? safe("textile tickers", fetchTextileTickers(), none) : none,
+    uses("er_api") ? safe("er-api", fetchErApi(), none) : none,
+    ecbSymbols.length ? safe("ecb", fetchEcb(ecbSymbols), none) : none,
+    ...corridors.map((c) =>
+      c.sources.some((s) => s.id === "textile_price") ? safe(`textile ${c.pair}`, fetchTextile(c.pair), [] as Observation[]) : Promise.resolve([] as Observation[]),
+    ),
   ]);
   const byPair = new Map<string, Observation[]>();
   corridors.forEach((c, i) => {
@@ -89,6 +135,10 @@ export async function observeAll(client: PublicClient, corridors: readonly Corri
     const u = c.fiat === "USD" ? undefined : uni.get(c.fiat);
     if (u) obs.push(u);
     if (c.sources.some((s) => s.id === "peg")) obs.push({ source: "peg", fiatPerUsd: 1, at: Date.now() });
+    for (const [id, m] of [["textile_ticker", tickers], ["er_api", er], ["ecb", ecb]] as const) {
+      const o = m.get(c.fiat);
+      if (o && c.sources.some((s) => s.id === id)) obs.push(o);
+    }
     byPair.set(c.pair, obs);
   });
   return { byPair, errors };

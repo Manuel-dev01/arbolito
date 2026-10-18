@@ -170,6 +170,11 @@ describe("stitch.toml", () => {
     expect(toml).toContain(`sell_total_liquidity_collateral = "${brl.sellCapSoft}"`);
   });
 
+  it("quotes only funded (live) corridors", () => {
+    expect(CORRIDORS.some((c) => !c.live)).toBe(true);
+    for (const c of CORRIDORS) expect(toml.includes(`/feed/${c.pair}"`)).toBe(c.live);
+  });
+
   it("uses the Celo chain block from Stitch's own template and leaves [rfq] to connect", () => {
     expect(toml).toContain("chain_id = 42220");
     expect(toml).toContain('reactor = "0xa9AA0a64769cBed4d3B1Ceb4Df01CdE915C235b3"');

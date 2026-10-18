@@ -21,7 +21,7 @@
  */
 import { TOKENS } from "@arbolito/config";
 
-export type Pair = "wars-usdt" | "wbrl-usdt" | "usdc-usdt" | "usat-usdt";
+export type Pair = "wars-usdt" | "wbrl-usdt" | "usdc-usdt" | "usat-usdt" | "wcop-usdt" | "wmxn-usdt";
 
 export type SourceId =
   | "textile_price" // Textile's own corridor price (what other fillers price off)
@@ -29,7 +29,10 @@ export type SourceId =
   | "dolar_crypto" // dolarapi "cripto" USD/ARS (where wARS actually trades)
   | "dolar_ccl" // dolarapi CCL USD/ARS
   | "dolar_official_cross" // dolarapi official USD/ARS ÷ BRL/ARS → USD/BRL
-  | "peg"; // a stablecoin's 1.00 peg (stable corridors only)
+  | "peg" // a stablecoin's 1.00 peg (stable corridors only)
+  | "textile_ticker" // Textile /tickers maker levels (USDT_COP, USDT_MXN): mid, or the one side quoted
+  | "er_api" // ExchangeRate-API open access (open.er-api.com), daily; attribution required when shown
+  | "ecb"; // ECB reference rate via Frankfurter (MXN; no COP)
 
 export interface SourceSpec {
   id: SourceId;
@@ -41,8 +44,10 @@ export interface SourceSpec {
 
 export interface Corridor {
   pair: Pair;
-  soft: "wARS" | "wBRL" | "USDC" | "USAT";
-  fiat: "ARS" | "BRL" | "USD";
+  soft: "wARS" | "wBRL" | "USDC" | "USAT" | "wCOP" | "wMXN";
+  fiat: "ARS" | "BRL" | "USD" | "COP" | "MXN";
+  /** Stitch quotes it (inventory funded). A non-live corridor is priced and published only, to watch the feed before funding. */
+  live: boolean;
   /** Stitch side spreads around our published mid. */
   buyOffsetBps: number;
   sellOffsetBps: number;
@@ -80,6 +85,7 @@ export const CORRIDORS: readonly Corridor[] = [
     pair: "wars-usdt",
     soft: "wARS",
     fiat: "ARS",
+    live: true,
     buyOffsetBps: 14, // covers ~a day of peso crawl on what we buy
     sellOffsetBps: 5,
     buyCapUsdt: usdt(10),
@@ -102,6 +108,7 @@ export const CORRIDORS: readonly Corridor[] = [
     pair: "wbrl-usdt",
     soft: "wBRL",
     fiat: "BRL",
+    live: true,
     buyOffsetBps: 6,
     sellOffsetBps: 6,
     buyCapUsdt: usdt(20), // raised 2026-10-17 to rebuild wBRL with idle USDT (founder OK)
@@ -122,6 +129,7 @@ export const CORRIDORS: readonly Corridor[] = [
       pair: soft === "USDC" ? "usdc-usdt" : "usat-usdt",
       soft,
       fiat: "USD",
+      live: true,
       buyOffsetBps: 3,
       sellOffsetBps: 3,
       buyCapUsdt: usdt(10),
@@ -137,7 +145,51 @@ export const CORRIDORS: readonly Corridor[] = [
       skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 2, floorBps: 1 },
     }),
   ),
+  // Ripio wFIAT for Colombia and Mexico. No Uniswap pool and no Textile /price for these yet, so
+  // fair comes from Textile's ticker levels and daily FX references. Not live until funded.
+  {
+    pair: "wcop-usdt",
+    soft: "wCOP",
+    fiat: "COP",
+    live: false,
+    buyOffsetBps: 10,
+    sellOffsetBps: 10,
+    buyCapUsdt: usdt(10),
+    sellCapSoft: wad(31_700), // ≈ US$ 10 at ~3,170 COP/USD
+    sources: [
+      { id: "textile_ticker", weight: 2, maxAgeMs: 10 * MIN },
+      { id: "er_api", weight: 1, maxAgeMs: 26 * HOUR },
+    ],
+    minSources: 2,
+    maxDevBps: 150,
+    jumpBps: 100,
+    jumpConfirmMs: 30_000,
+    skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 6, floorBps: 3 },
+  },
+  {
+    pair: "wmxn-usdt",
+    soft: "wMXN",
+    fiat: "MXN",
+    live: false,
+    buyOffsetBps: 10,
+    sellOffsetBps: 10,
+    buyCapUsdt: usdt(10),
+    sellCapSoft: wad(185), // ≈ US$ 10 at ~18.5 MXN/USD
+    sources: [
+      { id: "textile_ticker", weight: 2, maxAgeMs: 10 * MIN },
+      { id: "er_api", weight: 1, maxAgeMs: 26 * HOUR },
+      { id: "ecb", weight: 1, maxAgeMs: 4 * 24 * HOUR }, // the ECB skips weekends and holidays
+    ],
+    minSources: 2,
+    maxDevBps: 150,
+    jumpBps: 100,
+    jumpConfirmMs: 30_000,
+    skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 6, floorBps: 3 },
+  },
 ];
+
+/** The corridors Stitch quotes (funded). */
+export const LIVE_CORRIDORS = CORRIDORS.filter((c) => c.live);
 
 /** Problems with a corridor's parameters; empty when it is safe to run. */
 export function validateCorridor(c: Corridor): string[] {

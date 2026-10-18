@@ -38,12 +38,13 @@ describe("risk officer", () => {
     expect(parseDecision(JSON.stringify({ corridors: [{ pair: "wars-usdt", action: "tighten", reason: "go faster" }] }), CORRIDORS)).toEqual([]);
   });
 
-  it("asks once with the decide tool forced and the signals attached", async () => {
+  it("asks once, offering the decide tool (auto choice), with the signals attached", async () => {
     const llm = fakeLlm(JSON.stringify({ corridors: [{ pair: "wars-usdt", action: "normal", reason: "quiet market" }] }));
     const r = await reviewRisk(llm, "model-x", [{ pair: "wars-usdt", holds: 0, fills: 0 }], CORRIDORS);
     expect(r.decisions).toEqual([{ pair: "wars-usdt", action: "normal", minutes: 0, reason: "quiet market" }]);
     expect(llm.calls).toHaveLength(1);
-    expect(llm.calls[0]!.toolChoice).toEqual({ type: "function", function: { name: "decide" } });
+    expect(llm.calls[0]!.toolChoice).toBe("auto");
+    expect(llm.calls[0]!.tools?.map((t) => t.function.name)).toEqual(["decide"]);
     expect(llm.calls[0]!.messages.at(-1)!.content).toContain("wars-usdt");
   });
 
