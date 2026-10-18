@@ -63,6 +63,20 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-18: Risk officer live; wCOP/wMXN priced (dry)
+- **Desk fills:** 3 so far, all on wBRL from taker `0x5dc2…b77f`: a sale at +6 bps, then two buys totalling $20 at +2 bps (the raised buy cap at work). NAV $79.95 vs $80 funded.
+- **Risk officer on** (founder go-ahead):
+  - `DEEPSEEK_API_KEY` (copied via stdin) and `DESK_RISK_OFFICER=true` set on `desk-feed`.
+  - DeepSeek V4 thinks by default: with a 3,000-token budget it reasoned without answering, and it rejects a forced `tool_choice`. Now called with `thinking: disabled` (new llm client option) and the decide tool forced, about 930 tokens per review. A text-JSON fallback is kept.
+  - First live review: all six corridors normal, with reasons.
+- **wCOP/USDT and wMXN/USDT** (not live, priced only):
+  - **Sources:** Textile `/tickers` maker levels, ExchangeRate-API (daily; attribution needed when shown) and the ECB via Frankfurter (MXN).
+  - **Live:** COP 3,174.37 (sources within 27 bps); MXN 18.4655 (within 44 bps).
+  - Stitch, funding and `/desk` only include live corridors.
+- **Next:**
+  - Founder runs `/minipay-check`.
+  - Fund wCOP/wMXN: about 40 USDT. No Uniswap pools exist, so swaps go via Textile with our partner key (first live Textile taker execution; rehearse on a fork).
+
 ### 2026-10-17: Desk on four corridors; app conversions routed through Textile
 **Shipped:**
 - **Organisers confirmed:** our app's users filling against the desk is not self-trading.
