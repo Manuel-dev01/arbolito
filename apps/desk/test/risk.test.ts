@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChatRequest, ChatResult, LlmClient } from "@arbolito/llm";
-import { CORRIDORS, MAX_PAUSE_MIN, MIN_PAUSE_MIN, parseDecision, reviewRisk, windowStats } from "../src";
+import { CORRIDORS, MAX_PAUSE_MIN, MIN_PAUSE_MIN, jsonFromText, parseDecision, reviewRisk, windowStats } from "../src";
 
 const fakeLlm = (args: string | Error): LlmClient & { calls: ChatRequest[] } => {
   const calls: ChatRequest[] = [];
@@ -46,6 +46,20 @@ describe("risk officer", () => {
     expect(llm.calls[0]!.toolChoice).toBe("auto");
     expect(llm.calls[0]!.tools?.map((t) => t.function.name)).toEqual(["decide"]);
     expect(llm.calls[0]!.messages.at(-1)!.content).toContain("wars-usdt");
+  });
+
+  it("accepts the same JSON from a text reply when the model doesn't call the tool", async () => {
+    const llm: LlmClient = {
+      async chat(): Promise<ChatResult> {
+        const content = `Reviewed the signals.
+{"corridors":[{"pair":"wbrl-usdt","action":"pause","minutes":30,"reason":"three negative-edge fills"}]}
+Done.`;
+        return { message: { role: "assistant", content }, toolCalls: [], finishReason: "stop", usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 }, model: "fake" };
+      },
+    };
+    const r = await reviewRisk(llm, "m", [], CORRIDORS);
+    expect(r.decisions).toEqual([{ pair: "wbrl-usdt", action: "pause", minutes: 30, reason: "three negative-edge fills" }]);
+    expect(jsonFromText("no json here")).toBeUndefined();
   });
 
   it("a failed call is no decision, never a throw", async () => {

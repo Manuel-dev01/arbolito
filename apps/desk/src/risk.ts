@@ -86,7 +86,21 @@ Pause only for a concrete reason visible in the signals, for example:
 - volatility or the price move over the last hour is far above normal for the pair (Argentine peso: a crawl of ~5 bps/day; real: a few tens of bps/day);
 - repeated breaker holds suggesting an unstable market;
 - a stablecoin moving away from 1.00 (fairNow is fiat per USD; for USDC/USA₮ it should be ~1).
-Otherwise return NORMAL: a quiet market is the normal case. Keep reasons short and factual. Always call the decide tool once, covering every corridor.`;
+Otherwise return NORMAL: a quiet market is the normal case. Keep reasons short and factual. Always call the decide tool once, covering every corridor.
+If you cannot call tools, reply with only the same JSON object: {"corridors":[{"pair":"…","action":"normal"|"pause","minutes":15-120,"reason":"…"}]}.`;
+
+/** The first top-level JSON object in a text reply (the fallback when the model answers in text). */
+export function jsonFromText(text: string | null | undefined): string | undefined {
+  if (!text) return undefined;
+  const start = text.indexOf("{");
+  if (start < 0) return undefined;
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  return undefined;
+}
 
 /** Parse and clamp the model's tool call; unknown pairs and malformed output are dropped. */
 export function parseDecision(argsJson: string, corridors: readonly Corridor[]): RiskDecision[] {
@@ -127,8 +141,10 @@ export async function reviewRisk(llm: LlmClient, model: string, signals: Corrido
       timeoutMs: 45_000,
     });
     const call = res.toolCalls.find((c) => c.function.name === "decide");
-    if (!call) return { decisions: [], error: "no decide call" };
-    return { decisions: parseDecision(call.function.arguments, corridors) };
+    // Thinking models sometimes answer in text even with the tool offered; the same JSON is accepted.
+    const args = call?.function.arguments ?? jsonFromText(res.message.content);
+    if (!args) return { decisions: [], error: "no decide call or JSON reply" };
+    return { decisions: parseDecision(args, corridors) };
   } catch (e) {
     return { decisions: [], error: (e as Error).message };
   }
