@@ -63,6 +63,27 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-17: Desk on four corridors; app conversions routed through Textile
+**Shipped:**
+- **Organisers confirmed:** our app's users filling against the desk is not self-trading.
+- **Textile partner API key** (founder-created, live): set on Vercel as `TEXTILE_API_KEY` with `TEXTILE_RFQ_ENABLED=true`. Firm quotes for MiniPay users need no extra user signature. `ATTRIBUTION_CODE` was missing on Vercel, which left /prepare `not_ready`; now set.
+  - **Verified:** the live `/api/miniapp/quote` for 5 USDT → wARS routes via Textile at 8,082.7 wARS (Uniswap 8,040.0).
+- **Desk corridors:**
+  - **New:** USDC/USDT and USA₮/USDT, at US$ 10 per side and 3/3 bps spreads. They price off Textile with a fixed 1.00 peg as the second source, so a drift of more than 30 bps off peg trips the breaker (depeg guard).
+  - **wBRL:** buy cap raised to US$ 20, using idle USDT.
+- **Inventory** (founder sent another 40 USDT): 2 × 5 USDT → 9.987 USDC through the new Uniswap USDC/USDT 0.01% pool (`0x1a810e0B…8846`, verified, added to config and 04-reference), and 2 × 5 USDT → 10.0015 USA₮. Approvals in place; all txs tagged.
+- **Stitch** quotes four pools; `/desk` shows all four.
+- **Hygiene:**
+  - Guard constructor pools are now an explicit `guard` flag, so a new routing pool never changes a guard deploy.
+  - Textile client tests no longer read the key from `.env`.
+  - Migration 0003 adds snapshot columns `usdc`, `usat` and `fairs`.
+- **Textile day-one email:** 1 quote sent, 1 filled. Flow is the constraint, not price.
+
+**Risks / next:**
+- The firm path with the partner key (/prepare → MiniPay) hasn't run end to end with a real user yet. The founder's `/minipay-check` is still pending.
+- Risk officer: turn on at ≥10 fills or after 3 days live.
+- Consider wCOP/wMXN corridors (they need COP and MXN price sources).
+
 ### 2026-10-15: Landing matches the design; Arbolito Desk feed built and dry-run against Stitch
 **Shipped (pushed to main):**
 - **Landing:**
