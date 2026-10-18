@@ -133,11 +133,12 @@ export async function reviewRisk(llm: LlmClient, model: string, signals: Corrido
         { role: "user", content: `Signals for the last hour (JSON):\n${JSON.stringify(signals)}` },
       ],
       tools: [RISK_TOOL],
-      // deepseek-v4-pro (thinking mode) rejects a forced tool_choice; "auto" plus the prompt's
-      // "always call decide" works, and no call is simply no decision.
-      toolChoice: "auto",
+      // DeepSeek V4 thinks by default: it spent a 3,000-token budget reasoning without answering and
+      // rejects a forced tool_choice. A bounded pause decision needs neither, so thinking is off.
+      toolChoice: { type: "function", function: { name: "decide" } },
+      thinking: "disabled",
       temperature: 0,
-      maxTokens: 400,
+      maxTokens: 600,
       timeoutMs: 45_000,
     });
     const call = res.toolCalls.find((c) => c.function.name === "decide");

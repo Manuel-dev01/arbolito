@@ -55,6 +55,11 @@ export interface ChatRequest {
   signal?: AbortSignal;
   /** Per-attempt timeout; overrides the client default. */
   timeoutMs?: number;
+  /**
+   * DeepSeek V4 models think by default. "disabled" turns it off (sent as thinking.type), which is
+   * also what allows a forced tool_choice. Omitted: the model's default.
+   */
+  thinking?: "enabled" | "disabled";
 }
 
 export interface Usage {
@@ -146,6 +151,7 @@ export class DeepSeekClient implements LlmClient {
     }
     if (req.temperature !== undefined) body.temperature = req.temperature;
     if (req.maxTokens !== undefined) body.max_tokens = req.maxTokens;
+    if (req.thinking) body.thinking = { type: req.thinking };
 
     const timeoutMs = req.timeoutMs ?? this.timeoutMs;
     const res = await requestWithRetry(
