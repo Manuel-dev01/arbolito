@@ -82,10 +82,14 @@ export function isUserRejection(e: unknown): boolean {
 export interface TxSender {
   /** Sends one call through the wallet (MiniPay shows its sheet) and returns the tx hash. */
   send(call: Call, index: number): Promise<Hex>;
+  /** The sending account, so a send that errors without a hash can be checked onchain. */
+  account?: Address;
 }
 export interface ReceiptWaiter {
   /** Waits for the receipt. Throws on timeout/RPC failure (the outcome is then unknown). */
   wait(hash: Hex): Promise<"success" | "reverted">;
+  /** The account's nonce at the latest block: if it never moves, a send that errored went nowhere. */
+  nonce?(account: Address): Promise<number>;
 }
 
 export type SendOutcome =
@@ -95,7 +99,35 @@ export type SendOutcome =
   /** A tx reverted onchain: the swap or payment didn't happen. */
   | { kind: "failed"; hashes: Hex[]; atIndex: number; reason: "reverted" }
   /** We can't tell whether the tx went out (send error that isn't a rejection, or receipt timeout). Never retry blindly. */
-  | { kind: "failed"; hashes: Hex[]; atIndex: number; reason: "unknown"; error: string };
+  | { kind: "failed"; hashes: Hex[]; atIndex: number; reason: "unknown"; error: string }
+  /** MiniPay errored without a hash and the account's nonce didn't move: call `atIndex` never went out. */
+  | { kind: "failed"; hashes: Hex[]; atIndex: number; reason: "not-sent"; error: string };
+
+export interface SettleOptions {
+  /** How long the nonce must stay put before "not sent" (Celo blocks are ~1 s). */
+  settleMs?: number;
+  pollMs?: number;
+}
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * After a send error with no hash: true only if the account's mined nonce stays at `before` for
+ * `settleMs`. Any RPC failure, or a nonce that moved, means we can't say (the caller keeps "unknown").
+ */
+async function stayedUnsent(waiter: ReceiptWaiter, account: Address, before: number, o: SettleOptions): Promise<boolean> {
+  const settleMs = o.settleMs ?? 12_000;
+  const pollMs = o.pollMs ?? 2_000;
+  try {
+    for (let waited = 0; ; waited += pollMs) {
+      if ((await waiter.nonce!(account)) !== before) return false;
+      if (waited >= settleMs) return true;
+      await pause(pollMs);
+    }
+  } catch {
+    return false;
+  }
+}
 
 export interface SequencerHooks {
   /** Called right after MiniPay returns a hash for call `index`. */
@@ -105,15 +137,27 @@ export interface SequencerHooks {
 }
 
 /** Sends each call in order, waiting for each receipt before the next (approval first, then swap). */
-export async function sendCallsInOrder(calls: readonly Call[], sender: TxSender, waiter: ReceiptWaiter, hooks: SequencerHooks = {}): Promise<SendOutcome> {
+export async function sendCallsInOrder(
+  calls: readonly Call[],
+  sender: TxSender,
+  waiter: ReceiptWaiter,
+  hooks: SequencerHooks = {},
+  settle: SettleOptions = {},
+): Promise<SendOutcome> {
   const hashes: Hex[] = [];
+  const account = sender.account;
   for (let i = 0; i < calls.length; i++) {
     let hash: Hex;
+    // Each call waits for the previous receipt, so the mined nonce before a send is a fixed baseline.
+    const before = account && waiter.nonce ? await waiter.nonce(account).catch(() => null) : null;
     try {
       hash = await sender.send(calls[i]!, i);
     } catch (e) {
       if (isUserRejection(e)) return { kind: "cancelled", hashes, atIndex: i };
-      return { kind: "failed", hashes, atIndex: i, reason: "unknown", error: e instanceof Error ? e.message : String(e) };
+      const error = e instanceof Error ? e.message : String(e);
+      // Some MiniPay dismissals don't arrive as 4001. If nothing left the wallet, say so.
+      if (account && before !== null && (await stayedUnsent(waiter, account, before, settle))) return { kind: "failed", hashes, atIndex: i, reason: "not-sent", error };
+      return { kind: "failed", hashes, atIndex: i, reason: "unknown", error };
     }
     hashes.push(hash);
     hooks.onSent?.(i, hash);
@@ -133,6 +177,7 @@ export async function sendCallsInOrder(calls: readonly Call[], sender: TxSender,
 export function createViemSender(provider: Eip1193Provider, account: Address, feeCurrency?: () => Address | undefined): TxSender {
   const wallet = createWalletClient({ account, chain: celo, transport: custom(provider) });
   return {
+    account,
     async send(call) {
       const fc = feeCurrency?.();
       return wallet.sendTransaction({
@@ -154,6 +199,7 @@ export function createFornoWaiter(timeoutMs = 90_000): ReceiptWaiter {
       const r = await client.waitForTransactionReceipt({ hash, timeout: timeoutMs, pollingInterval: 1_000 });
       return r.status;
     },
+    nonce: (address) => client.getTransactionCount({ address, blockTag: "latest" }),
   };
 }
 

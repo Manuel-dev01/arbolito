@@ -243,7 +243,7 @@ describe("other messages", () => {
 
   it("link code: shown with a URL into the mini app; used and expired states edit it", () => {
     const active = renderLinkCode("active", "0482", "es", links);
-    expect(active.text).toBe("Tu código: <code>0482</code>\nConfirmalo en MiniPay para conectar. Vence en 10 min.");
+    expect(active.text).toBe("Tu código: <code>0482</code>\nEn MiniPay abrí Arbolito → <b>Ajustes → Telegram</b> y escribilo ahí. Vence en 10 min.");
     expect(texts(active.keyboard)).toEqual([["Conectar en MiniPay ↗"]]);
     expect(urls(active.keyboard)).toEqual(["https://arbolito.example/app/link?code=0482"]);
     const expired = renderLinkCode("expired", "0482", "en", links);

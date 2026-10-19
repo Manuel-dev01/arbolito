@@ -6,9 +6,6 @@ import { Frame, useApp } from "../context";
 import { Badge, Logo, Switch } from "../ui";
 import { fmtDate, useLocalEq } from "./Autonomy";
 
-/** Telegram bot handle (docs/STATUS.md: @arbolitoo_bot). Linking starts in the bot, which sends /app/link?code=…. */
-const TELEGRAM_BOT = "https://t.me/arbolitoo_bot";
-
 export function Security() {
   const { t, lang, auto, contacts, setPaused, go } = useApp();
   const eq = useLocalEq();
@@ -185,7 +182,7 @@ export function Settings() {
             onClick={() => {
               // TODO(contract): no endpoint tells the app whether this wallet is linked to Telegram (and as whom).
               if (mock) toast("@lucia.dg");
-              else openLink(TELEGRAM_BOT);
+              else window.location.href = `${window.location.pathname.replace(/\/$/, "")}/link${window.location.search}`;
             }}
           >
             <span>{t.setTelegram}</span>

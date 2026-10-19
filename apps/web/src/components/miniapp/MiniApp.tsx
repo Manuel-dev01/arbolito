@@ -34,7 +34,7 @@ import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
 import { ScreenView } from "./screens/ScreenView";
 import { DetailsSheet, LangSheet, MiniPaySheet } from "./sheets";
-import { LinkScreen } from "./screens/Link";
+import { codeFromUrl, LinkScreen } from "./screens/Link";
 
 const MOCK_FAILS: MockFail[] = ["reject", "revert", "no_route", "price_changed", "proof", "expired", "not_ready", "upstream", "mismatch"];
 
@@ -594,7 +594,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         const pct = q.vsOfficial ? ` · ${fmtPct(q.vsOfficial.pct, lang)} ${t.vsOff}.` : ".";
         setChat((c) => ({
           ...c,
-          msgs: [...c.msgs.filter((x) => x.kind !== "proc"), { id: newId(), kind: "done", title: fill(t.doneT, { x: got }), text: `${fill(t.doneSub, { y: fmtSym(q.amountIn, q.from, lang) })}${pct} ${t.chatTgToo}`, receiptId: rid }],
+          msgs: [...c.msgs.filter((x) => x.kind !== "proc"), { id: newId(), kind: "done", title: fill(t.doneT, { x: got }), text: `${fill(t.doneSub, { y: fmtSym(q.amountIn, q.from, lang) })}${pct}`, receiptId: rid }],
         }));
         void refreshBalances();
         return;
@@ -605,7 +605,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       }
       setChatQuote(msgId, res.kind === "failed" ? "used" : "live");
       setChat((c) => ({ ...c, msgs: c.msgs.filter((x) => x.kind !== "proc") }));
-      if (res.kind === "failed") return pushMsgs({ id: newId(), kind: "bot", text: res.reason === "reverted" ? `${t.failedT}. ${t.noMoneyMoved}` : `${t.unknownT}. ${t.unknownB}` });
+      if (res.kind === "failed") return pushMsgs({ id: newId(), kind: "bot", text: res.reason === "unknown" ? `${t.unknownT}. ${t.unknownB}` : res.reason === "not-sent" ? t.notSent : `${t.failedT}. ${t.noMoneyMoved}` });
       const mm = mapApiError(res.code);
       if (mm.kind === "expired") setChat((c) => ({ ...c, msgs: c.msgs.map((x) => (x.id === msgId && x.kind === "quote" ? { ...x, quote: { ...x.quote, expiresAt: new Date(0).toISOString() } } : x)) }));
       else if (mm.kind === "price-changed") pushMsgs({ id: newId(), kind: "bot", text: `${t.changed}. ${t.noMoneyMoved}` });
@@ -756,7 +756,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         const msgs: ChatMsg[] = [voice, quoteMsg];
         if (stage === "proc") msgs.push({ id: newId(), kind: "proc", text: tt.chatProc });
         if (stage === "done")
-          msgs.push({ id: newId(), kind: "done", title: fill(tt.doneT, { x: fmtSym(q.expectedOut, "wARS", l) }), text: `${fill(tt.doneSub, { y: fmtSym(q.amountIn, from, l) })} · ${q.vsOfficial ? fmtPct(q.vsOfficial.pct, l) : ""} ${tt.vsOff}. ${tt.chatTgToo}`, receiptId: ready.store.receipts(ready.account)[0]?.receiptId ?? null });
+          msgs.push({ id: newId(), kind: "done", title: fill(tt.doneT, { x: fmtSym(q.expectedOut, "wARS", l) }), text: `${fill(tt.doneSub, { y: fmtSym(q.amountIn, from, l) })} · ${q.vsOfficial ? fmtPct(q.vsOfficial.pct, l) : ""} ${tt.vsOff}.`, receiptId: ready.store.receipts(ready.account)[0]?.receiptId ?? null });
         if (stage === "cancel") msgs.push({ id: newId(), kind: "cancel", quoteMsgId: qid });
         setChat((c) => ({ ...c, msgs }));
       })();
@@ -769,7 +769,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     return (
       <div className="mp-root">
         <div className="mp-app" lang={lang}>
-          <Gate kind={env.phase} t={t} onRetry={() => { setEnv({ phase: "boot" }); void boot(); }} />
+          <Gate kind={env.phase} t={t} linkCode={mode === "link" ? codeFromUrl() : null} onRetry={() => { setEnv({ phase: "boot" }); void boot(); }} />
         </div>
       </div>
     );

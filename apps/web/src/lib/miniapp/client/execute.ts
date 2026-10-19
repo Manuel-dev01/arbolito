@@ -25,7 +25,7 @@ export type ExecStage =
 export type ExecResult =
   | { kind: "done"; prepared: Prepared | null; hashes: Hex[]; receipt: Submitted | null }
   | { kind: "cancelled" }
-  | { kind: "failed"; reason: "reverted" | "unknown"; hashes: Hex[] }
+  | { kind: "failed"; reason: "reverted" | "unknown" | "not-sent"; hashes: Hex[] }
   /** The server refused before anything was sent (expired, price changed, no route…). */
   | { kind: "api-error"; code: ClientErrorCode };
 

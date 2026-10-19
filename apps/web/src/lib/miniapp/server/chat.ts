@@ -2,7 +2,7 @@ import type { Address } from "viem";
 import type { z } from "zod";
 import { CELO_MAINNET_ID, TOKENS, tokenByAddress } from "@arbolito/config";
 import { formatUsd } from "@arbolito/chain";
-import { LlmConfigError, LlmError, TOKEN_SYMBOLS, ToolUserError, runAgentTurn, type ToolHandlers } from "@arbolito/llm";
+import { LlmConfigError, LlmError, TOKEN_SYMBOLS, ToolUserError, detectLanguage, runAgentTurn, type ToolHandlers } from "@arbolito/llm";
 import { effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
 import type { ChatRequest, ChatResponse, QuoteResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
@@ -172,7 +172,8 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
     result = await runAgentTurn({
       history,
       userText,
-      language: req.lang,
+      // Reply in the language the user wrote in (the app language is the fallback when it is unclear).
+      language: detectLanguage(userText, req.lang),
       tools: buildChatHandlers(deps, user, account, req.lang, quotes),
       model: deps.agentModel,
       client: deps.llm(),

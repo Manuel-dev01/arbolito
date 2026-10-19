@@ -2,9 +2,10 @@
 
 import type { MiniDict } from "../../../i18n/miniapp";
 import { ActionBar, Logo, NoMoneyMoved } from "../ui";
+import { CodeDigits } from "./Link";
 
 /** The only two wallet messages MiniPay allows: not inside MiniPay, and connection failed. */
-export function Gate({ kind, t, onRetry }: { kind: "no-minipay" | "conn-fail"; t: MiniDict; onRetry(): void }) {
+export function Gate({ kind, t, onRetry, linkCode }: { kind: "no-minipay" | "conn-fail"; t: MiniDict; onRetry(): void; linkCode?: string | null }) {
   if (kind === "conn-fail")
     return (
       <>
@@ -29,10 +30,10 @@ export function Gate({ kind, t, onRetry }: { kind: "no-minipay" | "conn-fail"; t
       <div className="mp-scroll">
         <div className="mp-center" style={{ gap: 20, padding: "32px 24px" }}>
           <Logo size={64} />
-          <h1 className="mp-h1 lg">{t.noMpTitle}</h1>
-          <p className="mp-p">{t.noMpBody}</p>
+          <h1 className="mp-h1 lg">{linkCode ? t.lnkGateT : t.noMpTitle}</h1>
+          {linkCode ? <CodeDigits code={linkCode} /> : <p className="mp-p">{t.noMpBody}</p>}
           <ol className="mp-soft" style={{ margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
-            {[t.noMp1, t.noMp2, t.noMp3].map((s, i) => (
+            {(linkCode ? [t.lnkGate1, t.lnkGate2, t.lnkGate3] : [t.noMp1, t.noMp2, t.noMp3]).map((s, i) => (
               <li key={s} className="mp-row" style={{ alignItems: "baseline" }}>
                 <span className="mp-mono mp-save" style={{ fontWeight: 600, fontSize: 14 }}>
                   {i + 1}

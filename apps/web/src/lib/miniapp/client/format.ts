@@ -73,6 +73,19 @@ export function fmtSym(amount: bigint | string, sym: Sym, lang: Lang, o: { dp?: 
   return fmtMoney(typeof amount === "string" ? BigInt(amount) : amount, DECIMALS[sym], CUR_OF[sym], lang, o);
 }
 
+/**
+ * A comparison vs the official rate is "savings" only when the user got more than at the official
+ * rate (buying dollars with pesos usually costs more than official). Otherwise it's shown neutrally.
+ */
+export function gainOf<T extends { deltaOut: string }>(s: T | null | undefined): T | null {
+  return s && BigInt(s.deltaOut) > 0n ? s : null;
+}
+
+/** The saved amount: whole pesos and reais, cents for dollars (a dollar gain is usually under $1). */
+export function fmtSaved(deltaOut: string | bigint, sym: Sym, lang: Lang): string {
+  return fmtSym(deltaOut, sym, lang, { dp: CUR_OF[sym] === "USD" ? 2 : 0 });
+}
+
 /** "+5,24%" / "+5.24%" from a percentage number (5.24). */
 export function fmtPct(pct: number, lang: Lang): string {
   const bps = BigInt(Math.round(pct * 100));

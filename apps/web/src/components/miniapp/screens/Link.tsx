@@ -5,21 +5,45 @@ import { fill } from "../../../i18n/miniapp";
 import { useApp } from "../context";
 import { ActionBar, Logo, NoMoneyMoved } from "../ui";
 
+/** Telegram bot handle (docs/STATUS.md: @arbolitoo_bot). */
+export const TELEGRAM_BOT = "https://t.me/arbolitoo_bot";
+
+/** The 4-digit linking code from a /app/link?code=1234 URL, or null. */
+export function codeFromUrl(): string | null {
+  const c = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("code") ?? "") : "";
+  return /^\d{4}$/.test(c) ? c : null;
+}
+
+/** The code as four big digits (shown in the Mini App and on the outside-MiniPay gate). */
+export function CodeDigits({ code }: { code: string }) {
+  return (
+    <div className="mp-card" style={{ padding: "20px 16px", display: "flex", justifyContent: "center", gap: 10 }} aria-label={code.split("").join(" ")}>
+      {code.split("").map((d, i) => (
+        <span key={i} className="mp-mono" style={{ width: 52, height: 64, borderRadius: 12, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 600 }}>
+          {d}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /**
- * /app/link?code=1234: "Conectá tu MiniPay". The same 4-digit code shows in Telegram; one tap
- * confirms it. No message signing (MiniPay rule); proof format is TBD by the backend (contract `proof?`).
+ * /app/link: "Conectá tu MiniPay con Telegram". The bot shows a 4-digit code (/conectar). With
+ * ?code= the code is prefilled and confirmed with one tap; without it (Ajustes → Telegram) the
+ * user types it. Typing is the path that always works: Telegram can't open an unlisted mini app
+ * inside MiniPay, so its link lands in Telegram's own browser. No message signing (MiniPay rule).
  */
 export function LinkScreen() {
-  const { t, api, account, showError } = useApp();
-  const [code] = useState(() => {
-    const c = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("code") ?? "" : "";
-    return /^\d{4}$/.test(c) ? c : null;
-  });
+  const { t, api, account, showError, openLink } = useApp();
+  const [urlCode] = useState(codeFromUrl);
+  const [code, setCode] = useState(urlCode ?? "");
+  const typed = urlCode === null;
+  const valid = /^\d{4}$/.test(code);
   const [state, setState] = useState<"idle" | "busy" | "done" | "fail">("idle");
   const [who, setWho] = useState<string | null>(null);
 
   const connect = async () => {
-    if (!code) return;
+    if (!valid) return;
     setState("busy");
     try {
       const r = await api.linkConfirm({ code, account });
@@ -56,29 +80,70 @@ export function LinkScreen() {
       </>
     );
 
+  if (typed)
+    return (
+      <>
+        <div className="mp-scroll">
+          <div className="mp-center">
+            <Logo size={56} />
+            <h1 className="mp-h1">{t.lnkTitle}</h1>
+            <ol className="mp-soft" style={{ margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10, alignSelf: "stretch" }}>
+              {[t.lnkStep1, t.lnkStep2].map((s, i) => (
+                <li key={s} className="mp-row" style={{ alignItems: "baseline" }}>
+                  <span className="mp-mono mp-save" style={{ fontWeight: 600, fontSize: 14 }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ fontSize: 16, lineHeight: 1.4 }}>{s}</span>
+                </li>
+              ))}
+            </ol>
+            <button type="button" className="mp-link inline" onClick={() => openLink(TELEGRAM_BOT)}>
+              {t.lnkOpenBot} ↗
+            </button>
+            <label className="mp-field" style={{ alignSelf: "stretch" }}>
+              <span>{t.lnkCodeLbl}</span>
+              <input
+                className="mp-input mono"
+                style={{ fontSize: 28, letterSpacing: ".4em", textAlign: "center" }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={4}
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value.replace(/\D/g, "").slice(0, 4));
+                  if (state === "fail") setState("idle");
+                }}
+                placeholder="0000"
+              />
+            </label>
+            {state === "fail" ? (
+              <div className="mp-banner" role="alert">
+                {t.lnkFail}
+              </div>
+            ) : null}
+            <div className="mp-small">{t.lnkNote}</div>
+          </div>
+        </div>
+        <ActionBar
+          primary={state === "busy" ? { label: t.lnkConnect, kind: "busy" } : valid ? { label: t.lnkConnect, onClick: () => void connect() } : { label: t.lnkConnect, kind: "off" }}
+          secondary={{ label: t.cancel, onClick: home }}
+        />
+      </>
+    );
+
   return (
     <>
       <div className="mp-scroll">
         <div className="mp-center">
           <Logo size={56} />
           <h1 className="mp-h1">{t.lnkTitle}</h1>
-          {code ? (
-            <>
-              <p className="mp-p">{t.lnkBody}</p>
-              <div className="mp-card" style={{ padding: "20px 16px", display: "flex", justifyContent: "center", gap: 10 }} aria-label={code.split("").join(" ")}>
-                {code.split("").map((d, i) => (
-                  <span key={i} className="mp-mono" style={{ width: 52, height: 64, borderRadius: 12, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 600 }}>
-                    {d}
-                  </span>
-                ))}
-              </div>
-              <div className="mp-small">{t.lnkNote}</div>
-            </>
-          ) : null}
-          {!code || state === "fail" ? (
+          <p className="mp-p">{t.lnkBody}</p>
+          <CodeDigits code={code} />
+          <div className="mp-small">{t.lnkNote}</div>
+          {state === "fail" ? (
             <>
               <div className="mp-banner" role="alert">
-                {code ? t.lnkFail : t.lnkBadCode}
+                {t.lnkFail}
               </div>
               <NoMoneyMoved t={t} />
             </>
@@ -86,8 +151,8 @@ export function LinkScreen() {
         </div>
       </div>
       <ActionBar
-        primary={code && state !== "fail" ? (state === "busy" ? { label: t.lnkConnect, kind: "busy" } : { label: t.lnkConnect, onClick: () => void connect() }) : { label: t.backHome, onClick: home }}
-        secondary={code && state !== "fail" ? { label: t.cancel, onClick: home } : null}
+        primary={state !== "fail" ? (state === "busy" ? { label: t.lnkConnect, kind: "busy" } : { label: t.lnkConnect, onClick: () => void connect() }) : { label: t.backHome, onClick: home }}
+        secondary={state !== "fail" ? { label: t.cancel, onClick: home } : null}
       />
     </>
   );

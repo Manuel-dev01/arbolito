@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { fmtPct, fmtRateLine, fmtSym, receiptRef } from "../../../lib/miniapp/client/format";
+import { fmtPct, fmtRateLine, fmtSaved, fmtSym, gainOf, receiptRef } from "../../../lib/miniapp/client/format";
 import { useApp, useNow, type ChatMsg } from "../context";
 import { CountdownBar, CountdownText, Spinner } from "../ui";
 import { routeText } from "./Change";
@@ -17,7 +17,11 @@ function ChatQuote({ m, now }: { m: Extract<ChatMsg, { kind: "quote" }>; now: nu
   const expired = cd.phase === "expired" && (m.status === "live" || m.status === "busy");
   const rows: [string, string, "mono" | "save" | "text"][] = [
     [t.rate, fmtRateLine(q.rate, q.from, q.to, lang), "mono"],
-    ...(q.vsOfficial ? ([[t.vsOff, `${fmtPct(q.vsOfficial.pct, lang)} · ${fill(t.saved, { x: fmtSym(q.vsOfficial.deltaOut, q.to, lang, { dp: 0 }) })}`, "save"]] as [string, string, "save"][]) : []),
+    ...(q.vsOfficial
+      ? gainOf(q.vsOfficial)
+        ? ([[t.vsOff, `${fmtPct(q.vsOfficial.pct, lang)} · ${fill(t.saved, { x: fmtSaved(q.vsOfficial.deltaOut, q.to, lang) })}`, "save"]] as [string, string, "save"][])
+        : ([[t.vsOff, fmtPct(q.vsOfficial.pct, lang), "mono"]] as [string, string, "mono"][])
+      : []),
     [t.route, routeText(q, t), "text"],
     [t.minimum, fmtSym(q.minOut, q.to, lang), "mono"],
   ];

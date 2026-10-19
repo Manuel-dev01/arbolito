@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import type { Receipt } from "../../../lib/miniapp/client/api";
-import { DECIMALS, fmtPct, fmtRateLine, fmtSym, receiptRef, shortHex } from "../../../lib/miniapp/client/format";
+import { DECIMALS, fmtPct, fmtRateLine, fmtSaved, fmtSym, gainOf, receiptRef, shortHex } from "../../../lib/miniapp/client/format";
 import type { Sym } from "../../../lib/miniapp/contract";
 import { Frame, useApp } from "../context";
 import { ReceiptBadge, Spinner } from "../ui";
@@ -57,7 +57,7 @@ export function ReceiptsList() {
                     </span>
                     <span className="mp-col" style={{ alignItems: "flex-end", gap: 4 }}>
                       {d?.savings ? (
-                        <span className="mp-save" style={{ fontSize: 14, fontWeight: 700 }}>
+                        <span className={gainOf(d.savings) ? "mp-save" : "mp-meta"} style={{ fontSize: 14, fontWeight: 700 }}>
                           {fmtPct(d.savings.pct, lang)}
                         </span>
                       ) : null}
@@ -110,17 +110,18 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
   const inn = BigInt(r.amountIn);
   const out = BigInt(r.amountOut);
   const offOut = r.savings ? out - BigInt(r.savings.deltaOut) : null;
+  const gain = gainOf(r.savings);
   const status = r.status;
   const tone = status === "verified" ? { bg: "var(--save-bg)", fg: "var(--save-text)", icon: "✓" } : status === "registering" ? { bg: "var(--surface-2)", fg: "var(--text)", icon: "…" } : { bg: "var(--attention-bg)", fg: "var(--attention-text)", icon: "!" };
   const title = status === "verified" ? t.verified : status === "registering" ? t.registering : status === "mismatch" ? t.mismatch : t.rcFailed;
   const body = status === "verified" ? t.rcVerifiedB : status === "registering" ? t.rcRegisteringB : status === "mismatch" ? t.rcMismatchB : t.rcFailedB;
   return (
     <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
-      {r.savings ? (
+      {gain ? (
         <div className="mp-col" style={{ padding: "8px 4px" }}>
           <span style={{ fontSize: 16, color: "var(--muted)" }}>{t.rcSaved}</span>
           <span className="mp-amount mp-save" style={{ fontSize: 53, lineHeight: 1 }}>
-            {fmtSym(r.savings.deltaOut, r.to, lang, { dp: 0 })}
+            {fmtSaved(gain.deltaOut, r.to, lang)}
           </span>
           <span style={{ fontSize: 16, color: "var(--muted)" }}>
             {t.rcVsOff} · {when}
@@ -164,7 +165,7 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
               <span>{t.rcOfficial}</span>
               <span className="mp-mono">{fmtRateLine(rateString(inn, r.from, offOut, r.to), r.from, r.to, lang)}</span>
             </div>
-            <div className="mp-meter" style={{ width: `${out > 0n ? Number((offOut * 1000n) / out) / 10 : 100}%`, background: "var(--muted)", opacity: 0.45 }} />
+            <div className="mp-meter" style={{ width: `${out > 0n ? Math.min(100, Number((offOut * 1000n) / out) / 10) : 100}%`, background: "var(--muted)", opacity: 0.45 }} />
           </div>
         ) : null}
         <span className="mp-small">{r.savings ? fill(t.rcCompareNote, { p: fmtPct(r.savings.pct, lang) }) : t.rcNoSavings}</span>

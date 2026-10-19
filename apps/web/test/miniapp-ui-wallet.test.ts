@@ -100,6 +100,19 @@ describe("Call sequencer (viem wallet client over a fake provider)", () => {
     const b = await sendCallsInOrder(calls, createViemSender(fakeProvider().provider, ACCOUNT), waiter({ 1: "throw" }));
     expect(b).toMatchObject({ kind: "failed", reason: "unknown", atIndex: 1 });
   });
+  it("a send error with no hash is 'not-sent' only when the account's nonce never moves", async () => {
+    const fast = { settleMs: 10, pollMs: 5 };
+    const still = { ...waiter(), nonce: async () => 7 };
+    const a = await sendCallsInOrder(calls, createViemSender(fakeProvider({ errorAt: 0 }).provider, ACCOUNT), still, {}, fast);
+    expect(a).toMatchObject({ kind: "failed", reason: "not-sent", atIndex: 0 });
+    let n = 7;
+    const moved = { ...waiter(), nonce: async () => n++ }; // something left the wallet
+    const b = await sendCallsInOrder(calls, createViemSender(fakeProvider({ errorAt: 0 }).provider, ACCOUNT), moved, {}, fast);
+    expect(b).toMatchObject({ kind: "failed", reason: "unknown" });
+    const flaky = { ...waiter(), nonce: async () => { throw new Error("rpc down"); } };
+    const c = await sendCallsInOrder(calls, createViemSender(fakeProvider({ errorAt: 1 }).provider, ACCOUNT), flaky, {}, fast);
+    expect(c).toMatchObject({ kind: "failed", reason: "unknown", atIndex: 1 });
+  });
   it("recognises rejections through viem's error wrapping", () => {
     expect(isUserRejection({ cause: { cause: { code: 4001 } } })).toBe(true);
     expect(isUserRejection({ name: "UserRejectedRequestError" })).toBe(true);

@@ -12,6 +12,8 @@ import {
   decimalKey,
   fmtMoney,
   fmtPct,
+  fmtSaved,
+  gainOf,
   fmtRateLine,
   fmtSym,
   fmtTyped,
@@ -174,7 +176,8 @@ export function QuoteCardA({ q, quoteAt, now, dim }: { q: Quote; quoteAt: number
   const { t, lang } = useApp();
   const exp = Date.parse(q.expiresAt);
   const cd = countdown(exp, now, exp - quoteAt);
-  const saved = q.vsOfficial ? fmtSym(q.vsOfficial.deltaOut, q.to, lang, { dp: 0 }) : null;
+  const gain = gainOf(q.vsOfficial);
+  const saved = gain ? fmtSaved(gain.deltaOut, q.to, lang) : null;
   return (
     <div className={`mp-card ${dim || cd.phase === "expired" ? "mp-dim" : ""}`}>
       <CountdownBar cd={cd} />
@@ -199,12 +202,14 @@ export function QuoteCardA({ q, quoteAt, now, dim }: { q: Quote; quoteAt: number
           <div className="mp-kv">
             <span>{t.vsOff}</span>
             <span className="mp-col" style={{ alignItems: "flex-end", gap: 2 }}>
-              <span className="mp-save" style={{ fontSize: 16, fontWeight: 800 }}>
+              <span className={gain ? "mp-save" : undefined} style={{ fontSize: 16, fontWeight: 800 }}>
                 {fmtPct(q.vsOfficial.pct, lang)}
               </span>
-              <span className="mp-save" style={{ fontSize: 14 }}>
-                {fill(t.saved, { x: saved ?? "" })}
-              </span>
+              {saved ? (
+                <span className="mp-save" style={{ fontSize: 14 }}>
+                  {fill(t.saved, { x: saved })}
+                </span>
+              ) : null}
             </span>
           </div>
         ) : null}
@@ -400,7 +405,7 @@ export function Done() {
   const { t, lang, exec, ch, go, openReceipt, api } = app;
   const r = useReceipt(api, exec.receiptId);
   const out = r.data?.amountOut ?? exec.expectedOut;
-  const savings = r.data?.savings ?? (ch.quote?.vsOfficial && ch.quote.from === exec.from && ch.quote.to === exec.to ? ch.quote.vsOfficial : null);
+  const savings = gainOf(r.data?.savings ?? (ch.quote?.vsOfficial && ch.quote.from === exec.from && ch.quote.to === exec.to ? ch.quote.vsOfficial : null));
   return (
     <Frame primary={{ label: t.seeReceipt, onClick: () => (exec.receiptId ? openReceipt(exec.receiptId) : go("receipts")) }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
       <div className="mp-center">
@@ -416,7 +421,7 @@ export function Done() {
             <span style={{ fontSize: 20, fontWeight: 800 }}>
               {fmtPct(savings.pct, lang)} {t.vsOff}
             </span>
-            <span style={{ fontSize: 15, fontWeight: 600 }}>{fill(t.saved, { x: fmtSym(savings.deltaOut, exec.to, lang, { dp: 0 }) })}</span>
+            <span style={{ fontSize: 15, fontWeight: 600 }}>{fill(t.saved, { x: fmtSaved(savings.deltaOut, exec.to, lang) })}</span>
           </div>
         ) : null}
         <ReceiptChip receiptId={exec.receiptId} />
@@ -464,7 +469,7 @@ export function Failed() {
         <NoMoneyMoved t={t} />
         <p className="mp-p ink">{fill(t.failedB, { y: payLabel(app) })}</p>
         <p className="mp-p" style={{ fontSize: 15 }}>
-          {t.failedWhy}
+          {res?.kind === "failed" && res.reason === "not-sent" ? t.notSent : t.failedWhy}
         </p>
       </div>
     </Frame>

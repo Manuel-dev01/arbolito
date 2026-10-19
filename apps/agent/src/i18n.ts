@@ -123,9 +123,9 @@ export const copy = {
   linkCode: (lang: Lang, code: string) =>
     pick<[string]>(
       {
-        es: (c) => `Tu código: <code>${c}</code>\nConfirmalo en MiniPay para conectar. Vence en 10 min.`,
-        pt: (c) => `Seu código: <code>${c}</code>\nConfirme no MiniPay para conectar. Expira em 10 min.`,
-        en: (c) => `Your code: <code>${c}</code>\nConfirm it in MiniPay to connect. Expires in 10 min.`,
+        es: (c) => `Tu código: <code>${c}</code>\nEn MiniPay abrí Arbolito → <b>Ajustes → Telegram</b> y escribilo ahí. Vence en 10 min.`,
+        pt: (c) => `Seu código: <code>${c}</code>\nNo MiniPay, abra o Arbolito → <b>Ajustes → Telegram</b> e digite lá. Expira em 10 min.`,
+        en: (c) => `Your code: <code>${c}</code>\nIn MiniPay, open Arbolito → <b>Settings → Telegram</b> and type it there. Expires in 10 min.`,
       },
       lang,
       code,

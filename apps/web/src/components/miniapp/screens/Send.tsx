@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import { countdown } from "../../../lib/miniapp/client/countdown";
 import { balanceOf, usdToCur } from "../../../lib/miniapp/client/derive";
-import { CURS, DECIMALS, fmtMoney, fmtPct, fmtRateLine, fmtSym, fmtTyped, maskPhone, parseHuman, SYM_OF, type Cur } from "../../../lib/miniapp/client/format";
+import { CURS, DECIMALS, fmtMoney, fmtPct, fmtRateLine, fmtSym, fmtTyped, gainOf, maskPhone, parseHuman, SYM_OF, type Cur } from "../../../lib/miniapp/client/format";
 import { isPositive } from "../../../lib/miniapp/client/keypad";
 import { newId, type Contact } from "../../../lib/miniapp/client/store";
 import { Frame, useApp, useNow } from "../context";
@@ -291,7 +291,7 @@ export function SendQuote() {
               <div className="mp-kv">
                 <span>{t.rate}</span>
                 <span className="mp-mono" style={{ fontSize: 14 }}>
-                  {fmtRateLine(q.rate, q.from, q.to, lang)} {q.vsOfficial ? <b className="mp-save">{fmtPct(q.vsOfficial.pct, lang)}</b> : null}
+                  {fmtRateLine(q.rate, q.from, q.to, lang)} {q.vsOfficial ? <b className={gainOf(q.vsOfficial) ? "mp-save" : undefined}>{fmtPct(q.vsOfficial.pct, lang)}</b> : null}
                 </span>
               </div>
             ) : null}
