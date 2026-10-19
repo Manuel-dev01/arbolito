@@ -193,7 +193,7 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
 ## Arbolito contracts (Celo mainnet)
 | Contract | Address | Notes |
 |---|---|---|
-| ArbolitoReceipts | **0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34** | Deployed 2026-10-09, block 79641781, tx `0xd3e1a5f6585c19d13d89491b47f597ed9b61f77fd074c9c14b86c30162ba421a`. Owner and emitter: ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`. The deploy tx carries `celo_e054d92430a5` |
+| ArbolitoReceipts | **0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34** | Deployed 2026-10-09, block 79641781, tx `0xd3e1a5f6585c19d13d89491b47f597ed9b61f77fd074c9c14b86c30162ba421a`. Owner and emitter: ops wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`. Second emitter (2026-10-19): the anchor wallet `0x89dC45dF1AAbf0b0CeD75A56953129d6d8fF7CA4`, a gas-only hot wallet the web app uses (`ANCHOR_PRIVATE_KEY`), funded with 0.3 CELO in tx `0x3bf223a38a75ecde0d2de4024c4093c41c1e2053ead797eaee9772f8f0e75f40` and allowed in tx `0x195b78fccaf24bf8cffadd08ef7ac1580a41331d43f8c144b3a9815a691c8b2e`. The deploy tx carries `celo_e054d92430a5` |
 
 ## Identity, reputation, attribution
 - ERC-8004 (mainnet):

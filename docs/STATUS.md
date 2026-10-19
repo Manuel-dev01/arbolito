@@ -63,6 +63,16 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-19 (evening): First real Mini App test on the founder's phone; receipts now anchor live
+- **Founder's test (MiniPay, wallet `0x7769…a734`), all checked onchain:** 2 USDT → 3,232.46 wARS (Textile fill), 3,232.45 wARS → 2.009 USDT (Uniswap), 1 USDT sent to ops (same-currency send), 1 USDT → 5.0599 wBRL (Textile, from the chat card). A 5 USDT attempt showed "we don't know": no tx left the wallet (MiniPay errored before returning a hash, most likely the sheet was closed).
+- **Fixes shipped (`69dfcd3`):**
+  - A send error with no hash is checked against the account's mined nonce for ~12 s; if it never moves the app says no money moved ("not-sent") instead of "unknown".
+  - Telegram linking: Telegram's link opens our page in its own browser (no wallet; MiniPay has no deeplink to an unlisted app), so linking dead-ended. Now the user types the bot's code in Settings → Telegram; the bot's message says so, and the page outside MiniPay shows the code and steps.
+  - "You saved" only when the user got more than official (pesos → dollars costs more than official); dollar savings in cents; the official meter clamped.
+  - Removed the false "Also sent to your Telegram"; the Mini App chat replies in the language the user writes in.
+- **Receipt anchoring live** (founder go-ahead): `pnpm anchor:wallet` created the anchor wallet `0x89dC…7CA4`, ops funded it with 0.3 CELO and made it an emitter (2 tagged txs), it anchored the 3 registering receipts (all now "verified"), and `ANCHOR_PRIVATE_KEY` + `ANCHOR_ENABLED=true` are on Vercel production, so new receipts anchor at submit. Rehearsed on an anvil fork first. ~0.01 CELO per anchor at 202 gwei; top up the wallet when it runs low.
+- **Next:** ArbolitoGuard v2 mainnet deploy (approved), then standing rules; ERC-8004 + Self; desk rebalancer.
+
 ### 2026-10-19 (later): Both desk issues fixed
 - **Textile `/submit` was not failing.** Textile recorded our tx hashes (`submittedAt`) and marked both RFQs `filled`. Our status schema rejected the `failReason: null` it returns, so a success read as a failure. The schemas now accept nulls, with a test using the live response. This also fixes the Mini App's submit, which uses the same call.
 - **Hard inventory caps:**

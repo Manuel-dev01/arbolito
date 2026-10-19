@@ -13,7 +13,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 ## Next up (in order)
 1. ✅ **Send to a contact** from the Mini App (2026-10-19): `POST /api/miniapp/send/prepare`. Same currency is one transfer. Cross currency pays the contact in the Uniswap swap, or forwards a Textile fill exactly. Receipts name the recipient.
 2. ✅ **Receipts list** (2026-10-19): `GET /api/miniapp/receipts`, merged into the app on launch, so receipts survive a new phone or a cleared app. Incoming transfers in the feed are still to do.
-3. 👤 **First real conversion through the Mini App** on the founder's phone (a few dollars), end to end: quote → MiniPay confirm → receipt. It proves the T1 core flow on mainnet.
+3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
 4. 👤 **Autonomy:** approve the ArbolitoGuard v2 mainnet deploy (≈3.04M gas ≈ 0.6 CELO). Then build standing rules: payday split and scheduled sends to saved contacts.
 5. 👤 **Identity:** ERC-8004 agent registration and Self agent ID (scripts and steps are ready; both need approval).
 6. ⬜ **Desk v1:** a hedger (sell inventory above the cap back to USDT), quote and win-rate stats from Stitch, and a strategy write-up for the originality score.
@@ -27,7 +27,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 |---|---|---|
 | Works on mainnet with real wFIAT | Mainnet wARS/wBRL conversions with anchored, verifiable receipts (`/r/<id>`) | ✅ |
 | | Every tx carries the attribution tag `celo_e054d92430a5` (enforced in code; MiniPay keeps it intact) | ✅ |
-| | A real user's conversion through the MiniPay Mini App | 👤 next |
+| | A real user's conversion through the MiniPay Mini App (founder, 2026-10-19; receipts anchored and verified) | ✅ |
 | Real use of wFIAT + Celo stack | Router: Uniswap v3 + Textile RFQ, best execution, Textile partner key | ✅ |
 | | Gas paid in stablecoins (MiniPay pays in USDT itself; our sender supports fee adapters) | ✅ |
 | | ERC-8004 identity registration | 👤 |
@@ -39,11 +39,11 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | | Standing rules: payday split, scheduled sends | ⬜ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
-| | Telegram bot: cards with "Confirmar en MiniPay", `/conectar` linking; auto-deploys from main | ✅ |
+| | Telegram bot: cards, `/conectar` linking (code typed in Settings → Telegram); auto-deploys from main | ✅ |
 | | Send to a contact (same currency or with conversion; receipts name the recipient) | ✅ |
 | | Receipts list from the server (incoming-transfer feed still to do) | ✅ |
 | | Wallet-ownership signature on reject and link (MiniPay supports both signing methods) | ⬜ |
-| | Mini App chat on Vercel (needs `DEEPSEEK_API_KEY` and `STT_API_KEY` set there) | 👤 |
+| | Mini App chat on Vercel (DeepSeek + voice; replies in the user's language) | ✅ |
 | | MiniPay Discover listing (name, URL, 512×512 icon) | 👤 |
 | Impact for LatAm | Story and numbers: the official-to-crypto dollar gap, BRL⇄ARS without SWIFT, the "Ahorraste" receipts | ✅ |
 | | Named real users (a pilot group in AR/BR), with their conversions on `/metrics` | 👤 ⬜ |
@@ -87,10 +87,10 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 - ✅ Neon Postgres (migrations 0000–0004).
 
 ## Founder actions (open)
-- [ ] Do a real Mini App conversion on your phone (a few dollars).
+- [x] Do a real Mini App conversion on your phone (a few dollars).
 - [ ] Approve the ArbolitoGuard v2 deploy (≈0.6 CELO gas from ops).
 - [ ] Approve ERC-8004 registration and Self agent ID.
-- [ ] Add `DEEPSEEK_API_KEY` and `STT_API_KEY` to Vercel (Mini App chat), or approve me copying them from `.env`.
+- [x] Add `DEEPSEEK_API_KEY` and `STT_API_KEY` to Vercel (Mini App chat).
 - [ ] Submit the MiniPay Discover listing.
 - [ ] Find 3–10 pilot users in AR/BR (named, with consent), for T1 impact.
 - [ ] Decide when to make the repo public; approve the Loops entry draft.
