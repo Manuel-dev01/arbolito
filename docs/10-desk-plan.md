@@ -59,6 +59,13 @@ Stitch stays unmodified, in its own process (no AGPL entanglement). Arbolito ser
   - It regenerates `stitch.toml` every tick (corridors, inventory caps, the maker `[rfq]` block) and restarts Stitch only when the config changes.
   - **Secrets:** `DESK_PRIVATE_KEY` and `DESK_RFQ_API_KEY`, passed to Stitch through its environment and a 0600 key file.
 - **Inventory caps:** `maxSoftUsd` per corridor; the buy side is off at the cap and back on below 80% of it.
+- **Rebalancer (2026-10-19, `apps/desk/src/rebalance.ts` + `rebalancer.ts`, `DESK_REBALANCE=off|dry|live`):** the cap alone leaves the excess idle and the buy side off. The rebalancer sells it back to USDT so the corridor can quote both sides again.
+  - **When:** only a corridor whose buy side is off and that is still above 80% of its cap. It sells down to 70% (below the resume level, so the buy side comes back).
+  - **How much:** one slice of at most US$ 5 per decision, a 10-minute cooldown per corridor, and never below the corridor's RFQ sell size (Stitch keeps that on offer).
+  - **Price floor:** the route's worst case must be within 40 bps of fair for wFIAT (10 bps for stables), or the desk holds and logs how far off the market is. The thin wBRL pool can trade far from fair; holding is the right answer then.
+  - **Venues:** Uniswap; Textile only once the buy side has been off 5 minutes, so our own maker (whose buy side is then off) can't be the filler. No self-trading.
+  - **Safety:** every sale goes through `executeRoute` → `sendGuarded` (simulated, tagged, per-action and daily caps in a Postgres ledger). Gas is paid in USDT through Celo's fee abstraction (the desk holds USDT, not CELO). Any sale that doesn't complete stops the rebalancer until a restart; nothing is retried.
+  - **Rehearsal:** `pnpm desk:rebalance --fork <rpc>` sold 25.3 wBRL for 5.0018 USDT on an anvil fork.
 - **The old `desk-stitch` service** is stopped (deployments removed).
 
 ## Money and safety

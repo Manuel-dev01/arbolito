@@ -91,7 +91,8 @@ export class FeedService {
         const prevAction = r.decisions.at(-1)?.action;
         let fair = fairs.get(c.pair)!;
         const pause = this.pauses.get(c.pair);
-        if (pause && now >= pause.until) this.pauses.delete(c.pair);
+        const paused = !!pause && now < pause.until;
+        if (pause && !paused) this.pauses.delete(c.pair);
         else if (pause) fair = { ok: false, reason: `risk officer pause: ${pause.reason}`, used: fair.used, dropped: fair.dropped };
         const res = step(c, r.state, fair, shares.get(c.pair), now);
         const h = this.history.get(c.pair) ?? { samples: [], holds: [] };
@@ -100,7 +101,9 @@ export class FeedService {
           h.samples.push({ at: now, fiatPerUsd: raw.fiatPerUsd });
           h.dispersionBps = raw.dispersionBps;
         }
-        if (res.decision.action === "hold") h.holds.push(now);
+        // Only the breaker's own holds count. Holds caused by the officer's pause would read as an
+        // unstable market and re-trigger the pause (it kept wBRL off for ~10 h on 2026-10-19).
+        if (res.decision.action === "hold" && !paused) h.holds.push(now);
         h.samples = h.samples.filter((x) => now - x.at <= HOUR);
         h.holds = h.holds.filter((x) => now - x <= HOUR);
         h.share = shares.get(c.pair);
