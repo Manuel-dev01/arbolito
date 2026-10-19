@@ -130,6 +130,7 @@ export class DeskLedger {
       fairWars: fair["wars-usdt"] === undefined ? null : String(fair["wars-usdt"]),
       fairWbrl: fair["wbrl-usdt"] === undefined ? null : String(fair["wbrl-usdt"]),
       fairs: Object.fromEntries(Object.entries(fair).filter(([, v]) => v !== undefined)),
+      balances: Object.fromEntries(Object.entries(b).map(([k, v]) => [k, v.toString()])),
       navMicros: nav === undefined ? null : nav.toString(),
     });
     this.lastSnapshot = now;

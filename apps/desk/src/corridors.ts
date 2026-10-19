@@ -146,12 +146,14 @@ export const CORRIDORS: readonly Corridor[] = [
     }),
   ),
   // Ripio wFIAT for Colombia and Mexico. No Uniswap pool and no Textile /price for these yet, so
-  // fair comes from Textile's ticker levels and daily FX references. Not live until funded.
+  // fair comes from Textile's ticker levels and daily FX references. Live from 2026-10-18 (founder
+  // sent 40 USDT): wCOP both sides; wMXN starts bid-only because nobody on Textile sells wMXN for
+  // USDT yet (USDT_MXN has no bid), so its sell side fills only from what the desk buys.
   {
     pair: "wcop-usdt",
     soft: "wCOP",
     fiat: "COP",
-    live: false,
+    live: true,
     buyOffsetBps: 10,
     sellOffsetBps: 10,
     buyCapUsdt: usdt(10),
@@ -170,10 +172,10 @@ export const CORRIDORS: readonly Corridor[] = [
     pair: "wmxn-usdt",
     soft: "wMXN",
     fiat: "MXN",
-    live: false,
+    live: true,
     buyOffsetBps: 10,
     sellOffsetBps: 10,
-    buyCapUsdt: usdt(10),
+    buyCapUsdt: usdt(20), // bid-only start: the whole wMXN allocation sits on the buy side
     sellCapSoft: wad(185), // ≈ US$ 10 at ~18.5 MXN/USD
     sources: [
       { id: "textile_ticker", weight: 2, maxAgeMs: 10 * MIN },

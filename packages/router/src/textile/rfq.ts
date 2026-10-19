@@ -13,12 +13,14 @@ export class TextileRfqAdapter implements VenueAdapter {
   constructor(
     private readonly client = new TextileClient(),
     private readonly chainId = CELO_MAINNET_ID,
+    /** Preview timeout. The default keeps app quotes inside their budget; one-off scripts can wait longer (a cold preview took 2.8 s). */
+    private readonly previewTimeoutMs = 1_500,
   ) {}
 
   async quote(p: QuoteParams): Promise<Quote | null> {
     let preview;
     try {
-      preview = await this.client.preview({ chainId: this.chainId, sellToken: p.tokenIn, buyToken: p.tokenOut, sellAmount: p.amountIn });
+      preview = await this.client.preview({ chainId: this.chainId, sellToken: p.tokenIn, buyToken: p.tokenOut, sellAmount: p.amountIn }, this.previewTimeoutMs);
     } catch (err) {
       // No corridor for this pair (e.g. wBRL→wARS direct) is a normal "can't quote", not a venue error.
       if (err instanceof TextileApiError && err.body.includes("corridor_unavailable")) return null;

@@ -238,6 +238,8 @@ export const deskSnapshots = pgTable(
     fairWbrl: text(),
     /** Fair USDT per soft unit for every corridor, by pair (supersedes fairWars/fairWbrl). */
     fairs: jsonb(),
+    /** Every token balance by symbol, atomic decimal strings (2026-10-19; covers wCOP/wMXN and later corridors). */
+    balances: jsonb(),
     /** USDT + soft at fair, micro-USD (CELO gas float excluded). */
     navMicros: atomic(),
   },

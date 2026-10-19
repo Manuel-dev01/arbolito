@@ -105,9 +105,9 @@ describe("inventory skew", () => {
         ["wbrl-usdt", 5],
       ]),
     );
-    // USDT is split by buy cap (10 + 20 + 10 + 10 = 50): wARS counts 40 × 10/50 = 8 USDT,
-    // so US$ 10 of wARS vs 8 USDT → 10/18. wBRL: nothing held → 0.
-    expect(shares.get("wars-usdt")).toBeCloseTo(10 / 18, 6);
+    // USDT is split by live buy caps (10 + 20 + 10 + 10 + 10 + 20 = 80): wARS counts 40 × 10/80 = 5
+    // USDT, so US$ 10 of wARS vs 5 USDT → 10/15. wBRL: nothing held → 0.
+    expect(shares.get("wars-usdt")).toBeCloseTo(10 / 15, 6);
     expect(shares.get("wbrl-usdt")).toBe(0);
   });
 });
@@ -171,7 +171,8 @@ describe("stitch.toml", () => {
   });
 
   it("quotes only funded (live) corridors", () => {
-    expect(CORRIDORS.some((c) => !c.live)).toBe(true);
+    const dry = stitchToml(CORRIDORS.map((c) => (c.pair === "wcop-usdt" ? { ...c, live: false } : c)), { feedBaseUrl: "http://feed:8790" });
+    expect(dry).not.toContain("/feed/wcop-usdt");
     for (const c of CORRIDORS) expect(toml.includes(`/feed/${c.pair}"`)).toBe(c.live);
   });
 

@@ -66,7 +66,7 @@ runMain(async () => {
     if (only && !only.includes(c.soft.toLowerCase())) continue;
     const planned = await plan({
       client: publicClient,
-      adapters: [new UniswapV3Adapter(publicClient), new TextileRfqAdapter()],
+      adapters: [new UniswapV3Adapter(publicClient), new TextileRfqAdapter(undefined, undefined, 6_000)],
       tokenIn: usdt,
       tokenOut: TOKENS[c.soft].address as Address,
       amountIn: SWAP_USDT,
@@ -118,7 +118,7 @@ runMain(async () => {
 
   // 2. swaps, each re-planned at execution so the quote is current
   for (const sym of swaps) {
-    const planned = await plan({ client: publicClient, adapters: [new UniswapV3Adapter(publicClient), new TextileRfqAdapter()], tokenIn: usdt, tokenOut: TOKENS[sym].address as Address, amountIn: SWAP_USDT, taker: desk.address });
+    const planned = await plan({ client: publicClient, adapters: [new UniswapV3Adapter(publicClient), new TextileRfqAdapter(undefined, undefined, 6_000)], tokenIn: usdt, tokenOut: TOKENS[sym].address as Address, amountIn: SWAP_USDT, taker: desk.address });
     const route = executableRoutes(planned, { textileFirm })[0];
     if (!route) throw new Error(`no executable route for USDT → ${sym}; stopping (nothing retried)`);
     const value = await usdMicros(publicClient, usdt, SWAP_USDT, planned.blockNumber);
@@ -138,6 +138,7 @@ runMain(async () => {
       minBlock,
       onProgress: (e) => console.log(`  [${e.venue}] ${e.stage}: ${e.message}${e.txHash ? ` ${where(e.txHash)}` : ""}`),
     });
+    for (const w of res.warnings) console.log(`  warning: ${w}`);
     if (res.status !== "complete") throw new Error(`swap ${res.status}: ${res.error?.message}; stopping, nothing retried. Check the desk wallet onchain.`);
     minBlock = res.legs.at(-1)!.blockNumber;
     console.log(`  received ${fmtAmount(route.tokenOut, res.finalAmountOut)}`);

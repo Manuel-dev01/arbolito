@@ -291,6 +291,7 @@ const es = {
     cols: { time: "Hora", pair: "Par", side: "Lado", amount: "Monto", price: "Precio", vsFair: "vs justo", tx: "Transacción" },
     side: { buy: "compró", sell: "vendió" },
     noFake: "Sin números de ejemplo: cada cifra sale de una transacción en Celo o del feed en vivo.",
+    fxCredit: "Referencia diaria para pesos colombianos y mexicanos:",
     toMetrics: "Ver las métricas de hoy →",
   },
   receipt: {
@@ -699,6 +700,7 @@ const pt: Messages = {
     cols: { time: "Hora", pair: "Par", side: "Lado", amount: "Valor", price: "Preço", vsFair: "vs justo", tx: "Transação" },
     side: { buy: "comprou", sell: "vendeu" },
     noFake: "Sem números de exemplo: cada valor vem de uma transação na Celo ou do feed ao vivo.",
+    fxCredit: "Referência diária para pesos colombianos e mexicanos:",
     toMetrics: "Ver as métricas de hoje →",
   },
   receipt: {
@@ -1105,6 +1107,7 @@ const en: Messages = {
     cols: { time: "Time", pair: "Pair", side: "Side", amount: "Amount", price: "Price", vsFair: "vs fair", tx: "Transaction" },
     side: { buy: "bought", sell: "sold" },
     noFake: "No example numbers: every figure comes from a Celo transaction or the live feed.",
+    fxCredit: "Daily reference for Colombian and Mexican pesos:",
     toMetrics: "See today's metrics →",
   },
   receipt: {

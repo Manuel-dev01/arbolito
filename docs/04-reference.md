@@ -230,6 +230,11 @@ From the Ripio team via the hackathon channel, 2026-10-08.
 - Ripio serves 6M+ users in LatAm.
 
 ## MiniPay (primary surface, verified from docs.minipay.xyz 2026-10-12)
+- **On-device check (founder's phone, `/minipay-check`, 2026-10-18), all passed:**
+  - **Detection:** `isMiniPay` true. Auto-connected `0x7769…a734` on chain `0xa4ec` (42220) with no prompt.
+  - **Signing:** `personal_sign` and `eth_signTypedData_v4` (TakerControl shape) are both supported, and both signatures recover to the account.
+  - **Attribution tag survives:** a 0-value self-transfer whose data was only our ERC-8021 suffix mined with the input **exactly the suffix** (35 bytes), both with and without a requested `feeCurrency`. Txs [0x45284291…](https://celoscan.io/tx/0x45284291980147c92cc33a6076aaea4235fed7cc5debd16cdb45be252cbc4a5d) and [0x7511902b…](https://celoscan.io/tx/0x7511902b74fe07df304ef7265bef3d6fed622d948ae2fc28f153f0247180d30d).
+  - **MiniPay chooses the fee currency itself:** with none requested, it still paid in **USDT via the adapter `0x0E2A…6f72`**, as type `0x7b` (CIP-64). Treat any `feeCurrency` we pass as a hint.
 - **Availability:** standalone Android/iOS in AR, BR, CL, CO, PE, UY, MX (and NG, KE, GH, ZA…).
 - **Assets:** the wallet holds and shows only USDm, USDC and USDT; gas is paid in stablecoins (MiniPay may override `feeCurrency`). The provider is injected as `window.ethereum` (`isMiniPay`) and auto-connects: no connect button, no sign-in, and no auth-style message signing.
 - **Deeplinks** (`https://link.minipay.xyz/…`):

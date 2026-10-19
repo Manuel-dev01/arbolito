@@ -1,0 +1,1 @@
+ALTER TABLE "desk_snapshots" ADD COLUMN "balances" jsonb;

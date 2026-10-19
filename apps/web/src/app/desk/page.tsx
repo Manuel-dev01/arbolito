@@ -15,12 +15,25 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 const TZ = "America/Argentina/Buenos_Aires";
-const PAIRS: Record<string, { soft: "wARS" | "wBRL" | "USDC" | "USAT"; fiat: "ARS" | "BRL" | "USD" }> = {
+const PAIRS: Record<string, { soft: "wARS" | "wBRL" | "USDC" | "USAT" | "wCOP" | "wMXN"; fiat: "ARS" | "BRL" | "USD" | "COP" | "MXN" }> = {
   "wars-usdt": { soft: "wARS", fiat: "ARS" },
   "wbrl-usdt": { soft: "wBRL", fiat: "BRL" },
   "usdc-usdt": { soft: "USDC", fiat: "USD" },
   "usat-usdt": { soft: "USAT", fiat: "USD" },
+  "wcop-usdt": { soft: "wCOP", fiat: "COP" },
+  "wmxn-usdt": { soft: "wMXN", fiat: "MXN" },
 };
+/** Inventory rows: label, token symbol in the balances map, decimals, the pair whose fair values it (null = USDT). */
+const INVENTORY: [fiat: string, label: string, sym: string, decimals: number, pair: string | null][] = [
+  ["USD", "USDT", "USDT", 6, null],
+  ["ARS", "wARS", "wARS", 18, "wars-usdt"],
+  ["BRL", "wBRL", "wBRL", 18, "wbrl-usdt"],
+  ["USD", "USDC", "USDC", 6, "usdc-usdt"],
+  ["USD", "USA₮", "USAT", 6, "usat-usdt"],
+  ["COP", "wCOP", "wCOP", 18, "wcop-usdt"],
+  ["MXN", "wMXN", "wMXN", 18, "wmxn-usdt"],
+];
+const BADGE: Record<string, string> = { ARS: "$", BRL: "R$", USD: "US$", COP: "$", MXN: "MX$" };
 /** A stable pair reads as "1 USDC = 1,0013 USDT"; a wFIAT pair as "ARS 1.613,94" per US$. */
 const usdtPer = (soft: string, px: number, locale: Locale) => `1 ${soft} = ${formatFixed(BigInt(Math.round(px * 1e4)), 4, locale, { dp: 4 })} USDT`;
 
@@ -206,18 +219,21 @@ export default async function DeskPage({ searchParams }: Props) {
           <p>{t.inventory.d}</p>
           {s ? (
             <div>
-              {(
-                [
-                  ["USD", "USDT", formatFixed(BigInt(s.usdt), 6, locale, { dp: 2 }), BigInt(s.usdt)],
-                  ["ARS", "wARS", formatFixed(BigInt(s.wars), 18, locale, { dp: 2 }), softUsd(s.wars, 18, s.fairs["wars-usdt"] ?? s.fairWars)],
-                  ["BRL", "wBRL", formatFixed(BigInt(s.wbrl), 18, locale, { dp: 2 }), softUsd(s.wbrl, 18, s.fairs["wbrl-usdt"] ?? s.fairWbrl)],
-                  ...(s.usdc !== null ? ([["USD", "USDC", formatFixed(BigInt(s.usdc), 6, locale, { dp: 2 }), softUsd(s.usdc, 6, s.fairs["usdc-usdt"] ?? null)]] as const) : []),
-                  ...(s.usat !== null ? ([["USD", "USA₮", formatFixed(BigInt(s.usat), 6, locale, { dp: 2 }), softUsd(s.usat, 6, s.fairs["usat-usdt"] ?? null)]] as const) : []),
-                ] as const
-              ).map(([fiat, sym, amount, inUsd]) => (
+              {INVENTORY.map(([fiat, label, sym, dec, pair]) => {
+                // Newer snapshots carry every balance; older ones only the fixed columns.
+                const legacy: Record<string, string | null> = { USDT: s.usdt, wARS: s.wars, wBRL: s.wbrl, USDC: s.usdc, USAT: s.usat };
+                const raw = s.balances[sym] ?? legacy[sym] ?? null;
+                const legacyFair: Record<string, number | null> = { "wars-usdt": s.fairWars, "wbrl-usdt": s.fairWbrl };
+                const fair = pair === null ? 1 : (s.fairs[pair] ?? legacyFair[pair] ?? null);
+                const live = pair === null || view.feed?.corridors.some((c) => c.pair === pair && c.params.live !== false);
+                if (raw === null || (!live && BigInt(raw) === 0n)) return null;
+                return [fiat, label, formatFixed(BigInt(raw), dec, locale, { dp: 2 }), softUsd(raw, dec, fair)] as const;
+              })
+                .filter((x) => x !== null)
+                .map(([fiat, sym, amount, inUsd]) => (
                 <div className="inv-row" key={sym}>
                   <span className={`cur-badge cur-${fiat}`} aria-hidden="true">
-                    {fiat === "ARS" ? "$" : fiat === "BRL" ? "R$" : "US$"}
+                    {BADGE[fiat] ?? fiat}
                   </span>
                   <span className="inv-name">
                     {sym}
@@ -254,6 +270,10 @@ export default async function DeskPage({ searchParams }: Props) {
       </div>
 
       <p className="small muted">{t.noFake}</p>
+      <p className="small muted">
+        {t.fxCredit}{" "}
+        <ExtLink href="https://www.exchangerate-api.com">Rates By Exchange Rate API</ExtLink>
+      </p>
       <a className="text-link" href={withLang("/metrics", lang)}>
         {t.toMetrics}
       </a>
