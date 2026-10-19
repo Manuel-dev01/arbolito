@@ -63,6 +63,17 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-19: Six corridors live; MiniPay check passed; first Textile taker buys
+- **MiniPay check** (founder's phone): all passed. Detection, personal_sign and signTypedData_v4 work, and the tag survives exactly. MiniPay picks USDT as the fee currency on its own. Details in 04-reference.
+- **wCOP/USDT and wMXN/USDT live** (third 40 USDT from the founder):
+  - **wCOP:** bought via Textile with the partner key, the first live Textile taker execution: 2 × 5 USDT → 31,865.88 wCOP. Both sides at US$ 10.
+  - **wMXN:** bid-only (US$ 20), since nobody on Textile sells wMXN for USDT yet.
+  - Stitch quotes six pools.
+- **Known issues:**
+  - **Textile `/submit` failed** after both wCOP swaps. They settled onchain and Textile's indexer reconciles fills, but the error text wasn't captured; the funding script now prints executor warnings. The Mini App's submit uses the same call, so investigate.
+  - **No inventory cap per corridor:** the desk bought another US$ 20 of wBRL on 10-18 (it holds 203 wBRL ≈ US$ 40, against a US$ 10 sell cap). The skew now leans it to sell. Add a hard cap that turns a buy side off when the soft asset passes a limit.
+- **Desk:** 4 fills, all wBRL, all from taker `0x5dc2…b77f`, all at positive edge. NAV ≈ US$ 120.1 vs US$ 120 funded (before the wCOP purchases).
+
 ### 2026-10-18: Risk officer live; wCOP/wMXN priced (dry)
 - **Desk fills:** 3 so far, all on wBRL from taker `0x5dc2…b77f`: a sale at +6 bps, then two buys totalling $20 at +2 bps (the raised buy cap at work). NAV $79.95 vs $80 funded.
 - **Risk officer on** (founder go-ahead):
