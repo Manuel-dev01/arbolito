@@ -1,0 +1,96 @@
+# Arbolito: build scope tracker
+
+The one place to see what's done, what's next and what's left, mapped to how each track is
+judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
+STATUS.md log.
+
+**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-10-19 (21 days left).
+
+Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs the founder (a decision, an approval, money or an account)
+
+---
+
+## Next up (in order)
+1. ⬜ **Send to a contact** from the Mini App: a `/send` prepare endpoint plus the UI hookup. It's the core remittance flow, and the UI currently shows "todavía no está disponible".
+2. ⬜ **Receipts list and activity feed** endpoint for the Mini App's Comprobantes tab and home feed.
+3. 👤 **First real conversion through the Mini App** on the founder's phone (a few dollars), end to end: quote → MiniPay confirm → receipt. It proves the T1 core flow on mainnet.
+4. 👤 **Autonomy:** approve the ArbolitoGuard v2 mainnet deploy (≈3.04M gas ≈ 0.6 CELO). Then build standing rules: payday split and scheduled sends to saved contacts.
+5. 👤 **Identity:** ERC-8004 agent registration and Self agent ID (scripts and steps are ready; both need approval).
+6. ⬜ **Desk v1:** a hedger (sell inventory above the cap back to USDT), quote and win-rate stats from Stitch, and a strategy write-up for the originality score.
+7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
+8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
+
+---
+
+## T1 Stable Agents: LatAm (wFIAT agent): the main track
+| Criterion (20% each) | Item | State |
+|---|---|---|
+| Works on mainnet with real wFIAT | Mainnet wARS/wBRL conversions with anchored, verifiable receipts (`/r/<id>`) | ✅ |
+| | Every tx carries the attribution tag `celo_e054d92430a5` (enforced in code; MiniPay keeps it intact) | ✅ |
+| | A real user's conversion through the MiniPay Mini App | 👤 next |
+| Real use of wFIAT + Celo stack | Router: Uniswap v3 + Textile RFQ, best execution, Textile partner key | ✅ |
+| | Gas paid in stablecoins (MiniPay pays in USDT itself; our sender supports fee adapters) | ✅ |
+| | ERC-8004 identity registration | 👤 |
+| | Self agent ID | 👤 |
+| | x402 via Celo's facilitator (see T2b) | ⬜ |
+| Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
+| | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
+| | "Let Arbolito act for you": ArbolitoGuard v2 operator (contract and tests done, not deployed) | 🟡 👤 |
+| | Standing rules: payday split, scheduled sends | ⬜ |
+| UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
+| | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
+| | Telegram bot: cards with "Confirmar en MiniPay", `/conectar` linking; auto-deploys from main | ✅ |
+| | Send to a contact (the backend endpoint is missing) | ⬜ |
+| | Receipts list and activity feed (the backend endpoint is missing) | ⬜ |
+| | Wallet-ownership signature on reject and link (MiniPay supports both signing methods) | ⬜ |
+| | Mini App chat on Vercel (needs `DEEPSEEK_API_KEY` and `STT_API_KEY` set there) | 👤 |
+| | MiniPay Discover listing (name, URL, 512×512 icon) | 👤 |
+| Impact for LatAm | Story and numbers: the official-to-crypto dollar gap, BRL⇄ARS without SWIFT, the "Ahorraste" receipts | ✅ |
+| | Named real users (a pilot group in AR/BR), with their conversions on `/metrics` | 👤 ⬜ |
+
+## T2a Open Corridors: Textile FX (Arbolito Desk)
+| Criterion | Item | State |
+|---|---|---|
+| Strategy P&L (40%) | Desk live on Railway: Stitch supervised inside `desk-feed`, 24/7 | ✅ |
+| | Fair value from multiple sources, inventory skew that never crosses fair, circuit breaker | ✅ |
+| | Hard inventory caps (buy side off at the cap) | ✅ |
+| | LLM risk officer (pause-only, every 15 min) | ✅ |
+| | Hedger: rebalance inventory above the cap back to USDT | ⬜ |
+| Volume quoted and filled (30%) | Six corridors quoting: wARS, wBRL, USDC, USA₮, wCOP, wMXN (bid-only) | ✅ |
+| | Fills ledger plus the `/desk` page (4 fills so far, all at positive edge) | ✅ |
+| | App conversions routed through Textile, so they become RFQs the desk can win | ✅ |
+| | Quote and win-rate stats (from Stitch logs) on `/desk` | ⬜ |
+| | Optional: cNGN or IDRX corridors (listed in the track) | ⬜ |
+| Originality (30%) | Devaluation-aware wARS pricing, depeg guard on stables, wMXN as the only bid | ✅ |
+| | Strategy write-up for judges (docs/10-desk-plan.md, to be polished) | 🟡 |
+
+## T2b Open Corridors: USA₮ with x402
+| Criterion | Item | State |
+|---|---|---|
+| Real settlement via Celo's facilitator | x402 FX API (`apps/fx-api`, a stub today) selling quotes and conversions, paid in USA₮ | ⬜ |
+| Named counterparty outside the team | Another team's agent, or a named business, paying for quotes | ⬜ 👤 |
+| Repeat flow | The same payer calling repeatedly over the window | ⬜ |
+| Why USA₮ | Treasury/savings dollar narrative; the `payTo` address in the submission | ⬜ |
+
+## T3 Build with buy
+| Criterion | Item | State |
+|---|---|---|
+| Use case | Competitor quotes (Western Union, Remitly, banks) captured by buy browsers into receipts | ⬜ |
+| Depth | Verified paid buy calls from the tagged wallet | ⬜ 👤 (paid calls) |
+| Demand | Driven by real user conversions | ⬜ |
+
+## Infrastructure (done)
+- ✅ pnpm/TS monorepo, verified mainnet config (72/72 checks), 396 unit tests, fork tests on anvil.
+- ✅ ArbolitoReceipts `0x5C0b…2d34`; ProofBundle canonical JSON and keccak, anchored and verifiable in the browser.
+- ✅ Vercel (`arbolito-livid.vercel.app`): landing, `/app` Mini App, `/r`, `/metrics`, `/desk`, `/minipay-check`.
+- ✅ Railway: `arbolito-bot` (auto-deploys from main) and `desk-feed` (feed, Stitch, ledger, risk officer).
+- ✅ Neon Postgres (migrations 0000–0004).
+
+## Founder actions (open)
+- [ ] Do a real Mini App conversion on your phone (a few dollars).
+- [ ] Approve the ArbolitoGuard v2 deploy (≈0.6 CELO gas from ops).
+- [ ] Approve ERC-8004 registration and Self agent ID.
+- [ ] Add `DEEPSEEK_API_KEY` and `STT_API_KEY` to Vercel (Mini App chat), or approve me copying them from `.env`.
+- [ ] Submit the MiniPay Discover listing.
+- [ ] Find 3–10 pilot users in AR/BR (named, with consent), for T1 impact.
+- [ ] Decide when to make the repo public; approve the Loops entry draft.

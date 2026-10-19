@@ -1,6 +1,6 @@
 # Arbolito: rules for every Claude Code session in this repo
 
-Arbolito is a hackathon build for Celo "Agents on Open Rails". Read `PLAN.md`, `docs/STATUS.md` and the relevant `docs/0x-*.md` before starting work. `docs/04-reference.md` is the canonical source for addresses and endpoints. Never invent an address. Verify against the chain or the live docs, then update that file.
+Arbolito is a hackathon build for Celo "Agents on Open Rails". Read `PLAN.md`, `docs/SCOPE.md` (what's done and what's left), `docs/STATUS.md` and the relevant `docs/0x-*.md` before starting work. `docs/04-reference.md` is the canonical source for addresses and endpoints. Never invent an address. Verify against the chain or the live docs, then update that file.
 
 ## Money safety (real funds, Celo mainnet)
 - Textile has no Celo testnet and buy is mainnet-only. Treat **every transaction and every paid HTTP call as real money**.
@@ -23,7 +23,7 @@ Arbolito is a hackathon build for Celo "Agents on Open Rails". Read `PLAN.md`, `
 - Celo fee abstraction: pass the **adapter** address (not the token) in `feeCurrency` for 6-decimal tokens.
 - x402: buy speaks **v1** (`X-PAYMENT` header); Celo's facilitator issues **v2** (`PAYMENT-SIGNATURE`). Support both explicitly. Treat a non-402 response from a paid endpoint as an error, not a success.
 - Before writing any Anthropic SDK / Claude API code, load the `claude-api` skill.
-- Keep `docs/STATUS.md` current. At the end of each work block, log what shipped, what's blocked and what's next.
+- Keep `docs/STATUS.md` and `docs/SCOPE.md` current. At the end of each work block, log what shipped, what's blocked and what's next, and tick the scope tracker.
 
 ## Git
 - Small, focused commits with clear messages.
