@@ -49,6 +49,18 @@ Stitch stays unmodified, in its own process (no AGPL entanglement). Arbolito ser
   - Tx [0x27d4ee67…](https://celoscan.io/tx/0x27d4ee6758a90f58881bdb16e3e546c09d16fe6edfbe252d418e4f4877779d2d), block 80,183,354. Settled through `0x96E4…12dE`.
   - **Honest P&L note:** the wBRL inventory was bought on Uniswap at ~0.19787 USDT/wBRL (the thin pool), so this first round trip is about −0.25% (≈ −$0.025) against cost. The spread was earned against fair. Future inventory should be built at fair, through the bid side or Textile.
 
+## Architecture since 2026-10-19
+- **One Railway service, `desk-feed`:**
+  - the feed (`/feed/<pair>`, `/state`, `/healthz`; public at desk-feed-production.up.railway.app)
+  - Stitch as a supervised child, reading the feed on localhost
+  - the ledger (fills and snapshots in Postgres)
+  - the risk officer
+- **Supervisor:**
+  - It regenerates `stitch.toml` every tick (corridors, inventory caps, the maker `[rfq]` block) and restarts Stitch only when the config changes.
+  - **Secrets:** `DESK_PRIVATE_KEY` and `DESK_RFQ_API_KEY`, passed to Stitch through its environment and a 0600 key file.
+- **Inventory caps:** `maxSoftUsd` per corridor; the buy side is off at the cap and back on below 80% of it.
+- **The old `desk-stitch` service** is stopped (deployments removed).
+
 ## Money and safety
 - **Desk wallet `0xBCB8…EdbE` (`DESK_PRIVATE_KEY`).** Only capped float lives there. `DESK_MAX_INVENTORY_USD` (500) is a ceiling, not a target.
 - **Inventory is capital at risk, not spend.** Stitch caps each side with a fixed liquidity (never `"max"`), and the wallet holds only what we fund.

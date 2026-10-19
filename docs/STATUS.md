@@ -63,6 +63,16 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-19 (later): Both desk issues fixed
+- **Textile `/submit` was not failing.** Textile recorded our tx hashes (`submittedAt`) and marked both RFQs `filled`. Our status schema rejected the `failReason: null` it returns, so a success read as a failure. The schemas now accept nulls, with a test using the live response. This also fixes the Mini App's submit, which uses the same call.
+- **Hard inventory caps:**
+  - Each corridor has a `maxSoftUsd` (wARS, USDC, USA₮ and wCOP 15; wBRL and wMXN 25). At the cap, the buy side is dropped from Stitch's config and the sell side keeps quoting. It resumes below 80% of the cap.
+  - **Why:** Stitch re-offers a side's full size after every fill, so the desk had bought US$ 40 of wBRL.
+  - **Architecture change:** Stitch now runs as a supervised child of `desk-feed` (official v0.1.312 Linux build, pinned by sha256 in the Dockerfile). The supervisor restarts it only when the generated config changes, at most once a minute, and never runs two instances. Stitch reads the feed on localhost, and the `[rfq]` block comes from `DESK_MAKER`.
+  - **Cutover:** deployed feed-only, then `railway down` on `desk-stitch`, then `DESK_PRIVATE_KEY` and `DESK_RFQ_API_KEY` were piped into `desk-feed`.
+  - **Live:** the wBRL buy side went off immediately (≈ US$ 40 held) and the RFQ session was accepted.
+  - The `desk-stitch` service is stopped; its variables still hold the key copies until the service is deleted.
+
 ### 2026-10-19: Six corridors live; MiniPay check passed; first Textile taker buys
 - **MiniPay check** (founder's phone): all passed. Detection, personal_sign and signTypedData_v4 work, and the tag survives exactly. MiniPay picks USDT as the fee currency on its own. Details in 04-reference.
 - **wCOP/USDT and wMXN/USDT live** (third 40 USDT from the founder):
