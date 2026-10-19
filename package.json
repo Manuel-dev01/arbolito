@@ -29,6 +29,7 @@
     "desk:feed": "node scripts/run.mjs desk-feed",
     "desk:stitch-config": "node scripts/run.mjs desk-stitch-config",
     "desk:fund": "node scripts/run.mjs desk-fund",
+    "desk:rebalance": "node scripts/run.mjs desk-rebalance",
     "anchor:wallet": "node scripts/run.mjs anchor-wallet",
     "desk:stitch": "node scripts/run.mjs desk-stitch"
   },

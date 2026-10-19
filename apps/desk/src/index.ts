@@ -6,6 +6,8 @@ export * from "./fills";
 export * from "./inventory";
 export * from "./limits";
 export * from "./ledger";
+export * from "./rebalance";
+export * from "./rebalancer";
 export * from "./risk";
 export * from "./server";
 export * from "./skew";

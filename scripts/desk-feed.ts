@@ -13,10 +13,11 @@ import { join } from "node:path";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { loadEnv } from "@arbolito/config";
-import { makePublicClient } from "@arbolito/chain";
-import { getDb } from "@arbolito/db";
+import { makePublicClient, makeWalletClient } from "@arbolito/chain";
+import { DbLedger, getDb } from "@arbolito/db";
+import { textileFirmEnabled } from "@arbolito/router";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, StitchSupervisor, buySidesOff, stitchToml } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -48,6 +49,21 @@ if (hasFlag("once")) {
     env.DESK_STITCH_BIN && env.DESK_RFQ_API_KEY && env.DESK_PRIVATE_KEY
       ? new StitchSupervisor({ bin: env.DESK_STITCH_BIN, dir: join(homedir(), "stitch-run"), privateKey: env.DESK_PRIVATE_KEY, rfqApiKey: env.DESK_RFQ_API_KEY, log })
       : undefined;
+  // Rebalancer (optional, DESK_REBALANCE): sells inventory above a cap back to USDT, within the spend caps.
+  const deskAccount = env.DESK_PRIVATE_KEY ? privateKeyToAccount(env.DESK_PRIVATE_KEY as Hex) : undefined;
+  const rebalancer =
+    supervisor && deskAccount && env.DESK_REBALANCE !== "off"
+      ? new Rebalancer({
+          mode: env.DESK_REBALANCE,
+          publicClient: client,
+          account: deskAccount,
+          walletClient: makeWalletClient(deskAccount),
+          ledger: env.DATABASE_URL ? new DbLedger(getDb(), deskAccount.address) : undefined,
+          textileFirm: textileFirmEnabled(),
+          feeCurrency: "USDT", // gas in USDT (the desk holds USDT, little CELO)
+          log,
+        })
+      : undefined;
   let buyOff = new Set<string>();
   let ready = false;
   const stitchConfig = () => stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, rfq: DESK_MAKER });
@@ -66,14 +82,21 @@ if (hasFlag("once")) {
       if (changed) log(`inventory caps: buy side off for [${[...next].join(", ") || "none"}]`);
       buyOff = next;
       supervisor.apply(stitchConfig());
+      if (rebalancer) {
+        rebalancer.observe(buyOff);
+        void rebalancer.maybeSell(balances, CORRIDORS, usdtPerSoft, buyOff);
+      }
     },
-    extraState: () => (supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff] } } : {}),
+    extraState: () => ({
+      ...(supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff] } } : {}),
+      ...(rebalancer ? { rebalancer: rebalancer.status() } : {}),
+    }),
   });
   svc.start().then(
     () => {
       ready = true; // Stitch starts on the next tick, once the feed is serving
       console.log(
-        `desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}; risk officer ${risk ? "on" : "off"}; stitch ${supervisor ? "supervised" : "external"}`,
+        `desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}; risk officer ${risk ? "on" : "off"}; rebalancer ${env.DESK_REBALANCE}; stitch ${supervisor ? "supervised" : "external"}`,
       );
     },
     (e: Error) => {

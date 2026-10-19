@@ -29,6 +29,8 @@ export const envSchema = z.object({
   DESK_RISK_OFFICER: bool.default(false),
   DESK_STITCH_BIN: opt(z.string()),
   DESK_RFQ_API_KEY: opt(z.string()),
+  /** Sell soft inventory above a corridor cap back to USDT (apps/desk/src/rebalancer.ts): off, dry (log only) or live. */
+  DESK_REBALANCE: z.enum(["off", "dry", "live"]).default("off"),
   BUILD_MAX_ACTION_USD: z.coerce.number().positive().default(5),
   BUILD_MAX_DAILY_USD: z.coerce.number().positive().default(25),
 
