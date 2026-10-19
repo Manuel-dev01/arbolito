@@ -16,7 +16,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
 4. 🟡 **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`), wired on Vercel. Next: standing rules (payday split, scheduled sends) executed by the operator.
 5. 🟡 **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID: waiting for the founder's passport scan.
-6. ⬜ **Desk v1:** a hedger (sell inventory above the cap back to USDT), quote and win-rate stats from Stitch, and a strategy write-up for the originality score.
+6. 🟡 **Desk v1:** rebalancer live 2026-10-19 (sells above-cap inventory back to USDT, gas in USDT); risk-officer lockout fixed. Left: quote and win-rate stats from Stitch, and the strategy write-up.
 7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
 8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
 
@@ -55,7 +55,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | | Fair value from multiple sources, inventory skew that never crosses fair, circuit breaker | ✅ |
 | | Hard inventory caps (buy side off at the cap) | ✅ |
 | | LLM risk officer (pause-only, every 15 min) | ✅ |
-| | Hedger: rebalance inventory above the cap back to USDT | ⬜ |
+| | Rebalancer: sells inventory above the cap back to USDT (≤ $5 slices, price floor vs fair, no self-trading, gas in USDT) | ✅ |
 | Volume quoted and filled (30%) | Six corridors quoting: wARS, wBRL, USDC, USA₮, wCOP, wMXN (bid-only) | ✅ |
 | | Fills ledger plus the `/desk` page (4 fills so far, all at positive edge) | ✅ |
 | | App conversions routed through Textile, so they become RFQs the desk can win | ✅ |
