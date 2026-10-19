@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { recoverTypedDataAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { TOKENS } from "@arbolito/config";
-import { TextileApiError, TextileClient, TextileRfqAdapter, signTakerControl } from "../src";
+import { TextileApiError, TextileClient, TextileRfqAdapter, signTakerControl, statusSchema } from "../src";
 
 const account = privateKeyToAccount("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d");
 const { wBRL, USDT } = TOKENS;
@@ -117,5 +117,30 @@ describe("TextileRfqAdapter", () => {
     const partial = { data: { ...PREVIEW.data, sellAmount: "100000000000000000000" } };
     const q = await new TextileRfqAdapter(new TextileClient("https://x/v2", null, mockFetch(200, partial))).quote(params);
     expect(q).toBeNull();
+  });
+});
+
+describe("status shape (live, 2026-10-19)", () => {
+  it("accepts the nulls Textile sends on a filled RFQ (a successful /submit once looked failed)", () => {
+    const live = {
+      data: {
+        rfqId: "rfq_Hn8kL68duTZCMsJV",
+        status: "filled",
+        lateFillCorrectionClosed: false,
+        chainId: 42220,
+        sellAmount: "5000000",
+        buyAmount: "15935426394887404975536",
+        feeAmount: "499",
+        quoteTtlMs: 60000,
+        noQuoteReason: null,
+        txHash: "0x6bff195827da2c94134b3d16b15c8d2fb6342cf1fc099e35d27388d5d6815189",
+        submittedAt: "2026-10-19T00:12:05.361Z",
+        filledAt: "2026-10-19T00:12:04.000Z",
+        failReason: null,
+      },
+    };
+    const r = statusSchema.safeParse(live);
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.data.status).toBe("filled");
   });
 });

@@ -30,7 +30,7 @@ export const previewSchema = z.object({
       rateRay: uint.optional(),
       availableSellAmount: uint.optional(),
       availableBuyAmount: uint.optional(),
-      reason: z.string().optional(),
+      reason: z.string().nullish(),
       routing: routingSchema.optional(),
     })
     .passthrough(),
@@ -45,7 +45,7 @@ export const firmSchema = z.object({
       rfqId: z.string(),
       claimToken: z.string(),
       status: z.enum(["quoted", "no_quote"]),
-      reason: z.string().optional(),
+      reason: z.string().nullish(),
       availableSellAmount: uint.optional(),
       retryAfterMs: z.number().int().optional(),
       quote: z
@@ -75,11 +75,13 @@ export const statusSchema = z.object({
     .object({
       rfqId: z.string(),
       status: z.string(),
-      txHash: z.string().optional(),
-      sellAmount: uint.optional(),
-      buyAmount: uint.optional(),
-      failReason: z.string().optional(),
-      filledAt: z.string().optional(),
+      // Textile sends null for fields that don't apply yet (e.g. failReason on a filled RFQ, 2026-10-19):
+      // reading a null as a failure made a successful /submit look failed.
+      txHash: z.string().nullish(),
+      sellAmount: uint.nullish(),
+      buyAmount: uint.nullish(),
+      failReason: z.string().nullish(),
+      filledAt: z.string().nullish(),
     })
     .passthrough(),
 });
