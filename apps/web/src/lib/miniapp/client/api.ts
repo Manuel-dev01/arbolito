@@ -40,11 +40,7 @@ export type ChatReply = z.infer<typeof ChatResponse>;
 export type LinkResult = z.infer<typeof LinkConfirmResponse>;
 export type Calls = z.infer<typeof CallsResponse>;
 
-/**
- * TODO(contract): a send-to-contact endpoint. The contract's /quote and /prepare have no recipient,
- * so a cross-currency send ("Graciela recibe pesos") can't be prepared. The UI calls this shape at
- * POST /api/miniapp/send/prepare and treats a 404 as `not_ready`.
- */
+/** POST /api/miniapp/send/prepare (server: lib/miniapp/server/send.ts, contract SendPrepareRequest). */
 export const SendPrepareRequest = z.object({
   account: z.string(),
   recipient: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
@@ -91,7 +87,6 @@ export interface ApiClient {
    * declined (4001). Marks the quote failed / rejected_in_minipay so Telegram's card follows.
    */
   reject(req: { quoteId: string; account: string; code?: number }): Promise<{ quoteId: string; status: string }>;
-  /** TODO(contract): see SendPrepareRequest. */
   sendPrepare(req: SendPrepareRequest): Promise<Calls & { expectedOut: string; minOut: string }>;
 }
 

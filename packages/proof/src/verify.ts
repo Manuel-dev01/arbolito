@@ -67,10 +67,18 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
     if (execReceipt.blockNumber > anchor.blockNumber) errors.push("receipt was anchored before the execution");
     const codes = attributionCodes(execTx.input);
     if (codes.join(",") !== bundle.execution.attribution.join(",")) errors.push("execution attribution does not match bundle");
-    // The claimed output must be what the execution tx actually delivered to the taker.
-    const delivered = receivedInTx(execReceipt, bundle.request.tokenOut as Address, bundle.request.taker as Address);
-    if (delivered.toString() !== bundle.execution.amountOut) {
-      errors.push(`execution.amountOut ${bundle.execution.amountOut} does not match the ${delivered} delivered onchain`);
+    // The claimed output must be what actually reached the receiver onchain: the taker on a
+    // conversion, the recipient on a send (in the delivery transfer when the swap settled to the taker).
+    const receiver = (bundle.request.recipient ?? bundle.request.taker) as Address;
+    const deliveryHash = bundle.execution.deliveryTxHash as Hex | undefined;
+    const deliveryReceipt = deliveryHash ? await o.client.getTransactionReceipt({ hash: deliveryHash }).catch(() => null) : execReceipt;
+    if (!deliveryReceipt) errors.push(`delivery tx ${deliveryHash} not found`);
+    else {
+      if (deliveryReceipt.status !== "success") errors.push("delivery tx reverted");
+      const delivered = receivedInTx(deliveryReceipt, bundle.request.tokenOut as Address, receiver);
+      if (delivered.toString() !== bundle.execution.amountOut) {
+        errors.push(`execution.amountOut ${bundle.execution.amountOut} does not match the ${delivered} delivered onchain`);
+      }
     }
   }
 

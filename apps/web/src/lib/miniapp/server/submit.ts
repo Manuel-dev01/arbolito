@@ -112,7 +112,10 @@ export async function submitQuote(deps: MiniappDeps, req: z.infer<typeof SubmitR
   if (hashes.length !== prepared.calls.length) throw badRequest(`Expected ${prepared.calls.length} transaction(s), got ${hashes.length}.`);
   const checked: CheckedTx[] = [];
   for (const [i, h] of hashes.entries()) checked.push(await checkTx(deps, h, prepared.calls[i]!, account, i));
-  const swap = checked[checked.length - 1]!;
+  // The conversion tx; on a Textile send a forwarding transfer to the contact follows it.
+  const swap = checked[prepared.swapIndex ?? checked.length - 1]!;
+  const delivery = checked[checked.length - 1]!;
+  const receiver = (prepared.recipient ?? account) as Address;
 
   // A concurrent or repeated submit for the same swap returns the receipt already registered.
   const dup = await store.receiptByExecutionTx(swap.hash);
@@ -120,8 +123,9 @@ export async function submitQuote(deps: MiniappDeps, req: z.infer<typeof SubmitR
 
   const payload = decodePayload(row.payload);
   const route = executedRoute(payload.route, account, prepared);
-  // Authoritative executed amount: the swap's Transfer logs to the account (never balance diffs).
-  const amountOut = receivedInTx(swap.receipt, route.tokenOut, account);
+  // Authoritative executed amount: the Transfer logs to the receiver (never balance diffs): the
+  // account on a conversion, the contact on a send (in the forwarding transfer after a Textile fill).
+  const amountOut = receivedInTx(delivery.receipt, route.tokenOut, receiver);
 
   let report: PreparedTextile["report"];
   if (prepared.kind === "textile") report = await reportTextile(deps, prepared, swap.hash);
@@ -131,7 +135,14 @@ export async function submitQuote(deps: MiniappDeps, req: z.infer<typeof SubmitR
     alternatives: payload.alternatives,
     quotesConsidered: payload.quotesConsidered,
     references: payload.references,
-    execution: { txHash: swap.hash, blockNumber: swap.receipt.blockNumber, amountOut, attribution: attributionCodes(swap.tx.input) },
+    execution: {
+      txHash: swap.hash,
+      blockNumber: swap.receipt.blockNumber,
+      amountOut,
+      attribution: attributionCodes(swap.tx.input),
+      ...(delivery.hash !== swap.hash ? { deliveryTxHash: delivery.hash } : {}),
+    },
+    ...(prepared.recipient ? { recipient: prepared.recipient } : {}),
     createdAt: new Date(deps.now()),
   });
   let usd = 0n;

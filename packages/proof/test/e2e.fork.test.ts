@@ -195,7 +195,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
       alternatives: [],
       quotesConsidered: planned.quotesConsidered,
       references: [],
-      execution: { ...bundle.execution, txHash: bundle.execution.txHash as Hex, blockNumber: BigInt(bundle.execution.blockNumber), amountOut: 0n },
+      execution: { ...bundle.execution, deliveryTxHash: undefined, txHash: bundle.execution.txHash as Hex, blockNumber: BigInt(bundle.execution.blockNumber), amountOut: 0n },
     });
     await anchorBundle({ bundle: wrong, receipts, mode: "fork", publicClient, walletClient });
     const result = await verifyBundle(JSON.parse(JSON.stringify(wrong)), { client: publicClient, receipts });

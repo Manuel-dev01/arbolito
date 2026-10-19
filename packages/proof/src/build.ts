@@ -1,4 +1,4 @@
-import type { Hex } from "viem";
+import type { Address, Hex } from "viem";
 import { tokenByAddress } from "@arbolito/config";
 import { fiatOf, referenceRate, type Quote, type Reference, type Route } from "@arbolito/router";
 import { jsonSafe } from "./canonical";
@@ -9,7 +9,9 @@ export interface BuildBundleArgs {
   alternatives: Route[];
   quotesConsidered: Quote[];
   references: Reference[];
-  execution: { txHash: Hex; blockNumber: bigint; amountOut: bigint; attribution: string[] };
+  execution: { txHash: Hex; blockNumber: bigint; amountOut: bigint; attribution: string[]; deliveryTxHash?: Hex };
+  /** A send: who received the output (absent on a conversion, where it is the taker). */
+  recipient?: Address;
   createdAt?: Date;
   competitor?: ProofBundle["competitor"];
 }
@@ -47,7 +49,7 @@ export function buildBundle(a: BuildBundleArgs): ProofBundle {
     routeId: a.route.id,
     createdAt: (a.createdAt ?? new Date()).toISOString(),
     chainId: 42220,
-    request: { tokenIn: a.route.tokenIn, tokenOut: a.route.tokenOut, amountIn: a.route.amountIn.toString(), taker: a.route.taker },
+    request: { tokenIn: a.route.tokenIn, tokenOut: a.route.tokenOut, amountIn: a.route.amountIn.toString(), taker: a.route.taker, recipient: a.recipient },
     quotesConsidered: jsonSafe(a.quotesConsidered),
     chosen: jsonSafe(a.route),
     alternatives: jsonSafe(a.alternatives),
@@ -59,6 +61,7 @@ export function buildBundle(a: BuildBundleArgs): ProofBundle {
       blockNumber: a.execution.blockNumber.toString(),
       amountOut: a.execution.amountOut.toString(),
       attribution: a.execution.attribution,
+      deliveryTxHash: a.execution.deliveryTxHash,
     },
   };
   return proofBundleSchema.parse(bundle);

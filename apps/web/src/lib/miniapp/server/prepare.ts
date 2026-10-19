@@ -31,7 +31,13 @@ export interface StoredCall {
   label: string;
 }
 
-export interface PreparedUniswap {
+/** Set on a send: who receives the output, and which call is the swap (a Textile send ends with a forwarding transfer). */
+interface SendFields {
+  recipient?: Address;
+  swapIndex?: number;
+}
+
+export interface PreparedUniswap extends SendFields {
   kind: "uniswap";
   calls: StoredCall[];
   blockNumber: string;
@@ -41,7 +47,7 @@ export interface PreparedUniswap {
 }
 
 /** Firm Textile quote. claimToken is a bearer capability: server-side only, never returned or logged. */
-export interface PreparedTextile {
+export interface PreparedTextile extends SendFields {
   kind: "textile";
   calls: StoredCall[];
   rfqId: string;
@@ -64,7 +70,7 @@ const PROOF_WINDOW_MS = { eip712: 60_000, eip191: 5 * 60_000 } as const;
 
 const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
-function tagged(deps: MiniappDeps, call: { to: Address; data: Hex; value: bigint; label: string }): StoredCall {
+export function tagged(deps: MiniappDeps, call: { to: Address; data: Hex; value: bigint; label: string }): StoredCall {
   if (!deps.attributionCode) throw notReady("ATTRIBUTION_CODE is not configured; every transaction must carry it.");
   return { to: call.to, data: withAttribution(call.data, deps.attributionCode), core: call.data, value: call.value.toString(), label: call.label };
 }
@@ -162,10 +168,11 @@ function textileCode(err: TextileApiError): string {
   return /proof_of_control_required/.test(err.body) ? "proof_of_control_required" : /corridor_unavailable/.test(err.body) ? "corridor_unavailable" : `http_${err.status}`;
 }
 
-async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address, row: QuoteRow): Promise<PreparedUniswap> {
+async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address, row: QuoteRow, recipient?: Address): Promise<PreparedUniswap> {
   const fresh = await requoteUniswap(deps, route);
   if (fresh === null || fresh < route.minOut) throw final(priceChanged(), "price_changed");
-  const [approve, swap] = buildRouteCalls(route, account) as [
+  // On a send, the swap pays the contact directly (the router's recipient), in the same transaction.
+  const [approve, swap] = buildRouteCalls(route, recipient ?? account) as [
     { to: Address; data: Hex; value: bigint; label: string },
     { to: Address; data: Hex; value: bigint; label: string },
   ];
@@ -175,6 +182,7 @@ async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address,
   return {
     kind: "uniswap",
     calls,
+    ...(recipient ? { recipient, swapIndex: calls.length - 1 } : {}),
     blockNumber: (await deps.chain.getBlockNumber()).toString(),
     expectedOut: fresh.toString(),
     minOut: route.minOut.toString(),
@@ -189,6 +197,7 @@ async function prepareTextile(
   proof: z.infer<typeof TakerProof> | undefined,
   /** The quote's own expiresAt (ms): the prepared deadline never runs past it. */
   quoteDeadlineMs: number,
+  recipient?: Address,
 ): Promise<PreparedTextile> {
   const leg = route.legs[0]!;
   if (!deps.textile.hasPartnerKey) {
@@ -247,11 +256,18 @@ async function prepareTextile(
     calls.push(tagged(deps, { to: leg.quote.tokenIn, data, value: 0n, label: "approve to Textile reactor" }));
   }
   calls.push(tagged(deps, { to: swapTx.to as Address, data: swapTx.data as Hex, value: 0n, label: "Textile reactor executeBatch" }));
+  const swapIndex = calls.length - 1;
+  if (recipient) {
+    // Textile settles to the taker only. A firm fill is exact, so forwarding exactly buyAmount is safe.
+    const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [recipient, buyAmount] });
+    calls.push(tagged(deps, { to: leg.quote.tokenOut, data, value: 0n, label: "send to contact" }));
+  }
 
   const { claimToken: _claim, ...firmPublic } = firm;
   return {
     kind: "textile",
     calls,
+    ...(recipient ? { recipient, swapIndex } : {}),
     rfqId: firm.rfqId,
     claimToken: firm.claimToken,
     expiresAt: new Date(expiresMs).toISOString(),
@@ -274,7 +290,7 @@ function toResponse(quoteId: string, p: Prepared): z.infer<typeof PrepareRespons
 }
 
 /** POST /prepare: unsigned, attribution-tagged calls for the user's wallet. */
-export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof PrepareRequest>): Promise<z.infer<typeof PrepareResponse>> {
+export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof PrepareRequest>, opts: { recipient?: Address } = {}): Promise<z.infer<typeof PrepareResponse>> {
   const account = req.account.toLowerCase() as Address;
   const store = deps.store();
   const row = await loadLiveQuote(deps, store, req.quoteId, account);
@@ -290,10 +306,10 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
   const kind = routeKind(route);
   let prepared: Prepared;
   try {
-    if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row);
+    if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row, opts.recipient);
     else if (kind === "textile") {
       if (!deps.textileEnabled) throw final(notReady("Textile execution is not enabled yet."), "textile_disabled");
-      prepared = await prepareTextile(deps, route, account, req.takerProof, row.expiresAt.getTime());
+      prepared = await prepareTextile(deps, route, account, req.takerProof, row.expiresAt.getTime(), opts.recipient);
     } else throw final(noRoute("This route can't be executed from a wallet in one go."), "no_route");
   } catch (err) {
     const error = err instanceof ApiFailure ? quoteError.get(err) : undefined;

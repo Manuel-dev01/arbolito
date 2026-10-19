@@ -45,7 +45,8 @@ export const proofBundleSchema = z.object({
   routeId: z.string().min(1),
   createdAt: z.string(),
   chainId: z.literal(42220),
-  request: z.object({ tokenIn: address, tokenOut: address, amountIn: uint, taker: address }),
+  /** recipient: set on a send, when the output goes to someone other than the taker (absent on conversions). */
+  request: z.object({ tokenIn: address, tokenOut: address, amountIn: uint, taker: address, recipient: address.optional() }),
   quotesConsidered: z.array(quoteSchema),
   chosen: routeSchema,
   /** Other complete routes the planner found, best first. */
@@ -64,6 +65,8 @@ export const proofBundleSchema = z.object({
     amountOut: uint,
     /** ERC-8021 codes found in the execution tx calldata. */
     attribution: z.array(z.string()),
+    /** On a send whose swap settled to the taker (Textile), the transfer that then delivered amountOut to the recipient. */
+    deliveryTxHash: hash32.optional(),
   }),
 });
 

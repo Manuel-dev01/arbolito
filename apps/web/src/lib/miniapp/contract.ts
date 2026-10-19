@@ -118,6 +118,15 @@ export const NeedsTakerProof = z.object({
   issuedAt: z.number().int(),
 });
 
+// ── POST /api/miniapp/send/prepare ─────────────────────────────────────────
+/**
+ * Send to a contact. Same currency: one transfer, no quote. Cross currency: the live quote
+ * (from /quote, same pair and amount) is prepared with the contact as recipient; submit it with
+ * /submit like a conversion, and its receipt names the recipient.
+ */
+export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional() });
+export const SendPrepareResponse = z.object({ calls: z.array(Call), expectedOut: Atomic, minOut: Atomic, quoteId: z.string().uuid().optional() });
+
 // ── POST /api/miniapp/submit ───────────────────────────────────────────────
 /** After the wallet sent the calls: register the result, build and anchor the receipt. */
 export const SubmitRequest = z.object({ quoteId: z.string().uuid(), account: Address, txHashes: z.array(Hex).min(1) });

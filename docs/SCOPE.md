@@ -11,7 +11,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 ---
 
 ## Next up (in order)
-1. ⬜ **Send to a contact** from the Mini App: a `/send` prepare endpoint plus the UI hookup. It's the core remittance flow, and the UI currently shows "todavía no está disponible".
+1. ✅ **Send to a contact** from the Mini App (2026-10-19): `POST /api/miniapp/send/prepare`. Same currency is one transfer. Cross currency pays the contact in the Uniswap swap, or forwards a Textile fill exactly. Receipts name the recipient.
 2. ⬜ **Receipts list and activity feed** endpoint for the Mini App's Comprobantes tab and home feed.
 3. 👤 **First real conversion through the Mini App** on the founder's phone (a few dollars), end to end: quote → MiniPay confirm → receipt. It proves the T1 core flow on mainnet.
 4. 👤 **Autonomy:** approve the ArbolitoGuard v2 mainnet deploy (≈3.04M gas ≈ 0.6 CELO). Then build standing rules: payday split and scheduled sends to saved contacts.
@@ -40,7 +40,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
 | | Telegram bot: cards with "Confirmar en MiniPay", `/conectar` linking; auto-deploys from main | ✅ |
-| | Send to a contact (the backend endpoint is missing) | ⬜ |
+| | Send to a contact (same currency or with conversion; receipts name the recipient) | ✅ |
 | | Receipts list and activity feed (the backend endpoint is missing) | ⬜ |
 | | Wallet-ownership signature on reject and link (MiniPay supports both signing methods) | ⬜ |
 | | Mini App chat on Vercel (needs `DEEPSEEK_API_KEY` and `STT_API_KEY` set there) | 👤 |
