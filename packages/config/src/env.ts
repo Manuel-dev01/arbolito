@@ -27,6 +27,8 @@ export const envSchema = z.object({
   DESK_FEED_PORT: z.coerce.number().int().positive().default(8790),
   DESK_FEED_PUBLIC_URL: z.string().url().default("https://desk-feed-production.up.railway.app"),
   DESK_RISK_OFFICER: bool.default(false),
+  DESK_STITCH_BIN: opt(z.string()),
+  DESK_RFQ_API_KEY: opt(z.string()),
   BUILD_MAX_ACTION_USD: z.coerce.number().positive().default(5),
   BUILD_MAX_DAILY_USD: z.coerce.number().positive().default(25),
 

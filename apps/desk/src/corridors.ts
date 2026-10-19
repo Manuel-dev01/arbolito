@@ -54,6 +54,8 @@ export interface Corridor {
   /** Fixed RFQ caps per side, in atomic units. Never "max" (it double-books shared USDT). */
   buyCapUsdt: bigint;
   sellCapSoft: bigint;
+  /** Hard inventory cap: at or above this much soft asset (US$ at fair) the buy side is switched off (limits.ts). */
+  maxSoftUsd: number;
   sources: SourceSpec[];
   /** Fewer agreeing sources than this → breaker holds (Stitch stops quoting once stale). */
   minSources: number;
@@ -90,6 +92,7 @@ export const CORRIDORS: readonly Corridor[] = [
     sellOffsetBps: 5,
     buyCapUsdt: usdt(10),
     sellCapSoft: wad(16_000), // ≈ US$ 10 at ~1,600 ARS/USD
+    maxSoftUsd: 15,
     sources: [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
       // dolarapi refreshes in Argentine market hours only; overnight it is ~14 h old. The peso
@@ -113,6 +116,7 @@ export const CORRIDORS: readonly Corridor[] = [
     sellOffsetBps: 6,
     buyCapUsdt: usdt(20), // raised 2026-10-17 to rebuild wBRL with idle USDT (founder OK)
     sellCapSoft: wad(50), // ≈ US$ 10 at ~5.05 BRL/USD
+    maxSoftUsd: 25,
     sources: [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
       { id: "dolar_official_cross", weight: 1, maxAgeMs: 26 * HOUR },
@@ -134,6 +138,7 @@ export const CORRIDORS: readonly Corridor[] = [
       sellOffsetBps: 3,
       buyCapUsdt: usdt(10),
       sellCapSoft: usd6(10),
+      maxSoftUsd: 15,
       sources: [
         { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
         { id: "peg", weight: 1, maxAgeMs: MIN },
@@ -158,6 +163,7 @@ export const CORRIDORS: readonly Corridor[] = [
     sellOffsetBps: 10,
     buyCapUsdt: usdt(10),
     sellCapSoft: wad(31_700), // ≈ US$ 10 at ~3,170 COP/USD
+    maxSoftUsd: 15,
     sources: [
       { id: "textile_ticker", weight: 2, maxAgeMs: 10 * MIN },
       { id: "er_api", weight: 1, maxAgeMs: 26 * HOUR },
@@ -177,6 +183,7 @@ export const CORRIDORS: readonly Corridor[] = [
     sellOffsetBps: 10,
     buyCapUsdt: usdt(20), // bid-only start: the whole wMXN allocation sits on the buy side
     sellCapSoft: wad(185), // ≈ US$ 10 at ~18.5 MXN/USD
+    maxSoftUsd: 25,
     sources: [
       { id: "textile_ticker", weight: 2, maxAgeMs: 10 * MIN },
       { id: "er_api", weight: 1, maxAgeMs: 26 * HOUR },
@@ -190,6 +197,16 @@ export const CORRIDORS: readonly Corridor[] = [
   },
 ];
 
+/**
+ * The desk's Textile maker registration (stitch connect, 2026-10-15). Public identifiers; the
+ * maker credential itself is DESK_RFQ_API_KEY.
+ */
+export const DESK_MAKER = {
+  streamUrl: "wss://api.textilecredit.com/v2/maker/stream",
+  makerId: "cmv9mwxsm00a3yx0veu44d0fc",
+  validationContract: "0x10B9EbA3a175Df418a35CB8329a527691EE258C5",
+} as const;
+
 /** The corridors Stitch quotes (funded). */
 export const LIVE_CORRIDORS = CORRIDORS.filter((c) => c.live);
 
@@ -201,6 +218,7 @@ export function validateCorridor(c: Corridor): string[] {
   if (c.skew.maxBps < 0) errs.push(`${c.pair}: skew.maxBps must be >= 0`);
   if (c.skew.targetShare <= 0 || c.skew.targetShare >= 1) errs.push(`${c.pair}: skew.targetShare must be in (0, 1)`);
   if (c.skew.bandShare <= 0) errs.push(`${c.pair}: skew.bandShare must be > 0`);
+  if (!(c.maxSoftUsd > 0)) errs.push(`${c.pair}: maxSoftUsd must be positive`);
   if (c.buyCapUsdt <= 0n || c.sellCapSoft <= 0n) errs.push(`${c.pair}: side caps must be positive and fixed`);
   if (c.minSources < 2) errs.push(`${c.pair}: minSources must be at least 2 (one source can't be cross-checked)`);
   if (c.sources.reduce((n, s) => n + (s.weight > 0 ? 1 : 0), 0) < c.minSources) errs.push(`${c.pair}: fewer weighted sources than minSources`);

@@ -1,9 +1,21 @@
-# Arbolito Desk pricing feed (apps/desk) that Stitch quotes from. Railway service "desk-feed".
-# Reads only (public prices, the desk wallet's balances via DESK_ADDRESS); holds no key.
-# Stitch reaches it over Railway's private network at http://desk-feed.railway.internal:8790.
+# Arbolito Desk (Railway service "desk-feed"): the pricing feed (apps/desk) and, when
+# DESK_RFQ_API_KEY + DESK_PRIVATE_KEY are set, Stitch itself as a supervised child that quotes
+# from the feed over localhost and is restarted when inventory caps change its config.
 FROM node:22-slim
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NODE_ENV=production
-RUN npm install -g pnpm@11.1.2 && apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm@11.1.2 && apt-get update && apt-get install -y --no-install-recommends ca-certificates curl xz-utils && rm -rf /var/lib/apt/lists/*
+
+# Textile's Stitch, official release v0.1.312 (the version dry-run and deployed since 2026-10-15),
+# pinned by the release's published sha256.
+ARG STITCH_VERSION=v0.1.312
+ARG STITCH_SHA256=fe55e8ea4714a364d682bc5cdfeb7e8acd5aa6695443fd74a5fb1add8ac49336
+RUN curl -fsSL -o /tmp/stitch.tar.xz "https://github.com/textile-protocol/textile-stitch/releases/download/${STITCH_VERSION}/stitch-bot-x86_64-unknown-linux-gnu.tar.xz" \
+ && echo "${STITCH_SHA256}  /tmp/stitch.tar.xz" | sha256sum -c - \
+ && tar -xJf /tmp/stitch.tar.xz -C /tmp \
+ && install -m 0755 /tmp/stitch-bot-x86_64-unknown-linux-gnu/stitch /usr/local/bin/stitch \
+ && rm -rf /tmp/stitch*
+ENV DESK_STITCH_BIN=/usr/local/bin/stitch
+
 WORKDIR /app
 COPY . .
 # The root package (scripts/, tsx) and the workspace packages the feed imports; lockfile must match.

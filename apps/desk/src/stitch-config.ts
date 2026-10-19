@@ -16,6 +16,10 @@ export interface StitchOptions {
   stalenessSecs?: number;
   /** Smallest slice in USDT atomic units (6 dp). */
   minSliceUsdt?: bigint;
+  /** Pairs whose buy side is switched off (inventory cap reached); their sell side still quotes. */
+  buyOff?: ReadonlySet<string>;
+  /** The maker registration; when given, the [rfq] block is written here instead of by `stitch connect`. */
+  rfq?: { streamUrl: string; makerId: string; validationContract: string };
 }
 
 export const feedUrl = (base: string, pair: string) => `${base.replace(/\/$/, "")}/feed/${pair}`;
@@ -51,10 +55,9 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
       `debt = "${TOKENS.USDT.address}"`,
       `debt_decimals = ${TOKENS.USDT.decimals}`,
       `feed_url = "${feedUrl(o.feedBaseUrl, c.pair)}"`,
-      `buy_offset_bps = ${c.buyOffsetBps}`,
-      `buy_total_liquidity_debt = "${c.buyCapUsdt}"`,
-      `buy_min_slice_debt = "${slice}"`,
-      "buy_max_orders = 4",
+      ...(o.buyOff?.has(c.pair)
+        ? ["# buy side off: inventory cap reached (apps/desk/src/limits.ts)"]
+        : [`buy_offset_bps = ${c.buyOffsetBps}`, `buy_total_liquidity_debt = "${c.buyCapUsdt}"`, `buy_min_slice_debt = "${slice}"`, "buy_max_orders = 4"]),
       `sell_offset_bps = ${c.sellOffsetBps}`,
       `sell_total_liquidity_collateral = "${c.sellCapSoft}"`,
       `sell_min_slice_debt = "${slice}"`,
@@ -63,5 +66,6 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
       `corridor_network = "Celo"`,
     );
   }
+  if (o.rfq) lines.push("", "[rfq]", "enabled = true", `url = "${o.rfq.streamUrl}"`, `maker_id = "${o.rfq.makerId}"`, `validation_contract = "${o.rfq.validationContract}"`);
   return lines.join("\n") + "\n";
 }

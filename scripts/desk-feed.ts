@@ -1,16 +1,22 @@
 /**
- * Runs the desk pricing feed (apps/desk) that Stitch quotes from.
+ * Runs the desk: the pricing feed (apps/desk) and, when configured, Stitch itself as a supervised
+ * child that quotes from it.
  *   pnpm desk:feed            serve on DESK_FEED_PORT (default 8790) until stopped
  *   pnpm desk:feed --once     one tick, print the state, exit (a quick look at what we'd publish)
- * Reads only; holds no key. Inventory comes from DESK_ADDRESS (or the address of DESK_PRIVATE_KEY).
+ * Feed-only by default: reads public prices and the desk wallet's balances, holds no key.
+ * With DESK_STITCH_BIN + DESK_RFQ_API_KEY + DESK_PRIVATE_KEY it also runs Stitch on a config it
+ * regenerates every tick, switching a buy side off when that corridor's inventory cap is reached
+ * (apps/desk/src/limits.ts) and restarting Stitch only when the config changes.
  */
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { loadEnv } from "@arbolito/config";
 import { makePublicClient } from "@arbolito/chain";
 import { getDb } from "@arbolito/db";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DeskLedger, FeedService } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, StitchSupervisor, buySidesOff, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -36,15 +42,46 @@ if (hasFlag("once")) {
   const ledger = address && env.DATABASE_URL ? new DeskLedger(getDb(), client, address, CORRIDORS, log) : undefined;
   // The risk officer only runs when explicitly enabled (paid LLM calls, ~every 15 min).
   const risk = env.DESK_RISK_OFFICER && env.DEEPSEEK_API_KEY ? { llm: createLlmClient(), model: env.RISK_OFFICER_MODEL } : undefined;
-  const svc = new FeedService({ client, port: env.DESK_FEED_PORT, deskAddress: address, ledger, risk, log });
+
+  // Stitch in-process (optional). It reads the feed over localhost, so no public hop is needed.
+  const supervisor =
+    env.DESK_STITCH_BIN && env.DESK_RFQ_API_KEY && env.DESK_PRIVATE_KEY
+      ? new StitchSupervisor({ bin: env.DESK_STITCH_BIN, dir: join(homedir(), "stitch-run"), privateKey: env.DESK_PRIVATE_KEY, rfqApiKey: env.DESK_RFQ_API_KEY, log })
+      : undefined;
+  let buyOff = new Set<string>();
+  let ready = false;
+  const stitchConfig = () => stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, rfq: DESK_MAKER });
+
+  const svc = new FeedService({
+    client,
+    port: env.DESK_FEED_PORT,
+    deskAddress: address,
+    ledger,
+    risk,
+    log,
+    onTick: ({ balances, usdtPerSoft }) => {
+      if (!supervisor || !ready || !balances) return;
+      const next = buySidesOff(balances, CORRIDORS, usdtPerSoft, buyOff);
+      const changed = next.size !== buyOff.size || [...next].some((p) => !buyOff.has(p));
+      if (changed) log(`inventory caps: buy side off for [${[...next].join(", ") || "none"}]`);
+      buyOff = next;
+      supervisor.apply(stitchConfig());
+    },
+    extraState: () => (supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff] } } : {}),
+  });
   svc.start().then(
-    () => console.log(`desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}; risk officer ${risk ? "on" : "off"}`),
+    () => {
+      ready = true; // Stitch starts on the next tick, once the feed is serving
+      console.log(
+        `desk feed on :${env.DESK_FEED_PORT} (${svc.corridors.map((c) => `/feed/${c.pair}`).join(", ")}); inventory from ${address ?? "nowhere (no skew)"}; ledger ${ledger ? "on" : "off"}; risk officer ${risk ? "on" : "off"}; stitch ${supervisor ? "supervised" : "external"}`,
+      );
+    },
     (e: Error) => {
       console.error(`failed: ${e.message}`);
       process.exitCode = 1;
     },
   );
-  const stop = () => void svc.stop().then(() => process.exit(0));
+  const stop = () => void Promise.all([svc.stop(), supervisor?.stop()]).then(() => process.exit(0));
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 }

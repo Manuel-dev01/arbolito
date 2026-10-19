@@ -30,6 +30,10 @@ export interface FeedServiceOptions {
   ledger?: DeskLedger;
   /** LLM risk officer: may pause a corridor for 15–120 min, nothing else (risk.ts). */
   risk?: { llm: LlmClient; model: string; everyMs?: number };
+  /** Called after every tick with the balances and fair prices (USDT per soft) it computed. */
+  onTick?: (t: { balances?: Balances; usdtPerSoft: Record<string, number | undefined> }) => void;
+  /** Extra fields merged into /state (e.g. the Stitch supervisor). */
+  extraState?: () => Record<string, unknown>;
 }
 
 const HOUR = 3_600_000;
@@ -124,6 +128,15 @@ export class FeedService {
         this.risk.nextAt = now + (this.o.risk.everyMs ?? 15 * 60_000);
         void this.reviewRisk(now);
       }
+      if (this.o.onTick) {
+        const usdtPerSoft: Record<string, number | undefined> = {};
+        for (const [pair, f] of fiat) usdtPerSoft[pair] = 1 / f;
+        try {
+          this.o.onTick({ balances: this.balances, usdtPerSoft });
+        } catch (e) {
+          errors.push(`onTick: ${(e as Error).message}`);
+        }
+      }
       this.lastErrors = errors;
       if (errors.length) log(`sources: ${errors.join("; ")}`);
       this.lastTickAt = new Date(now).toISOString();
@@ -182,6 +195,7 @@ export class FeedService {
     return {
       lastTickAt: this.lastTickAt ?? null,
       sourceErrors: this.lastErrors,
+      ...(this.o.extraState?.() ?? {}),
       riskOfficer: this.o.risk
         ? { enabled: true, lastReviewAt: this.risk.lastReviewAt ?? null, lastError: this.risk.lastError ?? null, decisions: this.risk.lastDecisions, pauses: Object.fromEntries([...this.pauses].map(([k, v]) => [k, { until: new Date(v.until).toISOString(), reason: v.reason }])) }
         : { enabled: false },
