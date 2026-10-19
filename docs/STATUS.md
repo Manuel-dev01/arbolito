@@ -71,7 +71,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - **Architecture change:** Stitch now runs as a supervised child of `desk-feed` (official v0.1.312 Linux build, pinned by sha256 in the Dockerfile). The supervisor restarts it only when the generated config changes, at most once a minute, and never runs two instances. Stitch reads the feed on localhost, and the `[rfq]` block comes from `DESK_MAKER`.
   - **Cutover:** deployed feed-only, then `railway down` on `desk-stitch`, then `DESK_PRIVATE_KEY` and `DESK_RFQ_API_KEY` were piped into `desk-feed`.
   - **Live:** the wBRL buy side went off immediately (≈ US$ 40 held) and the RFQ session was accepted.
-  - The `desk-stitch` service is stopped; its variables still hold the key copies until the service is deleted.
+  - The `desk-stitch` service was deleted with the founder's OK, removing its copies of the key and credential. The arbolito project now runs only `desk-feed` and `arbolito-bot`.
 
 ### 2026-10-19: Six corridors live; MiniPay check passed; first Textile taker buys
 - **MiniPay check** (founder's phone): all passed. Detection, personal_sign and signTypedData_v4 work, and the tag survives exactly. MiniPay picks USDT as the fee currency on its own. Details in 04-reference.
