@@ -161,6 +161,7 @@ export class FeedService {
         fairNow: h?.samples.at(-1)?.fiatPerUsd,
         ...windowStats(h?.samples ?? []),
         dispersionBps: h?.dispersionBps,
+        breakerMaxDevBps: c.maxDevBps,
         holds: h?.holds.length ?? 0,
         share: h?.share === undefined ? undefined : Math.round(h.share * 1000) / 1000,
         fills: mine.length,
