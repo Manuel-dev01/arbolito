@@ -122,6 +122,12 @@ export class MemoryStore implements MiniappStore {
   async receiptByExecutionTx(tx: string) {
     return this.receipts.find((r) => r.executionTx === tx);
   }
+  async receiptsByTaker(taker: string, limit: number) {
+    return this.receipts
+      .filter((r) => r.taker === taker.toLowerCase())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
   async setReceiptAnchor(id: string, anchorTx: string, anchorBlock: bigint) {
     Object.assign(this.receipts.find((r) => r.id === id)!, { anchorTx, anchorBlock });
   }

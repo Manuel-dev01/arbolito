@@ -364,6 +364,7 @@ export function createMockServer(scenario: MockScenario) {
       if (body.code === "0000") return err(400, "bad_request", "unknown code");
       return json(200, { linked: true, telegramName: "@lucia.dg" });
     }
+    if (path.startsWith("/receipts")) return json(200, { receipts: [] }); // mock receipts live in the local index
     if (path === "/send/prepare") {
       await sleep(400);
       const amountIn = parseHuman(String(body.amount), DECIMALS[body.from as Sym]);

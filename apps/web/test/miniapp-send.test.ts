@@ -3,11 +3,13 @@ import { decodeFunctionData, type Address, type Hex } from "viem";
 import { CONTRACTS, TOKENS } from "@arbolito/config";
 import { attributionCodes } from "@arbolito/chain";
 import { erc20Abi, swapRouter02Abi } from "@arbolito/router";
-import { SendPrepareResponse } from "../src/lib/miniapp/contract";
+import { ReceiptsListResponse, SendPrepareResponse } from "../src/lib/miniapp/contract";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { createQuote } from "../src/lib/miniapp/server/quote";
+import { listReceipts } from "../src/lib/miniapp/server/receipts-list";
 import { prepareSend } from "../src/lib/miniapp/server/send";
+import { prepareQuote } from "../src/lib/miniapp/server/prepare";
 import { submitQuote } from "../src/lib/miniapp/server/submit";
 import { ACCOUNT, CLAIM, CODE, OTHER, REACTOR, firmQuote, makeRig, mineCalls, transferLog, usdtToWars, wallet } from "./miniapp-helpers";
 
@@ -101,5 +103,29 @@ describe("POST /send/prepare: send to a contact", () => {
     const bundle = row.bundle as { request: { recipient?: string }; execution: { txHash: string; deliveryTxHash?: string } };
     expect(bundle.request.recipient).toBe(CONTACT);
     expect(bundle.execution).toMatchObject({ txHash: hashes[1], deliveryTxHash: hashes[2] });
+  });
+});
+
+describe("GET /receipts", () => {
+  it("lists the wallet's conversions and sends, newest first, with the send's recipient", async () => {
+    const rig = makeRig();
+    // A conversion…
+    const q1 = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10" });
+    const p1 = await prepareQuote(rig.deps, { quoteId: q1.quoteId, account: wallet.address });
+    await submitQuote(rig.deps, { quoteId: q1.quoteId, account: wallet.address, txHashes: mineCalls(rig, p1.calls, { delivered: { token: wARS.address, amount: 16_000n * E18 } }) });
+    // …then a send.
+    const q2 = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10" });
+    const p2 = await prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "wARS", amount: "10", quoteId: q2.quoteId });
+    const hashes = mineCalls(rig, p2.calls, { tamper: (i, tx) => (i === 1 ? { ...tx, logs: [transferLog(wARS.address, CONTRACTS.uniswap.swapRouter02 as Address, CONTACT, 15_900n * E18)] } : tx) });
+    await submitQuote(rig.deps, { quoteId: q2.quoteId, account: wallet.address, txHashes: hashes });
+    rig.store.receipts[1]!.createdAt = new Date(rig.store.receipts[0]!.createdAt.getTime() + 1000);
+
+    const list = ReceiptsListResponse.parse(await listReceipts(rig.deps, wallet.address)).receipts;
+    expect(list.map((r) => [r.kind, r.recipient, r.from, r.to])).toEqual([
+      ["send", CONTACT, "USDT", "wARS"],
+      ["change", null, "USDT", "wARS"],
+    ]);
+    expect(list[0]!.amountOut).toBe((15_900n * E18).toString());
+    expect((await listReceipts(rig.deps, OTHER)).receipts).toEqual([]); // only the taker's own
   });
 });

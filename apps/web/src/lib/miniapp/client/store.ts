@@ -78,6 +78,13 @@ export function createStore(kv: KV | null = defaultKV()) {
     },
 
     receipts: (account: string) => read<ReceiptIndexEntry[]>(`receipts.${acct(account)}`, []),
+    /** Merge server-known receipts: dedupe by id (local entries keep their contact names), newest first. */
+    mergeReceipts(account: string, entries: ReceiptIndexEntry[]) {
+      const local = read<ReceiptIndexEntry[]>(`receipts.${acct(account)}`, []);
+      const byId = new Map(entries.map((e) => [e.receiptId, e]));
+      for (const e of local) byId.set(e.receiptId, e);
+      write(`receipts.${acct(account)}`, [...byId.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 100));
+    },
     addReceipt(account: string, e: ReceiptIndexEntry) {
       const list = read<ReceiptIndexEntry[]>(`receipts.${acct(account)}`, []).filter((x) => x.receiptId !== e.receiptId);
       write(`receipts.${acct(account)}`, [e, ...list].slice(0, 100));

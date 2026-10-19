@@ -237,6 +237,18 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     void refreshBalances();
     void refreshAuto();
     api.rates().then(setRates, () => {});
+    // Receipts made from another phone (or before a cleared app) come back from the server.
+    api.listReceipts(account).then(
+      (list) => {
+        const names = new Map(store.contacts(account).filter((c) => c.address).map((c) => [c.address!.toLowerCase(), c.name]));
+        store.mergeReceipts(
+          account,
+          list.map((r) => ({ receiptId: r.receiptId, kind: r.kind, to: r.recipient ? (names.get(r.recipient.toLowerCase()) ?? undefined) : undefined, at: r.at })),
+        );
+        setReceipts(store.receipts(account));
+      },
+      () => {},
+    );
     // Re-register receipts whose /submit didn't go through last time (submit moves no money).
     const pending = store.pendingSubmits(account);
     if (pending.length) {

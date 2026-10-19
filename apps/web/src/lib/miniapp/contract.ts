@@ -148,6 +148,14 @@ export const ReceiptResponse = z.object({
   createdAt: z.string(),
 });
 
+// ── GET /api/miniapp/receipts?account=0x… ─────────────────────────────────
+/** The wallet's receipts, newest first (up to 50): a send names its recipient wallet. */
+export const ReceiptsListResponse = z.object({
+  receipts: z.array(
+    z.object({ receiptId: z.string().uuid(), kind: z.enum(["change", "send"]), recipient: Address.nullable(), at: z.string(), from: Sym, to: Sym, amountIn: Atomic, amountOut: Atomic }),
+  ),
+});
+
 // ── Autonomy ("Dejá que Arbolito actúe por vos") via ArbolitoGuard v2 ──────
 export const TokenLimit = z.object({ sym: Sym, perTx: Atomic, perDay: Atomic });
 /** POST /api/miniapp/autonomy/plan → calls: bounded approvals to the guard, setOperator, configure. */

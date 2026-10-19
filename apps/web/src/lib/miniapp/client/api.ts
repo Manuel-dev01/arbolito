@@ -15,6 +15,7 @@ import {
   LinkConfirmResponse,
   NeedsTakerProof,
   OpenQuoteResponse,
+  ReceiptsListResponse,
   PrepareRequest,
   PrepareResponse,
   QuoteRequest,
@@ -72,6 +73,7 @@ export interface ApiClient {
   quoteById(id: string): Promise<Quote>;
   /** GET /api/miniapp/quotes/open: the account's latest open (quoted, unexpired) quote, or null. */
   openQuote(account: string): Promise<Quote | null>;
+  listReceipts(account: string): Promise<z.infer<typeof ReceiptsListResponse>["receipts"]>;
   prepare(req: z.input<typeof PrepareRequest>): Promise<Prepared>;
   submit(req: z.input<typeof SubmitRequest>): Promise<Submitted>;
   receipt(id: string): Promise<Receipt>;
@@ -158,6 +160,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     quote: async (r) => call(QuoteResponse, "/quote", { method: "POST", body: req(QuoteRequest, r) }),
     quoteById: (id) => call(QuoteResponse, `/quote/${encodeURIComponent(id)}`),
     openQuote: async (account) => (await call(OpenQuoteResponse, `/quotes/open${q(account)}`)).quote,
+    listReceipts: async (account) => (await call(ReceiptsListResponse, `/receipts${q(account)}`)).receipts,
     prepare: async (r) => call(PrepareResponse, "/prepare", { method: "POST", body: req(PrepareRequest, r) }),
     submit: async (r) => call(SubmitResponse, "/submit", { method: "POST", body: req(SubmitRequest, r) }),
     receipt: (id) => call(ReceiptResponse, `/receipt/${encodeURIComponent(id)}`),

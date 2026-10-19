@@ -37,6 +37,8 @@ export interface MiniappStore {
   insertReceipt(r: NewReceipt): Promise<boolean>;
   getReceipt(id: string): Promise<ReceiptRow | undefined>;
   receiptByExecutionTx(txHash: string): Promise<ReceiptRow | undefined>;
+  /** The newest receipts this wallet made (as taker), newest first. */
+  receiptsByTaker(taker: string, limit: number): Promise<ReceiptRow[]>;
   setReceiptAnchor(id: string, anchorTx: string, anchorBlock: bigint): Promise<void>;
 
   /** Last `limit` messages, oldest first, never starting with a dangling assistant/tool message. */
@@ -129,6 +131,10 @@ export class DrizzleStore implements MiniappStore {
   async receiptByExecutionTx(txHash: string) {
     const [row] = await this.db.select().from(receipts).where(eq(receipts.executionTx, txHash)).limit(1);
     return row;
+  }
+
+  async receiptsByTaker(taker: string, limit: number) {
+    return this.db.select().from(receipts).where(eq(receipts.taker, taker.toLowerCase())).orderBy(desc(receipts.createdAt)).limit(limit);
   }
 
   async setReceiptAnchor(id: string, anchorTx: string, anchorBlock: bigint) {
