@@ -1,17 +1,16 @@
 /**
- * pnpm register:8004 --uri <https://…/agent-registration.json> [--live] [--yes]
+ * pnpm register:8004 [--uri <url>] [--live] [--yes]
  *
- * Renders identity/agent-registration.template.json from env (PUBLIC_BASE_URL etc.) to
- * .arbolito/agent-registration.json for hosting, then registers the agent on the
- * ERC-8004 Identity Registry with register(agentURI).
- * Without --live: renders and simulates register() (no transaction).
+ * Registers Arbolito on the ERC-8004 Identity Registry with register(agentURI). The URI defaults
+ * to ${PUBLIC_BASE_URL}/.well-known/agent-registration.json, served by the web app
+ * (apps/web/src/lib/agent-registration.ts). The script fetches it first and refuses to register
+ * a file that isn't live or isn't a registration-v1 document.
+ * Without --live: fetch, check and simulate register() (no transaction).
  * With --live: founder go-ahead required; sends via the guarded sender (attribution, $0 value).
- * After registering: put the agentId into "registrations", re-host the file, set ERC8004_AGENT_ID.
+ * After registering: set ERC8004_AGENT_ID (locally and on Vercel); the hosted file then lists it.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { decodeEventLog, encodeFunctionData, parseAbi } from "viem";
-import { CONTRACTS, findRepoRoot, loadEnv, txUrl } from "@arbolito/config";
+import { CONTRACTS, loadEnv, txUrl } from "@arbolito/config";
 import { makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
 import { confirm, flagValue, hasFlag, opsAccount, runMain } from "./lib/cli";
 
@@ -22,32 +21,18 @@ const identityAbi = parseAbi([
 
 runMain(async () => {
   const env = loadEnv();
-  const uri = flagValue("uri");
+  const base = env.PUBLIC_BASE_URL?.replace(/\/$/, "");
+  const uri = flagValue("uri") ?? (base ? `${base}/.well-known/agent-registration.json` : undefined);
+  if (!uri) throw new Error("Set PUBLIC_BASE_URL or pass --uri");
   const live = hasFlag("live");
   const account = opsAccount();
 
-  const vars: Record<string, string | undefined> = {
-    PUBLIC_BASE_URL: env.PUBLIC_BASE_URL?.replace(/\/$/, ""),
-    TELEGRAM_BOT_HANDLE: process.env.TELEGRAM_BOT_HANDLE,
-    FX_API_URL: process.env.FX_API_URL,
-    MCP_URL: process.env.MCP_URL,
-    AGENT_WALLET: account.address,
-  };
-  const root = findRepoRoot();
-  const template = readFileSync(join(root, "identity", "agent-registration.template.json"), "utf8");
-  const missing = [...template.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]!).filter((k, i, a) => a.indexOf(k) === i && !vars[k]);
-  const rendered = template.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`);
-  const out = join(root, ".arbolito", "agent-registration.json");
-  mkdirSync(join(root, ".arbolito"), { recursive: true });
-  writeFileSync(out, rendered);
-  console.log(`Rendered ${out}`);
-  if (missing.length) console.log(`  still templated (set these before registering): ${missing.join(", ")}`);
-
-  if (!uri) {
-    console.log("\nHost the rendered file over HTTPS, then re-run with --uri <url>.");
-    return;
-  }
-  if (live && missing.length) throw new Error("Refusing to register a registration file with unfilled placeholders");
+  const res = await fetch(uri, { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) throw new Error(`${uri} answered ${res.status}`);
+  const doc = (await res.json()) as { type?: string; name?: string; services?: { name: string; endpoint: string }[] };
+  if (doc.type !== "https://eips.ethereum.org/EIPS/eip-8004#registration-v1" || !doc.name || !doc.services?.length) throw new Error(`${uri} is not a registration-v1 file`);
+  if (JSON.stringify(doc).includes("{{")) throw new Error(`${uri} still has template placeholders`);
+  console.log(`${uri}: "${doc.name}", services ${doc.services.map((x) => x.name).join(", ")}`);
 
   const publicClient = makePublicClient();
   const { result: simulatedId } = await publicClient.simulateContract({
