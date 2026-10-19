@@ -14,7 +14,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 1. ✅ **Send to a contact** from the Mini App (2026-10-19): `POST /api/miniapp/send/prepare`. Same currency is one transfer. Cross currency pays the contact in the Uniswap swap, or forwards a Textile fill exactly. Receipts name the recipient.
 2. ✅ **Receipts list** (2026-10-19): `GET /api/miniapp/receipts`, merged into the app on launch, so receipts survive a new phone or a cleared app. Incoming transfers in the feed are still to do.
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
-4. 👤 **Autonomy:** approve the ArbolitoGuard v2 mainnet deploy (≈3.04M gas ≈ 0.6 CELO). Then build standing rules: payday split and scheduled sends to saved contacts.
+4. 🟡 **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`), wired on Vercel. Next: standing rules (payday split, scheduled sends) executed by the operator.
 5. 👤 **Identity:** ERC-8004 agent registration and Self agent ID (scripts and steps are ready; both need approval).
 6. ⬜ **Desk v1:** a hedger (sell inventory above the cap back to USDT), quote and win-rate stats from Stitch, and a strategy write-up for the originality score.
 7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
@@ -35,7 +35,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | | x402 via Celo's facilitator (see T2b) | ⬜ |
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
-| | "Let Arbolito act for you": ArbolitoGuard v2 operator (contract and tests done, not deployed) | 🟡 👤 |
+| | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
 | | Standing rules: payday split, scheduled sends | ⬜ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
@@ -88,7 +88,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 
 ## Founder actions (open)
 - [x] Do a real Mini App conversion on your phone (a few dollars).
-- [ ] Approve the ArbolitoGuard v2 deploy (≈0.6 CELO gas from ops).
+- [x] Approve the ArbolitoGuard v2 deploy (deployed 2026-10-19).
 - [ ] Approve ERC-8004 registration and Self agent ID.
 - [x] Add `DEEPSEEK_API_KEY` and `STT_API_KEY` to Vercel (Mini App chat).
 - [ ] Submit the MiniPay Discover listing.

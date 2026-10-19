@@ -11,6 +11,7 @@
     "quote": "node scripts/run.mjs quote",
     "smoke:convert": "node scripts/run.mjs smoke-convert",
     "deploy:receipts": "pnpm contracts:build && node scripts/run.mjs deploy-receipts",
+    "deploy:guard": "pnpm contracts:build && node scripts/run.mjs deploy-guard",
     "register:8004": "node scripts/run.mjs register-8004",
     "reanchor:receipt": "node scripts/run.mjs reanchor-receipt",
     "verify:receipt": "node scripts/run.mjs verify-receipt",

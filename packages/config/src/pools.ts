@@ -20,7 +20,7 @@ export const POOLS = [
   { name: "wBRL/USDT 0.01%", address: "0x01c3cf91cdf7B34181C7eC8566c0236951FEA40F", token0: "USDT", token1: "wBRL", fee: 100, routable: true, guard: true },
   { name: "USAT/USDT 0.01%", address: "0x070D575a713EaF5025462D0865Fb0Dac4B14bC38", token0: "USDT", token1: "USAT", fee: 100, routable: true, guard: true },
   /** Found 2026-10-17 via factory.getPool (fee 100): ~23.1K USDC + 164.7K USDT, so USDC trades at a small premium. */
-  { name: "USDC/USDT 0.01%", address: "0x1a810e0B6c2dd5629AFa2f0c898b9512C6F78846", token0: "USDT", token1: "USDC", fee: 100, routable: true, guard: false },
+  { name: "USDC/USDT 0.01%", address: "0x1a810e0B6c2dd5629AFa2f0c898b9512C6F78846", token0: "USDT", token1: "USDC", fee: 100, routable: true, guard: true },
   { name: "USAT/USDT 0.05%", address: "0xaE073a816117DcD1cC237fe4CB99F89F8F8bfF4F", token0: "USDT", token1: "USAT", fee: 500, routable: false, guard: false },
 ] as const satisfies readonly PoolInfo[];
 

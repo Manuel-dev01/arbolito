@@ -95,6 +95,8 @@ export const envSchema = z.object({
   GUARD_ADDRESS: opt(address),
   /** Operator the guard authorizes for autonomous swaps/sends (Arbolito's operator EOA). */
   ARBOLITO_OPERATOR_ADDRESS: opt(address),
+  /** Key of ARBOLITO_OPERATOR_ADDRESS: gas only; it can only act through the guard, within each user's caps. */
+  ARBOLITO_OPERATOR_PRIVATE_KEY: opt(privateKey),
 });
 
 export type Env = z.infer<typeof envSchema>;

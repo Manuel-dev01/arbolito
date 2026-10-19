@@ -53,12 +53,12 @@ describe("guard v2 encoders", () => {
     expect(() => encodeGuardV2Configure({ ...cfg, maxSlippageBps: 1001 })).toThrow();
   });
 
-  it("builds constructor args without a reactor: router, factory, 10 min TWAP, 5 tokens, 3 pools", () => {
+  it("builds constructor args without a reactor: router, factory, 10 min TWAP, 5 tokens, 4 pools (USDC/USDT included)", () => {
     const [router, factory, window, tokens, pools] = guardV2ConstructorArgs();
     expect(router).toBe(CONTRACTS.uniswap.swapRouter02);
     expect(factory).toBe(CONTRACTS.uniswap.factory);
     expect(window).toBe(600);
     expect(tokens).toHaveLength(5);
-    expect(pools).toHaveLength(3);
+    expect(pools).toHaveLength(4);
   });
 });

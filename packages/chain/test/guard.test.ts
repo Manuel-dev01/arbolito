@@ -31,7 +31,7 @@ describe("guard encoders", () => {
     expect(args).toEqual([path, 10_000_000n, 1n]);
   });
 
-  it("builds constructor args from the canonical config: 5 tokens, 3 routable 0.01% pools, 10 min TWAP", () => {
+  it("builds constructor args from the canonical config: 5 tokens, 4 routable 0.01% pools, 10 min TWAP", () => {
     const [router, factory, reactor, window, tokens, pools] = guardConstructorArgs();
     expect(router).toBe(CONTRACTS.uniswap.swapRouter02);
     expect(factory).toBe(CONTRACTS.uniswap.factory);
@@ -42,6 +42,7 @@ describe("guard encoders", () => {
       "0x5d8ef8b839be522b9e3d60a51edb5837cd0b2391",
       "0x01c3cf91cdf7b34181c7ec8566c0236951fea40f",
       "0x070d575a713eaf5025462d0865fb0dac4b14bc38",
+      "0x1a810e0b6c2dd5629afa2f0c898b9512c6f78846",
     ]);
   });
 

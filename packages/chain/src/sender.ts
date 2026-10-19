@@ -81,6 +81,8 @@ export interface GuardedSendParams {
   purpose: string;
   /** Token symbol to pay gas in (mainnet only). */
   feeCurrency?: string;
+  /** Explicit EIP-1559 fees. Default: viem's (a ~2x base-fee cap, which a near-empty gas wallet may not cover). */
+  fees?: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint };
   attributionCode?: string;
   caps?: Caps;
   ledger?: SpendLedger;
@@ -195,7 +197,7 @@ export async function sendGuarded(p: GuardedSendParams): Promise<GuardedSendResu
   let hash: Hex;
   try {
     // Pass the simulated gas so signing doesn't re-estimate against a possibly lagging node.
-    hash = await p.walletClient.sendTransaction({ ...tx, gas, chain: p.walletClient.chain ?? null } as never);
+    hash = await p.walletClient.sendTransaction({ ...tx, gas, ...(p.fees ?? {}), chain: p.walletClient.chain ?? null } as never);
   } catch (err) {
     // Nothing was broadcast, so nothing moved.
     await ledger.update(day, id, { status: "released" });

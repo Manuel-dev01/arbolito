@@ -21,6 +21,7 @@ const ENTRIES = {
   "desk-fund": "scripts/desk-fund.ts",
   "desk-stitch": "scripts/desk-stitch.ts",
   "anchor-wallet": "scripts/anchor-wallet.ts",
+  "deploy-guard": "scripts/deploy-guard.ts",
 };
 
 const name = process.argv[2];
