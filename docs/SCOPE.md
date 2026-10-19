@@ -15,7 +15,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 2. ✅ **Receipts list** (2026-10-19): `GET /api/miniapp/receipts`, merged into the app on launch, so receipts survive a new phone or a cleared app. Incoming transfers in the feed are still to do.
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
 4. 🟡 **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`), wired on Vercel. Next: standing rules (payday split, scheduled sends) executed by the operator.
-5. 👤 **Identity:** ERC-8004 agent registration and Self agent ID (scripts and steps are ready; both need approval).
+5. 🟡 **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID: waiting for the founder's passport scan.
 6. ⬜ **Desk v1:** a hedger (sell inventory above the cap back to USDT), quote and win-rate stats from Stitch, and a strategy write-up for the originality score.
 7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
 8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
@@ -30,8 +30,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | | A real user's conversion through the MiniPay Mini App (founder, 2026-10-19; receipts anchored and verified) | ✅ |
 | Real use of wFIAT + Celo stack | Router: Uniswap v3 + Textile RFQ, best execution, Textile partner key | ✅ |
 | | Gas paid in stablecoins (MiniPay pays in USDT itself; our sender supports fee adapters) | ✅ |
-| | ERC-8004 identity registration | 👤 |
-| | Self agent ID | 👤 |
+| | ERC-8004 identity registration (agentId 9976, URI served at `/.well-known/agent-registration.json`) | ✅ |
+| | Self agent ID (session open; founder scans with the Self app) | 🟡 👤 |
 | | x402 via Celo's facilitator (see T2b) | ⬜ |
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
@@ -44,7 +44,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 | | Receipts list from the server (incoming-transfer feed still to do) | ✅ |
 | | Wallet-ownership signature on reject and link (MiniPay supports both signing methods) | ⬜ |
 | | Mini App chat on Vercel (DeepSeek + voice; replies in the user's language) | ✅ |
-| | MiniPay Discover listing (name, URL, 512×512 icon) | 👤 |
+| | MiniPay Discover listing (name, URL, 512×512 icon at `/arbolito.png`) | 👤 |
 | Impact for LatAm | Story and numbers: the official-to-crypto dollar gap, BRL⇄ARS without SWIFT, the "Ahorraste" receipts | ✅ |
 | | Named real users (a pilot group in AR/BR), with their conversions on `/metrics` | 👤 ⬜ |
 
@@ -89,7 +89,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · 👤 needs t
 ## Founder actions (open)
 - [x] Do a real Mini App conversion on your phone (a few dollars).
 - [x] Approve the ArbolitoGuard v2 deploy (deployed 2026-10-19).
-- [ ] Approve ERC-8004 registration and Self agent ID.
+- [x] Approve ERC-8004 registration and Self agent ID (ERC-8004 done).
+- [ ] Scan the Self agent ID link with the Self app.
 - [x] Add `DEEPSEEK_API_KEY` and `STT_API_KEY` to Vercel (Mini App chat).
 - [ ] Submit the MiniPay Discover listing.
 - [ ] Find 3–10 pilot users in AR/BR (named, with consent), for T1 impact.

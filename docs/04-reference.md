@@ -197,7 +197,7 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
 | ArbolitoGuard v2 | **0x411E44dB70476F74C3560F5cCFdbc8c63f231d33** | Deployed 2026-10-19, block 80508584, tx `0x8b4aa0dab665eb01a2b34963072519dd2a6c4b5cd198a5ec41ab54521d4661c1` (3,095,251 gas ≈ 0.627 CELO), tagged `celo_e054d92430a5`. Ownerless, immutable. Pins SwapRouter02 `0x5615…bc4`, factory `0xAfE2…cEc`, a 600 s TWAP, tokens wARS/wBRL/USDT/USA₮/USDC and the 0.01% pools wARS/USDT, wBRL/USDT, USA₮/USDT, USDC/USDT (readback checked onchain). Operator EOA (`ARBOLITO_OPERATOR_ADDRESS`): `0xeA7135ec38D6C289D781D22059eCf6007c6f36b4`, gas only, acts only for accounts that set it, within their caps |
 
 ## Identity, reputation, attribution
-- ERC-8004 (mainnet):
+- ERC-8004 (mainnet): **Arbolito is agentId 9976** (registered 2026-10-19 by ops, URI `https://arbolito-livid.vercel.app/.well-known/agent-registration.json`, tx `0xbb465125ec0aa57324ab3ee39887755504222813a8341c45486abf9a95d5ce89`)
   - Identity 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
   - Reputation 0x8004BAa17C55a88189AE136b182e5fdA19dE9b63
 - ERC-8004 (Sepolia): Identity 0x8004A818BFB912233c491871b3d84c89A494BD9e; Reputation 0x8004B663056A597Dffe9eCcC1965A193B7388713.
