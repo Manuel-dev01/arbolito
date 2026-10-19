@@ -20,6 +20,7 @@ const ENTRIES = {
   "desk-stitch-config": "scripts/desk-stitch-config.ts",
   "desk-fund": "scripts/desk-fund.ts",
   "desk-stitch": "scripts/desk-stitch.ts",
+  "anchor-wallet": "scripts/anchor-wallet.ts",
 };
 
 const name = process.argv[2];

@@ -28,6 +28,7 @@
     "desk:feed": "node scripts/run.mjs desk-feed",
     "desk:stitch-config": "node scripts/run.mjs desk-stitch-config",
     "desk:fund": "node scripts/run.mjs desk-fund",
+    "anchor:wallet": "node scripts/run.mjs anchor-wallet",
     "desk:stitch": "node scripts/run.mjs desk-stitch"
   },
   "devDependencies": {
