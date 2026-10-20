@@ -219,3 +219,20 @@
   .mp-cd-bar { transition: none; }
 }
 .mp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Home (2026-10-20): agent chip, hero accents, currency split, tinted action tiles ── */
+.mp-agent { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px 0 14px; border-radius: 16px; border: 1px solid color-mix(in oklab, var(--save-text) 35%, transparent); background: color-mix(in oklab, var(--save-text) 10%, var(--surface)); color: var(--text); font-size: 15px; text-align: left; }
+.mp-agent-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--save-text); box-shadow: 0 0 0 4px color-mix(in oklab, var(--save-text) 25%, transparent); animation: mp-pulse 2.4s ease-in-out infinite; flex: none; }
+@keyframes mp-pulse { 50% { box-shadow: 0 0 0 7px color-mix(in oklab, var(--save-text) 8%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .mp-agent-dot { animation: none; } }
+.mp-hero { position: relative; overflow: hidden; }
+.mp-hero > * { position: relative; }
+.mp-hero .mp-hero-orbs { position: absolute; top: -18px; right: -14px; width: 120px; height: 120px; opacity: 0.22; pointer-events: none; }
+.mp-split { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+.mp-split-seg { display: block; height: 100%; border-radius: 4px; min-width: 6px; }
+.mp-split-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.mp-split-seg.ARS, .mp-split-dot.ARS { background: oklch(0.66 0.15 245); }
+.mp-split-seg.BRL, .mp-split-dot.BRL { background: oklch(0.82 0.18 125); }
+.mp-split-seg.USD, .mp-split-dot.USD { background: oklch(0.68 0.2 350); }
+.mp-action-tile { width: 56px; height: 56px; border-radius: 18px; border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; }
+.mp-act-icon { width: 36px; height: 36px; flex: none; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }

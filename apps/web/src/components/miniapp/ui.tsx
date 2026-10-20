@@ -148,3 +148,22 @@ export function KV({ k, children }: { k: string; children: ReactNode }) {
     </div>
   );
 }
+
+/** Line icons (24×24, stroke = currentColor) for the home screen's actions and bars. */
+const ICONS = {
+  swap: "M7 7h11l-3-3M17 17H6l3 3",
+  send: "M5 19 19 5M9 5h10v10",
+  plus: "M12 5v14M5 12h14",
+  withdraw: "M12 4v11m-4-4 4 4 4-4M5 19h14",
+  mic: "M12 4a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3",
+  spark: "M12 4l1.8 4.7L18.5 10l-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.3z",
+  chevron: "M9 6l6 6-6 6",
+} as const;
+
+export function Icon({ name, size = 24, stroke = 2 }: { name: keyof typeof ICONS; size?: number; stroke?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
