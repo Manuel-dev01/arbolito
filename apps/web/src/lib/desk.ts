@@ -3,14 +3,45 @@
  * (written by apps/desk's ledger) plus the live feed's /state. Records are plain JSON (no bigint)
  * so they can sit in Next's data cache.
  */
-import { asc, desc } from "drizzle-orm";
+import { asc, count, desc, gte } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { loadEnv } from "@arbolito/config";
-import { deskFills, deskSnapshots } from "@arbolito/db";
+import { deskFills, deskRfqs, deskSnapshots } from "@arbolito/db";
 import { webDb } from "./data";
 
-/** What the founder funded the desk with (40 USDT, 2026-10-15), micro-USD. */
-export const DESK_CAPITAL_MICROS = 40_000_000n;
+/**
+ * What the founder funded the desk with, micro-USD: three deposits of 40 USDT from 0x7769…a734
+ * (blocks 80170952, 80313359 and 80404036; checked onchain 2026-10-20). Gas CELO from ops excluded.
+ */
+export const DESK_CAPITAL_MICROS = 120_000_000n;
+
+const DAY = 86_400_000;
+
+/** Share of snapshots (every ~5 min) in which each corridor was quoting, over the last day and week. */
+export type Uptime = Record<string, { day: number | null; week: number | null }>;
+
+/** Pure: uptime per pair from snapshots' `quoting` maps (rows without one are skipped). */
+export function uptimeFrom(rows: { at: Date; quoting: unknown }[], now: number): Uptime {
+  const acc: Record<string, { d: [number, number]; w: [number, number] }> = {};
+  for (const r of rows) {
+    const q = r.quoting as Record<string, boolean> | null;
+    if (!q) continue;
+    const age = now - r.at.getTime();
+    if (age > 7 * DAY) continue;
+    for (const [pair, live] of Object.entries(q)) {
+      const a = (acc[pair] ??= { d: [0, 0], w: [0, 0] });
+      a.w[1]++;
+      if (live) a.w[0]++;
+      if (age <= DAY) {
+        a.d[1]++;
+        if (live) a.d[0]++;
+      }
+    }
+  }
+  const out: Uptime = {};
+  for (const [pair, a] of Object.entries(acc)) out[pair] = { day: a.d[1] ? a.d[0] / a.d[1] : null, week: a.w[1] ? a.w[0] / a.w[1] : null };
+  return out;
+}
 
 export interface DeskFillRecord {
   txHash: string;
@@ -62,6 +93,9 @@ export interface DeskStats {
 
 export interface DeskView {
   db: boolean;
+  uptime: Uptime;
+  /** RFQs our quote won, as Stitch logged them (since 2026-10-20). */
+  rfqsWon: number;
   fills: DeskFillRecord[];
   latest: DeskSnapshotRecord | null;
   stats: DeskStats;
@@ -93,13 +127,18 @@ export function deskStats(fills: DeskFillRecord[]): DeskStats {
   return { fills: fills.length, volumeMicros: volume.toString(), spreadMicros: Math.round(spread).toString() };
 }
 
+const EMPTY: Omit<DeskView, "feed"> = { db: false, fills: [], latest: null, stats: deskStats([]), uptime: {}, rfqsWon: 0 };
+
 const loadDb = unstable_cache(
   async (): Promise<Omit<DeskView, "feed">> => {
     const db = webDb();
-    if (!db) return { db: false, fills: [], latest: null, stats: deskStats([]) };
-    const [rows, [latest]] = await Promise.all([
+    if (!db) return EMPTY;
+    const now = Date.now();
+    const [rows, [latest], recent, [won]] = await Promise.all([
       db.select().from(deskFills).orderBy(asc(deskFills.at)),
       db.select().from(deskSnapshots).orderBy(desc(deskSnapshots.at)).limit(1),
+      db.select({ at: deskSnapshots.at, quoting: deskSnapshots.quoting }).from(deskSnapshots).where(gte(deskSnapshots.at, new Date(now - 7 * DAY))),
+      db.select({ n: count() }).from(deskRfqs),
     ]);
     const fills: DeskFillRecord[] = rows.map((r) => ({
       txHash: r.txHash,
@@ -112,9 +151,9 @@ const loadDb = unstable_cache(
       fairPrice: r.fairPrice === null ? null : Number(r.fairPrice),
       edgeBps: r.edgeBps === null ? null : Number(r.edgeBps),
     }));
-    return { db: true, fills: fills.reverse(), latest: latest ? snap(latest) : null, stats: deskStats(fills) };
+    return { db: true, fills: fills.reverse(), latest: latest ? snap(latest) : null, stats: deskStats(fills), uptime: uptimeFrom(recent, now), rfqsWon: won?.n ?? 0 };
   },
-  ["desk-db-v1"],
+  ["desk-db-v2"],
   { revalidate: 30 },
 );
 
@@ -130,10 +169,10 @@ async function loadFeed(): Promise<FeedState | null> {
 
 /** Fills and snapshots only (no feed call), for pages that must not wait on the feed. */
 export async function loadDeskData(): Promise<Omit<DeskView, "feed">> {
-  return loadDb().catch(() => ({ db: false, fills: [], latest: null, stats: deskStats([]) }));
+  return loadDb().catch(() => EMPTY);
 }
 
 export async function loadDesk(): Promise<DeskView> {
-  const [data, feed] = await Promise.all([loadDb().catch(() => ({ db: false, fills: [], latest: null, stats: deskStats([]) })), loadFeed()]);
+  const [data, feed] = await Promise.all([loadDb().catch(() => EMPTY), loadFeed()]);
   return { ...data, feed };
 }

@@ -122,7 +122,9 @@ export class FeedService {
         for (const [pair, f] of fiat) fairNow[pair] = 1 / f;
         try {
           await this.o.ledger.indexFills(fairNow, now);
-          if (this.balances) await this.o.ledger.snapshot(this.balances, fairNow, now);
+          // Live = published this tick (not held by the breaker, not paused by the risk officer).
+          const quoting = Object.fromEntries(this.corridors.map((c) => [c.pair, c.live && this.rt.get(c.pair)?.decisions.at(-1)?.action === "publish"]));
+          if (this.balances) await this.o.ledger.snapshot(this.balances, fairNow, now, quoting);
         } catch (e) {
           errors.push(`ledger: ${(e as Error).message}`);
         }

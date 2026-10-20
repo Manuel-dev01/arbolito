@@ -242,8 +242,22 @@ export const deskSnapshots = pgTable(
     balances: jsonb(),
     /** USDT + soft at fair, micro-USD (CELO gas float excluded). */
     navMicros: atomic(),
+    /** Per pair: was the corridor quoting (feed published, not held or paused) at this snapshot (2026-10-20). */
+    quoting: jsonb(),
   },
   (t) => [index("desk_snapshots_at_idx").on(t.at)],
+);
+
+/** An RFQ outcome Stitch reported for one of our quotes (it logs only the selected ones). */
+export const deskRfqs = pgTable(
+  "desk_rfqs",
+  {
+    rfqId: text().primaryKey(),
+    /** selected | … as Stitch prints it */
+    result: text().notNull(),
+    at: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index("desk_rfqs_at_idx").on(t.at)],
 );
 
 /** Small key/value state for the desk (e.g. the fills indexer's last scanned block). */

@@ -7,6 +7,7 @@ export * from "./inventory";
 export * from "./limits";
 export * from "./ledger";
 export * from "./rebalance";
+export * from "./rfq-log";
 export * from "./rebalancer";
 export * from "./risk";
 export * from "./server";

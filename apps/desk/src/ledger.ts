@@ -6,7 +6,7 @@
 import { desc, eq } from "drizzle-orm";
 import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import { TOKENS } from "@arbolito/config";
-import { deskFills, deskSnapshots, deskState, type Db } from "@arbolito/db";
+import { deskFills, deskRfqs, deskSnapshots, deskState, type Db } from "@arbolito/db";
 import type { Corridor } from "./corridors";
 import { edgeBps, fillsFromTransfers, navMicros, type DeskTransfer } from "./fills";
 import type { Balances } from "./inventory";
@@ -114,7 +114,8 @@ export class DeskLedger {
   }
 
   /** Record inventory + NAV at most every few minutes. */
-  async snapshot(b: Balances, fair: FairNow, now = Date.now()): Promise<void> {
+  /** `quoting`: per pair, whether the corridor was live this tick (for the uptime on /desk). */
+  async snapshot(b: Balances, fair: FairNow, now = Date.now(), quoting?: Record<string, boolean>): Promise<void> {
     if (now - this.lastSnapshot < SNAPSHOT_EVERY_MS) return;
     const [blockNumber, celo] = await Promise.all([this.client.getBlockNumber(), this.client.getBalance({ address: this.desk })]);
     const nav = navMicros(b, this.corridors, fair);
@@ -132,8 +133,14 @@ export class DeskLedger {
       fairs: Object.fromEntries(Object.entries(fair).filter(([, v]) => v !== undefined)),
       balances: Object.fromEntries(Object.entries(b).map(([k, v]) => [k, v.toString()])),
       navMicros: nav === undefined ? null : nav.toString(),
+      quoting: quoting ?? null,
     });
     this.lastSnapshot = now;
+  }
+
+  /** An RFQ outcome from Stitch's log (once per RFQ id). */
+  async recordRfqResult(rfqId: string, result: string, at = Date.now()): Promise<void> {
+    await this.db.insert(deskRfqs).values({ rfqId, result, at: new Date(at) }).onConflictDoNothing({ target: deskRfqs.rfqId });
   }
 
   /** Fills seen in the last windowMs, by pair. */

@@ -5,6 +5,15 @@ import { getLang, LOCALE, messages, withLang } from "../../i18n/messages";
 import { DESK_CAPITAL_MICROS, loadDesk, type FeedCorridor } from "../../lib/desk";
 import { formatBps, formatFixed, formatMoney, shortHex, type Locale } from "../../lib/format";
 
+const PAIR_LABEL: Record<string, string> = {
+  "wars-usdt": "wARS / USDT",
+  "wbrl-usdt": "wBRL / USDT",
+  "usdc-usdt": "USDC / USDT",
+  "usat-usdt": "USA₮ / USDT",
+  "wcop-usdt": "wCOP / USDT",
+  "wmxn-usdt": "wMXN / USDT",
+};
+
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export const revalidate = 30;
@@ -164,6 +173,33 @@ export default async function DeskPage({ searchParams }: Props) {
             </div>
           </dl>
           <p className="small muted">{t.pnl.note}</p>
+        </section>
+
+        <section className="card desk-card" aria-labelledby="desk-quoting">
+          <h2 id="desk-quoting">{t.quoting.t}</h2>
+          <p>{t.quoting.d}</p>
+          {Object.keys(view.uptime).length ? (
+            <dl className="desk-kv">
+              {Object.entries(view.uptime).map(([pair, u]) => (
+                <div key={pair}>
+                  <dt className="mono">{PAIR_LABEL[pair] ?? pair}</dt>
+                  <dd className="mono">
+                    {u.day === null ? "—" : `${Math.round(u.day * 100)}%`} <span className="muted small">{t.quoting.day}</span> · {u.week === null ? "—" : `${Math.round(u.week * 100)}%`}{" "}
+                    <span className="muted small">{t.quoting.week}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="small muted">{t.quoting.noData}</p>
+          )}
+          <dl className="desk-kv">
+            <div>
+              <dt>{t.quoting.won}</dt>
+              <dd className="mono">{view.rfqsWon}</dd>
+            </div>
+          </dl>
+          <p className="small muted">{t.quoting.wonNote}</p>
         </section>
 
         <section className="card desk-card desk-wide" aria-labelledby="desk-fills">

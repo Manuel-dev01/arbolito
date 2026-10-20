@@ -17,7 +17,7 @@ import { makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { DbLedger, getDb } from "@arbolito/db";
 import { textileFirmEnabled } from "@arbolito/router";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, stitchToml } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, parseRfqResult, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -47,7 +47,18 @@ if (hasFlag("once")) {
   // Stitch in-process (optional). It reads the feed over localhost, so no public hop is needed.
   const supervisor =
     env.DESK_STITCH_BIN && env.DESK_RFQ_API_KEY && env.DESK_PRIVATE_KEY
-      ? new StitchSupervisor({ bin: env.DESK_STITCH_BIN, dir: join(homedir(), "stitch-run"), privateKey: env.DESK_PRIVATE_KEY, rfqApiKey: env.DESK_RFQ_API_KEY, log })
+      ? new StitchSupervisor({
+          bin: env.DESK_STITCH_BIN,
+          dir: join(homedir(), "stitch-run"),
+          privateKey: env.DESK_PRIVATE_KEY,
+          rfqApiKey: env.DESK_RFQ_API_KEY,
+          log,
+          // RFQs our quote won, into the ledger (best effort; never blocks Stitch).
+          onLine: (line) => {
+            const r = parseRfqResult(line);
+            if (r && ledger) void ledger.recordRfqResult(r.rfqId, r.result).catch((e: Error) => log(`rfq record failed: ${e.message}`));
+          },
+        })
       : undefined;
   // Rebalancer (optional, DESK_REBALANCE): sells inventory above a cap back to USDT, within the spend caps.
   const deskAccount = env.DESK_PRIVATE_KEY ? privateKeyToAccount(env.DESK_PRIVATE_KEY as Hex) : undefined;
