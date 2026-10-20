@@ -44,6 +44,12 @@ Ripio's local stablecoins on Celo (wARS, wBRL) make that a token swap. But a per
   - It speaks Spanish, Portuguese and English, and takes voice notes.
   - The Telegram bot does the same; money only moves after a MiniPay confirmation.
 
+## vs Western Union (Build with buy)
+- **The question every family sending money asks:** "is this better than Western Union?" Arbolito answers it on each dollar → peso/real quote and receipt.
+- **How:** a few times a day, Arbolito rents a browser through [buy](https://usebuy.ai) (x402, paid in USDT from its buy payer [`0xD07b…3e58`](https://celoscan.io/address/0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58)) and reads Western Union's own currency converter.
+- **Example (2026-10-20):** Western Union paid R$ 4.82 per dollar, and Arbolito about 5.06, so roughly **5% more reais**. For pesos the two rates were about the same, before Western Union's transfer fee.
+- **Proof:** Western Union's rate is stored as a reference in each receipt, citing the buy payment that read it, and [/metrics](https://arbolito-livid.vercel.app/metrics#buy) lists every reading with its Celo transaction.
+
 ## Arbolito Desk (Open Corridors: Textile FX)
 - **Corridors:** a Textile maker quoting **wARS, wBRL, wCOP, wMXN, USDC and USA₮ against USDT**.
 - **Engine:** Textile's own filler (Stitch) signs the quotes. Arbolito supplies the price it quotes from:
@@ -65,6 +71,7 @@ Ripio's local stablecoins on Celo (wARS, wBRL) make that a token swap. But a per
 | ERC-8004 identity | agentId **9976** on the Identity Registry `0x8004A169…a432` ([tx](https://celoscan.io/tx/0xbb465125ec0aa57324ab3ee39887755504222813a8341c45486abf9a95d5ce89)) |
 | Desk maker wallet | [`0xBCB8B7dcEB8B39457Ef6D5dC95520A562b13EdbE`](https://celoscan.io/address/0xBCB8B7dcEB8B39457Ef6D5dC95520A562b13EdbE) |
 | Rules operator | [`0xeA7135ec38D6C289D781D22059eCf6007c6f36b4`](https://celoscan.io/address/0xeA7135ec38D6C289D781D22059eCf6007c6f36b4) |
+| buy payer (x402) | [`0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58`](https://celoscan.io/address/0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58) |
 
 Every address and endpoint we rely on is checked against the chain: [docs/04-reference.md](docs/04-reference.md), and `pnpm verify:addresses`.
 
@@ -96,6 +103,7 @@ Arbolito Desk: price feed ─► Stitch (Textile filler) ◄─► Textile RFQ; 
 | `packages/router` | Uniswap v3 and Textile RFQ adapters, the route planner, the executor |
 | `packages/proof` | ProofBundle schema, canonical hashing, anchoring, verification |
 | `packages/rules` | Standing rules: types, signed text, schedule, the runner |
+| `packages/x402`, `packages/competitors` | x402 v1 client (pays buy), and reading Western Union in a rented browser |
 | `packages/chain` | Clients, the guarded sender (caps, attribution, simulation), guard encoders |
 | `packages/llm`, `packages/db`, `packages/config` | Chat agent and tools, Postgres schema, verified config |
 | `contracts/` | ArbolitoReceipts, ArbolitoGuard (Foundry) |

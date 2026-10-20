@@ -17,7 +17,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 4. ✅ **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`). Standing rules live 2026-10-20: monthly sends (optionally converted) and payday splits, drafted in the chat, signed in MiniPay, run by the operator through the guard. Left: a real rule run on the founder's phone.
 5. ✅ **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID dropped (2026-10-20): it needs a passport, which the founder doesn't have.
 6. ✅ **Desk v1:** rebalancer (2026-10-19), risk-officer fixes, buy side sized to the room under each cap, quoting uptime and RFQs won on /desk, P&L against the real 120 USDT capital, and [docs/DESK-STRATEGY.md](DESK-STRATEGY.md) (2026-10-20). A true win rate isn't measurable: Stitch logs only the RFQs we win.
-7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
+7. 🟡 **T3 Build with buy** (chosen 2026-10-20; T2b dropped: it needs an outside counterparty paying us). "vs Western Union" on quotes and receipts, read in browsers bought through buy: built and deployed to Vercel; the bot's 6-hourly refresh is waiting on Railway's build outage. Left: the first stored readings, then real users driving the calls.
 8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
 
 ---
@@ -76,9 +76,9 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 ## T3 Build with buy
 | Criterion | Item | State |
 |---|---|---|
-| Use case | Competitor quotes (Western Union, Remitly, banks) captured by buy browsers into receipts | ⬜ |
-| Depth | Verified paid buy calls from the tagged wallet | ⬜ 👤 (paid calls) |
-| Demand | Driven by real user conversions | ⬜ |
+| Use case | "vs Western Union" on quotes and receipts: a family sending dollars sees how many more pesos/reais Arbolito delivers than Western Union (before its fee). Western Union's rate is read live in a browser bought through buy | ✅ built (first stored readings pending Railway) |
+| Depth | x402 v1 client (`packages/x402`), buy payer `0xD07b…3e58`; 6 paid browser sessions so far, each settled on Celo; the bot refreshes every 6 h; /metrics lists every reading with its payment | 🟡 |
+| Demand | Each refresh is driven by quotes and receipts real users see; more users → more value from the same calls | ⬜ (needs pilot users) |
 
 ## Infrastructure (done)
 - ✅ pnpm/TS monorepo, verified mainnet config (72/72 checks), 396 unit tests, fork tests on anvil.
