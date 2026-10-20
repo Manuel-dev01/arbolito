@@ -4,7 +4,7 @@ The one place to see what's done, what's next and what's left, mapped to how eac
 judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
 STATUS.md log.
 
-**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-10-19 (21 days left).
+**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-10-20 (20 days left).
 
 Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped · 👤 needs the founder (a decision, an approval, money or an account)
 
@@ -16,7 +16,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
 4. ✅ **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`). Standing rules live 2026-10-20: monthly sends (optionally converted) and payday splits, drafted in the chat, signed in MiniPay, run by the operator through the guard. Left: a real rule run on the founder's phone.
 5. ✅ **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID dropped (2026-10-20): it needs a passport, which the founder doesn't have.
-6. 🟡 **Desk v1:** rebalancer live 2026-10-19 (sells above-cap inventory back to USDT, gas in USDT); risk-officer lockout fixed. Left: quote and win-rate stats from Stitch, and the strategy write-up.
+6. ✅ **Desk v1:** rebalancer (2026-10-19), risk-officer fixes, buy side sized to the room under each cap, quoting uptime and RFQs won on /desk, P&L against the real 120 USDT capital, and [docs/DESK-STRATEGY.md](DESK-STRATEGY.md) (2026-10-20). A true win rate isn't measurable: Stitch logs only the RFQs we win.
 7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
 8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
 
@@ -38,6 +38,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
 | | Standing rules: payday split, monthly sends (signed in MiniPay; runner in the bot; Telegram notice per run) | ✅ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
+| | Mini App home polish: agent status chip, today's dollar, icons, split bar (2026-10-20) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
 | | Telegram bot: cards, `/conectar` linking (code typed in Settings → Telegram); auto-deploys from main | ✅ |
 | | Send to a contact (same currency or with conversion; receipts name the recipient) | ✅ |
@@ -59,10 +60,10 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | Volume quoted and filled (30%) | Six corridors quoting: wARS, wBRL, USDC, USA₮, wCOP, wMXN (bid-only) | ✅ |
 | | Fills ledger plus the `/desk` page (4 fills so far, all at positive edge) | ✅ |
 | | App conversions routed through Textile, so they become RFQs the desk can win | ✅ |
-| | Quote and win-rate stats (from Stitch logs) on `/desk` | ⬜ |
+| | Quoting uptime per corridor (24 h / 7 d) and RFQs won on `/desk` (win rate not observable: Stitch logs only wins) | ✅ |
 | | Optional: cNGN or IDRX corridors (listed in the track) | ⬜ |
 | Originality (30%) | Devaluation-aware wARS pricing, depeg guard on stables, wMXN as the only bid | ✅ |
-| | Strategy write-up for judges (docs/10-desk-plan.md, to be polished) | 🟡 |
+| | Strategy write-up for judges: [docs/DESK-STRATEGY.md](DESK-STRATEGY.md) | ✅ |
 
 ## T2b Open Corridors: USA₮ with x402
 | Criterion | Item | State |

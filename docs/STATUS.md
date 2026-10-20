@@ -63,6 +63,15 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-20 (afternoon): Home screen polish; desk stats, capital fix, buy sizing; strategy write-up
+- **Mini App home** (founder: "looks off, something's missing"): greeting by time of day with the wallet under it, the "Arbolito is acting for you · N rules" chip, logo-colour accents and a pesos/reais/dollars split bar on the balance card, line icons on tinted action tiles (Change filled), a mic on the ask bar, "The dollar today" card (official peso and the gap), cents on small conversions, icons on activity rows. Checked in headless Chrome before deploying.
+- **/desk P&L was against the wrong capital:** 40 USDT instead of the 120 USDT funded (three 40 USDT deposits from `0x7769…a734`, blocks 80170952, 80313359, 80404036, read onchain). Corrected; the result was overstated by ~US$ 80.
+- **Desk stats:** snapshots now record whether each corridor was quoting; /desk shows uptime per corridor (24 h, 7 days). Stitch logs only the RFQs our quote won (no requests or losses, even at debug), so those go to `desk_rfqs` and /desk shows the count; we don't publish a win rate we can't measure. Migration 0006 (applied).
+- **Buy-side overshoot fixed:** a corridor reopening at US$ 17.6 of wBRL offered its full US$ 20 and one fill (2026-10-20 13:22, −0.01% edge) took it to ~US$ 37; the rebalancer would then sell the excess back a few bps under fair. The buy side now offers only the room left under the cap, in US$ 5 steps with a dollar of tolerance and hysteresis. Live: wBRL buy off (at cap), the others offering US$ 5–20. The rebalancer is holding the excess wBRL because Uniswap pays 25 bps under fair (45 bps worst case) against a 40 bps limit.
+- **docs/DESK-STRATEGY.md:** the strategy for the Textile judges (architecture, fair value, devaluation-aware pesos, skew bounds, breaker, caps and rebalancer, the pause-only risk officer and what running it taught us, honest results, how to verify, code map).
+- **Desk now:** 6 fills, ~US$ 90 executed, edges −0.01% to +0.06%; NAV ≈ US$ 120 against 120 USDT.
+- **Next:** decide T2b (x402 FX API in USA₮) and T3 (buy) with the founder; README for judges and the submission package.
+
 ### 2026-10-20: Standing rules live (payday split, monthly sends); desk RFQ logging
 - **Standing rules** (`packages/rules`, founder-approved): the T1 "agent acts on its own" piece.
   - **Kinds:** monthly send to a saved contact (optionally converted: USDT → pesos/reais, the contact gets exactly what the swap returned) and payday split (a share of each incoming USDT payment sent by someone else, into pesos/reais/USA₮/USDC).
