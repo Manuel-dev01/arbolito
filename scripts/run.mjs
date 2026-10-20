@@ -23,6 +23,7 @@ const ENTRIES = {
   "anchor-wallet": "scripts/anchor-wallet.ts",
   "deploy-guard": "scripts/deploy-guard.ts",
   "desk-rebalance": "scripts/desk-rebalance.ts",
+  "fund-gas": "scripts/fund-gas.ts",
 };
 
 const name = process.argv[2];

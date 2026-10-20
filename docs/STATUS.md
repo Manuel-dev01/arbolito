@@ -63,6 +63,18 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-20: Standing rules live (payday split, monthly sends); desk RFQ logging
+- **Standing rules** (`packages/rules`, founder-approved): the T1 "agent acts on its own" piece.
+  - **Kinds:** monthly send to a saved contact (optionally converted: USDT → pesos/reais, the contact gets exactly what the swap returned) and payday split (a share of each incoming USDT payment sent by someone else, into pesos/reais/USA₮/USDC).
+  - **Creation:** in the Mini App chat (`prepare_scheduled_send`, `prepare_payday_split`, `list_rules`). A rule turns on only when the account signs its exact text in MiniPay (personal_sign; names the account, the contact's full address and the rule id). Drafts need autonomy on and, for sends, a guard-allowed contact. Listed with Cancel (signed) in Limits & security.
+  - **Runner:** in the bot service (`RULES_RUNNER=live`), every 60 s, with the operator key `0xeA71…36b4` through ArbolitoGuard v2. A run is claimed in `rule_runs` before any tx ((rule, trigger) unique: a month or a payment runs at most once). Preflight reads the guard and wallet; sendGuarded (tagged, capped at our US$ 5/25 build caps on top of the user's, 1.25x base-fee cap); nothing retried; an unconfirmed tx stops the rule. Linked users get a Telegram message per run.
+  - **Tests:** pure rules (5), DB claims (2), backend + chat (4), and a fork test against the deployed guard (monthly send converted to wARS once; split of an outside payment only, ignoring the account's own transfers and small ones; cap skip; revoked permission stops the rule).
+  - **Allowance fix:** turning autonomy on approved one day's cap, which one run used up. It now approves the daily cap for each day of the permission (30); the guard still enforces the per-operation and daily caps.
+  - **Operator gas:** 0.2 CELO from ops ([`0x5c20d9f8…f006`](https://celoscan.io/tx/0x5c20d9f8eb276019fca7c66b14634b0e2189399a80e56bbb6d16e4925744f006), tagged; `pnpm fund:gas operator 0.2`, rehearsed on a fork).
+- **Desk RFQ stats (in progress):** Stitch logs only selected quotes at INFO. `RUST_LOG=…,stitch_bot::rfq=debug` on desk-feed (also silences per-tick spam); the supervisor now hands each line to an `onLine` hook. No RFQ arrived in the first ~30 min, so the parser waits for real lines.
+- **Self agent ID:** dropped (needs a passport).
+- **Next:** the founder tries a rule on the phone; RFQ parser + win-rate on `/desk`; strategy write-up; submission package.
+
 ### 2026-10-19 (evening): First real Mini App test on the founder's phone; receipts now anchor live
 - **Founder's test (MiniPay, wallet `0x7769…a734`), all checked onchain:** 2 USDT → 3,232.46 wARS (Textile fill), 3,232.45 wARS → 2.009 USDT (Uniswap), 1 USDT sent to ops (same-currency send), 1 USDT → 5.0599 wBRL (Textile, from the chat card). A 5 USDT attempt showed "we don't know": no tx left the wallet (MiniPay errored before returning a hash, most likely the sheet was closed).
 - **Fixes shipped (`69dfcd3`):**

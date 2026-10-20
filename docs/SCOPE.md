@@ -14,7 +14,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 1. ✅ **Send to a contact** from the Mini App (2026-10-19): `POST /api/miniapp/send/prepare`. Same currency is one transfer. Cross currency pays the contact in the Uniswap swap, or forwards a Textile fill exactly. Receipts name the recipient.
 2. ✅ **Receipts list** (2026-10-19): `GET /api/miniapp/receipts`, merged into the app on launch, so receipts survive a new phone or a cleared app. Incoming transfers in the feed are still to do.
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
-4. 🟡 **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`), wired on Vercel. Next: standing rules (payday split, scheduled sends) executed by the operator.
+4. ✅ **Autonomy:** ArbolitoGuard v2 deployed 2026-10-19 (`0x411E…1d33`). Standing rules live 2026-10-20: monthly sends (optionally converted) and payday splits, drafted in the chat, signed in MiniPay, run by the operator through the guard. Left: a real rule run on the founder's phone.
 5. ✅ **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID dropped (2026-10-20): it needs a passport, which the founder doesn't have.
 6. 🟡 **Desk v1:** rebalancer live 2026-10-19 (sells above-cap inventory back to USDT, gas in USDT); risk-officer lockout fixed. Left: quote and win-rate stats from Stitch, and the strategy write-up.
 7. ⬜ **T2b / T3** (if time): the x402 FX API paid in USA₮, and buy-powered competitor quotes.
@@ -36,7 +36,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
-| | Standing rules: payday split, scheduled sends | ⬜ |
+| | Standing rules: payday split, monthly sends (signed in MiniPay; runner in the bot; Telegram notice per run) | ✅ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
 | | Telegram bot: cards, `/conectar` linking (code typed in Settings → Telegram); auto-deploys from main | ✅ |

@@ -31,6 +31,7 @@
     "desk:fund": "node scripts/run.mjs desk-fund",
     "desk:rebalance": "node scripts/run.mjs desk-rebalance",
     "anchor:wallet": "node scripts/run.mjs anchor-wallet",
+    "fund:gas": "node scripts/run.mjs fund-gas",
     "desk:stitch": "node scripts/run.mjs desk-stitch"
   },
   "devDependencies": {
