@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { fill } from "../../../i18n/miniapp";
+import { linkMessage } from "../../../lib/miniapp/contract";
+import { isUserRejection } from "../../../lib/miniapp/client/wallet";
 import { useApp } from "../context";
 import { ActionBar, Logo, NoMoneyMoved } from "../ui";
 
@@ -34,7 +36,7 @@ export function CodeDigits({ code }: { code: string }) {
  * inside MiniPay, so its link lands in Telegram's own browser. No message signing (MiniPay rule).
  */
 export function LinkScreen() {
-  const { t, api, account, showError, openLink } = useApp();
+  const { t, api, account, wallet, showError, openLink } = useApp();
   const [urlCode] = useState(codeFromUrl);
   const [code, setCode] = useState(urlCode ?? "");
   const typed = urlCode === null;
@@ -46,12 +48,15 @@ export function LinkScreen() {
     if (!valid) return;
     setState("busy");
     try {
-      const r = await api.linkConfirm({ code, account });
+      // MiniPay shows the code in its signing sheet: the wallet proves it's the one being linked.
+      const proof = await wallet.signer.personalSign(linkMessage(code, account));
+      const r = await api.linkConfirm({ code, account, proof });
       if (r.linked) {
         setWho(r.telegramName);
         setState("done");
       } else setState("fail");
     } catch (e) {
+      if (isUserRejection(e)) return setState("idle");
       const c = (e as { code?: string }).code;
       if (c === "bad_request") setState("fail");
       else {
@@ -121,7 +126,7 @@ export function LinkScreen() {
                 {t.lnkFail}
               </div>
             ) : null}
-            <div className="mp-small">{t.lnkNote}</div>
+            <div className="mp-small">{t.lnkSignNote}</div>
           </div>
         </div>
         <ActionBar
@@ -139,7 +144,7 @@ export function LinkScreen() {
           <h1 className="mp-h1">{t.lnkTitle}</h1>
           <p className="mp-p">{t.lnkBody}</p>
           <CodeDigits code={code} />
-          <div className="mp-small">{t.lnkNote}</div>
+          <div className="mp-small">{t.lnkSignNote}</div>
           {state === "fail" ? (
             <>
               <div className="mp-banner" role="alert">

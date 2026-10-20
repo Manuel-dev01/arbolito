@@ -1,8 +1,10 @@
 import type { Address } from "viem";
 import type { z } from "zod";
-import type { LinkConfirmRequest, LinkConfirmResponse } from "../contract";
+import type { Hex } from "viem";
+import { linkMessage, type LinkConfirmRequest, type LinkConfirmResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, rateLimited } from "./errors";
+import { signedBy } from "./signature";
 
 /** Code guesses allowed per wallet and per IP in a 10-minute window (4 digits = 10,000 codes). */
 const LINK_LIMIT_ACCOUNT = 5;
@@ -22,10 +24,9 @@ export async function linkStatus(deps: MiniappDeps, account: Address): Promise<{
  * If a MiniPay-only user already owns that wallet, its receipts and chat history move to the
  * Telegram user and the duplicate is deleted. The code is single-use.
  *
- * TODO(minipay-check): `proof` is optional for now. The /minipay-check results decide how a
- * wallet proves ownership here (personal_sign of the code, or a 0-value tagged tx) without an
- * auth-style sign-in; until then a guessed code could link someone else's Telegram to this
- * wallet, which the rate limits and the code shown in both apps make unlikely but not impossible.
+ * The wallet signs linkMessage(code, account) in MiniPay (personal_sign works there: the
+ * MiniPay check, 2026-10-19). The signature is checked before the code is even looked up, so a
+ * guessed code neither links someone else's wallet nor reveals whether it exists.
  */
 export async function confirmLink(
   deps: MiniappDeps,
@@ -36,6 +37,7 @@ export async function confirmLink(
   if (!deps.limiter.take(`link:acct:${account}`, LINK_LIMIT_ACCOUNT, LINK_WINDOW_MS) || !deps.limiter.take(`link:ip:${ip}`, LINK_LIMIT_IP, LINK_WINDOW_MS)) {
     throw rateLimited("Too many attempts. Wait a few minutes and ask the bot for a new code.");
   }
+  if (!(await signedBy(deps, account, linkMessage(req.code, account), req.proof as Hex))) throw badRequest("MiniPay's signature doesn't match. Try again.");
   const now = new Date(deps.now());
 
   return deps.store().transaction(async (store) => {

@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { verifyMessage, type Address, type Hex } from "viem";
+import type { Address, Hex } from "viem";
 import type { z } from "zod";
 import { readGuardV2IsContact, readGuardV2Operator, readGuardV2Settings } from "@arbolito/chain";
 import { cancelText, describeRule, nextMonthlyRun, parseRule, ruleText, type Lang, type RuleSpec } from "@arbolito/rules";
 import type { RuleCancelRequest, RuleCard, RuleConfirmRequest, RulesListResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, notReady } from "./errors";
+import { signedBy } from "./signature";
 import type { RuleRow } from "./store";
 
 /**
@@ -55,20 +56,6 @@ export async function draftRule(deps: MiniappDeps, account: Address, lang: strin
   const l = asLang(lang);
   const row = await store.insertRuleDraft({ id, account: acct, kind: spec.kind, params: spec.params, lang: l, message: ruleText(spec, id, acct, l) });
   return toCard(row);
-}
-
-/** A personal_sign over `message` by `account`: plain EOAs offline, smart accounts through the chain (ERC-1271/6492). */
-async function signedBy(deps: MiniappDeps, account: Address, message: string, signature: Hex): Promise<boolean> {
-  try {
-    if (await verifyMessage({ address: account, message, signature })) return true;
-  } catch {
-    /* not an EOA signature: try the chain */
-  }
-  try {
-    return await deps.chain.verifyMessage({ address: account, message, signature });
-  } catch {
-    return false;
-  }
 }
 
 /** POST /rules/confirm: the account's signature over the draft's text turns it on. */

@@ -229,7 +229,10 @@ export const ChatResponse = z.object({
 
 // ── Telegram linking ("Conectá tu MiniPay": 4-digit code shown in both apps) ──
 /** POST /api/miniapp/link/confirm { code, account, proof? } — proof format decided by the MiniPay check. */
-export const LinkConfirmRequest = z.object({ code: z.string().regex(/^\d{4}$/), account: Address, proof: Hex.optional() });
+/** proof: the wallet's personal_sign over linkMessage(code, account), so a guessed code can't link someone else's wallet. */
+export const LinkConfirmRequest = z.object({ code: z.string().regex(/^\d{4}$/), account: Address, proof: Hex });
+/** The text a wallet signs to link a Telegram account (shown in MiniPay's signing sheet). */
+export const linkMessage = (code: string, account: string) => `Arbolito: connect Telegram\nAccount: ${account.toLowerCase()}\nCode: ${code}`;
 export const LinkConfirmResponse = z.object({ linked: z.boolean(), telegramName: z.string().nullable() });
 /** GET /api/miniapp/link/status?account=: is this wallet linked to a Telegram account, and as whom. */
 export const LinkStatusResponse = z.object({ linked: z.boolean(), telegramName: z.string().nullable() });

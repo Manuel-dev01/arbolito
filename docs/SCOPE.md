@@ -43,7 +43,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | Telegram bot: cards, `/conectar` linking (code typed in Settings → Telegram); auto-deploys from main | ✅ |
 | | Send to a contact (same currency or with conversion; receipts name the recipient) | ✅ |
 | | Receipts list from the server (incoming-transfer feed still to do) | ✅ |
-| | Wallet-ownership signature on reject and link (MiniPay supports both signing methods) | ⬜ |
+| | Wallet-ownership signature: Telegram linking and rules need the wallet's personal_sign (2026-10-20); reject is unsigned (it only cancels a quote) | ✅ |
 | | Mini App chat on Vercel (DeepSeek + voice; replies in the user's language) | ✅ |
 | | MiniPay Discover listing (name, URL, 512×512 icon at `/arbolito.png`) | 👤 |
 | Impact for LatAm | Story and numbers: the official-to-crypto dollar gap, BRL⇄ARS without SWIFT, the "Ahorraste" receipts | ✅ |

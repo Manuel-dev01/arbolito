@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { POST as linkRoute } from "../src/app/api/miniapp/link/confirm/route";
-import { LinkConfirmResponse } from "../src/lib/miniapp/contract";
+import { LinkConfirmResponse, linkMessage } from "../src/lib/miniapp/contract";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { confirmLink, linkStatus } from "../src/lib/miniapp/server/link";
-import { ACCOUNT, T0, makeRig } from "./miniapp-helpers";
+import { ACCOUNT, T0, makeRig, wallet } from "./miniapp-helpers";
+
+/** The test wallet's signature over the link text (what MiniPay's personal_sign returns). */
+const proof = (code: string, account: string = ACCOUNT) => wallet.signMessage({ message: linkMessage(code, account) });
 
 async function failure(p: Promise<unknown>): Promise<ApiFailure> {
   try {
@@ -23,12 +26,12 @@ describe("POST /link/confirm", () => {
     const rig = makeRig();
     const tg = rig.store.addUser({ telegramId: 42n, telegramUsername: "ola", displayName: "Ola" });
     rig.store.addCode({ code: "1234", userId: tg.id });
-    const res = await confirmLink(rig.deps, { code: "1234", account: ACCOUNT.toUpperCase().replace("0X", "0x") }, "1.1.1.1");
+    const res = await confirmLink(rig.deps, { code: "1234", account: ACCOUNT.toUpperCase().replace("0X", "0x"), proof: await proof("1234") }, "1.1.1.1");
     expect(res).toEqual({ linked: true, telegramName: "Ola" });
     expect(rig.store.users.find((u) => u.id === tg.id)!.walletAddress).toBe(ACCOUNT);
     expect(rig.store.codes[0]).toMatchObject({ usedAt: new Date(T0), account: ACCOUNT });
     // Single use.
-    expect((await failure(confirmLink(rig.deps, { code: "1234", account: ACCOUNT }, "1.1.1.1"))).code).toBe("bad_request");
+    expect((await failure(confirmLink(rig.deps, { code: "1234", account: ACCOUNT, proof: await proof("1234") }, "1.1.1.1"))).code).toBe("bad_request");
   });
 
   it("merges an existing MiniPay-only user: receipts and messages move, the duplicate goes", async () => {
@@ -52,7 +55,7 @@ describe("POST /link/confirm", () => {
     const tg = rig.store.addUser({ telegramId: 7n, telegramUsername: "lucia" });
     rig.store.addCode({ code: "0420", userId: tg.id });
 
-    expect(await confirmLink(rig.deps, { code: "0420", account: ACCOUNT }, "1.1.1.1")).toEqual({ linked: true, telegramName: "@lucia" });
+    expect(await confirmLink(rig.deps, { code: "0420", account: ACCOUNT, proof: await proof("0420") }, "1.1.1.1")).toEqual({ linked: true, telegramName: "@lucia" });
     expect(rig.store.users.map((u) => u.id)).toEqual([tg.id]);
     expect(rig.store.users[0]!.walletAddress).toBe(ACCOUNT);
     expect(rig.store.receipts[0]!.userId).toBe(tg.id);
@@ -65,18 +68,28 @@ describe("POST /link/confirm", () => {
     const tg = rig.store.addUser({ telegramId: 2n });
     rig.store.addCode({ code: "1111", userId: tg.id });
     rig.store.addCode({ code: "2222", userId: tg.id, expiresAt: new Date(T0 - 1) });
-    const taken = await failure(confirmLink(rig.deps, { code: "1111", account: ACCOUNT }, "1.1.1.1"));
+    const taken = await failure(confirmLink(rig.deps, { code: "1111", account: ACCOUNT, proof: await proof("1111") }, "1.1.1.1"));
     expect([taken.code, taken.status]).toEqual(["bad_request", 409]);
     expect(rig.store.codes[0]!.usedAt).toBeNull(); // nothing burned on refusal
-    expect((await failure(confirmLink(rig.deps, { code: "2222", account: "0x5555555555555555555555555555555555555555" }, "1.1.1.1"))).message).toContain("expired");
-    expect((await failure(confirmLink(rig.deps, { code: "9999", account: "0x5555555555555555555555555555555555555555" }, "1.1.1.1"))).code).toBe("bad_request");
+    expect((await failure(confirmLink(rig.deps, { code: "2222", account: ACCOUNT, proof: await proof("2222") }, "1.1.1.1"))).message).toContain("expired");
+    expect((await failure(confirmLink(rig.deps, { code: "9999", account: ACCOUNT, proof: await proof("9999") }, "1.1.1.1"))).code).toBe("bad_request");
+  });
+
+  it("needs the wallet's own signature over this code: another code's or another wallet's is refused", async () => {
+    const rig = makeRig();
+    const tg = rig.store.addUser({ telegramId: 9n });
+    rig.store.addCode({ code: "4321", userId: tg.id });
+    const other = "0x5555555555555555555555555555555555555555";
+    expect((await failure(confirmLink(rig.deps, { code: "4321", account: ACCOUNT, proof: await proof("1234") }, "1.1.1.1"))).message).toContain("signature");
+    expect((await failure(confirmLink(rig.deps, { code: "4321", account: other, proof: await proof("4321") }, "1.1.1.1"))).message).toContain("signature");
+    expect(rig.store.codes[0]!.usedAt).toBeNull(); // the code survives a bad signature
   });
 
   it("rate-limits code guessing per wallet", async () => {
     const rig = makeRig();
     setDeps(rig.deps);
     const call = () =>
-      linkRoute(new Request("https://arbolito.test/api/miniapp/link/confirm", { method: "POST", body: JSON.stringify({ code: "0000", account: ACCOUNT }), headers: { "x-forwarded-for": "9.9.9.9" } }));
+      linkRoute(new Request("https://arbolito.test/api/miniapp/link/confirm", { method: "POST", body: JSON.stringify({ code: "0000", account: ACCOUNT, proof: `0x${"11".repeat(65)}` }), headers: { "x-forwarded-for": "9.9.9.9" } }));
     for (let i = 0; i < 5; i++) expect((await call()).status).toBe(400);
     const limited = await call();
     expect(limited.status).toBe(429);
@@ -90,7 +103,7 @@ describe("POST /link/confirm", () => {
     const tg = rig.store.addUser({ telegramId: 3n });
     rig.store.addCode({ code: "5555", userId: tg.id });
     setDeps(rig.deps);
-    const res = await linkRoute(new Request("https://arbolito.test/x", { method: "POST", body: JSON.stringify({ code: "5555", account: ACCOUNT }) }));
+    const res = await linkRoute(new Request("https://arbolito.test/x", { method: "POST", body: JSON.stringify({ code: "5555", account: ACCOUNT, proof: await proof("5555") }) }));
     expect(res.status).toBe(200);
     expect(LinkConfirmResponse.parse(await res.json())).toEqual({ linked: true, telegramName: null });
   });
