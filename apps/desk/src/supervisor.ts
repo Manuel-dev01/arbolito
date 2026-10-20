@@ -18,6 +18,8 @@ export interface SupervisorOptions {
   rfqApiKey: string;
   minRestartMs?: number;
   log?: (line: string) => void;
+  /** Every complete line Stitch prints (stdout and stderr), e.g. to count RFQ events. */
+  onLine?: (line: string) => void;
 }
 
 export class StitchSupervisor {
@@ -61,11 +63,21 @@ export class StitchSupervisor {
       env: { ...process.env, STITCH_PRIVATE_KEY: this.o.privateKey, STITCH_RFQ_API_KEY_FILE: join(this.o.dir, "rfq-api.key"), STITCH_RUNTIME_DIR: this.o.dir },
       stdio: ["ignore", "pipe", "pipe"],
     });
-    const forward = (buf: Buffer) => {
-      for (const line of buf.toString().split("\n")) if (line.trim()) this.o.log?.(`[stitch] ${line}`);
+    // A chunk can end mid-line: keep the tail until its newline arrives.
+    const forwarder = () => {
+      let tail = "";
+      return (buf: Buffer) => {
+        const lines = (tail + buf.toString()).split("\n");
+        tail = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          this.o.log?.(`[stitch] ${line}`);
+          this.o.onLine?.(line);
+        }
+      };
     };
-    child.stdout?.on("data", forward);
-    child.stderr?.on("data", forward);
+    child.stdout?.on("data", forwarder());
+    child.stderr?.on("data", forwarder());
     child.on("exit", (code, signal) => {
       if (this.child !== child) return;
       this.child = undefined;
