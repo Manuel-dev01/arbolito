@@ -24,6 +24,7 @@ const ENTRIES = {
   "deploy-guard": "scripts/deploy-guard.ts",
   "desk-rebalance": "scripts/desk-rebalance.ts",
   "fund-gas": "scripts/fund-gas.ts",
+  "buy": "scripts/buy.ts",
 };
 
 const name = process.argv[2];

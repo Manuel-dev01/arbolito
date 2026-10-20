@@ -29,6 +29,9 @@ importers:
       '@arbolito/router':
         specifier: workspace:*
         version: link:packages/router
+      '@arbolito/x402':
+        specifier: workspace:*
+        version: link:packages/x402
       viem:
         specifier: ^2.57.3
         version: 2.57.3(typescript@7.0.2)(zod@4.6.5)
@@ -57,6 +60,9 @@ importers:
       '@arbolito/chain':
         specifier: workspace:*
         version: link:../../packages/chain
+      '@arbolito/competitors':
+        specifier: workspace:*
+        version: link:../../packages/competitors
       '@arbolito/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -75,6 +81,9 @@ importers:
       '@arbolito/rules':
         specifier: workspace:*
         version: link:../../packages/rules
+      '@arbolito/x402':
+        specifier: workspace:*
+        version: link:../../packages/x402
       '@grammyjs/auto-retry':
         specifier: ^2.0.2
         version: 2.0.2(grammy@1.46.0)
@@ -206,6 +215,12 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
+  packages/competitors:
+    dependencies:
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
+
   packages/config:
     dependencies:
       dotenv:
@@ -303,7 +318,17 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
-  packages/x402: {}
+  packages/x402:
+    dependencies:
+      '@arbolito/chain':
+        specifier: workspace:*
+        version: link:../chain
+      viem:
+        specifier: ^2.57.3
+        version: 2.57.3(typescript@7.0.2)(zod@4.6.5)
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
 
 packages:
 

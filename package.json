@@ -32,6 +32,7 @@
     "desk:rebalance": "node scripts/run.mjs desk-rebalance",
     "anchor:wallet": "node scripts/run.mjs anchor-wallet",
     "fund:gas": "node scripts/run.mjs fund-gas",
+    "buy": "node scripts/run.mjs buy",
     "desk:stitch": "node scripts/run.mjs desk-stitch"
   },
   "devDependencies": {
@@ -50,6 +51,7 @@
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
     "viem": "^2.57.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@arbolito/x402": "workspace:*"
   }
 }

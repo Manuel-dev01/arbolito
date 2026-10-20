@@ -1,2 +1,3 @@
-// Phase 3: shared x402 v1/v2 helpers and facilitator client.
-export {};
+// x402 for Arbolito: the v1 "exact" (EIP-3009) client buy's gateway speaks.
+export * from "./client";
+export * from "./v1";
