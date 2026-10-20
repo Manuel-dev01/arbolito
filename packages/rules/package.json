@@ -1,0 +1,13 @@
+{
+  "name": "@arbolito/rules",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "viem": "^2.57.3",
+    "zod": "^4.6.5"
+  }
+}

@@ -252,3 +252,56 @@ export const deskState = pgTable("desk_state", {
   value: jsonb().notNull(),
   updatedAt: updatedAt(),
 });
+
+// ── Standing rules (packages/rules): drafts, active rules, and every run ───────────────
+
+/** A user's automatic rule. Turned on only by the account's own signature over its text. */
+export const rules = pgTable(
+  "rules",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** The MiniPay wallet (lowercase) the rule acts for, through ArbolitoGuard. */
+    account: text().notNull(),
+    /** send | split */
+    kind: text().notNull(),
+    /** Validated by @arbolito/rules (SendParams | SplitParams). */
+    params: jsonb().notNull(),
+    /** draft → active (signed) → cancelled (by the account) | stopped (by the runner after a failure). */
+    status: text().notNull().default("draft"),
+    lang: text().notNull().default("es"),
+    /** The exact text the account signed (ruleText) and its signature. */
+    message: text().notNull(),
+    signature: text(),
+    confirmedAt: timestamp({ withTimezone: true }),
+    /** send: when it runs next. */
+    nextRunAt: timestamp({ withTimezone: true }),
+    /** split: last block scanned for incoming transfers. */
+    cursorBlock: bigint({ mode: "bigint" }),
+    stoppedReason: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("rules_account_idx").on(t.account), index("rules_status_idx").on(t.status)],
+);
+
+/** One execution of a rule. Inserted before any transaction; (rule, trigger) is unique, so a run never repeats. */
+export const ruleRuns = pgTable(
+  "rule_runs",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    ruleId: uuid()
+      .notNull()
+      .references(() => rules.id, { onDelete: "cascade" }),
+    /** sendTrigger / splitTrigger from @arbolito/rules. */
+    trigger: text().notNull(),
+    /** running → done | partial (swap done, send failed: the funds stayed in the account) | failed | skipped */
+    status: text().notNull(),
+    amountIn: atomic(),
+    amountOut: atomic(),
+    txHashes: jsonb().notNull().default([]),
+    error: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("rule_runs_rule_trigger_key").on(t.ruleId, t.trigger), index("rule_runs_created_idx").on(t.createdAt)],
+);

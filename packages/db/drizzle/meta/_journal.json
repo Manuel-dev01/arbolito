@@ -36,6 +36,13 @@
       "when": 1792368870921,
       "tag": "0004_desk_balances",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792488184274,
+      "tag": "0005_rules",
+      "breakpoints": true
     }
   ]
 }
