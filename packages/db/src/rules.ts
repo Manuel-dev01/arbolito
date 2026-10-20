@@ -29,12 +29,12 @@ export async function activateRule(db: Db, id: string, a: { signature: string; n
   return rows.length === 1;
 }
 
-/** Cancelled by the account (draft or active). */
+/** Cancelled by the account (draft, active, or stopped by the runner). */
 export async function cancelRule(db: Db, id: string): Promise<boolean> {
   const rows = await db
     .update(rules)
     .set({ status: "cancelled", nextRunAt: null })
-    .where(and(eq(rules.id, id), inArray(rules.status, ["draft", "active"])))
+    .where(and(eq(rules.id, id), inArray(rules.status, ["draft", "active", "stopped"])))
     .returning({ id: rules.id });
   return rows.length === 1;
 }

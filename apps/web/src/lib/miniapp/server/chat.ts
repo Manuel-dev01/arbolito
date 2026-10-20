@@ -3,13 +3,15 @@ import type { z } from "zod";
 import { CELO_MAINNET_ID, TOKENS, tokenByAddress } from "@arbolito/config";
 import { formatUsd } from "@arbolito/chain";
 import { LlmConfigError, LlmError, TOKEN_SYMBOLS, ToolUserError, detectLanguage, runAgentTurn, type ToolHandlers } from "@arbolito/llm";
+import { parseRule } from "@arbolito/rules";
 import { effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
-import type { ChatRequest, ChatResponse, QuoteResponse } from "../contract";
+import type { ChatRequest, ChatResponse, QuoteResponse, RuleCard } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { ApiFailure, badRequest, notReady, rateLimited, upstream } from "./errors";
 import { logError } from "./http";
 import { readBalances } from "./market";
 import { createQuote, parseAmount, planQuote, type PlannedQuote } from "./quote";
+import { draftRule, listRulesRes } from "./rules";
 import type { UserRow } from "./store";
 
 /** Turns per wallet and per IP per minute (each turn can cost an LLM call and an STT call). */
@@ -48,6 +50,7 @@ function summarize(q: PlannedQuote) {
 const asToolError = (err: unknown): never => {
   if (err instanceof ApiFailure && err.code === "no_route") throw new ToolUserError(NO_ROUTE, "no_route");
   if (err instanceof ApiFailure && err.code === "bad_request") throw new ToolUserError(err.message, "bad_request");
+  if (err instanceof ApiFailure && err.code === "not_ready") throw new ToolUserError(err.message, "not_ready");
   throw err;
 };
 
@@ -56,7 +59,31 @@ const asToolError = (err: unknown): never => {
  * funds: prepare_convert stores a quote the Mini App renders as a card; Confirm goes through
  * /prepare and the user's own MiniPay confirmation.
  */
-export function buildChatHandlers(deps: MiniappDeps, user: UserRow, account: Address, lang: string, quotes: z.infer<typeof QuoteResponse>[]): ToolHandlers {
+/** Accent- and case-insensitive name match ("mama" finds "Mamá"). */
+const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
+
+export interface ChatContext {
+  /** The phone's contacts that have a wallet. */
+  contacts: { name: string; address: string }[];
+  /** Rule drafts made this turn (rendered as cards). */
+  rules: z.infer<typeof RuleCard>[];
+}
+
+export function buildChatHandlers(
+  deps: MiniappDeps,
+  user: UserRow,
+  account: Address,
+  lang: string,
+  quotes: z.infer<typeof QuoteResponse>[],
+  ctx: ChatContext = { contacts: [], rules: [] },
+): ToolHandlers {
+  const ruleResult = (card: z.infer<typeof RuleCard>) => {
+    ctx.rules.push(card);
+    return {
+      data: { status: "pending_signature", rule: card.description, note: "A rule card is shown in the app; the user turns it on by signing it in MiniPay. Nothing runs until then." },
+      card: { kind: "rule", id: card.ruleId },
+    };
+  };
   return {
     async get_balances() {
       const { balances } = await readBalances(deps, account);
@@ -92,6 +119,34 @@ export function buildChatHandlers(deps: MiniappDeps, user: UserRow, account: Add
         },
         card: { kind: "convert", id: q.quoteId },
       };
+    },
+
+    async prepare_scheduled_send(args) {
+      const c = ctx.contacts.find((x) => norm(x.name) === norm(args.contact));
+      if (!c) {
+        const names = ctx.contacts.map((x) => x.name).join(", ");
+        throw new ToolUserError(names ? `No saved contact called "${args.contact}" with a wallet. Saved: ${names}.` : "The user has no saved contacts with a wallet yet; they can add one in Send.", "bad_request");
+      }
+      try {
+        const spec = parseRule("send", { contact: c.address, contactName: c.name, amountUsdt: parseAmount("USDT", args.amountUsd).toString(), receive: args.receive ?? "USDT", dayOfMonth: args.dayOfMonth });
+        return ruleResult(await draftRule(deps, account, lang, spec));
+      } catch (err) {
+        return asToolError(err);
+      }
+    },
+
+    async prepare_payday_split(args) {
+      try {
+        const spec = parseRule("split", { percent: args.percent, to: args.to, minIncomingUsdt: parseAmount("USDT", args.minIncomingUsd).toString() });
+        return ruleResult(await draftRule(deps, account, lang, spec));
+      } catch (err) {
+        return asToolError(err);
+      }
+    },
+
+    async list_rules() {
+      const { rules, runs } = await listRulesRes(deps, account);
+      return { data: { rules: rules.map((r) => ({ id: r.ruleId, status: r.status, rule: r.description, nextRunAt: r.nextRunAt, stoppedReason: r.stoppedReason })), latestRuns: runs.slice(0, 5) } };
     },
 
     async get_limits() {
@@ -167,6 +222,7 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
   const user = await store.walletUser(account, req.lang);
   const history = await store.loadHistory(user.id, HISTORY_LIMIT);
   const quotes: z.infer<typeof QuoteResponse>[] = [];
+  const ctx: ChatContext = { contacts: req.contacts ?? [], rules: [] };
   let result;
   try {
     result = await runAgentTurn({
@@ -174,7 +230,7 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
       userText,
       // Reply in the language the user wrote in (the app language is the fallback when it is unclear).
       language: detectLanguage(userText, req.lang),
-      tools: buildChatHandlers(deps, user, account, req.lang, quotes),
+      tools: buildChatHandlers(deps, user, account, req.lang, quotes, ctx),
       model: deps.agentModel,
       client: deps.llm(),
     });
@@ -187,5 +243,5 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
     throw err;
   }
   await store.appendHistory(user.id, result.messages);
-  return { transcript, reply: result.text, quotes };
+  return { transcript, reply: result.text, quotes, rules: ctx.rules };
 }

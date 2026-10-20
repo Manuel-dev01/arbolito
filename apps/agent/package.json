@@ -19,7 +19,8 @@
     "grammy": "^1.46.0",
     "viem": "^2.57.3",
     "zod": "^4.6.5",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "@arbolito/rules": "workspace:*"
   },
   "scripts": {
     "start": "tsx src/main.ts"

@@ -8,7 +8,9 @@ import type { ToolDefinition } from "./client";
  *
  * Autonomy policy (docs/02-product-spec.md): there is deliberately NO tool that moves funds.
  * prepare_convert / prepare_send only create a quote card; money moves only when the user
- * confirms it in their own MiniPay wallet, outside the LLM.
+ * confirms it in their own MiniPay wallet, outside the LLM. prepare_scheduled_send and
+ * prepare_payday_split only draft a rule: it turns on when the user signs it in MiniPay, and its
+ * runs are bounded onchain by ArbolitoGuard (caps and contacts the user set).
  */
 
 export const TOKEN_SYMBOLS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
@@ -87,6 +89,26 @@ export const toolSchemas = {
       .regex(/^[A-Za-z0-9_-]{1,80}$/, "receipt id")
       .describe('Receipt id, or "last" for the user\'s most recent receipt.'),
   }),
+  prepare_scheduled_send: z.strictObject({
+    contact: z.string().trim().min(1).max(40).describe("The saved contact's name exactly as the user wrote it."),
+    amountUsd: z
+      .string()
+      .regex(/^(0|[1-9]d{0,9})(.d{1,6})?$/, 'plain decimal, e.g. "50" or "12.5"')
+      .refine((x) => /[1-9]/.test(x), "must be greater than zero")
+      .describe("US dollars spent each month (paid from the user's USDT), as a plain decimal string."),
+    receive: token.optional().describe("Currency the contact receives (default USDT). wARS/wBRL/USAT/USDC are bought with the USDT first."),
+    dayOfMonth: z.number().int().min(1).max(28).describe("Day of the month it runs (1–28)."),
+  }),
+  prepare_payday_split: z.strictObject({
+    percent: z.number().int().min(1).max(90).describe("Share of each incoming payment to change, in percent."),
+    to: z.enum(["wARS", "wBRL", "USAT", "USDC"]).describe("Currency to change that share into."),
+    minIncomingUsd: z
+      .string()
+      .regex(/^(0|[1-9]d{0,9})(.d{1,6})?$/, 'plain decimal, e.g. "100"')
+      .refine((x) => /[1-9]/.test(x), "must be greater than zero")
+      .describe("Smallest incoming USDT payment that counts as pay (smaller ones are ignored)."),
+  }),
+  list_rules: z.strictObject({}),
   get_limits: z.strictObject({}),
   deposit_info: z.strictObject({ token: token.optional().describe("Token the user wants to deposit, if they said.") }),
   withdraw_guide: z.strictObject({ token: token.optional().describe("Token the user wants to cash out, if they said.") }),
@@ -108,6 +130,11 @@ const descriptions: Record<ToolName, string> = {
   add_contact: "Save a contact (name + 0x address) that the user dictated in this chat.",
   list_contacts: "List the user's saved contacts. Read-only.",
   get_receipt: "Fetch a verifiable receipt of a past transaction by id. Read-only.",
+  prepare_scheduled_send:
+    "Draft a monthly automatic payment to a saved contact (e.g. rent, sending money to family), optionally converted to pesos or reais. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on, with that contact allowed there; every run stays within the user's limits.",
+  prepare_payday_split:
+    "Draft a payday rule: when a USDT payment of at least minIncomingUsd arrives from someone else, change percent of it into another currency. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on.",
+  list_rules: "List the user's automatic rules (monthly payments, payday splits), their status and the latest runs. Read-only.",
   get_limits: "Read the user's per-action and daily limits and how much is left today. Read-only. Limits can't be changed here.",
   deposit_info: "Show how to deposit into the user's Arbolito wallet (address, network, supported tokens).",
   withdraw_guide: "Explain how to cash out to a local bank account (off-ramp guide).",

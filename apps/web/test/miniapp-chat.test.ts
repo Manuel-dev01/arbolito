@@ -37,9 +37,9 @@ describe("POST /chat (fake LLM, fake STT)", () => {
     // Tool output fed back to the model: pending, nothing moved.
     const toolMsg = llm.requests[1]!.messages.find((m) => m.role === "tool")!;
     expect(JSON.parse(toolMsg.content as string)).toMatchObject({ status: "pending_confirmation", youPay: "10 USDT" });
-    // Only the Mini App tool set is offered (no send or contacts).
+    // Only the Mini App tool set is offered (no send or contacts; rules draft cards the user signs).
     expect(llm.requests[0]!.tools!.map((t) => t.function.name).sort()).toEqual(
-      ["deposit_info", "get_balances", "get_limits", "get_quote", "help", "prepare_convert", "withdraw_guide"].sort(),
+      ["deposit_info", "get_balances", "get_limits", "get_quote", "help", "list_rules", "prepare_convert", "prepare_payday_split", "prepare_scheduled_send", "withdraw_guide"].sort(),
     );
 
     // History: a MiniPay-only user keyed by the wallet, and the turn stored.

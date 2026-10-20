@@ -1,5 +1,5 @@
 import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
-import { linkCodes, messages, miniappQuotes, receipts, users, type Db } from "@arbolito/db";
+import { activateRule, cancelRule, getRule, insertRuleDraft, linkCodes, listRules, messages, miniappQuotes, receipts, runsForAccount, users, type Db, type RuleRow, type RuleRunRow } from "@arbolito/db";
 import type { ChatMessage } from "@arbolito/llm";
 
 /**
@@ -15,6 +15,15 @@ export type QuotePatch = Partial<Pick<QuoteRow, "status" | "prepared" | "receipt
 export type ReceiptRow = typeof receipts.$inferSelect;
 export type NewReceipt = typeof receipts.$inferInsert;
 export type LinkCodeRow = typeof linkCodes.$inferSelect;
+export type { RuleRow, RuleRunRow };
+export interface NewRuleDraft {
+  id: string;
+  account: string;
+  kind: string;
+  params: unknown;
+  lang: string;
+  message: string;
+}
 
 export interface MiniappStore {
   /** The user owning this wallet, creating a MiniPay-only user (no Telegram id) on first sight. */
@@ -51,6 +60,16 @@ export interface MiniappStore {
   useLinkCode(id: string, account: string, now: Date): Promise<boolean>;
 
   transaction<T>(fn: (s: MiniappStore) => Promise<T>): Promise<T>;
+
+  // Standing rules (packages/rules)
+  insertRuleDraft(r: NewRuleDraft): Promise<RuleRow>;
+  getRule(id: string): Promise<RuleRow | undefined>;
+  /** draft → active, once; false if it wasn't a draft. */
+  activateRule(id: string, a: { signature: string; nextRunAt: Date | null; cursorBlock: bigint | null; now: Date }): Promise<boolean>;
+  cancelRule(id: string): Promise<boolean>;
+  /** Draft, active and stopped rules of an account, newest first. */
+  listRules(account: string): Promise<RuleRow[]>;
+  ruleRuns(account: string, limit: number): Promise<(RuleRunRow & { kind: string })[]>;
 }
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -173,6 +192,25 @@ export class DrizzleStore implements MiniappStore {
       .where(and(eq(linkCodes.id, id), isNull(linkCodes.usedAt)))
       .returning({ id: linkCodes.id });
     return rows.length === 1;
+  }
+
+  insertRuleDraft(r: NewRuleDraft) {
+    return insertRuleDraft(this.db as Db, r);
+  }
+  getRule(id: string) {
+    return getRule(this.db as Db, id);
+  }
+  activateRule(id: string, a: { signature: string; nextRunAt: Date | null; cursorBlock: bigint | null; now: Date }) {
+    return activateRule(this.db as Db, id, a);
+  }
+  cancelRule(id: string) {
+    return cancelRule(this.db as Db, id);
+  }
+  listRules(account: string) {
+    return listRules(this.db as Db, account);
+  }
+  ruleRuns(account: string, limit: number) {
+    return runsForAccount(this.db as Db, account, limit);
   }
 
   async transaction<T>(fn: (s: MiniappStore) => Promise<T>): Promise<T> {

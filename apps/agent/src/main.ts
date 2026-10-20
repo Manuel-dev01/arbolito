@@ -9,8 +9,9 @@
 import { run } from "@grammyjs/runner";
 import { loadEnv } from "@arbolito/config";
 import { log } from "@arbolito/chain";
-import { closeDb } from "@arbolito/db";
+import { closeDb, getDb } from "@arbolito/db";
 import { createBot } from "./bot";
+import { startRulesRunner } from "./rules";
 
 const env = loadEnv();
 if (!env.TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set (see docs/07-keys-setup.md)");
@@ -28,11 +29,14 @@ const resumed = await flow.resume().catch((err) => {
 if (resumed) log(`[bot] watching ${resumed} live card(s) from before the restart`);
 
 const runner = run(bot);
+// Standing rules (RULES_RUNNER=live): runs through ArbolitoGuard with the operator key.
+const stopRules = startRulesRunner(getDb(), bot.api, env);
 
 const stop = async () => {
   log("[bot] stopping");
   flow.stop();
   linker.stop();
+  stopRules?.();
   if (runner.isRunning()) await runner.stop();
   await closeDb();
   process.exit(0);

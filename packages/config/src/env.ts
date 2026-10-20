@@ -99,6 +99,8 @@ export const envSchema = z.object({
   ARBOLITO_OPERATOR_ADDRESS: opt(address),
   /** Key of ARBOLITO_OPERATOR_ADDRESS: gas only; it can only act through the guard, within each user's caps. */
   ARBOLITO_OPERATOR_PRIVATE_KEY: opt(privateKey),
+  /** Run users' standing rules from the bot process (packages/rules): off or live. */
+  RULES_RUNNER: z.enum(["off", "live"]).default("off"),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -190,12 +190,41 @@ export const ChatRequest = z.object({
   text: z.string().max(1000).optional(),
   audioBase64: z.string().max(8_000_000).optional(),
   audioMime: z.string().optional(),
+  /** The phone's saved contacts that have a wallet (contacts live on the phone), so the chat can name them in rules. */
+  contacts: z.array(z.object({ name: z.string().max(40), address: Address })).max(200).optional(),
 });
+
+// ── Standing rules ("Dejá que Arbolito actúe por vos": packages/rules) ─────
+/** A rule as the app shows it. A draft is turned on by signing `message` in MiniPay (POST /rules/confirm). */
+export const RuleCard = z.object({
+  ruleId: z.string().uuid(),
+  kind: z.enum(["send", "split"]),
+  status: z.enum(["draft", "active", "stopped"]),
+  /** One line in the user's language. */
+  description: z.string(),
+  /** The exact text to sign (personal_sign) to turn it on. */
+  message: z.string(),
+  nextRunAt: z.string().nullable(),
+  stoppedReason: z.string().nullable(),
+});
+/** GET /api/miniapp/rules?account= */
+export const RulesListResponse = z.object({
+  rules: z.array(RuleCard),
+  runs: z.array(z.object({ ruleId: z.string().uuid(), kind: z.enum(["send", "split"]), status: z.string(), at: z.string(), txHashes: z.array(z.string()), error: z.string().nullable() })),
+});
+/** POST /api/miniapp/rules/confirm: the account's personal_sign over the rule's message. */
+export const RuleConfirmRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });
+/** POST /api/miniapp/rules/cancel: the account's personal_sign over cancelText(ruleId, account). */
+export const RuleCancelRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });
+export const RuleResponse = z.object({ rule: RuleCard });
+
 export const ChatResponse = z.object({
   transcript: z.string().nullable(),
   reply: z.string(),
   /** Quote cards to render under the reply; Confirm goes through /prepare like the Change flow. */
   quotes: z.array(QuoteResponse),
+  /** Rule drafts to render under the reply; Confirm signs the rule in MiniPay (POST /rules/confirm). */
+  rules: z.array(RuleCard).default([]),
 });
 
 // ── Telegram linking ("Conectá tu MiniPay": 4-digit code shown in both apps) ──

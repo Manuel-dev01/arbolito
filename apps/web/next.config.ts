@@ -6,7 +6,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source (exports → ./src/index.ts).
-  transpilePackages: ["@arbolito/config", "@arbolito/chain", "@arbolito/router", "@arbolito/proof", "@arbolito/db", "@arbolito/llm"],
+  transpilePackages: ["@arbolito/config", "@arbolito/chain", "@arbolito/router", "@arbolito/proof", "@arbolito/db", "@arbolito/llm", "@arbolito/rules"],
   serverExternalPackages: ["pg"],
   outputFileTracingRoot: repoRoot,
   // The JSON fallback for receipts (docs/receipts) lives outside apps/web; ship it with the server functions.

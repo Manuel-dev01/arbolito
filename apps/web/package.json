@@ -23,7 +23,8 @@
     "react-dom": "19.3.0",
     "three": "0.186.1",
     "viem": "^2.57.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@arbolito/rules": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

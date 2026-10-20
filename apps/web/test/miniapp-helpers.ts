@@ -7,7 +7,7 @@ import type { ChatMessage, ChatRequest as LlmChatRequest, ChatResult, LlmClient 
 import { erc20Abi, type Quote, type QuoteParams, type TextileFirm, type VenueAdapter } from "@arbolito/router";
 import type { MiniappDeps, TextileTaker } from "../src/lib/miniapp/server/deps";
 import { RateLimiter } from "../src/lib/miniapp/server/rate-limit";
-import type { LinkCodeRow, MiniappStore, NewQuote, NewReceipt, QuotePatch, QuoteRow, ReceiptRow, UserRow } from "../src/lib/miniapp/server/store";
+import type { LinkCodeRow, MiniappStore, NewQuote, NewReceipt, NewRuleDraft, QuotePatch, QuoteRow, ReceiptRow, RuleRow, RuleRunRow, UserRow } from "../src/lib/miniapp/server/store";
 import { trimHistory } from "../src/lib/miniapp/server/store";
 
 // Anvil dev key #2: signs in memory only (never funded, never broadcast; see docs/04 on dev keys).
@@ -27,6 +27,36 @@ export class MemoryStore implements MiniappStore {
   receipts: ReceiptRow[] = [];
   messages: { userId: string; content: ChatMessage }[] = [];
   codes: LinkCodeRow[] = [];
+  rules: RuleRow[] = [];
+  runs: (RuleRunRow & { kind: string })[] = [];
+
+  async insertRuleDraft(r: NewRuleDraft) {
+    const row: RuleRow = { ...r, account: r.account.toLowerCase(), status: "draft", signature: null, confirmedAt: null, nextRunAt: null, cursorBlock: null, stoppedReason: null, createdAt: new Date(T0 + this.rules.length), updatedAt: new Date(T0) };
+    this.rules.push(row);
+    return row;
+  }
+  async getRule(id: string) {
+    return this.rules.find((r) => r.id === id);
+  }
+  async activateRule(id: string, a: { signature: string; nextRunAt: Date | null; cursorBlock: bigint | null; now: Date }) {
+    const r = this.rules.find((x) => x.id === id && x.status === "draft");
+    if (!r) return false;
+    Object.assign(r, { status: "active", signature: a.signature, confirmedAt: a.now, nextRunAt: a.nextRunAt, cursorBlock: a.cursorBlock });
+    return true;
+  }
+  async cancelRule(id: string) {
+    const r = this.rules.find((x) => x.id === id && x.status !== "cancelled");
+    if (!r) return false;
+    Object.assign(r, { status: "cancelled", nextRunAt: null });
+    return true;
+  }
+  async listRules(account: string) {
+    return this.rules.filter((r) => r.account === account.toLowerCase() && r.status !== "cancelled").sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  async ruleRuns(account: string, limit: number) {
+    const mine = new Set(this.rules.filter((r) => r.account === account.toLowerCase()).map((r) => r.id));
+    return this.runs.filter((x) => mine.has(x.ruleId)).slice(0, limit);
+  }
 
   addUser(p: Partial<UserRow> = {}): UserRow {
     const row: UserRow = {
