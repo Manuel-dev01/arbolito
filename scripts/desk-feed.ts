@@ -17,7 +17,7 @@ import { makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { DbLedger, getDb } from "@arbolito/db";
 import { textileFirmEnabled } from "@arbolito/router";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, parseRfqResult, stitchToml } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, buySizes, parseRfqResult, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -76,8 +76,9 @@ if (hasFlag("once")) {
         })
       : undefined;
   let buyOff = new Set<string>();
+  let buySize = new Map<string, bigint>();
   let ready = false;
-  const stitchConfig = () => stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, rfq: DESK_MAKER });
+  const stitchConfig = () => stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, buySize, rfq: DESK_MAKER });
 
   const svc = new FeedService({
     client,
@@ -92,6 +93,10 @@ if (hasFlag("once")) {
       const changed = next.size !== buyOff.size || [...next].some((p) => !buyOff.has(p));
       if (changed) log(`inventory caps: buy side off for [${[...next].join(", ") || "none"}]`);
       buyOff = next;
+      // Size each buy side to the room left under its cap, so one fill can't overshoot it.
+      const sizes = buySizes(balances, CORRIDORS, usdtPerSoft, buySize);
+      if ([...sizes].some(([p, v]) => buySize.get(p) !== v)) log(`buy sizes: ${[...sizes].map(([p, v]) => `${p}=${Number(v) / 1e6}`).join(", ")}`);
+      buySize = sizes;
       supervisor.apply(stitchConfig());
       if (rebalancer) {
         rebalancer.observe(buyOff);

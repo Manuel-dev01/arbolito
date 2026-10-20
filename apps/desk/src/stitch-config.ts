@@ -18,6 +18,8 @@ export interface StitchOptions {
   minSliceUsdt?: bigint;
   /** Pairs whose buy side is switched off (inventory cap reached); their sell side still quotes. */
   buyOff?: ReadonlySet<string>;
+  /** Per pair, the USDT the buy side may offer (limits.ts buySizes); under one slice means off. Default: buyCapUsdt. */
+  buySize?: ReadonlyMap<string, bigint>;
   /** The maker registration; when given, the [rfq] block is written here instead of by `stitch connect`. */
   rfq?: { streamUrl: string; makerId: string; validationContract: string };
 }
@@ -46,6 +48,8 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
     `staleness_secs = ${o.stalenessSecs ?? 20}`,
   ];
   for (const c of corridors) {
+    const size = o.buySize?.get(c.pair) ?? c.buyCapUsdt;
+    const buyOff = o.buyOff?.has(c.pair) || size < BigInt(slice);
     lines.push(
       "",
       "[[pools]]",
@@ -55,9 +59,9 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
       `debt = "${TOKENS.USDT.address}"`,
       `debt_decimals = ${TOKENS.USDT.decimals}`,
       `feed_url = "${feedUrl(o.feedBaseUrl, c.pair)}"`,
-      ...(o.buyOff?.has(c.pair)
+      ...(buyOff
         ? ["# buy side off: inventory cap reached (apps/desk/src/limits.ts)"]
-        : [`buy_offset_bps = ${c.buyOffsetBps}`, `buy_total_liquidity_debt = "${c.buyCapUsdt}"`, `buy_min_slice_debt = "${slice}"`, "buy_max_orders = 4"]),
+        : [`buy_offset_bps = ${c.buyOffsetBps}`, `buy_total_liquidity_debt = "${size < c.buyCapUsdt ? size : c.buyCapUsdt}"`, `buy_min_slice_debt = "${slice}"`, "buy_max_orders = 4"]),
       `sell_offset_bps = ${c.sellOffsetBps}`,
       `sell_total_liquidity_collateral = "${c.sellCapSoft}"`,
       `sell_min_slice_debt = "${slice}"`,
