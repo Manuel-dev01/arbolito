@@ -61,7 +61,8 @@ export interface VenueAdapter {
 }
 
 export interface Reference {
-  name: "official" | "mep" | "ccl" | "crypto" | "blue" | "textile_mid" | "uniswap_mid";
+  /** western_union: read in a browser rented through buy (packages/competitors); the source names the payment. */
+  name: "official" | "mep" | "ccl" | "crypto" | "blue" | "textile_mid" | "uniswap_mid" | "western_union";
   /** Quote convention BASE/QUOTE: units of QUOTE per 1 BASE, e.g. "USD/ARS" = 1545. */
   pair: string;
   rate: string;

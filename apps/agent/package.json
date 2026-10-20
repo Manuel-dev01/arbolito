@@ -20,7 +20,9 @@
     "viem": "^2.57.3",
     "zod": "^4.6.5",
     "tsx": "^4.23.15",
-    "@arbolito/rules": "workspace:*"
+    "@arbolito/rules": "workspace:*",
+    "@arbolito/competitors": "workspace:*",
+    "@arbolito/x402": "workspace:*"
   },
   "scripts": {
     "start": "tsx src/main.ts"

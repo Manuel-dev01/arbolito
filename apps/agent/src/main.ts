@@ -11,6 +11,7 @@ import { loadEnv } from "@arbolito/config";
 import { log } from "@arbolito/chain";
 import { closeDb, getDb } from "@arbolito/db";
 import { createBot } from "./bot";
+import { startCompetitorsRunner } from "./competitors";
 import { startRulesRunner } from "./rules";
 
 const env = loadEnv();
@@ -54,12 +55,15 @@ if (resumed) log(`[bot] watching ${resumed} live card(s) from before the restart
 const runner = run(bot);
 // Standing rules (RULES_RUNNER=live): runs through ArbolitoGuard with the operator key.
 const stopRules = startRulesRunner(getDb(), bot.api, env);
+// Western Union rates through buy (COMPETITORS_RUNNER=live), for "vs Western Union" on quotes and receipts.
+const stopCompetitors = startCompetitorsRunner(getDb(), env);
 
 const stop = async () => {
   log("[bot] stopping");
   flow.stop();
   linker.stop();
   stopRules?.();
+  stopCompetitors?.();
   if (runner.isRunning()) await runner.stop();
   await closeDb();
   process.exit(0);

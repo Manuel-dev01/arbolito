@@ -50,6 +50,13 @@
       "when": 1792503029855,
       "tag": "0006_desk_quoting",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792508733652,
+      "tag": "0007_competitor_rates",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,5 @@
+- heading "Convert US Dollar to Brazilian Real" [level=1, ref=e59]
+- textbox "Send Amount Receiver gets" [ref=e109]: 700.00
+- textbox "250.00" [ref=e110]
+- generic "BRL" [ref=e111] clickable [cursor:pointer]
+- link "Send money now" [ref=e60]

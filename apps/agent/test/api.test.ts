@@ -9,7 +9,7 @@ describe("Mini App quote client", () => {
     const fetchFn = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => json(200, quote));
     const client = createMiniAppClient({ baseUrl: "https://web.example/", fetchFn: fetchFn as typeof fetch });
     const q = await client.quote({ from: "USDT", to: "wARS", amount: "100", lang: "es", account: "0x7e0316b2533F6dF2E651295A9B11481BB8346c3c" });
-    expect(q).toEqual(quote);
+    expect(q).toEqual({ ...quote, vsWesternUnion: null }); // an older server omits it: parsed as null
     const [url, init] = fetchFn.mock.calls[0]!;
     expect(url).toBe("https://web.example/api/miniapp/quote");
     expect(init?.method).toBe("POST");

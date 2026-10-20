@@ -319,3 +319,27 @@ export const ruleRuns = pgTable(
   },
   (t) => [uniqueIndex("rule_runs_rule_trigger_key").on(t.ruleId, t.trigger), index("rule_runs_created_idx").on(t.createdAt)],
 );
+
+// ── Competitor rates (packages/competitors): read in a browser rented through buy ────────
+
+/** One reading of a competitor's rate, and the buy payment that paid for the browser. */
+export const competitorRates = pgTable(
+  "competitor_rates",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** western_union */
+    provider: text().notNull(),
+    /** USD-ARS | USD-BRL */
+    corridor: text().notNull(),
+    /** Local currency per US$ (decimal string), before the provider's transfer fee. */
+    rate: text().notNull(),
+    sendAmount: text().notNull(),
+    receiveAmount: text().notNull(),
+    sourceUrl: text().notNull(),
+    /** The buy x402 settlement that paid for the browser session, and its price (atomic, 6 dp). */
+    paymentTx: text(),
+    paidAtomic: atomic(),
+    at: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index("competitor_rates_corridor_at_idx").on(t.corridor, t.at)],
+);

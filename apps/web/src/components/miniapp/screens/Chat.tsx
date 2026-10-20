@@ -22,6 +22,9 @@ function ChatQuote({ m, now }: { m: Extract<ChatMsg, { kind: "quote" }>; now: nu
         ? ([[t.vsOff, `${fmtPct(q.vsOfficial.pct, lang)} · ${fill(t.saved, { x: fmtSaved(q.vsOfficial.deltaOut, q.to, lang) })}`, "save"]] as [string, string, "save"][])
         : ([[t.vsOff, fmtPct(q.vsOfficial.pct, lang), "mono"]] as [string, string, "mono"][])
       : []),
+    ...(q.vsWesternUnion
+      ? ([[t.vsWU, q.vsWesternUnion.pct > 0 ? `${fmtPct(q.vsWesternUnion.pct, lang)} · ${fill(t.wuMore, { x: fmtSaved(q.vsWesternUnion.deltaOut, q.to, lang) })}` : `${fmtPct(q.vsWesternUnion.pct, lang)} · ${t.wuBeforeFee}`, q.vsWesternUnion.pct > 0 ? "save" : "mono"]] as [string, string, "save" | "mono"][])
+      : []),
     [t.route, routeText(q, t), "text"],
     [t.minimum, fmtSym(q.minOut, q.to, lang), "mono"],
   ];

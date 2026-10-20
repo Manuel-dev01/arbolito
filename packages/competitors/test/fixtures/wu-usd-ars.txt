@@ -1,0 +1,6 @@
+- heading "Convert US Dollar to Argentine Peso" [level=1, ref=e57]
+- textbox "Send Amount Receiver gets" [ref=e107]: 500.00
+- textbox "250.00" [ref=e108]: 809375.00
+- generic "ARS" [ref=e109] clickable [cursor:pointer]
+- link "Send money now" [ref=e58]
+- heading "USD vs ARS information" [level=2, ref=e12]

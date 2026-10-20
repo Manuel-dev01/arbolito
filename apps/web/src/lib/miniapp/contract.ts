@@ -75,6 +75,8 @@ export const QuoteResponse = z.object({
   rate: z.string(),
   /** vs the official reference for this pair; null if none. deltaOut is in `to` atomic units. */
   vsOfficial: z.object({ pct: z.number(), pair: z.string(), deltaOut: z.string() }).nullable(),
+  /** Dollars → pesos/reais only: % and amount more than Western Union's rate (before its fee), read through buy. */
+  vsWesternUnion: z.object({ pct: z.number(), rate: z.string(), deltaOut: z.string(), at: z.string() }).nullable().default(null),
   /** Plain-language route: number of steps and venues ("2 pasos, por el mejor mercado"). */
   steps: z.number().int().min(1),
   venues: z.array(z.enum(["uniswap", "textile"])),
@@ -143,6 +145,8 @@ export const ReceiptResponse = z.object({
   amountIn: Atomic,
   amountOut: Atomic,
   savings: z.object({ pct: z.number(), deltaOut: z.string(), pair: z.string() }).nullable(),
+  /** From the receipt's own references (Western Union's rate at the time, with the buy payment that read it). */
+  vsWesternUnion: z.object({ pct: z.number(), rate: z.string(), deltaOut: z.string(), at: z.string() }).nullable().default(null),
   executionTx: Hex,
   anchorTx: Hex.nullable(),
   createdAt: z.string(),

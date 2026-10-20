@@ -168,7 +168,21 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
             <div className="mp-meter" style={{ width: `${out > 0n ? Math.min(100, Number((offOut * 1000n) / out) / 10) : 100}%`, background: "var(--muted)", opacity: 0.45 }} />
           </div>
         ) : null}
+        {r.vsWesternUnion ? (
+          <div className="mp-col" style={{ gap: 5 }}>
+            <div className="mp-between" style={{ fontSize: 15, color: "var(--muted)" }}>
+              <span>Western Union</span>
+              <span className="mp-mono">{fmtRateLine(rateString(inn, r.from, out - BigInt(r.vsWesternUnion.deltaOut), r.to), r.from, r.to, lang)}</span>
+            </div>
+            <div className="mp-meter" style={{ width: `${out > 0n ? Math.min(100, Number(((out - BigInt(r.vsWesternUnion.deltaOut)) * 1000n) / out) / 10) : 100}%`, background: "var(--a2)", opacity: 0.55 }} />
+          </div>
+        ) : null}
         <span className="mp-small">{r.savings ? fill(t.rcCompareNote, { p: fmtPct(r.savings.pct, lang) }) : t.rcNoSavings}</span>
+        {r.vsWesternUnion ? (
+          <span className="mp-small">
+            {r.vsWesternUnion.pct > 0 ? fill(t.wuReceiptMore, { p: fmtPct(r.vsWesternUnion.pct, lang), x: fmtSaved(r.vsWesternUnion.deltaOut, r.to, lang) }) : t.wuReceiptSame} {t.wuSource}
+          </span>
+        ) : null}
       </div>
       <div className="mp-row" style={{ background: tone.bg, borderRadius: 18, padding: 16, gap: 14, alignItems: "flex-start" }} role="status">
         <span className="mp-circle" style={{ width: 40, height: 40, fontSize: 20, background: tone.fg, color: "var(--bg)" }}>

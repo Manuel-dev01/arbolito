@@ -8,6 +8,7 @@ import type { MiniappDeps } from "./deps";
 import { badRequest, noRoute } from "./errors";
 import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
+import { vsWesternUnion } from "./competitors";
 
 /** How long a quote card stays confirmable. */
 export const QUOTE_TTL_MS = 60_000;
@@ -112,6 +113,7 @@ export function toQuoteResponse(row: Pick<QuoteRow, "id" | "expiresAt">, q: Plan
     minOut: r.minOut.toString(),
     rate: rateString(r.tokenIn, r.amountIn, r.tokenOut, r.expectedOut),
     vsOfficial: savings ? { pct: savings.bps / 100, pair: savings.pair, deltaOut: savings.delta } : null,
+    vsWesternUnion: vsWesternUnion(symOf(r.tokenIn), symOf(r.tokenOut), r.amountIn, r.expectedOut, q.references),
     steps: r.legs.length,
     venues: venuesOf(r),
     usesTextile: r.legs.some((l) => l.quote.venue !== "uniswap_v3"),

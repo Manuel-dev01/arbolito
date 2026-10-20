@@ -6,6 +6,7 @@ import { badRequest, notFound } from "./errors";
 import { logError } from "./http";
 import { symOf } from "./quote";
 import { receiptUrl } from "./submit";
+import { vsWesternUnion } from "./competitors";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,6 +41,7 @@ export async function getMiniappReceipt(deps: MiniappDeps, id: string): Promise<
     amountIn: row.amountIn,
     amountOut: row.amountOut,
     savings: s ? { pct: s.bps / 100, deltaOut: s.delta, pair: s.pair } : null,
+    vsWesternUnion: vsWesternUnion(symOf(row.tokenIn), symOf(row.tokenOut), BigInt(row.amountIn), BigInt(row.amountOut), bundle.references),
     executionTx: row.executionTx,
     anchorTx: row.anchorTx ?? null,
     createdAt: (row.createdAt ?? new Date(bundle.createdAt)).toISOString(),

@@ -90,7 +90,7 @@ export function tokenRef(address: string): TokenRef {
   }
 }
 
-const COMPARE_ORDER: ReferenceName[] = ["official", "mep", "ccl", "crypto", "blue", "uniswap_mid", "textile_mid"];
+const COMPARE_ORDER: ReferenceName[] = ["official", "mep", "ccl", "crypto", "blue", "western_union", "uniswap_mid", "textile_mid"];
 const USD_BRIDGES: ReferenceName[] = ["uniswap_mid", "textile_mid", "official"];
 
 type Ref = ProofBundle["references"][number];

@@ -8,6 +8,7 @@ import { formatBps, formatFixed, formatMoney, formatToken, shortHex } from "../.
 import { RECEIPTS_ADDRESS } from "../../lib/chain";
 import { computeMetrics } from "../../lib/metrics";
 import { addressUrl, txUrl } from "../../lib/receipts-abi";
+import { BUY_PAYER, loadBuyPurchases } from "../../lib/buy-public";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -23,7 +24,7 @@ export default async function MetricsPage({ searchParams }: Props) {
   const t = messages(lang).metrics;
   const tr = messages(lang).receipt;
 
-  const { records, fetchedAt } = await listReceiptsCached();
+  const [{ records, fetchedAt }, purchases] = await Promise.all([listReceiptsCached(), loadBuyPurchases().catch(() => [])]);
   const active = records.filter((r) => !r.supersededBy);
   const anchors = new Map(
     await Promise.all(
@@ -248,6 +249,37 @@ export default async function MetricsPage({ searchParams }: Props) {
             </ul>
           </div>
         )}
+      </section>
+
+      <section className="card" id="buy">
+        <div className="card-head">
+          <h2 className="h2">{t.buy.title}</h2>
+          <p className="lead">{t.buy.lead}</p>
+        </div>
+        <ul className="list-plain">
+          {purchases.map((b) => (
+            <li key={`${b.at}-${b.corridor}`}>
+              <span className="mono">{b.corridor.replace("-", " → ")}</span> · {t.buy.rate} <span className="mono">{Number(b.rate).toLocaleString(locale, { maximumFractionDigits: 4 })}</span>{" "}
+              <span className="muted">· {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(b.at))} UTC</span>
+              {b.paymentTx ? (
+                <>
+                  {" "}
+                  · {t.buy.paid} {b.paidAtomic ? usd(BigInt(b.paidAtomic)) : ""}{" "}
+                  <ExtLink href={txUrl(b.paymentTx as `0x${string}`)} className="mono">
+                    {shortHex(b.paymentTx, 6, 4)} ↗
+                  </ExtLink>
+                </>
+              ) : null}
+            </li>
+          ))}
+          {purchases.length === 0 && <li className="muted">{t.buy.empty}</li>}
+        </ul>
+        <p className="small muted">
+          {t.buy.payer}:{" "}
+          <ExtLink href={addressUrl(BUY_PAYER)} className="mono">
+            {shortHex(BUY_PAYER, 6, 4)} ↗
+          </ExtLink>
+        </p>
       </section>
 
       <section className="card" id="wallets">

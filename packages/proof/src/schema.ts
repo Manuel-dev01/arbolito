@@ -33,7 +33,7 @@ export const routeSchema = z.object({
 });
 
 export const referenceSchema = z.object({
-  name: z.enum(["official", "mep", "ccl", "crypto", "blue", "textile_mid", "uniswap_mid"]),
+  name: z.enum(["official", "mep", "ccl", "crypto", "blue", "textile_mid", "uniswap_mid", "western_union"]),
   pair: z.string(),
   rate: z.string(),
   source: z.string(),

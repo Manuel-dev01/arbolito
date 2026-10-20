@@ -213,6 +213,23 @@ export function QuoteCardA({ q, quoteAt, now, dim }: { q: Quote; quoteAt: number
             </span>
           </div>
         ) : null}
+        {q.vsWesternUnion ? (
+          <div className="mp-kv">
+            <span>{t.vsWU}</span>
+            <span className="mp-col" style={{ alignItems: "flex-end", gap: 2 }}>
+              <span className={q.vsWesternUnion.pct > 0 ? "mp-save" : undefined} style={{ fontSize: 16, fontWeight: 800 }}>
+                {fmtPct(q.vsWesternUnion.pct, lang)}
+              </span>
+              {BigInt(q.vsWesternUnion.deltaOut) > 0n ? (
+                <span className="mp-save" style={{ fontSize: 14 }}>
+                  {fill(t.wuMore, { x: fmtSaved(q.vsWesternUnion.deltaOut, q.to, lang) })}
+                </span>
+              ) : (
+                <span className="mp-meta">{t.wuBeforeFee}</span>
+              )}
+            </span>
+          </div>
+        ) : null}
         <div className="mp-kv" style={{ flexDirection: "column", gap: 4 }}>
           <span>{t.route}</span>
           <span style={{ fontSize: 16, lineHeight: 1.4, textAlign: "left" }}>{routeText(q, t)}</span>
