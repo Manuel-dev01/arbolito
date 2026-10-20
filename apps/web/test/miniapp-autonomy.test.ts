@@ -43,8 +43,8 @@ describe("autonomy plan", () => {
       expect(attributionCodes(c.data as Hex)).toContain(CODE);
       expect(c.value).toBe("0");
     }
-    expect(decodeFunctionData({ abi: erc20Abi, data: res.calls[0]!.data as Hex })).toMatchObject({ functionName: "approve", args: [GUARD, 50_000_000n] });
-    expect(decodeFunctionData({ abi: erc20Abi, data: res.calls[1]!.data as Hex }).args).toEqual([GUARD, 80_000n * 10n ** 18n]);
+    expect(decodeFunctionData({ abi: erc20Abi, data: res.calls[0]!.data as Hex })).toMatchObject({ functionName: "approve", args: [GUARD, 50_000_000n * 30n] }); // the daily cap for each of the 30 days
+    expect(decodeFunctionData({ abi: erc20Abi, data: res.calls[1]!.data as Hex }).args).toEqual([GUARD, 80_000n * 10n ** 18n * 30n]);
 
     const setOp = decodeFunctionData({ abi: arbolitoGuardAbi, data: res.calls[2]!.data as Hex });
     expect(setOp).toMatchObject({ functionName: "setOperator", args: [OPERATOR, BigInt(T0 / 1000 + 30 * 86_400)] });

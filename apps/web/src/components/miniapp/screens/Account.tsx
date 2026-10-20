@@ -1,10 +1,49 @@
 "use client";
 
+import { useEffect } from "react";
 import { fill } from "../../../i18n/miniapp";
 import { fmtSym, maskPhone } from "../../../lib/miniapp/client/format";
 import { Frame, useApp } from "../context";
-import { Badge, Logo, Switch } from "../ui";
+import { Badge, Logo, Spinner, Switch } from "../ui";
 import { fmtDate, useLocalEq } from "./Autonomy";
+
+/** The account's automatic rules, each with Cancel (signed in MiniPay). */
+function RulesList() {
+  const { t, lang, rules, refreshRules, cancelRule } = useApp();
+  useEffect(() => refreshRules(), [refreshRules]);
+  return (
+    <div className="mp-card">
+      <div style={{ padding: "14px 16px 4px", fontSize: 16, fontWeight: 700 }}>{t.rulesT}</div>
+      {rules === null ? (
+        <div style={{ padding: 16 }}>
+          <Spinner />
+        </div>
+      ) : rules.length === 0 ? (
+        <div className="mp-small" style={{ padding: "4px 16px 16px" }}>
+          {t.rulesNone}
+        </div>
+      ) : (
+        rules.map((r) => (
+          <div key={r.ruleId} className="mp-col" style={{ padding: "12px 16px", gap: 6, borderTop: "1px solid var(--hairline)" }}>
+            <span style={{ fontSize: 16, lineHeight: 1.4 }}>{r.description}</span>
+            <div className="mp-between" style={{ gap: 10 }}>
+              <span className="mp-meta" style={r.status === "stopped" ? { color: "var(--attention-text)" } : undefined}>
+                {r.status === "stopped"
+                  ? fill(t.ruleStopped, { r: r.stoppedReason ?? "" })
+                  : r.nextRunAt
+                    ? fill(t.ruleNext, { d: fmtDate(new Date(r.nextRunAt), lang) })
+                    : t.ruleWaiting}
+              </span>
+              <button type="button" className="mp-link inline" style={{ minHeight: 0 }} onClick={() => cancelRule(r.ruleId)}>
+                {t.ruleCancel}
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
 export function Security() {
   const { t, lang, auto, contacts, setPaused, go } = useApp();
@@ -83,6 +122,7 @@ export function Security() {
             {t.secTurnOn}
           </button>
         )}
+        {on ? <RulesList /> : null}
         <div className="mp-card pad" style={{ gap: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 600 }}>{t.secPhoneT}</span>
           <span className="mp-small">{t.secPhoneB}</span>

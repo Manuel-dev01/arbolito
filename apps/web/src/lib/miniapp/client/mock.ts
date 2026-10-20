@@ -365,6 +365,8 @@ export function createMockServer(scenario: MockScenario) {
       return json(200, { linked: true, telegramName: "@lucia.dg" });
     }
     if (path.startsWith("/receipts")) return json(200, { receipts: [] }); // mock receipts live in the local index
+    if (path === "/rules/confirm" || path === "/rules/cancel") return err(400, "bad_request", "Automatic rules aren't available in the demo.");
+    if (path.startsWith("/rules")) return json(200, { rules: [], runs: [] });
     if (path === "/send/prepare") {
       await sleep(400);
       const amountIn = parseHuman(String(body.amount), DECIMALS[body.from as Sym]);

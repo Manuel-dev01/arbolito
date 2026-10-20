@@ -10,7 +10,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Address } from "viem";
 import { fill, miniT, pickLang, DISPLAY_CUR, type Lang } from "../../i18n/miniapp";
-import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Quote, type Rates } from "../../lib/miniapp/client/api";
+import { cancelText } from "@arbolito/rules";
+import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Quote, type Rates, type Rule } from "../../lib/miniapp/client/api";
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
 import { mapApiError, type ClientErrorCode } from "../../lib/miniapp/client/errors";
 import { executeCalls, executeQuote, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
@@ -27,7 +28,7 @@ import {
   type SheetRequest,
 } from "../../lib/miniapp/client/mock";
 import { createStore, newId, type Contact, type ReceiptIndexEntry, type Store } from "../../lib/miniapp/client/store";
-import { createMiniPayWallet, detectMiniPay, getAccount, pickFeeCurrency, type Wallet } from "../../lib/miniapp/client/wallet";
+import { createMiniPayWallet, detectMiniPay, getAccount, isUserRejection, pickFeeCurrency, type Wallet } from "../../lib/miniapp/client/wallet";
 import { AppContext, PRESETS, type AppCtx, type AutoDraft, type BalState, type ChangeState, type ChatMsg, type ExecState, type SendState } from "./context";
 import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen } from "./screens";
 import { Header } from "./ui";
@@ -92,6 +93,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [auto, setAuto] = useState<AutoStatus | null>(null);
   const [receipts, setReceipts] = useState<ReceiptIndexEntry[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [rules, setRules] = useState<Rule[] | null>(null);
   const [ch, setChState] = useState<ChangeState>({ from: "wBRL", to: "wARS", amount: "10", quote: null, quoteAt: 0, prev: null, busy: false });
   const [exec, setExec] = useState<ExecState>(EMPTY_EXEC);
   const [send, setSendState] = useState<SendState>({ contactId: null, pay: "USD", amount: "20", quote: null, quoteAt: 0, busy: false });
@@ -517,7 +519,9 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (!ready) return;
       setChat((c) => ({ ...c, busy: true, msgs: [...c.msgs, { id: newId(), kind: "typing" }] }));
       try {
-        const r = await ready.api.chat({ account: ready.account, lang, ...req });
+        // Rules can name the phone's contacts that have a wallet (contacts live on the phone).
+        const withWallet = contacts.filter((c) => c.address).map((c) => ({ name: c.name.slice(0, 40), address: c.address! }));
+        const r = await ready.api.chat({ account: ready.account, lang, contacts: withWallet, ...req });
         setChat((c) => ({
           ...c,
           busy: false,
@@ -525,6 +529,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
             ...c.msgs.filter((x) => x.kind !== "typing").map((m) => (m.id === voiceMsgId && m.kind === "voice" ? { ...m, text: r.transcript } : m)),
             { id: newId(), kind: "bot", text: r.reply },
             ...r.quotes.map((q): ChatMsg => ({ id: newId(), kind: "quote", quote: q, at: Date.now(), status: "live" })),
+            ...(r.rules ?? []).map((rule): ChatMsg => ({ id: newId(), kind: "rule", rule, status: "draft" })),
           ],
         }));
       } catch (e) {
@@ -533,7 +538,55 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         if (code === "rate_limited") toast(t.errRate);
       }
     },
-    [ready, lang, t, toast],
+    [ready, lang, t, toast, contacts],
+  );
+
+  const refreshRules = useCallback(() => {
+    if (!ready || ready.mock) return setRules([]);
+    ready.api.listRules(ready.account).then(
+      (r) => setRules(r.rules.filter((x) => x.status !== "draft")),
+      () => {},
+    );
+  }, [ready]);
+
+  const setRuleMsg = (id: string, patch: Partial<Extract<ChatMsg, { kind: "rule" }>>) =>
+    setChat((c) => ({ ...c, msgs: c.msgs.map((m) => (m.id === id && m.kind === "rule" ? { ...m, ...patch } : m)) }));
+
+  const chatRuleConfirm = useCallback(
+    async (msgId: string) => {
+      if (!ready) return;
+      const m = chat.msgs.find((x) => x.id === msgId);
+      if (!m || m.kind !== "rule" || m.status !== "draft") return;
+      setRuleMsg(msgId, { status: "busy" });
+      try {
+        const signature = await ready.wallet.signer.personalSign(m.rule.message);
+        const rule = await ready.api.confirmRule({ ruleId: m.rule.ruleId, account: ready.account, signature });
+        setRuleMsg(msgId, { status: "active", rule });
+        pushMsgs({ id: newId(), kind: "bot", text: `${t.ruleOnT}. ${t.ruleOnB}` });
+        refreshRules();
+      } catch (e) {
+        setRuleMsg(msgId, { status: "draft" });
+        if (isUserRejection(e)) return;
+        showError((e as { code?: ClientErrorCode }).code ?? "network");
+      }
+    },
+    [ready, chat.msgs, pushMsgs, t, refreshRules, showError],
+  );
+
+  const cancelRule = useCallback(
+    async (ruleId: string) => {
+      if (!ready) return;
+      try {
+        const signature = await ready.wallet.signer.personalSign(cancelText(ruleId, ready.account as Address));
+        await ready.api.cancelRule({ ruleId, account: ready.account, signature });
+        setRules((rs) => (rs ?? []).filter((r) => r.ruleId !== ruleId));
+        toast(t.ruleCancelled);
+      } catch (e) {
+        if (isUserRejection(e)) return;
+        showError((e as { code?: ClientErrorCode }).code ?? "network");
+      }
+    },
+    [ready, toast, t, showError],
   );
 
   const chatText = useCallback(
@@ -849,6 +902,10 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     chatConfirm: (id) => void chatConfirm(id),
     chatCancel,
     chatRefresh: (id) => void chatRefresh(id),
+    chatRuleConfirm: (id) => void chatRuleConfirm(id),
+    rules,
+    refreshRules,
+    cancelRule: (id) => void cancelRule(id),
     chatAlts,
   };
 

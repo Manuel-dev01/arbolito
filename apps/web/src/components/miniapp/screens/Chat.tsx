@@ -83,6 +83,32 @@ function ChatQuote({ m, now }: { m: Extract<ChatMsg, { kind: "quote" }>; now: nu
   );
 }
 
+/** A drafted automatic rule: the user turns it on by signing its text in MiniPay. */
+function ChatRule({ m }: { m: Extract<ChatMsg, { kind: "rule" }> }) {
+  const { t, chatRuleConfirm } = useApp();
+  return (
+    <div className="mp-chat-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <span className="mp-kicker mp-save" style={{ fontSize: 12, color: "var(--save-text)" }}>
+        {t.ruleKicker}
+      </span>
+      <span style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.4 }}>{m.rule.description}</span>
+      {m.status === "active" ? (
+        <span className="mp-row mp-save" style={{ gap: 8, fontWeight: 700 }}>
+          ✓ {t.ruleOnT}
+        </span>
+      ) : (
+        <>
+          <span className="mp-small">{t.ruleSignNote}</span>
+          <button type="button" className={`mp-btn ${m.status === "busy" ? "busy" : ""}`} style={{ borderRadius: 12, minHeight: 48, fontSize: 16 }} disabled={m.status === "busy"} onClick={() => chatRuleConfirm(m.id)}>
+            {m.status === "busy" ? <Spinner size={16} color="currentColor" /> : null}
+            {m.status === "busy" ? t.openingMP : t.ruleSign}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 const WAVE = [10, 18, 12, 20, 8, 14, 16, 9];
 
 function Message({ m, now }: { m: ChatMsg; now: number }) {
@@ -145,6 +171,8 @@ function Message({ m, now }: { m: ChatMsg; now: number }) {
           ) : null}
         </div>
       );
+    case "rule":
+      return <ChatRule m={m} />;
     case "cancel":
       return (
         <div className="mp-bubble bot" style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: "90%" }}>

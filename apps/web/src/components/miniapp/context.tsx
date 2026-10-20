@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Address } from "viem";
 import type { Sym } from "../../lib/miniapp/contract";
-import type { ApiClient, AutoStatus, Balances, Quote, Rates } from "../../lib/miniapp/client/api";
+import type { ApiClient, AutoStatus, Balances, Quote, Rates, Rule } from "../../lib/miniapp/client/api";
 import type { ExecResult, ExecStage } from "../../lib/miniapp/client/execute";
 import type { Cur, Lang } from "../../lib/miniapp/client/format";
 import type { Prices } from "../../lib/miniapp/client/derive";
@@ -73,7 +73,8 @@ export type ChatMsg =
   | { id: string; kind: "quote"; quote: Quote; at: number; status: "live" | "used" | "cancelled" | "busy" }
   | { id: string; kind: "proc"; text: string }
   | { id: string; kind: "done"; title: string; text: string; receiptId: string | null }
-  | { id: string; kind: "cancel"; quoteMsgId: string };
+  | { id: string; kind: "cancel"; quoteMsgId: string }
+  | { id: string; kind: "rule"; rule: Rule; status: "draft" | "busy" | "active" };
 
 export interface AppCtx {
   t: MiniDict;
@@ -135,6 +136,13 @@ export interface AppCtx {
   chatConfirm(msgId: string): void;
   chatCancel(msgId: string): void;
   chatRefresh(msgId: string): void;
+  /** Turns a drafted rule on: the user signs its text in MiniPay. */
+  chatRuleConfirm(msgId: string): void;
+  /** The account's automatic rules (null until loaded). */
+  rules: Rule[] | null;
+  refreshRules(): void;
+  /** Cancels a rule: the user signs the cancel text in MiniPay. */
+  cancelRule(ruleId: string): void;
   chatAlts(msgId: string): void;
 }
 

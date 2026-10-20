@@ -115,7 +115,7 @@ export async function autonomyPlan(deps: MiniappDeps, req: z.infer<typeof Autono
     const perDay = BigInt(l.perDay);
     if (perDay === 0n || perTx === 0n) throw badRequest(`${l.sym} limits must be greater than zero.`);
     if (perTx > perDay) throw badRequest(`${l.sym} per-transaction limit is above the daily limit.`);
-    if (perDay > U128_MAX) throw badRequest(`${l.sym} limit is too large.`);
+    if (perDay > U128_MAX || perDay * BigInt(req.operatorDays) > U128_MAX) throw badRequest(`${l.sym} limit is too large.`);
     return { sym: l.sym, token: TOKENS[l.sym].address as Address, maxPerTx: perTx, maxPerDay: perDay };
   });
   const contacts = [...new Map(req.contacts.map((c) => [c.toLowerCase(), c as Address])).values()];
@@ -123,9 +123,11 @@ export async function autonomyPlan(deps: MiniappDeps, req: z.infer<typeof Autono
 
   const expiry = BigInt(Math.floor(deps.now() / 1000) + req.operatorDays * 86_400);
   const calls = [
-    // The allowance is the hard ceiling on what the guard can ever move: one day's worth.
+    // The allowance is the ceiling on what the guard can move over the permission's life: the daily
+    // cap for every day it lasts. (A single day's worth ran out after one run, so monthly rules
+    // stopped working.) The guard still enforces the per-operation and daily caps onchain.
     ...limits.map((l) =>
-      tag(deps, l.token, encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [guard.address, l.maxPerDay] }), `approve ${l.sym} to ArbolitoGuard`),
+      tag(deps, l.token, encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [guard.address, l.maxPerDay * BigInt(req.operatorDays)] }), `approve ${l.sym} to ArbolitoGuard`),
     ),
     tag(deps, guard.address, encodeGuardV2SetOperator(guard.operator, expiry), "ArbolitoGuard.setOperator"),
     tag(

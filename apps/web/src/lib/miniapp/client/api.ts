@@ -23,6 +23,10 @@ import {
   RatesResponse,
   ReceiptResponse,
   RevokePlanRequest,
+  RuleCancelRequest,
+  RuleConfirmRequest,
+  RuleResponse,
+  RulesListResponse,
   SubmitRequest,
   SubmitResponse,
   Sym,
@@ -32,6 +36,8 @@ import type { ClientErrorCode } from "./errors";
 export type Rates = z.infer<typeof RatesResponse>;
 export type Balances = z.infer<typeof BalancesResponse>;
 export type Quote = z.infer<typeof QuoteResponse>;
+export type RulesList = z.infer<typeof RulesListResponse>;
+export type Rule = RulesList["rules"][number];
 export type Prepared = z.infer<typeof PrepareResponse>;
 export type NeedsProof = z.infer<typeof NeedsTakerProof>;
 export type Submitted = z.infer<typeof SubmitResponse>;
@@ -90,6 +96,9 @@ export interface ApiClient {
    */
   reject(req: { quoteId: string; account: string; code?: number }): Promise<{ quoteId: string; status: string }>;
   sendPrepare(req: SendPrepareRequest): Promise<Calls & { expectedOut: string; minOut: string }>;
+  listRules(account: string): Promise<RulesList>;
+  confirmRule(req: z.input<typeof RuleConfirmRequest>): Promise<Rule>;
+  cancelRule(req: z.input<typeof RuleCancelRequest>): Promise<Rule>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -172,6 +181,9 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     linkConfirm: async (r) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: req(LinkConfirmRequest, r) }),
     reject: async (r) => call(RejectResponse, "/reject", { method: "POST", body: req(RejectRequest, r) }),
     sendPrepare: async (r) => call(SendPrepareResponse, "/send/prepare", { method: "POST", body: req(SendPrepareRequest, r) }),
+    listRules: (account) => call(RulesListResponse, `/rules${q(account)}`),
+    confirmRule: async (r) => (await call(RuleResponse, "/rules/confirm", { method: "POST", body: req(RuleConfirmRequest, r) })).rule,
+    cancelRule: async (r) => (await call(RuleResponse, "/rules/cancel", { method: "POST", body: req(RuleCancelRequest, r) })).rule,
   };
 }
 
