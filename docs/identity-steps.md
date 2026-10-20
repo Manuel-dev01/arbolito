@@ -9,7 +9,9 @@ Registry: Identity `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` (Celo mainnet).
 - Agent URI: `https://arbolito-livid.vercel.app/.well-known/agent-registration.json`, served by `apps/web` from `apps/web/src/lib/agent-registration.ts`. It lists only live services; add the x402 FX API and MCP there when they ship (same URI, no new tx). `ERC8004_AGENT_ID=9976` fills `registrations`.
 - Re-run: `pnpm register:8004` fetches and checks the hosted file and simulates; `--live` registers (a new id each time, so don't).
 
-## 2. Self Agent ID (proof-of-human)
+## 2. Self Agent ID (proof-of-human): dropped 2026-10-20
+Self needs a passport, which the founder doesn't have. Kept below in case a teammate with a supported passport registers later.
+
 Registry: `0xaC3DF9ABf80d0F5c020C06B04Cced27763355944` (Celo mainnet). This matches the `@selfxyz/agent-sdk` README.
 
 You need the Self app on your phone with your passport or ID already scanned.
