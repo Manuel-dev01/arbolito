@@ -70,7 +70,9 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Buy-side overshoot fixed:** a corridor reopening at US$ 17.6 of wBRL offered its full US$ 20 and one fill (2026-10-20 13:22, −0.01% edge) took it to ~US$ 37; the rebalancer would then sell the excess back a few bps under fair. The buy side now offers only the room left under the cap, in US$ 5 steps with a dollar of tolerance and hysteresis. Live: wBRL buy off (at cap), the others offering US$ 5–20. The rebalancer is holding the excess wBRL because Uniswap pays 25 bps under fair (45 bps worst case) against a 40 bps limit.
 - **docs/DESK-STRATEGY.md:** the strategy for the Textile judges (architecture, fair value, devaluation-aware pesos, skew bounds, breaker, caps and rebalancer, the pause-only risk officer and what running it taught us, honest results, how to verify, code map).
 - **Desk now:** 6 fills, ~US$ 90 executed, edges −0.01% to +0.06%; NAV ≈ US$ 120 against 120 USDT.
-- **Next:** decide T2b (x402 FX API in USA₮) and T3 (buy) with the founder; README for judges and the submission package.
+- **Telegram linking now needs the wallet's signature** (personal_sign over "Arbolito: connect Telegram / Account / Code", checked before the code is looked up). Shared `signedBy` helper for rules and linking.
+- **README rewritten for judges:** what's live, onchain addresses with links, how it's built, the repo map, how to run it. The planning-pack README (T3 claims, "deadline TBD") is gone.
+- **Next:** decide T2b (x402 FX API in USA₮) and T3 (buy) with the founder; the rest of the submission package (demo video, Loops entry).
 
 ### 2026-10-20: Standing rules live (payday split, monthly sends); desk RFQ logging
 - **Standing rules** (`packages/rules`, founder-approved): the T1 "agent acts on its own" piece.
