@@ -39,3 +39,20 @@ describe("Western Union's converter, read from buy's browser snapshots (captured
     expect(seen.slice(0, 3)).toEqual(["open", "wait", "snapshot"]);
   });
 });
+
+describe("browser commands", () => {
+  it("resend a command that never reached the (already paid) session, but not an HTTP error", async () => {
+    const { command } = await import("../src");
+    const session: BrowserSession = { sessionId: "s", accessToken: "SECRET-TOKEN-0123456789", status: "ready", expiresAt: "", commandUrl: "https://gw.test/c" };
+    let n = 0;
+    const flaky = async () => {
+      if (n++ < 2) throw new TypeError("fetch failed");
+      return new Response(JSON.stringify({ output: { success: true, data: { ok: 1 } } }));
+    };
+    expect(await command(session, { action: "snapshot" }, flaky, 3)).toEqual({ ok: 1 });
+    let m = 0;
+    const http = async () => (m++, new Response("nope", { status: 400 }));
+    await expect(command(session, { action: "open" }, http, 3)).rejects.toThrow(/400/);
+    expect(m).toBe(1);
+  });
+});

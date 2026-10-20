@@ -2,7 +2,8 @@
  * Keeps Western Union's rates fresh for "vs Western Union" on quotes and receipts. Every few hours
  * it buys one short browser session through buy (x402, USDT, from the buy payer), reads Western
  * Union's converter for dollars → reais and pesos, and stores the readings with the payment.
- * Enabled with COMPETITORS_RUNNER=live and BUY_PAYER_PRIVATE_KEY.
+ * Enabled with COMPETITORS_RUNNER=live and BUY_PAYER_PRIVATE_KEY; `pnpm buy rates --live` runs one
+ * refresh by hand.
  *
  * Money rules: the free 402 is checked against MAX_CALL before signing; spend counts against the
  * build caps (database ledger, per payer); a payment whose outcome is unclear stops the runner
@@ -35,16 +36,71 @@ function referenceFor(c: Corridor, refs: Reference[]): number | null {
   return null;
 }
 
+export interface RefreshResult {
+  skipped: boolean;
+  paymentTx: string | null;
+  stored: CompetitorRate[];
+  errors: string[];
+}
+
+/**
+ * One refresh: skipped when every corridor has a reading younger than REFRESH_MS (unless forced).
+ * Throws PaymentUncertainError when a payment's outcome is unclear (callers must not retry).
+ */
+export async function refreshWesternUnion(db: Db, env: Env, o: { force?: boolean } = {}): Promise<RefreshResult> {
+  if (!env.BUY_PAYER_PRIVATE_KEY) throw new Error("BUY_PAYER_PRIVATE_KEY is not set");
+  if (!o.force) {
+    const fresh = await latestCompetitorRates(db, "western_union", REFRESH_MS);
+    if (CORRIDORS.every((c) => fresh.some((r) => r.corridor === c))) return { skipped: true, paymentTx: null, stored: [], errors: [] };
+  }
+  const payer = privateKeyToAccount(env.BUY_PAYER_PRIVATE_KEY as Hex);
+  const request = { url: `${env.BUY_GATEWAY_URL.replace(/\/$/, "")}/v1/browser/sessions`, method: "POST" as const, body: { durationMinutes: MINUTES } };
+  const quote = await quoteRequest(request, TOKENS[env.BUY_PAY_TOKEN].address);
+  const paid = await payRequest(request, {
+    account: payer,
+    quote,
+    maxAmount: MAX_CALL,
+    ledger: new DbLedger(db, payer.address),
+    caps: capsFromEnv(),
+    purpose: `buy browser.sessions.create ${MINUTES}m (Western Union rates)`,
+  });
+  const paymentTx = paid.settlement?.transaction ?? null;
+  log(`[competitors] paid ${Number(paid.amount) / 1e6} ${env.BUY_PAY_TOKEN} for a browser${paymentTx ? ` (tx ${paymentTx})` : ""}`);
+
+  const session = PaidBrowserResponse.parse(paid.body).browser;
+  const { rates, errors } = await readWesternUnion(session, CORRIDORS);
+  const client = makePublicClient();
+  const refs = (await fetchReferences(client, await client.getBlockNumber()).catch(() => ({ references: [] as Reference[] }))).references;
+  const stored: CompetitorRate[] = [];
+  for (const r of rates) {
+    const ref = referenceFor(r.corridor, refs);
+    if (ref !== null && !plausible(r.rate, ref)) errors.push(`dropped ${r.corridor} ${r.rate.toFixed(4)}: too far from ${ref}`);
+    else stored.push(r);
+  }
+  const at = new Date();
+  await insertCompetitorRates(
+    db,
+    stored.map((r) => ({
+      provider: r.provider,
+      corridor: r.corridor,
+      rate: r.rate.toFixed(6),
+      sendAmount: String(r.sendAmount),
+      receiveAmount: String(r.receiveAmount),
+      sourceUrl: r.sourceUrl,
+      paymentTx,
+      paidAtomic: paid.amount.toString(),
+      at,
+    })),
+  );
+  return { skipped: false, paymentTx, stored, errors };
+}
+
 export function startCompetitorsRunner(db: Db, env: Env): (() => void) | null {
   if (env.COMPETITORS_RUNNER !== "live") return null;
   if (!env.BUY_PAYER_PRIVATE_KEY) {
     log("[competitors] COMPETITORS_RUNNER=live but BUY_PAYER_PRIVATE_KEY is missing: not running");
     return null;
   }
-  const payer = privateKeyToAccount(env.BUY_PAYER_PRIVATE_KEY as Hex);
-  const ledger = new DbLedger(db, payer.address);
-  const client = makePublicClient();
-  const url = `${env.BUY_GATEWAY_URL.replace(/\/$/, "")}/v1/browser/sessions`;
   let stopped: string | null = null;
   let busy = false;
 
@@ -52,42 +108,10 @@ export function startCompetitorsRunner(db: Db, env: Env): (() => void) | null {
     if (busy || stopped) return;
     busy = true;
     try {
-      const fresh = await latestCompetitorRates(db, "western_union", REFRESH_MS);
-      if (CORRIDORS.every((c) => fresh.some((r) => r.corridor === c))) return;
-
-      const request = { url, method: "POST" as const, body: { durationMinutes: MINUTES } };
-      const quote = await quoteRequest(request, TOKENS[env.BUY_PAY_TOKEN].address);
-      const paid = await payRequest(request, { account: payer, quote, maxAmount: MAX_CALL, ledger, caps: capsFromEnv(), purpose: `buy browser.sessions.create ${MINUTES}m (Western Union rates)` });
-      const tx = paid.settlement?.transaction ?? null;
-      log(`[competitors] paid ${Number(paid.amount) / 1e6} ${env.BUY_PAY_TOKEN} for a browser${tx ? ` (tx ${tx})` : ""}`);
-
-      const session = PaidBrowserResponse.parse(paid.body).browser;
-      const { rates, errors } = await readWesternUnion(session, CORRIDORS);
-      for (const e of errors) log(`[competitors] ${e}`);
-
-      const refs = (await fetchReferences(client, await client.getBlockNumber()).catch(() => ({ references: [] as Reference[] }))).references;
-      const keep: CompetitorRate[] = [];
-      for (const r of rates) {
-        const ref = referenceFor(r.corridor, refs);
-        if (ref !== null && !plausible(r.rate, ref)) log(`[competitors] dropped ${r.corridor} ${r.rate.toFixed(4)}: too far from ${ref}`);
-        else keep.push(r);
-      }
-      const at = new Date();
-      await insertCompetitorRates(
-        db,
-        keep.map((r) => ({
-          provider: r.provider,
-          corridor: r.corridor,
-          rate: r.rate.toFixed(6),
-          sendAmount: String(r.sendAmount),
-          receiveAmount: String(r.receiveAmount),
-          sourceUrl: r.sourceUrl,
-          paymentTx: tx,
-          paidAtomic: paid.amount.toString(),
-          at,
-        })),
-      );
-      log(`[competitors] Western Union: ${keep.map((r) => `${r.corridor} ${r.rate.toFixed(4)}`).join(", ") || "nothing read"}`);
+      const r = await refreshWesternUnion(db, env);
+      if (r.skipped) return;
+      for (const e of r.errors) log(`[competitors] ${e}`);
+      log(`[competitors] Western Union: ${r.stored.map((x) => `${x.corridor} ${x.rate.toFixed(4)}`).join(", ") || "nothing read"}`);
     } catch (e) {
       if (e instanceof PaymentUncertainError) {
         stopped = e.message;
@@ -98,7 +122,7 @@ export function startCompetitorsRunner(db: Db, env: Env): (() => void) | null {
     }
   }
 
-  log(`[competitors] runner on: payer ${payer.address}, Western Union every ${REFRESH_MS / 3_600_000} h`);
+  log(`[competitors] runner on: payer ${privateKeyToAccount(env.BUY_PAYER_PRIVATE_KEY as Hex).address}, Western Union every ${REFRESH_MS / 3_600_000} h`);
   void tick();
   const timer = setInterval(() => void tick(), CHECK_MS);
   return () => clearInterval(timer);

@@ -5,6 +5,7 @@
  *   pnpm buy fund <usdt> [--fork <rpc> | --live]   ops sends USDT to the payer (tagged; ≤ 2 USDT)
  *   pnpm buy quote [--minutes 2]          the free 402 for a browser session
  *   pnpm buy browser [--minutes 2] --live pay for one browser session (founder go-ahead first)
+ *   pnpm buy rates --live                 one Western Union refresh by hand (what the bot does every 6 h)
  *
  * The session's response can hold bearer URLs: they're redacted in the output and the full body
  * is written to .arbolito/buy/ (gitignored).
@@ -17,6 +18,8 @@ import { TOKENS, findRepoRoot, loadEnv, txUrl } from "@arbolito/config";
 import { FileLedger, MemoryLedger, capsFromEnv, makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
 import { erc20Abi } from "@arbolito/router";
 import { payRequest, quoteRequest } from "@arbolito/x402";
+import { closeDb, getDb } from "@arbolito/db";
+import { refreshWesternUnion } from "../apps/agent/src/competitors";
 import { confirm, flagValue, forkUrl, hasFlag, opsAccount, positional, runMain } from "./lib/cli";
 
 const MAX_FUND = parseUnits("2", 6);
@@ -76,12 +79,25 @@ runMain(async () => {
     return console.log(`sent: ${fork ? r.hash : txUrl(r.hash)}`);
   }
 
+  if (cmd === "rates") {
+    if (!live) return console.log("Re-run with --live to pay for one browser session (~US$ 0.0042) and refresh Western Union rates.");
+    try {
+      const r = await refreshWesternUnion(getDb(), env, { force: true });
+      console.log(`paid tx: ${r.paymentTx ? txUrl(r.paymentTx) : "(none)"}`);
+      for (const x of r.stored) console.log(`  ${x.corridor}: ${x.rate.toFixed(4)} (${x.sendAmount} → ${x.receiveAmount})`);
+      for (const e of r.errors) console.log(`  error: ${e}`);
+    } finally {
+      await closeDb();
+    }
+    return;
+  }
+
   const minutes = Number(flagValue("minutes") ?? 2);
   const request = { url: `${env.BUY_GATEWAY_URL.replace(/\/$/, "")}/v1/browser/sessions`, method: "POST" as const, body: { durationMinutes: minutes } };
   const quote = await quoteRequest(request, token.address);
   console.log(`buy browser session, ${minutes} min: ${formatUnits(quote.amount, token.decimals)} ${env.BUY_PAY_TOKEN} to ${quote.requirement.payTo} (payer ${payer.address})`);
   if (cmd === "quote") return;
-  if (cmd !== "browser") throw new Error("usage: pnpm buy <init|fund|quote|browser>");
+  if (cmd !== "browser") throw new Error("usage: pnpm buy <init|fund|quote|browser|rates>");
   if (!live) return console.log("Quote only. Re-run with --live to pay (founder go-ahead first).");
   if (!(await confirm(`\nThis pays ${formatUnits(quote.amount, token.decimals)} ${env.BUY_PAY_TOKEN} on Celo mainnet.`, "pay"))) return console.log("Aborted. Nothing was paid.");
 

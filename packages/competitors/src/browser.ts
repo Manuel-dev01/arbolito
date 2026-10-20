@@ -23,13 +23,23 @@ type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 export class BrowserCommandError extends Error {}
 
 /** One command; returns `output.data`. Never includes the token in an error. */
-export async function command(s: BrowserSession, body: Record<string, unknown>, f: FetchLike = fetch): Promise<Record<string, unknown>> {
-  const res = await f(s.commandUrl, {
-    method: "POST",
-    headers: { authorization: `Bearer ${s.accessToken}`, "content-type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
-  });
+export async function command(s: BrowserSession, body: Record<string, unknown>, f: FetchLike = fetch, retries = 3): Promise<Record<string, unknown>> {
+  // The session is already paid for, so a command that never reached it (network error) is
+  // safe to resend. HTTP errors are answers and are not retried.
+  let res: Response | undefined;
+  for (let i = 0; !res; i++) {
+    try {
+      res = await f(s.commandUrl, {
+        method: "POST",
+        headers: { authorization: `Bearer ${s.accessToken}`, "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch (e) {
+      if (i >= retries) throw new BrowserCommandError(`${String(body.action)}: ${(e as Error).message}`);
+      await new Promise((r) => setTimeout(r, 1_000 * (i + 1)));
+    }
+  }
   const text = await res.text();
   if (!res.ok) throw new BrowserCommandError(`${String(body.action)} → ${res.status} ${text.split(s.accessToken).join("<token>").slice(0, 200)}`);
   const json = JSON.parse(text) as { output?: { data?: Record<string, unknown>; success?: boolean; error?: string | null } };
