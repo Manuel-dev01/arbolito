@@ -13,6 +13,7 @@ import {
   ChatResponse,
   LinkConfirmRequest,
   LinkConfirmResponse,
+  LinkStatusResponse,
   NeedsTakerProof,
   OpenQuoteResponse,
   ReceiptsListResponse,
@@ -84,7 +85,9 @@ export interface ApiClient {
   submit(req: z.input<typeof SubmitRequest>): Promise<Submitted>;
   receipt(id: string): Promise<Receipt>;
   autonomyPlan(req: z.input<typeof AutonomyPlanRequest>): Promise<Calls>;
-  autonomyStatus(account: string): Promise<AutoStatus>;
+  /** candidates: the phone's contact wallets, so the guard can say which are allowed. */
+  autonomyStatus(account: string, candidates?: string[]): Promise<AutoStatus>;
+  linkStatus(account: string): Promise<z.infer<typeof LinkStatusResponse>>;
   revokePlan(req: z.input<typeof RevokePlanRequest>): Promise<Calls>;
   /** TODO(contract): pausing "al instante, sin confirmar en MiniPay" needs a server endpoint. */
   autonomyPause(account: string, paused: boolean): Promise<{ paused: boolean }>;
@@ -174,7 +177,9 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     submit: async (r) => call(SubmitResponse, "/submit", { method: "POST", body: req(SubmitRequest, r) }),
     receipt: (id) => call(ReceiptResponse, `/receipt/${encodeURIComponent(id)}`),
     autonomyPlan: async (r) => call(CallsResponse, "/autonomy/plan", { method: "POST", body: req(AutonomyPlanRequest, r) }),
-    autonomyStatus: (account) => call(AutonomyStatus, `/autonomy/status${q(account)}`),
+    autonomyStatus: (account, candidates = []) =>
+      call(AutonomyStatus, `/autonomy/status${q(account)}${candidates.length ? `&candidates=${candidates.slice(0, 50).join(",")}` : ""}`),
+    linkStatus: (account) => call(LinkStatusResponse, `/link/status${q(account)}`),
     revokePlan: async (r) => call(CallsResponse, "/autonomy/revoke-plan", { method: "POST", body: req(RevokePlanRequest, r) }),
     autonomyPause: (account, paused) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: { account, paused } }),
     chat: async (r) => call(ChatResponse, "/chat", { method: "POST", body: req(ChatRequest, r) }),

@@ -91,6 +91,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [bal, setBal] = useState<BalState>({ status: "loading", data: null, at: null });
   const [rates, setRates] = useState<Rates | null>(null);
   const [auto, setAuto] = useState<AutoStatus | null>(null);
+  const [telegram, setTelegram] = useState<{ linked: boolean; telegramName: string | null } | null>(null);
   const [receipts, setReceipts] = useState<ReceiptIndexEntry[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [rules, setRules] = useState<Rule[] | null>(null);
@@ -220,14 +221,40 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     }
   }, [ready]);
 
-  const refreshAuto = useCallback(async () => {
+  /**
+   * Reads the guard (retrying twice: a slow RPC used to leave Settings saying "Off" for a wallet
+   * that was on). The phone's contact wallets go along so the guard says which are allowed.
+   * `until` keeps polling while the answer doesn't match yet (right after the setup txs).
+   */
+  const refreshAuto = useCallback(
+    async (until?: (s: AutoStatus) => boolean) => {
+      if (!ready) return;
+      const candidates = ready.store.contacts(ready.account).flatMap((c) => (c.address ? [c.address] : []));
+      for (let i = 0; i < (until ? 8 : 3); i++) {
+        try {
+          const s = await ready.api.autonomyStatus(ready.account, candidates);
+          setAuto(s);
+          if (!until || until(s)) return;
+        } catch {
+          /* status unknown: keep what we had */
+        }
+        await new Promise((r) => setTimeout(r, until ? 3_000 : 1_500 * (i + 1)));
+      }
+    },
+    [ready],
+  );
+
+  const refreshTelegram = useCallback(() => {
     if (!ready) return;
-    try {
-      setAuto(await ready.api.autonomyStatus(ready.account));
-    } catch {
-      /* status unknown: the promo stays, nothing claims it's on */
-    }
+    ready.api.linkStatus(ready.account).then(setTelegram, () => {});
   }, [ready]);
+
+  // Settings and Limits & security always show fresh state.
+  useEffect(() => {
+    if (screen !== "settings" && screen !== "security") return;
+    void refreshAuto();
+    refreshTelegram();
+  }, [screen, refreshAuto, refreshTelegram]);
 
   useEffect(() => {
     if (!ready) return;
@@ -472,7 +499,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     );
     setAutoDraft({ busy: false });
     if (res.kind === "done") {
-      void refreshAuto();
+      // The node we read from can lag the setup txs by a few seconds: poll until it shows them.
+      void refreshAuto((s) => s.configured && s.operatorActive);
       return go("auto-on", { replace: true });
     }
     if (res.kind === "cancelled") return toast(t.toastCancelled);
@@ -855,6 +883,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     prices,
     refreshBalances: () => void refreshBalances(),
     auto,
+    telegram,
     refreshAuto: () => void refreshAuto(),
     receipts,
     contacts,

@@ -98,7 +98,15 @@ export function createBot(token: string): Arbolito {
   async function handleText(ctx: Ctx, text: string, lang: Lang) {
     const env = loadEnv();
     const history = await loadHistory(s.db, ctx.user.id);
-    const result = await runAgentTurn({ history, userText: text, language: lang, tools: buildHandlers(s, flow, ctx.user), model: env.AGENT_MODEL });
+    const tools = {
+      ...buildHandlers(s, flow, ctx.user),
+      // "Need to connect, give me a code": the same flow as /conectar, with a fresh code.
+      async connect_minipay() {
+        await connect(ctx, true);
+        return { data: { status: "code_sent", note: "A separate message with the 4-digit code and where to type it (MiniPay → Arbolito → Settings → Telegram) was sent. Don't repeat or invent the code." } };
+      },
+    };
+    const result = await runAgentTurn({ history, userText: text, language: lang, tools, model: env.AGENT_MODEL });
     await appendHistory(s.db, ctx.user.id, result.messages);
     for (const tc of result.toolCalls) if (!tc.ok) log(`[agent] tool ${tc.name} failed: ${tc.error ?? ""}`);
     if (result.text) await ctx.reply(result.text); // plain text: model output is never parsed as HTML

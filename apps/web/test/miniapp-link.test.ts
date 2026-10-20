@@ -3,7 +3,7 @@ import { POST as linkRoute } from "../src/app/api/miniapp/link/confirm/route";
 import { LinkConfirmResponse } from "../src/lib/miniapp/contract";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
-import { confirmLink } from "../src/lib/miniapp/server/link";
+import { confirmLink, linkStatus } from "../src/lib/miniapp/server/link";
 import { ACCOUNT, T0, makeRig } from "./miniapp-helpers";
 
 async function failure(p: Promise<unknown>): Promise<ApiFailure> {
@@ -93,5 +93,17 @@ describe("POST /link/confirm", () => {
     const res = await linkRoute(new Request("https://arbolito.test/x", { method: "POST", body: JSON.stringify({ code: "5555", account: ACCOUNT }) }));
     expect(res.status).toBe(200);
     expect(LinkConfirmResponse.parse(await res.json())).toEqual({ linked: true, telegramName: null });
+  });
+});
+
+describe("GET /link/status", () => {
+  it("says whether a Telegram user owns the wallet, and under which name", async () => {
+    const rig = makeRig();
+    expect(await linkStatus(rig.deps, ACCOUNT)).toEqual({ linked: false, telegramName: null });
+    rig.store.addUser({ walletAddress: ACCOUNT }); // a MiniPay-only user: not linked
+    expect((await linkStatus(rig.deps, ACCOUNT)).linked).toBe(false);
+    rig.store.users[0]!.telegramId = 5117427566n;
+    rig.store.users[0]!.telegramUsername = "ola_nuell";
+    expect(await linkStatus(rig.deps, ACCOUNT)).toEqual({ linked: true, telegramName: "@ola_nuell" });
   });
 });

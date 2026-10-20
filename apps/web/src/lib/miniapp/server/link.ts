@@ -9,6 +9,13 @@ const LINK_LIMIT_ACCOUNT = 5;
 const LINK_LIMIT_IP = 20;
 const LINK_WINDOW_MS = 10 * 60_000;
 
+/** GET /link/status: whether a Telegram user owns this wallet (read-only; shows the name the user chose). */
+export async function linkStatus(deps: MiniappDeps, account: Address): Promise<{ linked: boolean; telegramName: string | null }> {
+  const u = await deps.store().userByWallet(account.toLowerCase());
+  if (!u || u.telegramId === null) return { linked: false, telegramName: null };
+  return { linked: true, telegramName: u.displayName ?? (u.telegramUsername ? `@${u.telegramUsername}` : null) };
+}
+
 /**
  * POST /link/confirm: "Conectá tu MiniPay". The bot shows a 4-digit code; the Mini App confirms it
  * for the wallet MiniPay injected. Sets users.wallet_address (lowercased) on the Telegram user.

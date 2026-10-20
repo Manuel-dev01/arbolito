@@ -8,11 +8,14 @@ import { parseInput, respond } from "../../../../../lib/miniapp/server/http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const Query = z.object({ account: z.string().regex(/^0x[0-9a-fA-F]{40}$/) });
+const Addr = z.string().regex(/^0x[0-9a-fA-F]{40}$/);
+/** candidates: the phone's contact wallets, comma-separated (the guard is asked about each). */
+const Query = z.object({ account: Addr, candidates: z.array(Addr).max(50).default([]) });
 
 export function GET(req: Request) {
   return respond("autonomy status", AutonomyStatus, async () => {
-    const { account } = parseInput(Query, { account: new URL(req.url).searchParams.get("account") ?? undefined });
-    return autonomyStatus(getDeps(), account as Address);
+    const p = new URL(req.url).searchParams;
+    const { account, candidates } = parseInput(Query, { account: p.get("account") ?? undefined, candidates: p.get("candidates")?.split(",").filter(Boolean) ?? [] });
+    return autonomyStatus(getDeps(), account as Address, candidates as Address[]);
   });
 }

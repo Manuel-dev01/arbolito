@@ -176,8 +176,9 @@ export function Revoke() {
 }
 
 export function Settings() {
-  const { t, persona, contacts, auto, displayCur, setSheet, go, openLink, mock, toast } = useApp();
-  const tag = auto?.configured ? (auto.paused ? t.secTagPaused : t.secTagOn) : t.secTagOff;
+  const { t, persona, contacts, auto, telegram, displayCur, setSheet, go, mock, toast } = useApp();
+  const tag = auto === null ? "…" : auto.configured ? (auto.paused ? t.secTagPaused : t.secTagOn) : t.secTagOff;
+  const tgLabel = mock ? "@lucia.dg" : telegram === null ? "…" : telegram.linked ? (telegram.telegramName ?? t.tgLinked) : t.setTgHow;
   const row = { minHeight: 56, justifyContent: "space-between", fontWeight: 600, padding: "0 16px" } as const;
   return (
     <div className="mp-scroll">
@@ -220,13 +221,13 @@ export function Settings() {
             className="mp-list-row"
             style={row}
             onClick={() => {
-              // TODO(contract): no endpoint tells the app whether this wallet is linked to Telegram (and as whom).
+              // Linked or not, the code screen can (re)link this wallet to a Telegram account.
               if (mock) toast("@lucia.dg");
               else window.location.href = `${window.location.pathname.replace(/\/$/, "")}/link${window.location.search}`;
             }}
           >
             <span>{t.setTelegram}</span>
-            <span style={{ fontWeight: 400, color: "var(--muted)" }}>{mock ? "@lucia.dg" : t.setTgHow} ›</span>
+            <span style={{ fontWeight: 400, color: telegram?.linked ? "var(--save-text)" : "var(--muted)" }}>{tgLabel} ›</span>
           </button>
         </div>
         <div className="mp-meta" style={{ padding: "0 4px", lineHeight: 1.5 }}>

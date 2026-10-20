@@ -109,6 +109,7 @@ export const toolSchemas = {
       .describe("Smallest incoming USDT payment that counts as pay (smaller ones are ignored)."),
   }),
   list_rules: z.strictObject({}),
+  connect_minipay: z.strictObject({}),
   get_limits: z.strictObject({}),
   deposit_info: z.strictObject({ token: token.optional().describe("Token the user wants to deposit, if they said.") }),
   withdraw_guide: z.strictObject({ token: token.optional().describe("Token the user wants to cash out, if they said.") }),
@@ -134,6 +135,8 @@ const descriptions: Record<ToolName, string> = {
     "Draft a monthly automatic payment to a saved contact (e.g. rent, sending money to family), optionally converted to pesos or reais. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on, with that contact allowed there; every run stays within the user's limits.",
   prepare_payday_split:
     "Draft a payday rule: when a USDT payment of at least minIncomingUsd arrives from someone else, change percent of it into another currency. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on.",
+  connect_minipay:
+    "Connect (or reconnect) the user's MiniPay wallet to this Telegram chat: sends them a message with a fresh 4-digit code and where to type it in MiniPay. Use it whenever the user asks to connect, link, reconnect or for a code. Don't invent or repeat codes yourself.",
   list_rules: "List the user's automatic rules (monthly payments, payday splits), their status and the latest runs. Read-only.",
   get_limits: "Read the user's per-action and daily limits and how much is left today. Read-only. Limits can't be changed here.",
   deposit_info: "Show how to deposit into the user's Arbolito wallet (address, network, supported tokens).",

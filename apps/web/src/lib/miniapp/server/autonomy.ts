@@ -8,6 +8,7 @@ import {
   encodeGuardV2RevokeOperator,
   encodeGuardV2SetOperator,
   readGuardV2Budget,
+  readGuardV2IsContact,
   readGuardV2Operator,
   readGuardV2Settings,
   withAttribution,
@@ -25,8 +26,9 @@ import { logError } from "./http";
 
 const U128_MAX = (1n << 128n) - 1n;
 const eq = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-/** RecipientSet lookback for the contacts list (~30 days of 1 s Celo blocks). */
-const CONTACT_LOOKBACK_BLOCKS = 2_600_000n;
+/** RecipientSet lookback: one getLogs call (forno serves at most 5,000 blocks per call). */
+const CONTACT_LOOKBACK_BLOCKS = 4_900n;
+const MAX_CANDIDATES = 50;
 
 function guardOf(deps: MiniappDeps) {
   if (!deps.guard) throw notReady("Autonomy is not available yet (the guard is not deployed).");
@@ -38,8 +40,20 @@ function tag(deps: MiniappDeps, to: Address, data: Hex, label: string) {
   return { to, data: withAttribution(data, deps.attributionCode), value: "0", label };
 }
 
-/** Contacts the guard currently allows, replayed from RecipientSet events (best effort). */
-async function readContacts(deps: MiniappDeps, guard: Address, account: Address): Promise<Address[]> {
+/**
+ * Contacts the guard currently allows. The phone sends its contacts' wallets as candidates and the
+ * guard is asked about each (isRecipient); events from the last ~80 minutes add any just set.
+ * (Replaying all RecipientSet events failed: forno caps getLogs at 5,000 blocks, so the list was empty.)
+ */
+async function readContacts(deps: MiniappDeps, guard: Address, account: Address, candidates: Address[]): Promise<Address[]> {
+  const allowed = new Map<string, Address>();
+  try {
+    const unique = [...new Map(candidates.slice(0, MAX_CANDIDATES).map((c) => [c.toLowerCase(), c])).values()];
+    const flags = await Promise.all(unique.map((c) => readGuardV2IsContact(deps.chain, guard, account, c)));
+    unique.forEach((c, i) => flags[i] && allowed.set(c.toLowerCase(), c));
+  } catch (err) {
+    logError("autonomy contacts (candidates)", err);
+  }
   try {
     const latest = await deps.chain.getBlockNumber();
     const logs = await deps.chain.getLogs({
@@ -49,27 +63,25 @@ async function readContacts(deps: MiniappDeps, guard: Address, account: Address)
       fromBlock: latest > CONTACT_LOOKBACK_BLOCKS ? latest - CONTACT_LOOKBACK_BLOCKS : 0n,
       toBlock: latest,
     });
-    const allowed = new Map<string, Address>();
     for (const l of logs as unknown as { args: { recipient: Address; allowed: boolean } }[]) {
       if (l.args.allowed) allowed.set(l.args.recipient.toLowerCase(), l.args.recipient);
       else allowed.delete(l.args.recipient.toLowerCase());
     }
-    return [...allowed.values()];
   } catch (err) {
-    logError("autonomy contacts", err);
-    return [];
+    logError("autonomy contacts (events)", err);
   }
+  return [...allowed.values()];
 }
 
 /** GET /autonomy/status?account= */
-export async function autonomyStatus(deps: MiniappDeps, account: Address): Promise<z.infer<typeof AutonomyStatus>> {
+export async function autonomyStatus(deps: MiniappDeps, account: Address, candidates: Address[] = []): Promise<z.infer<typeof AutonomyStatus>> {
   const guard = guardOf(deps);
   try {
     const [settings, op, budgets, contacts] = await Promise.all([
       readGuardV2Settings(deps.chain, guard.address, account),
       readGuardV2Operator(deps.chain, guard.address, account),
       Promise.all(SYMBOLS.map(async (sym) => ({ sym, b: await readGuardV2Budget(deps.chain, guard.address, account, TOKENS[sym].address) }))),
-      readContacts(deps, guard.address, account),
+      readContacts(deps, guard.address, account, candidates),
     ]);
     return {
       account,

@@ -101,8 +101,11 @@ export interface AppCtx {
   rates: Rates | null;
   prices: Prices;
   refreshBalances(): void;
+  /** null until the guard has answered (shown as "…", never as "Off"). */
   auto: AutoStatus | null;
   refreshAuto(): void;
+  /** Whether this wallet is linked to Telegram (null until known). */
+  telegram: { linked: boolean; telegramName: string | null } | null;
   receipts: ReceiptIndexEntry[];
   contacts: Contact[];
   saveContact(c: Contact): void;

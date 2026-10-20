@@ -130,3 +130,20 @@ describe("autonomy revoke and status", () => {
     expect((await autonomyStatus(rig.deps, ACCOUNT)).operatorActive).toBe(false);
   });
 });
+
+describe("autonomy status contacts", () => {
+  it("asks the guard about the phone's contact wallets (old events are out of reach of one getLogs)", async () => {
+    const rig = guarded();
+    const STRANGER = "0x6666666666666666666666666666666666666666" as Address;
+    rig.chain.reads = {
+      settings: () => [true, false, 50],
+      operatorOf: () => [OPERATOR, BigInt(T0 / 1000 + 86_400), true],
+      limits: () => [0n, 0n],
+      spentToday: () => 0n,
+      isRecipient: (a) => (a[1] as string).toLowerCase() === CONTACT.toLowerCase(),
+    };
+    rig.chain.logs = []; // the allowance was set long ago: no recent RecipientSet event
+    const s = await autonomyStatus(rig.deps, ACCOUNT, [CONTACT, STRANGER, CONTACT.toUpperCase().replace("0X", "0x") as Address]);
+    expect(s.contacts.map((c) => c.toLowerCase())).toEqual([CONTACT.toLowerCase()]);
+  });
+});

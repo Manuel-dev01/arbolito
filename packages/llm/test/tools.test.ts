@@ -7,6 +7,7 @@ describe("tool definitions", () => {
     expect(defs.map((d) => d.function.name).sort()).toEqual(
       [
         "add_contact",
+        "connect_minipay",
         "deposit_info",
         "get_balances",
         "get_limits",
