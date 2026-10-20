@@ -51,13 +51,15 @@ describe("buy-side size under the cap", () => {
     expect(sizeAt(0)).toBe(20_000_000n); // plenty of room: the configured size
     expect(sizeAt(17.6)).toBe(5_000_000n); // 7.4 of room → one step, not 20
     expect(sizeAt(22)).toBe(0n); // under a step of room → off
+    expect(sizeAt(20.01)).toBe(5_000_000n); // US$ 4.99 of room still counts as a step (US$ 1 tolerance)
   });
 
   it("grows a step only with a dollar to spare, and shrinks at once", () => {
     const prev = new Map([["wbrl-usdt", 5_000_000n]]);
-    expect(sizeAt(14.6, prev)).toBe(5_000_000n); // 10.4 of room: not yet 10 (needs 11)
-    expect(sizeAt(13.8, prev)).toBe(10_000_000n); // 11.2 of room: grows
-    expect(sizeAt(21, new Map([["wbrl-usdt", 10_000_000n]]))).toBe(0n); // shrinks immediately
+    expect(sizeAt(15.6, prev)).toBe(5_000_000n); // 9.4 of room: not yet 10 (needs 10 with the tolerance)
+    expect(sizeAt(14.6, prev)).toBe(10_000_000n); // 10.4 of room: grows
+    expect(sizeAt(21, new Map([["wbrl-usdt", 10_000_000n]]))).toBe(5_000_000n); // shrinks immediately (4 of room + 1 tolerance = one step)
+    expect(sizeAt(23, new Map([["wbrl-usdt", 10_000_000n]]))).toBe(0n);
   });
 
   it("stitch.toml offers the cut size, and switches the side off under one slice", () => {

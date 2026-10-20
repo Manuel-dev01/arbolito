@@ -124,7 +124,8 @@ export class Rebalancer {
       const best = routes[0];
       const atFair = Number(slice.minUsdtOut) / (1 - slice.maxUnderFairBps / 10_000);
       const under = best ? Math.round((1 - Number(best.expectedOut) / atFair) * 10_000) : null;
-      const note = best ? `best ${best.label} pays ${under} bps under fair (limit ${slice.maxUnderFairBps})` : "no executable route";
+      const worst = best ? Math.round((1 - Number(best.minOut) / atFair) * 10_000) : null;
+      const note = best ? `best ${best.label} pays ${under} bps under fair, ${worst} bps at worst with slippage (limit ${slice.maxUnderFairBps})` : "no executable route";
       log(`rebalance ${slice.pair}: hold ${amt} (${note})`);
       this.record({ pair: slice.pair, action: "held", softAmount: slice.amount.toString(), note });
       return;

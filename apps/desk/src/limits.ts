@@ -33,6 +33,8 @@ export function buySidesOff(b: Balances, corridors: readonly Corridor[], usdtPer
 
 /** Buy-side sizes move in these steps, so Stitch restarts only when a step changes. */
 export const BUY_STEP_USD = 5;
+/** Room within this much of a step counts as the step: a cap is a limit, not to the cent. */
+const ROOM_TOLERANCE_USD = 1;
 
 /**
  * How much USDT each live corridor may offer on its buy side: its fixed buyCapUsdt, cut to the
@@ -53,7 +55,8 @@ export function buySizes(b: Balances, corridors: readonly Corridor[], usdtPerSof
       continue;
     }
     const room = c.maxSoftUsd - held;
-    const steps = (r: number) => BigInt(Math.max(0, Math.floor(r / BUY_STEP_USD))) * step;
+    // A corridor holding US$ 10.01 under a US$ 15 cap still offers US$ 5 (US$ 4.99 of room).
+    const steps = (r: number) => BigInt(Math.max(0, Math.floor((r + ROOM_TOLERANCE_USD) / BUY_STEP_USD))) * step;
     const cap = (v: bigint) => (v < c.buyCapUsdt ? v : c.buyCapUsdt);
     const now = cap(steps(room));
     const before = prev.get(c.pair);
