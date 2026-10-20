@@ -72,6 +72,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - **Allowance fix:** turning autonomy on approved one day's cap, which one run used up. It now approves the daily cap for each day of the permission (30); the guard still enforces the per-operation and daily caps.
   - **Operator gas:** 0.2 CELO from ops ([`0x5c20d9f8…f006`](https://celoscan.io/tx/0x5c20d9f8eb276019fca7c66b14634b0e2189399a80e56bbb6d16e4925744f006), tagged; `pnpm fund:gas operator 0.2`, rehearsed on a fork).
 - **Desk RFQ stats (in progress):** Stitch logs only selected quotes at INFO. `RUST_LOG=…,stitch_bot::rfq=debug` on desk-feed (also silences per-tick spam); the supervisor now hands each line to an `onLine` hook. No RFQ arrived in the first ~30 min, so the parser waits for real lines.
+- **Founder feedback fixed:** Settings showed Limits "Off" and Telegram "Connect" for a wallet that had both on. Autonomy status is now re-read when Settings opens (retried; polled after the setup txs; unknown shows "…"); contacts come from `isRecipient` on the phone's contact wallets (the 30-day event replay exceeded forno's 5,000-block cap and returned nothing); new `GET /link/status` shows the linked Telegram name. Bot: a `connect_minipay` tool (asking for a code now sends one) and the "/" command menu in es/pt/en. Verified live: linked as "Emmanuel", autonomy on, Ops allowed.
 - **Self agent ID:** dropped (needs a passport).
 - **Next:** the founder tries a rule on the phone; RFQ parser + win-rate on `/desk`; strategy write-up; submission package.
 
