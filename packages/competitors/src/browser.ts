@@ -1,6 +1,6 @@
 /**
  * Driving a browser session bought from buy (POST /v1/browser/sessions): the paid response holds
- * a bearer `accessToken` and a `commandUrl`; commands are agent-browser actions (open, wait,
+ * a bearer `accessToken` and a `commandUrl`; commands are agent-browser actions (open,
  * snapshot, …). The token and URLs are bearer capabilities: never logged.
  */
 import { z } from "zod";
@@ -19,6 +19,8 @@ export type BrowserSession = z.infer<typeof BrowserSession>;
 export const PaidBrowserResponse = z.object({ browser: BrowserSession }).passthrough();
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export class BrowserCommandError extends Error {}
 
@@ -57,11 +59,12 @@ export async function readWesternUnion(s: BrowserSession, corridors: readonly Co
   for (const c of corridors) {
     try {
       await command(s, { action: "open", url: WESTERN_UNION_PAGES[c] }, f);
-      await command(s, { action: "wait", target: String(waitMs) }, f);
+      // The converter fills in the amount a moment after load. We pause on our side rather than
+      // with the browser's "wait" (its accepted forms changed under us on 2026-10-21), and look
+      // up to three times.
       let rate: CompetitorRate | null = null;
-      // The amount can lag the page load; one more look after a second wait.
-      for (let i = 0; i < 2 && !rate; i++) {
-        if (i) await command(s, { action: "wait", target: String(waitMs) }, f);
+      for (let i = 0; i < 3 && !rate; i++) {
+        await pause(waitMs);
         rate = parseWesternUnion(String((await command(s, { action: "snapshot" }, f)).snapshot ?? ""), c);
       }
       if (rate) rates.push(rate);

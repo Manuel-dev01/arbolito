@@ -36,7 +36,7 @@ describe("Western Union's converter, read from buy's browser snapshots (captured
     expect(r.rates.map((x) => x.corridor)).toEqual(["USD-BRL"]);
     expect(r.errors[0]).toContain("USD-ARS");
     expect(r.errors[0]).not.toContain("SECRET-TOKEN");
-    expect(seen.slice(0, 3)).toEqual(["open", "wait", "snapshot"]);
+    expect(seen.slice(0, 2)).toEqual(["open", "snapshot"]); // no browser-side wait: we pause ourselves
   });
 });
 
