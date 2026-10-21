@@ -63,6 +63,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-21: Railway back; Western Union readings flowing
+- Railway resumed builds, but the queued pushes never deployed (GitHub auto-deploy didn't pick them up), so the bot was deployed from a snapshot of main.
+- buy changed its browser `wait` command overnight: `{action:"wait", target:"3000"}` now fails ("wait target must be a CSS selector … use milliseconds for a timed wait"), so the first runner session read nothing (tx `0xc8e8d48c…`). The reader now pauses on our side and snapshots up to three times.
+- **First stored readings** (tx `0x0f972328…a3cc`, US$ 0.004212): Western Union USD→BRL **4.8312**, USD→ARS **1,623.00**. Live quote check: US$ 10 → wBRL shows **+4.35% vs Western Union** (≈ R$ 2.10 more); US$ 10 → wARS **−0.01%** (same rate, before Western Union's fee). /metrics lists both readings with the payment; amounts now shown to 4 decimals.
+- buy spend so far: 8 sessions, ≈ US$ 0.033, all from the buy payer `0xD07b…3e58`.
+
 ### 2026-10-20 (evening): T3 "vs Western Union" through buy
 - **Track choice (founder, "don't overbloat"):** T3 Build with buy, as one feature that strengthens T1: quotes and receipts compare with Western Union. T2b (USA₮ x402) dropped: it needs an outside counterparty paying us repeatedly.
 - **x402 v1 client** (`packages/x402`): free 402 = quote; non-402 = error; price checked against our own maximum and the caps before signing; refused → reservation released; error/no answer after paying → kept, never retried. Domains verified against USDT/USDC onchain.
