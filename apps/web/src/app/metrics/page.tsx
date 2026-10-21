@@ -264,7 +264,7 @@ export default async function MetricsPage({ searchParams }: Props) {
               {b.paymentTx ? (
                 <>
                   {" "}
-                  · {t.buy.paid} {b.paidAtomic ? usd(BigInt(b.paidAtomic)) : ""}{" "}
+                  · {t.buy.paid} {b.paidAtomic ? `US$ ${formatFixed(BigInt(b.paidAtomic), 6, locale, { dp: 4, minDp: 4 })}` : ""}{" "}
                   <ExtLink href={txUrl(b.paymentTx as `0x${string}`)} className="mono">
                     {shortHex(b.paymentTx, 6, 4)} ↗
                   </ExtLink>
