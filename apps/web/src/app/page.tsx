@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Coin } from "../components/public/coin";
-import { CalcBody, CalcSection, CalcSkeleton, Faq, Hero, LiveLine, LiveQuote, ReceiptFloat, Numbers, pickShowcase, ProofBody, ProofSkeleton, ReceiptSection, Steps, TickerBand, Ticker, Trust } from "../components/public/landing";
+import { CalcBody, CalcSection, CalcSkeleton, Faq, Hero, LiveLine, LiveQuote, ReceiptFloat, Numbers, pickShowcase, ProofBody, ProofSkeleton, ReceiptSection, Steps, Story, TickerBand, Ticker, Trust } from "../components/public/landing";
 import { Shell } from "../components/public/shell";
 import { getLang, messages } from "../i18n/messages";
 import { listReceiptsCached } from "../lib/cached";
@@ -47,6 +47,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </Suspense>
         }
       />
+      <Story lang={lang} />
       <Steps lang={lang} showcase={showcase} />
       <CalcSection lang={lang}>
         <Suspense fallback={<CalcSkeleton lang={lang} />}>
