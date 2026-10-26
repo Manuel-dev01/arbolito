@@ -56,9 +56,11 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
   }
 
   const execHash = bundle.execution.txHash as Hex;
-  const [execReceipt, execTx] = await Promise.all([o.client.getTransactionReceipt({ hash: execHash }).catch(notFound), o.client.getTransaction({ hash: execHash }).catch(notFound)]);
   // A public RPC behind a load balancer sometimes has the tx but answers null for its receipt
-  // (seen on forno 2026-10-25). That is the node, not the receipt: say "try again", never "mismatch".
+  // (forno, 2026-10-25: about one lookup in three on week-old txs). That is the node, not the
+  // receipt: ask again, and if it never agrees say "try again", never "mismatch".
+  let [execReceipt, execTx] = await txAndReceipt(o.client, execHash);
+  for (let i = 0; i < 4 && !execReceipt !== !execTx; i++) [execReceipt, execTx] = await txAndReceipt(o.client, execHash);
   if (!execReceipt !== !execTx) throw new Error(`the RPC returned the execution tx ${execHash} without its receipt; try again`);
   if (!execReceipt || !execTx) errors.push(`execution tx ${execHash} not found`);
   else {
@@ -71,7 +73,16 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
     // conversion, the recipient on a send (in the delivery transfer when the swap settled to the taker).
     const receiver = (bundle.request.recipient ?? bundle.request.taker) as Address;
     const deliveryHash = bundle.execution.deliveryTxHash as Hex | undefined;
-    const deliveryReceipt = deliveryHash ? await o.client.getTransactionReceipt({ hash: deliveryHash }).catch(notFound) : execReceipt;
+    let deliveryReceipt = deliveryHash ? await o.client.getTransactionReceipt({ hash: deliveryHash }).catch(notFound) : execReceipt;
+    for (let i = 0; i < 4 && !deliveryReceipt && deliveryHash; i++) {
+      // Same flaky-node case: only call it missing if the tx itself is missing too.
+      const [r, tx] = await txAndReceipt(o.client, deliveryHash);
+      deliveryReceipt = r;
+      if (!tx) break;
+    }
+    if (!deliveryReceipt && deliveryHash && (await o.client.getTransaction({ hash: deliveryHash }).catch(notFound))) {
+      throw new Error(`the RPC returned the delivery tx ${deliveryHash} without its receipt; try again`);
+    }
     if (!deliveryReceipt) errors.push(`delivery tx ${deliveryHash} not found`);
     else {
       if (deliveryReceipt.status !== "success") errors.push("delivery tx reverted");
@@ -83,6 +94,11 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
   }
 
   return { ok: errors.length === 0, bundleHash: h, anchor, errors };
+}
+
+/** The receipt and the tx in one go (each null when the node says "not found"). */
+function txAndReceipt(client: PublicClient, hash: Hex) {
+  return Promise.all([client.getTransactionReceipt({ hash }).catch(notFound), client.getTransaction({ hash }).catch(notFound)]);
 }
 
 /** "Not found" answers become null; any other RPC error is thrown, so callers show "unavailable", not a mismatch. */
