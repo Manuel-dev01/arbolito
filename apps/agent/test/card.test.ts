@@ -61,7 +61,7 @@ describe("live quote card (ledger, 4a)", () => {
         "Ruta  directo, por el mejor mercado",
         "Mínimo garantizado  <code>ARS 159.996,00</code>",
         "",
-        "⏱ Vence en <b>48 s</b>. Después te paso otra.",
+        "⏱ Vence en <b>48 s</b>.",
       ].join("\n"),
     );
   });

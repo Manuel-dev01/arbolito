@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, lte, sql } from "drizzle-orm";
 import type { Db } from "./client";
-import { ruleRuns, rules } from "./schema";
+import { autonomyPauses, ruleRuns, rules } from "./schema";
 
 export type RuleRow = typeof rules.$inferSelect;
 export type RuleRunRow = typeof ruleRuns.$inferSelect;
@@ -109,4 +109,20 @@ export async function runsForAccount(db: Db, account: string, limit = 20): Promi
 /** Runs left in "running" (a crash mid-run): never retried automatically; surfaced for a human. */
 export async function staleRuns(db: Db, olderThan: Date): Promise<RuleRunRow[]> {
   return db.select().from(ruleRuns).where(and(eq(ruleRuns.status, "running"), sql`${ruleRuns.updatedAt} < ${olderThan}`));
+}
+
+/** Whether the account paused Arbolito (signed, off chain). */
+export async function isPaused(db: Db, account: string): Promise<boolean> {
+  const [row] = await db.select({ paused: autonomyPauses.paused }).from(autonomyPauses).where(eq(autonomyPauses.account, account.toLowerCase())).limit(1);
+  return row?.paused ?? false;
+}
+
+/** Records a signed pause or resume. False when a newer signature is already stored (replay). */
+export async function setPause(db: Db, account: string, p: { paused: boolean; signedAt: Date; signature: string }): Promise<boolean> {
+  const rows = await db
+    .insert(autonomyPauses)
+    .values({ account: account.toLowerCase(), ...p })
+    .onConflictDoUpdate({ target: autonomyPauses.account, set: { paused: p.paused, signedAt: p.signedAt, signature: p.signature, updatedAt: new Date() }, setWhere: lt(autonomyPauses.signedAt, p.signedAt) })
+    .returning({ account: autonomyPauses.account });
+  return rows.length === 1;
 }

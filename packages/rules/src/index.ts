@@ -116,6 +116,16 @@ export function ruleText(r: RuleSpec, ruleId: string, account: Address, lang: La
   return lines.join("\n");
 }
 
+/**
+ * The text the user signs to pause or resume Arbolito's rules. `at` (ISO time) makes each one
+ * single-use: the server takes it only if it's recent and newer than the last one stored.
+ */
+export function pauseText(account: Address, paused: boolean, at: string): string {
+  return `Arbolito: ${paused ? "pause" : "resume"} automatic rules
+Account: ${getAddress(account)}
+At: ${at}`;
+}
+
 /** The text the user signs to cancel a rule. */
 export function cancelText(ruleId: string, account: Address): string {
   return `Arbolito: cancel rule\nAccount: ${getAddress(account)}\nID: ${ruleId}`;

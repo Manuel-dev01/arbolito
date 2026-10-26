@@ -1,4 +1,4 @@
-import { bigint, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, date, index, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Money columns are numeric(78,0): atomic units (or micro-USD) as exact decimal strings.
@@ -319,6 +319,21 @@ export const ruleRuns = pgTable(
   },
   (t) => [uniqueIndex("rule_runs_rule_trigger_key").on(t.ruleId, t.trigger), index("rule_runs_created_idx").on(t.createdAt)],
 );
+
+/**
+ * "Pause Arbolito" (2026-10-26): the account's signed pause, honoured by the rules runner. No
+ * transaction and no fee; revoking the guard is still the onchain stop. signedAt only moves
+ * forward, so an old signature can't be replayed to undo a newer choice.
+ */
+export const autonomyPauses = pgTable("autonomy_pauses", {
+  /** The MiniPay wallet, lowercase. */
+  account: text().primaryKey(),
+  paused: boolean().notNull(),
+  /** The time inside the signed text (pauseText). */
+  signedAt: timestamp({ withTimezone: true }).notNull(),
+  signature: text().notNull(),
+  updatedAt: updatedAt(),
+});
 
 // ── Competitor rates (packages/competitors): read in a browser rented through buy ────────
 

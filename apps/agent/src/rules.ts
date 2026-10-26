@@ -9,7 +9,7 @@ import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Env } from "@arbolito/config";
 import { log, makePublicClient, makeWalletClient } from "@arbolito/chain";
-import { DbLedger, activeSplitRules, claimRun, dueSendRules, finishRun, setCursor, setNextRun, stopRule, users, type Db } from "@arbolito/db";
+import { DbLedger, activeSplitRules, claimRun, dueSendRules, finishRun, isPaused, setCursor, setNextRun, stopRule, users, type Db } from "@arbolito/db";
 import { RulesRunner, type RunnerStore } from "@arbolito/rules/runner";
 
 const TICK_MS = 60_000;
@@ -23,6 +23,7 @@ function dbStore(db: Db): RunnerStore {
     setNextRun: (id, at) => setNextRun(db, id, at),
     setCursor: (id, block) => setCursor(db, id, block),
     stopRule: (id, reason) => stopRule(db, id, reason),
+    isPaused: (account) => isPaused(db, account),
   };
 }
 

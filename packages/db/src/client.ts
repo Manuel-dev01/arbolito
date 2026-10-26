@@ -17,6 +17,9 @@ export function getDb(url = loadEnv().DATABASE_URL): Db {
   if (db) return db;
   if (!url) throw new Error("DATABASE_URL is not set (see docs/07-keys-setup.md)");
   pool = new pg.Pool({ connectionString: url, max: 5, idleTimeoutMillis: 30_000 });
+  // An idle client's connection can die (database restart, PgBouncer recycling). Without a listener
+  // node-postgres re-emits it as an uncaught error and the whole process (bot, runners) exits.
+  pool.on("error", (err) => console.error(`[db] idle connection error: ${err.message}`));
   db = drizzle(pool, { schema, casing: "snake_case" });
   return db;
 }

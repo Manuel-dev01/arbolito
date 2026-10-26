@@ -40,6 +40,8 @@ export interface RunnerStore {
   setNextRun(ruleId: string, at: Date): Promise<void>;
   setCursor(ruleId: string, block: bigint): Promise<void>;
   stopRule(ruleId: string, reason: string): Promise<void>;
+  /** The account's signed "Pause Arbolito" (off chain). Optional: absent means never paused. */
+  isPaused?(account: string): Promise<boolean>;
 }
 
 export interface StoredRule {
@@ -152,7 +154,7 @@ export class RulesRunner {
     // Next month either way: a skipped or failed month is not retried.
     await this.o.store.setNextRun(r.id, nextMonthlyRun(spec.params.dayOfMonth, this.now()));
     if (!run) return; // this month already ran (or is running)
-    const out = await this.executeSend(r.account as Address, spec.params);
+    const out = await this.executeSend(r.account as Address, spec.params).catch(beforeAnyTx);
     await this.finish(r, spec, run.id, out);
   }
 
@@ -196,8 +198,9 @@ export class RulesRunner {
         const amountIn = (value * BigInt(spec.params.percent)) / 100n;
         const run = await this.o.store.claimRun(r.id, splitTrigger(l.transactionHash!, l.logIndex!), amountIn);
         if (!run) continue;
-        const pre = await this.preflight(account, amountIn);
-        const out = pre ?? (await this.swap(account, spec.params.to, amountIn));
+        const out = await this.preflight(account, amountIn)
+          .then(async (pre) => pre ?? (await this.swap(account, spec.params.to, amountIn)))
+          .catch(beforeAnyTx);
         await this.finish(r, spec, run.id, out, value);
       }
       await this.o.store.setCursor(r.id, to);
@@ -220,7 +223,7 @@ export class RulesRunner {
     if (!op.active || op.operator.toLowerCase() !== operator.address.toLowerCase()) return stop("Arbolito's permission expired or was revoked");
     if (contact && !(await readGuardV2IsContact(c, guard, account, contact))) return stop("the contact is no longer allowed in the guard");
     const skip = (why: string): Outcome => ({ status: "skipped", txHashes: [], error: why });
-    if (settings.paused) return skip("the account paused Arbolito");
+    if (settings.paused || (await this.o.store.isPaused?.(account))) return skip("the account paused Arbolito");
     if (amountUsdt > budget.maxPerTx) return skip(`over the per-transaction limit (${budget.maxPerTx})`);
     if (budget.spentToday + amountUsdt > budget.maxPerDay) return skip("over today's limit");
     if (balance < amountUsdt) return skip("not enough USDT in the account");
@@ -287,3 +290,11 @@ export class RulesRunner {
   }
 }
 
+/**
+ * A claimed run that threw (an RPC or database error in the reads before sending). send() never
+ * throws, so nothing was broadcast: close the run as skipped and tell the user, rather than
+ * leaving it "running" and the month (or the payday) silently missed.
+ */
+function beforeAnyTx(e: unknown): Outcome {
+  return { status: "skipped", txHashes: [], error: `couldn't check the account just now (${((e as Error).message ?? String(e)).slice(0, 120)})` };
+}

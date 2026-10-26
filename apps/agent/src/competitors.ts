@@ -103,20 +103,26 @@ export function startCompetitorsRunner(db: Db, env: Env): (() => void) | null {
   }
   let stopped: string | null = null;
   let busy = false;
+  /** Set when a paid attempt stored nothing (or failed after it may have paid): wait a full refresh before paying again. */
+  let backoffUntil = 0;
 
   async function tick() {
-    if (busy || stopped) return;
+    if (busy || stopped || Date.now() < backoffUntil) return;
     busy = true;
     try {
       const r = await refreshWesternUnion(db, env);
       if (r.skipped) return;
+      if (r.stored.length === 0) backoffUntil = Date.now() + REFRESH_MS;
       for (const e of r.errors) log(`[competitors] ${e}`);
       log(`[competitors] Western Union: ${r.stored.map((x) => `${x.corridor} ${x.rate.toFixed(4)}`).join(", ") || "nothing read"}`);
     } catch (e) {
       if (e instanceof PaymentUncertainError) {
         stopped = e.message;
         log(`[competitors] STOPPED (${e.message}); check the buy payer's transfers, then restart`);
-      } else log(`[competitors] tick failed: ${(e as Error).message}`);
+      } else {
+        backoffUntil = Date.now() + REFRESH_MS;
+        log(`[competitors] tick failed: ${(e as Error).message}; next try in ${REFRESH_MS / 3_600_000} h`);
+      }
     } finally {
       busy = false;
     }

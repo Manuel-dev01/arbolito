@@ -181,7 +181,7 @@ export const copy = {
   minimum: { es: "Mínimo garantizado", pt: "Mínimo garantido", en: "Guaranteed minimum" } satisfies Record<Lang, string>,
   expiresIn: (lang: Lang, seconds: number) => {
     const span = seconds >= 120 ? `${Math.floor(seconds / 60)} min` : `${seconds} s`;
-    return { es: `⏱ Vence en <b>${span}</b>. Después te paso otra.`, pt: `⏱ Expira em <b>${span}</b>. Depois te passo outra.`, en: `⏱ Expires in <b>${span}</b>.` }[lang];
+    return { es: `⏱ Vence en <b>${span}</b>.`, pt: `⏱ Expira em <b>${span}</b>.`, en: `⏱ Expires in <b>${span}</b>.` }[lang];
   },
   expiresInShort: (lang: Lang, seconds: number) => {
     const span = seconds >= 120 ? `${Math.floor(seconds / 60)} min` : `${seconds} s`;

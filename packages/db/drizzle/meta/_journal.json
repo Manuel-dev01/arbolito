@@ -57,6 +57,13 @@
       "when": 1792508733652,
       "tag": "0007_competitor_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793008633556,
+      "tag": "0008_autonomy_pauses",
+      "breakpoints": true
     }
   ]
 }

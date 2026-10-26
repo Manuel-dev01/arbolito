@@ -36,6 +36,7 @@ type TapOutcome = { kind: "expired" } | { kind: "inMiniPay" } | { kind: "cancell
 
 export class CardFlow {
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly failures = new Map<string, number>();
   private readonly now: () => number;
   private readonly pollMs: number;
 
@@ -110,7 +111,17 @@ export class CardFlow {
     if (prev) clearTimeout(prev);
     const timer = setTimeout(() => {
       this.timers.delete(id);
-      this.refresh(id).catch((err) => log(`[flow] card ${id} refresh failed: ${(err as Error).message}`));
+      this.refresh(id).then(
+        () => this.failures.delete(id),
+        (err) => {
+          // A database or Telegram blip: try again with backoff (up to ~10 min), don't drop the card.
+          const n = (this.failures.get(id) ?? 0) + 1;
+          this.failures.set(id, n);
+          log(`[flow] card ${id} refresh failed (${n}): ${(err as Error).message}`);
+          if (n <= 8) this.schedule(id, Math.min(this.pollMs * 2 ** n, 600_000));
+          else this.failures.delete(id);
+        },
+      );
     }, Math.max(0, delayMs));
     this.timers.set(id, timer);
   }
