@@ -30,6 +30,7 @@
     "desk:stitch-config": "node scripts/run.mjs desk-stitch-config",
     "desk:fund": "node scripts/run.mjs desk-fund",
     "desk:approve": "node scripts/run.mjs desk-approve",
+    "ops:send": "node scripts/run.mjs ops-send",
     "desk:rebalance": "node scripts/run.mjs desk-rebalance",
     "anchor:wallet": "node scripts/run.mjs anchor-wallet",
     "fund:gas": "node scripts/run.mjs fund-gas",

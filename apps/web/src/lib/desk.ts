@@ -11,9 +11,10 @@ import { webDb } from "./data";
 
 /**
  * What the founder funded the desk with, micro-USD: three deposits of 40 USDT from 0x7769…a734
- * (blocks 80170952, 80313359 and 80404036; checked onchain 2026-10-20). Gas CELO from ops excluded.
+ * (blocks 80170952, 80313359 and 80404036; checked onchain 2026-10-20), plus 40 USDT from ops on
+ * 2026-10-26 (docs/TREASURY.md). Gas CELO from ops excluded. Update with every deposit.
  */
-export const DESK_CAPITAL_MICROS = 120_000_000n;
+export const DESK_CAPITAL_MICROS = 160_000_000n;
 
 const DAY = 86_400_000;
 

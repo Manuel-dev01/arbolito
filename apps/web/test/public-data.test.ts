@@ -109,8 +109,9 @@ describe("receipt verification badge", () => {
 });
 
 describe("outbound links", () => {
-  it("opens MiniPay through its documented deeplink host and the bot on Telegram", () => {
-    expect(MINIPAY_URL).toMatch(/^https:\/\/link\.minipay\.xyz\/(discover|miniapp\?id=[0-9a-f-]{36})$/);
+  it("opens the mini app (our gate until listed, then its MiniPay deeplink) and the bot on Telegram", () => {
+    // Until the Discover listing exists the CTA opens our /app gate (the discover deeplink is a download page off-phone).
+    expect(MINIPAY_URL).toMatch(/^(\/app|https:\/\/link\.minipay\.xyz\/miniapp\?id=[0-9a-f-]{36})$/);
     expect(TELEGRAM_URL).toBe("https://t.me/arbolitoo_bot");
   });
 });

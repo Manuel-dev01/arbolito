@@ -272,7 +272,7 @@ const es = {
     quoting: { t: "Cuánto cotiza", d: "La parte del tiempo en que cada corredor estuvo cotizando (sin cortes ni pausas), medida cada 5 minutos.", day: "24 h", week: "7 días", won: "RFQs ganadas", wonNote: "Cotizaciones del desk que Textile eligió, según el registro de Stitch (desde el 20 oct).", noData: "Midiendo: los primeros datos llegan en unos minutos." },
     pnl: {
       t: "Resultado (P&L)",
-      d: "Contra los 120 USDT con que se fondeó el desk (tres depósitos de 40), valuando el inventario al precio justo.",
+      d: "Contra los 160 USDT con que se fondeó el desk (cuatro depósitos de 40), valuando el inventario al precio justo.",
       nav: "Valor ahora",
       capital: "Capital aportado",
       result: "Resultado",
@@ -683,7 +683,7 @@ const pt: Messages = {
     quoting: { t: "Quanto cota", d: "A parte do tempo em que cada corredor esteve cotando (sem cortes nem pausas), medida a cada 5 minutos.", day: "24 h", week: "7 dias", won: "RFQs ganhas", wonNote: "Cotações da mesa que a Textile escolheu, segundo o registro do Stitch (desde 20 out).", noData: "Medindo: os primeiros dados chegam em alguns minutos." },
     pnl: {
       t: "Resultado (P&L)",
-      d: "Contra os 120 USDT com que a mesa foi financiada (três depósitos de 40), avaliando o estoque ao preço justo.",
+      d: "Contra os 160 USDT com que a mesa foi financiada (quatro depósitos de 40), avaliando o estoque ao preço justo.",
       nav: "Valor agora",
       capital: "Capital aportado",
       result: "Resultado",
@@ -1092,7 +1092,7 @@ const en: Messages = {
     quoting: { t: "How much it quotes", d: "The share of time each corridor was quoting (not held or paused), sampled every 5 minutes.", day: "24 h", week: "7 days", won: "RFQs won", wonNote: "Desk quotes Textile selected, from Stitch's log (since Oct 20).", noData: "Measuring: the first data arrives within minutes." },
     pnl: {
       t: "Result (P&L)",
-      d: "Against the 120 USDT the desk was funded with (three deposits of 40), valuing inventory at fair.",
+      d: "Against the 160 USDT the desk was funded with (four deposits of 40), valuing inventory at fair.",
       nav: "Value now",
       capital: "Capital in",
       result: "Result",

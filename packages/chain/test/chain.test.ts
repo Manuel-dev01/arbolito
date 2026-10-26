@@ -107,7 +107,8 @@ describe("sendGuarded guards", () => {
   });
   it("enforces caps before simulating or signing", async () => {
     await expect(
-      sendGuarded({ ...base, mode: "fork", usdMicros: USD(6), ledger: new MemoryLedger(), publicClient: fakePublic("anvil/v1") }),
+      // Explicit caps: the test must not depend on what .env currently allows.
+      sendGuarded({ ...base, mode: "fork", usdMicros: USD(6), caps: { maxActionMicros: USD(5), maxDailyMicros: USD(25) }, ledger: new MemoryLedger(), publicClient: fakePublic("anvil/v1") }),
     ).rejects.toThrow(CapExceededError);
   });
 });
