@@ -63,6 +63,22 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-26: full QA pass (audit + browser sweep), one fix batch
+- **How:** six read-only auditors (correctness, UX/state, API contract, resilience, misleading content, mobile) found 67 issues; each was checked by two independent skeptics trying to refute it against the code and the intended behaviour (45 confirmed by both, 17 contested, 5 refuted). A Playwright sweep loaded every page at 1440 and 390, clicked every button (the Mini App two levels deep in demo mode), and checked console errors, failed requests, overflow and stuck spinners.
+- **Worst finds, fixed:**
+  - "Pause Arbolito" called a route that only existed in demo mode: the real switch failed and rules kept running. Pause is now one signature and no fee (`POST /autonomy/pause`, table `autonomy_pauses`, migration 0008 applied); the rules runner skips paused accounts; replayed or stale signatures are refused.
+  - A valid receipt showed "Doesn't match" on /r: forno answers null for about one receipt lookup in three on week-old txs, verification read that as "not found", and /r cached it for an hour. Now verification asks again (15/15 live checks verified), other RPC errors show "unavailable", and only passing checks are cached.
+  - MiniPay's back button after "Sent" reopened a live "Confirm" for the same transfer (double send). Back after a finished change or send now goes home.
+  - A cross-currency send whose swap landed but whose transfer was declined said "No money moved". It now says the money was changed and is in the account, not sent.
+  - Rule runs that hit an RPC/DB error after being claimed stayed "running" and the month was silently skipped; now they close as skipped and the user is told. The DB pool no longer crashes the bot on a dropped idle connection. Telegram card watchers retry instead of stopping. The Western Union runner waits a full refresh after a paid read that stored nothing.
+  - "Change limits" / "Contacts it can pay" started from blank defaults and could leave deselected contacts payable onchain; they now start from the guard and remove deselected contacts.
+  - Copy that promised things that don't exist: notify-me on no market, Telegram messages for Mini App conversions and Ripio deposits, phone-number lookup, rate alerts, "1 confirmation", the landing's x402 API tile, the bot's "I'll send you another quote".
+- **Also:** favicon and app icons; `GET /quote/:id`; Telegram links never prepare a quote they can't show; chat failures show as failed; receipts retry; the public receipt for a send names the recipient; Western Union only for dollars → pesos/reais on /r; /desk reasons translated; 404 in the browser's language; small-phone keypad, 44px targets, toast position, safe areas; demo sheet labels in the app's language.
+- **Checks:** typecheck clean, 441 unit tests (new: pause, contact removal, Western Union directions), local production build swept clean, then production swept clean.
+- **Deployed:** Vercel (twice: the re-sweep caught forno's flaky receipts, fixed with retries; all three real receipts show Verified). Railway after the founder re-ran `railway login`: the bot restarted with both runners on (one 409 during the rollover, then stable).
+- **Blocked (desk):** the restart showed Stitch refusing to start: the desk wallet's wBRL allowance to Permit2 is down to 0.01 wBRL (the bounded 100 wBRL from 2026-10-15 was spent by fills). New `pnpm desk:approve <SYM> <amount> [--fork|--live]` tops up one bounded approval; 300 wBRL rehearsed on an anvil fork. Waiting for the founder's go-ahead to send it (gas only). Other allowances have room (USDT 120, wARS 32,000, wCOP 63,400, USDC 20, USA₮ 20).
+- **Not fixed (by decision):** the Discover steps on the no-MiniPay gate (wait for the listing); Textile proof on sends (production has the partner key); the landing hero's design countdown.
+
 ### 2026-10-21: Railway back; Western Union readings flowing
 - Railway resumed builds, but the queued pushes never deployed (GitHub auto-deploy didn't pick them up), so the bot was deployed from a snapshot of main.
 - buy changed its browser `wait` command overnight: `{action:"wait", target:"3000"}` now fails ("wait target must be a CSS selector … use milliseconds for a timed wait"), so the first runner session read nothing (tx `0xc8e8d48c…`). The reader now pauses on our side and snapshots up to three times.
@@ -249,7 +265,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - Rate limits are in-memory, per server instance.
 - Nothing re-anchors receipts left `registering`.
 
-**Contract gaps flagged by the UI** (`TODO(contract)`): send-to-contact prepare, `GET /quote/:id`, instant autonomy pause, receipts list, phone → address lookup, no-market notify, in-app withdraw, link status.
+**Contract gaps flagged by the UI** (`TODO(contract)`): send-to-contact prepare, `GET /quote/:id`, instant autonomy pause, receipts list, phone → address lookup, no-market notify, in-app withdraw, link status. *(2026-10-26: all closed except phone lookup, no-market notify and in-app withdraw, whose promises were removed from the copy.)*
 
 **Next:** close the send-to-contact and receipts-list gaps, redeploy the bot to Railway against the live quote API, then the wallet-signature proof once `/minipay-check` shows which signing methods MiniPay supports.
 

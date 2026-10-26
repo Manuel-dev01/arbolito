@@ -18,7 +18,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 5. ✅ **Identity:** ERC-8004 registered 2026-10-19 (agentId 9976). Self agent ID dropped (2026-10-20): it needs a passport, which the founder doesn't have.
 6. ✅ **Desk v1:** rebalancer (2026-10-19), risk-officer fixes, buy side sized to the room under each cap, quoting uptime and RFQs won on /desk, P&L against the real 120 USDT capital, and [docs/DESK-STRATEGY.md](DESK-STRATEGY.md) (2026-10-20). A true win rate isn't measurable: Stitch logs only the RFQs we win.
 7. 🟡 **T3 Build with buy** (chosen 2026-10-20; T2b dropped: it needs an outside counterparty paying us). "vs Western Union" on quotes and receipts, read in browsers bought through buy: built and deployed to Vercel; readings flowing since 2026-10-21 (US$ → R$: +4.35% vs Western Union). Left: real users driving the calls.
-8. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
+8. ✅ **QA pass** (2026-10-26): six audits double-checked by skeptics, browser sweep at 1440/390, ~55 fixes in one batch (instant signed pause, receipt verification, double-send on back, honest copy, small phones). Left: the desk's wBRL Permit2 top-up (needs the founder's go-ahead).
+9. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
 
 ---
 
