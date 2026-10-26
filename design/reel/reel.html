@@ -1,0 +1,592 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Arbolito launch reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700;800&family=Manrope:wght@400;500;600&display=block" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Arbolito launch reel: 30 s, 1920×1080, 30 fps. Deterministic: render(t) draws the frame at t.
+const W = 1920, H = 1080, FPS = 30, DUR = 30;
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+const LANG = new URLSearchParams(location.search).get("lang") || "en";
+
+const C = {
+  navy: "#0b1220", ink: "#f2f3f7", paper: "#f2f3f7", muted: "#4a5368", grey: "#a3abbf",
+  lime: "#c6ef4e", blue: "#4447d8", pink: "#e4288c", line: "#2a3346",
+};
+const F = {
+  arch: (w, s) => `${w} ${s}px Archivo`,
+  serif: (s, it = true) => `${it ? "italic " : ""}400 ${s}px "Instrument Serif"`,
+  mono: (w, s) => `${w} ${s}px "JetBrains Mono"`,
+  sans: (w, s) => `${w} ${s}px Manrope`,
+};
+
+// Real numbers (production, 2026-10-26): receipt 9d940004 (1 USDT → wARS), desk, chain head.
+const DATA = {
+  block: 81144953,
+  rate: 1621.86,
+  vsOfficial: "+5.31%",
+  tx: "0xdf5b…eab9",
+  bundle: "0x7d26…0ae9",
+  execBlock: "80,590,872",
+};
+
+const T = {
+  en: {
+    reel: "ARBOLITO — LAUNCH REEL — 2026",
+    ch: ["THE MARK", "ARBOLITO", "THE PROBLEM", "THE RATE", "THE ROUTE", "THE AGENT", "THE RECEIPT", "THE DESK", "THE RAILS", "FOR PEOPLE", "ARBOLITO"],
+    live: "LIVE ON CELO",
+    sub: "the money changer, onchain.",
+    probCode: "convert(USD, ARS)",
+    probSub: "every hop through the dollar takes a cut.",
+    rateLabel: "USD₮ → wARS · quote()",
+    rateUnder: `ARS for 1 US$ · ${DATA.vsOfficial} vs official`,
+    routeHead: "Every venue. Every time.",
+    best: "BEST PRICE",
+    agentHead: "five steps. quote to receipt.",
+    read: "READ", published: "PUBLISHED",
+    steps: ["QUOTE", "COMPARE", "SWAP", "ANCHOR", "VERIFY"],
+    stepVals: ["1.00 USD₮", `${DATA.vsOfficial} vs official`, DATA.tx, `block ${DATA.execBlock}`, "✓ verified onchain"],
+    recTag: "07 RECEIPT",
+    recHead: "Stamped onchain.",
+    recBody: ["Every conversion leaves a receipt anyone", "can check: the route, the rate and the", "references, anchored on Celo."],
+    recTitle: "ARBOLITO · RECEIPT",
+    recRows: [["Official", DATA.vsOfficial], ["Network", "Celo"], ["Tx", DATA.tx], ["Block", DATA.execBlock]],
+    stamp: "ANCHORED",
+    deskCap: "ARBOLITO DESK · MARKET MAKER ON TEXTILE FX",
+    quoting: "QUOTING",
+    big1Tag: "IN MINIPAY & TELEGRAM",
+    big1: "NO SIGN-UP",
+    big2: ["PROOF ON", "EVERY SWAP."],
+    tagline: "the money changer that shows its receipts.",
+    links: "arbolito-livid.vercel.app   ·   t.me/arbolitoo_bot   ·   MiniPay   ·   Celo",
+    credit: "Agents on Open Rails · 2026",
+  },
+  es: {
+    reel: "ARBOLITO — LANZAMIENTO — 2026",
+    ch: ["LA MARCA", "ARBOLITO", "EL PROBLEMA", "EL PRECIO", "LA RUTA", "EL AGENTE", "EL RECIBO", "EL DESK", "LOS RIELES", "PARA VOS", "ARBOLITO"],
+    live: "EN VIVO EN CELO",
+    sub: "el arbolito, ahora onchain.",
+    probCode: "cambiar(USD, ARS)",
+    probSub: "cada paso por el dólar te cobra una comisión.",
+    rateLabel: "USD₮ → wARS · cotizar()",
+    rateUnder: `ARS por 1 US$ · ${DATA.vsOfficial} vs oficial`,
+    routeHead: "Todos los mercados. Siempre.",
+    best: "MEJOR PRECIO",
+    agentHead: "cinco pasos. de la cotización al recibo.",
+    read: "LEE", published: "PUBLICA",
+    steps: ["COTIZA", "COMPARA", "CAMBIA", "ANCLA", "VERIFICA"],
+    stepVals: ["1.00 USD₮", `${DATA.vsOfficial} vs oficial`, DATA.tx, `bloque ${DATA.execBlock}`, "✓ verificado onchain"],
+    recTag: "07 RECIBO",
+    recHead: "Sellado onchain.",
+    recBody: ["Cada cambio deja un recibo que cualquiera", "puede verificar: la ruta, el precio y las", "referencias, anclado en Celo."],
+    recTitle: "ARBOLITO · RECIBO",
+    recRows: [["Oficial", DATA.vsOfficial], ["Red", "Celo"], ["Tx", DATA.tx], ["Bloque", DATA.execBlock]],
+    stamp: "ANCLADO",
+    deskCap: "ARBOLITO DESK · MARKET MAKER EN TEXTILE FX",
+    quoting: "COTIZANDO",
+    big1Tag: "EN MINIPAY Y TELEGRAM",
+    big1: "SIN REGISTRO",
+    big2: ["PRUEBA EN", "CADA CAMBIO."],
+    tagline: "el arbolito que te muestra el recibo.",
+    links: "arbolito-livid.vercel.app   ·   t.me/arbolitoo_bot   ·   MiniPay   ·   Celo",
+    credit: "Agents on Open Rails · 2026",
+  },
+}[LANG];
+
+// Chapter timeline (seconds). Hard cuts, like the reference.
+const CUTS = [0, 2.6, 5.0, 7.4, 9.9, 12.4, 15.6, 18.3, 20.7, 22.9, 25.6, 30];
+const LIGHT = new Set([1, 5, 9]);
+
+// ── helpers ──────────────────────────────────────────────────────────────
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = (p) => 1 - Math.pow(1 - clamp(p), 3);
+const easeInOut = (p) => { p = clamp(p); return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+const back = (p) => { p = clamp(p); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const win = (u, a, d) => clamp((u - a) / d);
+function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function text(s, x, y, font, color, align = "left", spacing = 0, base = "alphabetic") {
+  ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = base;
+  ctx.letterSpacing = `${spacing}px`;
+  ctx.fillText(s, x, y);
+  ctx.letterSpacing = "0px";
+}
+function measure(s, font, spacing = 0) { ctx.font = font; ctx.letterSpacing = `${spacing}px`; const w = ctx.measureText(s).width; ctx.letterSpacing = "0px"; return w; }
+const typed = (s, p) => s.slice(0, Math.floor(clamp(p) * s.length));
+function caret(x, y, h, color, t, w = null) { if (Math.floor(t * 2.4) % 2 === 0) { ctx.fillStyle = color; ctx.fillRect(x, y - h, w ?? h * 0.55, h); } }
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function bg(color) { ctx.fillStyle = color; ctx.fillRect(0, 0, W, H); }
+
+const icon = new Image();
+icon.src = "../arbolito-icon-512.png";
+
+// The Arbolito tree from the 512 icon geometry, centred at (cx, cy), with per-part progress.
+function tree(cx, cy, s, parts) {
+  const P = (x, y) => [cx + (x - 256) * s, cy + (y - 256) * s];
+  const stem = clamp(parts.stem ?? 1);
+  if (stem > 0) {
+    const [x0, y0] = P(234, 255); const [, y1] = P(0, 408);
+    const top = lerp(y1, y0, easeOut(stem));
+    ctx.fillStyle = C.ink; rrect(x0, top, 44 * s, y1 - top, 22 * s); ctx.fill();
+  }
+  const dot = (k, x, y, r, col) => { const q = back(parts[k] ?? 1); if (q <= 0) return; const [px, py] = P(x, y); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(px, py, r * s * q, 0, Math.PI * 2); ctx.fill(); };
+  dot("pink", 186, 237, 70, C.pink);
+  dot("lime", 326, 237, 70, C.lime);
+  dot("blue", 256, 147, 77, C.blue);
+}
+
+// Film grain: a few fixed noise tiles, cycled per frame.
+const grain = [0, 1, 2, 3].map((k) => {
+  const g = document.createElement("canvas"); g.width = g.height = 256;
+  const gx = g.getContext("2d"); const img = gx.createImageData(256, 256); const r = rng(99 + k);
+  for (let i = 0; i < img.data.length; i += 4) { const v = r() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  gx.putImageData(img, 0, 0); return g;
+});
+
+// ── HUD (always on) ──────────────────────────────────────────────────────
+function hud(t, ch, light) {
+  const col = light ? C.muted : C.grey;
+  text(T.reel, 80, 74, F.mono(500, 19), col, "left", 4);
+  text(`${String(ch + 1).padStart(2, "0")} — ${T.ch[ch]}`, W - 80, 74, F.mono(500, 19), col, "right", 4);
+  const s = Math.floor(t), fr = Math.floor((t - s) * FPS);
+  const tc = `00:00:${String(s).padStart(2, "0")}:${String(fr).padStart(2, "0")}`;
+  text(tc, 80, 1010, F.mono(500, 19), col, "left", 3);
+  const tw = measure(tc, F.mono(500, 19), 3);
+  if (Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = "#ff3b30"; ctx.beginPath(); ctx.arc(80 + tw + 22, 1003, 6, 0, Math.PI * 2); ctx.fill(); }
+  text("REC", 80 + tw + 36, 1010, F.mono(500, 19), col, "left", 3);
+  text(`CHAIN 42220 · BLOCK ${(DATA.block + Math.floor(t)).toLocaleString("en-US")}`, W - 80, 1010, F.mono(500, 19), col, "right", 3);
+  // timeline ruler with chapter ticks and the play head
+  ctx.strokeStyle = col; ctx.globalAlpha = 0.6; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(80, 1040); ctx.lineTo(W - 80, 1040); ctx.stroke();
+  for (const c of CUTS) { const x = 80 + (c / DUR) * (W - 160); ctx.beginPath(); ctx.moveTo(x, 1040); ctx.lineTo(x, 1050); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  const hx = 80 + (t / DUR) * (W - 160);
+  ctx.fillStyle = light ? C.navy : C.lime; ctx.fillRect(hx - 1.5, 1030, 3, 22);
+}
+
+// ── chapters ─────────────────────────────────────────────────────────────
+const SCENES = [
+  // 01 THE MARK: crosshair, ring, the tree assembles.
+  (u, d, t) => {
+    bg(C.navy);
+    const cx = W / 2, cy = H / 2;
+    const grow = easeOut(u / 1.1);
+    ctx.strokeStyle = C.grey; ctx.lineWidth = 2;
+    for (let i = 1; i <= 24; i++) { // dashed horizon
+      const x = i * 34 * grow; if (x > 820) break;
+      ctx.globalAlpha = 0.25 + 0.5 * (i % 4 === 0);
+      ctx.fillStyle = C.grey; ctx.fillRect(cx + x, cy - 1, i % 4 === 0 ? 14 : 6, 2); ctx.fillRect(cx - x - (i % 4 === 0 ? 14 : 6), cy - 1, i % 4 === 0 ? 14 : 6, 2);
+    }
+    for (let i = 1; i <= 12; i++) { const y = i * 30 * grow; if (y > 380) break; ctx.globalAlpha = 0.3; ctx.fillStyle = C.grey; ctx.fillRect(cx - 1, cy + y, 2, 8); ctx.fillRect(cx - 1, cy - y - 8, 2, 8); }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = C.lime; ctx.beginPath(); ctx.arc(cx, cy, 4 + 3 * Math.sin(t * 8), 0, Math.PI * 2); ctx.fill();
+    const ring = easeInOut(win(u, 0.5, 0.8));
+    if (ring > 0) {
+      ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(cx, cy, 228, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy, 200, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ring); ctx.stroke();
+      const rot = u * 0.25;
+      for (let i = 0; i < 90 * ring; i++) {
+        const a = rot + (i / 90) * Math.PI * 2; const long = i % 5 === 0;
+        const r0 = 214, r1 = long ? 236 : 224;
+        ctx.strokeStyle = C.grey; ctx.lineWidth = long ? 2 : 1;
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.stroke();
+      }
+    }
+    tree(cx, cy + 14, 0.62, { stem: win(u, 1.0, 0.35), pink: win(u, 1.2, 0.35), lime: win(u, 1.32, 0.35), blue: win(u, 1.46, 0.4) });
+    const lab = win(u, 1.6, 0.4);
+    if (lab > 0) {
+      ctx.globalAlpha = lab;
+      const s = T.live; const r = 262;
+      ctx.font = F.mono(500, 20); ctx.fillStyle = C.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const span = 0.032 * s.length;
+      for (let i = 0; i < s.length; i++) { const a = -Math.PI / 2 - span / 2 + (i / (s.length - 1)) * span; ctx.save(); ctx.translate(cx + Math.cos(a) * r, cy + Math.sin(a) * r); ctx.rotate(a + Math.PI / 2); ctx.fillText(s[i], 0, 0); ctx.restore(); }
+      ctx.fillStyle = C.lime; ctx.beginPath(); ctx.moveTo(cx, cy - 238); ctx.lineTo(cx - 8, cy - 252); ctx.lineTo(cx + 8, cy - 252); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  },
+  // 02 ARBOLITO: the wordmark types on; a stem drops beside it.
+  (u, d, t) => {
+    bg(C.paper);
+    const word = "ARBOLITO"; const font = F.arch(900, 250);
+    const total = measure(word, font, 6); let x = W / 2 - total / 2 - 30; const y = 590;
+    for (let i = 0; i < word.length; i++) {
+      const p = easeOut(win(u, i * 0.09, 0.28)); const ch = word[i];
+      const w = measure(ch, font, 6);
+      if (p > 0) { ctx.globalAlpha = p; text(ch, x, y + (1 - p) * 60, font, C.navy, "left", 6); ctx.globalAlpha = 1; }
+      x += w;
+    }
+    const drop = easeInOut(win(u, 0.75, 0.6));
+    const sx = x + 46;
+    if (drop > 0) {
+      const y1 = lerp(110, 610, drop);
+      ctx.fillStyle = C.navy; ctx.fillRect(sx - 3, 110, 6, y1 - 110);
+      ctx.fillStyle = C.lime; ctx.beginPath(); ctx.arc(sx, y1, 22 * back(win(u, 1.25, 0.3)), 0, Math.PI * 2); ctx.fill();
+    }
+    const sub = win(u, 1.3, 0.5);
+    if (sub > 0) { ctx.globalAlpha = sub; text(T.sub, W / 2 - 30, 720, F.serif(64), C.muted, "center"); ctx.globalAlpha = 1; }
+  },
+  // 03 THE PROBLEM: the code line types, then the cost.
+  (u, d, t) => {
+    bg(C.navy);
+    const font = F.mono(800, 150);
+    const s = typed(T.probCode, u / 1.1);
+    const tw = measure(T.probCode, font);
+    const x0 = W / 2 - tw / 2 - 40;
+    text(s, x0, 590, font, C.ink);
+    caret(x0 + measure(s, font) + 16, 590, 22, C.lime, t, 90);
+    const sub = typed(T.probSub, (u - 1.2) / 0.8);
+    if (sub) text(sub, x0 + 6, 700, F.mono(500, 34), C.grey);
+  },
+  // 04 THE RATE: a real quote counts up.
+  (u, d, t) => {
+    bg(C.navy);
+    const lab = typed(T.rateLabel, u / 0.6);
+    text(lab, 170, 380, F.mono(500, 34), C.grey, "left", 2);
+    if (u < 0.8) caret(170 + measure(lab, F.mono(500, 34), 2) + 10, 380, 30, C.grey, t, 16);
+    const p = easeOut(win(u, 0.3, 1.2));
+    const v = DATA.rate * p;
+    const num = v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    text(num, 160, 610, F.mono(800, 230), C.lime, "left", -4);
+    const under = typed(T.rateUnder, (u - 1.3) / 0.6);
+    if (under) text(under, 170, 690, F.mono(500, 32), C.lime);
+    const tx = typed(DATA.tx, (u - 1.8) / 0.3);
+    if (tx) { text(tx, 170, 750, F.mono(500, 30), C.grey); caret(170 + measure(tx, F.mono(500, 30)) + 8, 752, 30, C.lime, t, 16); }
+  },
+  // 05 THE ROUTE: both venues quoted; the better lane lights up.
+  (u, d, t) => {
+    bg(C.navy);
+    text(T.routeHead, 160, 230, F.serif(78), C.ink);
+    const L = [430, 560], R = [1490, 560];
+    const lanes = [{ name: "TEXTILE FX", cy: 400 }, { name: "UNISWAP v3", cy: 720 }];
+    const pick = win(u, 1.4, 0.3);
+    lanes.forEach((ln, i) => {
+      const draw = easeInOut(win(u, 0.15 + i * 0.12, 0.7));
+      const chosen = i === 0;
+      const col = pick > 0 ? (chosen ? C.lime : C.line) : C.grey;
+      ctx.strokeStyle = col; ctx.lineWidth = chosen && pick > 0 ? 5 : 2.5;
+      const pts = (k) => { const s = k; const x = lerp(L[0], R[0], s); const y = lerp(L[1], R[1], s) + Math.sin(Math.PI * s) * (ln.cy - 560); return [x, y]; };
+      ctx.beginPath(); for (let k = 0; k <= 60 * draw; k++) { const [x, y] = pts(k / 60); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      if (draw >= 1) {
+        for (let j = 0; j < 4; j++) { const s = ((u * 0.55 + j / 4 + i * 0.13) % 1); const [x, y] = pts(s); ctx.fillStyle = col; ctx.fillRect(x - 6, y - 6, 12, 12); }
+        const [mx, my] = pts(0.5);
+        ctx.fillStyle = C.navy; ctx.fillRect(mx - 130, my - 28, 260, 56);
+        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.strokeRect(mx - 130, my - 28, 260, 56);
+        text(ln.name, mx, my + 9, F.mono(700, 24), pick > 0 && !chosen ? C.grey : C.ink, "center", 3);
+        if (chosen && pick > 0) { ctx.globalAlpha = pick; ctx.fillStyle = C.lime; ctx.fillRect(mx - 90, my - 82, 180, 38); text(T.best, mx, my - 55, F.mono(800, 20), C.navy, "center", 3); ctx.globalAlpha = 1; }
+      }
+    });
+    const node = (x, y, label, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 64, 0, Math.PI * 2); ctx.fill(); text(label, x, y + 12, F.mono(800, 30), C.navy, "center"); };
+    node(L[0], L[1], "USD₮", C.ink); node(R[0], R[1], "wARS", C.lime);
+  },
+  // 06 THE AGENT: five steps fill in, each publishes its value.
+  (u, d, t) => {
+    bg(C.paper);
+    text(typed(T.agentHead, u / 0.9), 160, 220, F.serif(96), C.navy);
+    text(T.read, 560, 330, F.mono(500, 18), C.muted, "left", 4);
+    text(T.published, 1340, 330, F.mono(500, 18), C.muted, "left", 4);
+    T.steps.forEach((name, i) => {
+      const y = 410 + i * 100;
+      const a = win(u, 0.35 + i * 0.32, 0.15); if (a <= 0) return;
+      ctx.globalAlpha = a;
+      text(`0${i + 1}  ${name}`, 160, y + 8, F.mono(500, 26), C.navy, "left", 3);
+      // a tiny glyph per step
+      ctx.strokeStyle = C.navy; ctx.lineWidth = 2; ctx.beginPath();
+      for (let k = 0; k <= 20; k++) { const gx = 430 + k * 3; const gy = y - 4 - Math.pow(k / 20, 1 + i * 0.4) * 22 + (i === 4 ? Math.sin(k) * 4 : 0); k ? ctx.lineTo(gx, gy) : ctx.moveTo(gx, gy); }
+      ctx.stroke();
+      ctx.strokeStyle = C.grey; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(560, y); ctx.lineTo(1290, y); ctx.stroke();
+      for (let k = 0; k < 12; k++) { ctx.fillStyle = C.grey; ctx.fillRect(560 + k * 66, y - 6, 1.5, 12); }
+      ctx.fillStyle = C.navy; ctx.fillRect(1290, y - 12, 2, 24);
+      const p = easeInOut(win(u, 0.45 + i * 0.32, 0.4));
+      const dx = lerp(560, 1290, p);
+      ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(dx, y, 11, 0, Math.PI * 2); ctx.fill();
+      if (p >= 1) {
+        const v = T.stepVals[i];
+        if (i === 2) { const w = measure(v, F.mono(700, 30)) + 34; ctx.fillStyle = C.lime; rrect(1336, y - 26, w, 48, 6); ctx.fill(); ctx.strokeStyle = C.navy; ctx.lineWidth = 2; ctx.stroke(); text(v, 1353, y + 9, F.mono(700, 30), C.navy); }
+        else text(v, 1340, y + 10, F.mono(700, 32), C.navy);
+      }
+      ctx.globalAlpha = 1;
+    });
+  },
+  // 07 THE RECEIPT: copy on the left; a receipt slides in and gets stamped.
+  (u, d, t) => {
+    bg(C.navy);
+    const fade = win(u, 0.1, 0.4); ctx.globalAlpha = fade;
+    text(T.recTag, 160, 330, F.mono(700, 22), C.lime, "left", 4);
+    text(T.recHead, 160, 430, F.serif(96), C.ink);
+    T.recBody.forEach((l, i) => text(l, 160, 510 + i * 44, F.sans(500, 30), C.grey));
+    ctx.globalAlpha = 1;
+    const p = easeOut(win(u, 0.2, 0.8));
+    ctx.save(); ctx.translate(1340, 560 + (1 - p) * 700); ctx.rotate(-0.035);
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 60; ctx.shadowOffsetY = 30;
+    ctx.fillStyle = C.paper; rrect(-280, -340, 560, 680, 14); ctx.fill(); ctx.shadowColor = "transparent";
+    text(T.recTitle, -240, -270, F.mono(700, 22), C.navy, "left", 3);
+    text("1.00 USD₮", -240, -190, F.mono(800, 40), C.navy);
+    text(`→ ${DATA.rate.toLocaleString("en-US")} wARS`, -240, -138, F.mono(800, 40), C.navy);
+    ctx.strokeStyle = C.grey; ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-240, -95); ctx.lineTo(240, -95); ctx.stroke(); ctx.setLineDash([]);
+    T.recRows.forEach(([k, v], i) => { text(k, -240, -40 + i * 62, F.mono(500, 24), C.muted); text(v, 240, -40 + i * 62, F.mono(700, 24), C.navy, "right"); });
+    // perforation
+    for (let k = 0; k < 14; k++) { ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(-260 + k * 40, 340, 10, 0, Math.PI * 2); ctx.fill(); }
+    const st = win(u, 1.2, 0.25);
+    if (st > 0) {
+      const sc = lerp(2.2, 1, easeOut(st));
+      ctx.save(); ctx.translate(150, 250); ctx.rotate(-0.22); ctx.scale(sc, sc); ctx.globalAlpha = clamp(st * 1.5);
+      ctx.strokeStyle = C.blue; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI * 2); ctx.stroke();
+      text(T.stamp, 0, 8, F.mono(800, 26), C.blue, "center", 2);
+      text(`#${DATA.execBlock}`, 0, 42, F.mono(500, 16), C.blue, "center");
+      ctx.restore();
+    }
+    ctx.restore();
+  },
+  // 08 THE DESK: dot fields, a grid of quotes resolving around a live centre.
+  (u, d, t) => {
+    bg(C.navy);
+    for (let gx = 0; gx < 10; gx++) for (let gy = 0; gy < 15; gy++) {
+      const a = 0.35 + 0.6 * ((Math.sin(gx * 1.7 + gy * 0.9 + u * 3) + 1) / 2);
+      ctx.fillStyle = `rgba(242,243,247,${a * 0.7})`;
+      ctx.fillRect(60 + gx * 46, 150 + gy * 52, 6, 6); ctx.fillRect(W - 474 + gx * 46, 150 + gy * 52, 6, 6);
+    }
+    const cx = W / 2, cy = H / 2 - 10; const N = 11, S = 44;
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const di = i - (N - 1) / 2, dj = j - (N - 1) / 2; const dist = Math.hypot(di, dj);
+      if (dist > 5.6) continue;
+      const p = easeOut(win(u, dist * 0.08, 0.6));
+      if (p <= 0) continue;
+      ctx.save(); ctx.translate(cx + di * S, cy + dj * S); ctx.rotate((1 - p) * 1.2 + Math.sin(u * 2 + dist) * 0.04 * (dist > 3)); ctx.globalAlpha = p;
+      const center = di === 0 && dj === 0;
+      ctx.strokeStyle = center ? C.lime : "rgba(242,243,247,0.55)"; ctx.lineWidth = 1.5;
+      if (center) { ctx.fillStyle = C.lime; ctx.globalAlpha = 0.75 + 0.25 * Math.sin(u * 7); ctx.fillRect(-18, -18, 36, 36); }
+      else ctx.strokeRect(-17, -17, 34, 34);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    const cap = typed(T.deskCap, (u - 0.3) / 0.7);
+    text(cap, cx, 170, F.mono(700, 22), C.ink, "center", 4);
+    const pairs = ["wARS", "wBRL", "wCOP", "wMXN", "USDC", "USA₮"];
+    pairs.forEach((pname, i) => {
+      const a = win(u, 0.9 + i * 0.1, 0.2); if (a <= 0) return;
+      const ang = -Math.PI / 2 + (i / pairs.length) * Math.PI * 2 + Math.PI / 6; const r = 330;
+      const x = cx + Math.cos(ang) * r * 1.25, y = cy + Math.sin(ang) * r;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = C.navy; ctx.fillRect(x - 105, y - 30, 210, 60); ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.strokeRect(x - 105, y - 30, 210, 60);
+      text(`${pname}/USD₮`, x, y - 2, F.mono(700, 20), C.ink, "center", 1);
+      const live = pname !== "wBRL";
+      ctx.fillStyle = live ? C.lime : C.pink; ctx.beginPath(); ctx.arc(x - 60, y + 17, 5, 0, Math.PI * 2); ctx.fill();
+      text(live ? T.quoting : "HOLD", x + 6, y + 23, F.mono(500, 15), live ? C.lime : C.pink, "center", 2);
+      ctx.globalAlpha = 1;
+    });
+  },
+  // 09 THE RAILS: a slowly turning network of the pieces underneath.
+  (u, d, t) => {
+    bg(C.navy);
+    const pts = []; const NP = 160; const GA = Math.PI * (3 - Math.sqrt(5));
+    const labels = ["wARS", "wBRL", "wCOP", "wMXN", "USD₮", "USDC", "USA₮", "x402", "ERC-8004", "MiniPay", "Telegram", "Textile FX", "Uniswap", "buy"];
+    // Fibonacci sphere: even spread, so labels don't pile up.
+    for (let i = 0; i < NP; i++) { const y = 1 - (i / (NP - 1)) * 2; const rr = Math.sqrt(1 - y * y); const th = GA * i; pts.push([Math.cos(th) * rr, y, Math.sin(th) * rr]); }
+    const rot = u * 0.35 + 0.4; const cx = W / 2, cy = H / 2 - 20, R = 660 * easeOut(win(u, 0, 0.6));
+    const proj = pts.map(([x, y, z]) => { const xr = x * Math.cos(rot) - z * Math.sin(rot); const zr = x * Math.sin(rot) + z * Math.cos(rot); const s = 1 / (1.9 - zr * 0.7); return [cx + xr * R * s * 1.25, cy + y * R * s * 0.95, zr]; });
+    ctx.lineWidth = 1;
+    for (let i = 0; i < proj.length; i++) for (let j = i + 1; j < proj.length; j++) {
+      const [a, b] = [pts[i], pts[j]]; const dd = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      if (dd > 0.34) continue;
+      ctx.strokeStyle = `rgba(163,171,191,${0.22 * (1 - dd / 0.34) * (0.5 + 0.5 * (proj[i][2] + 1) / 2)})`;
+      ctx.beginPath(); ctx.moveTo(proj[i][0], proj[i][1]); ctx.lineTo(proj[j][0], proj[j][1]); ctx.stroke();
+    }
+    proj.forEach(([x, y, z], i) => {
+      const a = 0.35 + 0.65 * (z + 1) / 2; ctx.save(); ctx.translate(x, y); ctx.rotate(i + u); ctx.fillStyle = `rgba(242,243,247,${a})`; ctx.fillRect(-7, -1.5, 14, 3); ctx.restore();
+    });
+    labels.forEach((lab, k) => {
+      const [x, y, z] = proj[8 + k * 11]; const a = win(u, 0.3 + k * 0.06, 0.25) * (0.2 + 0.8 * clamp((z + 0.3) / 1.3)); if (a <= 0) return;
+      ctx.globalAlpha = a; const col = [C.lime, C.pink, C.blue][k % 3];
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+      text(lab, x + 14, y + 7, F.mono(700, 22), C.ink); ctx.globalAlpha = 1;
+    });
+  },
+  // 10 FOR PEOPLE: two beats, like FREE / BYTE-VERIFIED.
+  (u, d, t) => {
+    if (u < 1.25) {
+      bg(C.paper);
+      const p = easeOut(win(u, 0, 0.35));
+      // fit the word to 1560 px (Spanish "SIN REGISTRO" is longer than "NO SIGN-UP")
+      const fs = Math.min(250, Math.floor((250 * 1560) / measure(T.big1, F.arch(900, 250), -4)));
+      text(T.big1Tag, W / 2 - measure(T.big1, F.arch(900, fs), -4) / 2 + 8, 380, F.mono(500, 26), C.muted, "left", 4);
+      ctx.save(); ctx.translate(0, (1 - p) * 40); ctx.globalAlpha = p;
+      text(T.big1, W / 2, 640, F.arch(900, fs), C.navy, "center", -4);
+      ctx.restore();
+    } else {
+      bg(C.lime);
+      const p = easeOut(win(u, 1.25, 0.3));
+      ctx.globalAlpha = p;
+      text(T.big2[0], 150, 470, F.mono(800, 190), C.navy, "left", -6);
+      text(T.big2[1], 150, 690, F.mono(800, 190), C.navy, "left", -6);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = C.navy; ctx.lineWidth = 2; ctx.beginPath();
+      for (let k = 0; k < 40; k++) { const x = 160 + k * 4; const y = 760 + Math.sin(k * 0.9 + u * 10) * 3; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    }
+  },
+  // 11 ARBOLITO: stars, the mark and wordmark fly in, then the links.
+  (u, d, t) => {
+    bg(C.navy);
+    const r = rng(3);
+    for (let i = 0; i < 90; i++) { const x = r() * W, y = r() * H, ph = r() * 6, sz = r() < 0.15 ? 3 : 1.6; const a = 0.3 + 0.7 * Math.abs(Math.sin(u * 1.5 + ph)); ctx.fillStyle = i % 9 === 0 ? `rgba(198,239,78,${a})` : `rgba(242,243,247,${a * 0.7})`; ctx.fillRect(x + u * (r() - 0.5) * 30, y, sz, sz); }
+    const p = easeOut(win(u, 0, 0.7));
+    // centre the lockup: icon + gap + wordmark
+    const size = 240, gap = 60, ww = measure("ARBOLITO", F.arch(900, 170), 4);
+    const left = (W - (size + gap + ww)) / 2;
+    const ix = left - (1 - p) * 500, iy = 360;
+    // motion blur trail while flying in
+    for (let k = 4; k >= 0; k--) {
+      ctx.globalAlpha = k === 0 ? 1 : (1 - p) * 0.18;
+      if (icon.complete) { ctx.save(); rrect(ix - k * 40 * (1 - p), iy, size, size, 40); ctx.clip(); ctx.drawImage(icon, ix - k * 40 * (1 - p), iy, size, size); ctx.restore(); }
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(242,243,247,0.25)"; ctx.lineWidth = 2; rrect(ix, iy, size, size, 40); ctx.stroke();
+    const q = easeOut(win(u, 0.25, 0.7));
+    const wx = left + size + gap + (1 - q) * 380;
+    for (let k = 3; k >= 0; k--) { ctx.globalAlpha = k === 0 ? q : (1 - q) * 0.25; text("ARBOLITO", wx + k * 60 * (1 - q), 545, F.arch(900, 170), C.ink, "left", 4); }
+    ctx.globalAlpha = 1;
+    const tg = win(u, 1.0, 0.5);
+    if (tg > 0) { ctx.globalAlpha = tg; text(T.tagline, W / 2, 735, F.serif(66), C.ink, "center"); ctx.globalAlpha = 1; }
+    const ln = typed(T.links, (u - 1.6) / 1.0);
+    if (ln) {
+      const fw = measure(T.links, F.mono(500, 24)); const lx = W / 2 - fw / 2;
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(lx - 30, 790); ctx.lineTo(lx + fw + 30, 790); ctx.stroke();
+      text(ln, lx, 840, F.mono(500, 24), C.grey);
+      if (ln.length < T.links.length || Math.floor(t * 2.4) % 2 === 0) { ctx.fillStyle = C.lime; ctx.fillRect(lx + measure(ln, F.mono(500, 24)) + 6, 818, 12, 26); }
+    }
+    const cr = win(u, 2.8, 0.5);
+    if (cr > 0) { ctx.globalAlpha = cr; text(T.credit, W / 2, 900, F.mono(500, 18), C.grey, "center", 3); ctx.globalAlpha = 1; }
+    // fade to black at the very end
+    const out = win(u, d - 0.5, 0.5); if (out > 0) { ctx.fillStyle = `rgba(0,0,0,${out})`; ctx.fillRect(0, 0, W, H); }
+  },
+];
+
+function render(t) {
+  let ch = 0; while (ch < SCENES.length - 1 && t >= CUTS[ch + 1]) ch++;
+  const u = t - CUTS[ch], d = CUTS[ch + 1] - CUTS[ch];
+  ctx.save(); SCENES[ch](u, d, t); ctx.restore();
+  // 10 FOR PEOPLE's second beat is lime: treat as light for the HUD
+  const light = LIGHT.has(ch) || (ch === 9 && u >= 1.25);
+  hud(t, ch, light);
+  ctx.globalAlpha = light ? 0.05 : 0.06; ctx.globalCompositeOperation = "overlay";
+  const g = grain[Math.floor(t * FPS) % 4]; for (let x = 0; x < W; x += 256) for (let y = 0; y < H; y += 256) ctx.drawImage(g, x, y);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+}
+
+// ── soundtrack (synthesised, original) ──────────────────────────────────
+async function soundtrack() {
+  const SR = 48000; const ac = new OfflineAudioContext(2, SR * DUR, SR);
+  const master = ac.createGain(); master.gain.value = 0.8;
+  const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+  master.connect(comp).connect(ac.destination);
+  // echo bus
+  const dl = ac.createDelay(1); dl.delayTime.value = 0.375; const fb = ac.createGain(); fb.gain.value = 0.35; const wet = ac.createGain(); wet.gain.value = 0.25;
+  dl.connect(fb).connect(dl); dl.connect(wet).connect(master);
+  const noise = ac.createBuffer(1, SR * 2, SR); const nd = noise.getChannelData(0); const nr = rng(5); for (let i = 0; i < nd.length; i++) nd[i] = nr() * 2 - 1;
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  // pad: one chord per chapter
+  const CH = [[45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59], [45, 52, 57, 64], [41, 48, 57, 60], [43, 50, 55, 62], [40, 47, 55, 59], [45, 52, 57, 60], [41, 48, 53, 60], [43, 50, 55, 62], [45, 52, 57, 64]];
+  CH.forEach((notes, c) => {
+    const s = CUTS[c], e = CUTS[c + 1];
+    notes.forEach((m, k) => {
+      for (const det of [-6, 6]) {
+        const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = hz(m); o.detune.value = det;
+        const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(500 + c * 90, s); f.Q.value = 0.7;
+        const g = ac.createGain(); g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.022 / (k + 1) * 2, s + 0.08); g.gain.setValueAtTime(0.022 / (k + 1) * 2, e - 0.06); g.gain.linearRampToValueAtTime(0, e);
+        o.connect(f).connect(g).connect(master); g.connect(dl); o.start(s); o.stop(e + 0.01);
+      }
+    });
+  });
+  // sub kick on every cut
+  const kick = (at, amp = 0.9) => {
+    const o = ac.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(140, at); o.frequency.exponentialRampToValueAtTime(42, at + 0.22);
+    const g = ac.createGain(); g.gain.setValueAtTime(amp, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.5);
+    o.connect(g).connect(master); o.start(at); o.stop(at + 0.55);
+  };
+  CUTS.slice(0, -1).forEach((c, i) => kick(c + 0.001, i === 10 ? 1 : 0.75));
+  // hats on a 120 BPM grid
+  for (let tt = 2.6; tt < 25.5; tt += 0.25) {
+    const s = ac.createBufferSource(); s.buffer = noise; const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7500;
+    const g = ac.createGain(); const accent = Math.round((tt - 2.6) / 0.25) % 2 === 0; g.gain.setValueAtTime(accent ? 0.05 : 0.025, tt); g.gain.exponentialRampToValueAtTime(0.0005, tt + 0.05);
+    s.connect(f).connect(g).connect(master); s.start(tt, (tt * 0.37) % 1.5, 0.06);
+  }
+  // pulse bass from the rate onwards
+  for (let tt = 7.4; tt < 25.5; tt += 0.5) {
+    const c = CUTS.findIndex((x, i) => tt >= x && tt < CUTS[i + 1]);
+    const o = ac.createOscillator(); o.type = "triangle"; o.frequency.value = hz(CH[c][0] - 12);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.18, tt); g.gain.exponentialRampToValueAtTime(0.001, tt + 0.3);
+    o.connect(g).connect(master); o.start(tt); o.stop(tt + 0.32);
+  }
+  // riser into the end card, then an impact with a tail
+  { const s = ac.createBufferSource(); s.buffer = noise; s.loop = true; const f = ac.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 3;
+    f.frequency.setValueAtTime(300, 22.9); f.frequency.exponentialRampToValueAtTime(7000, 25.55);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, 22.9); g.gain.exponentialRampToValueAtTime(0.22, 25.5); g.gain.linearRampToValueAtTime(0, 25.6);
+    s.connect(f).connect(g).connect(master); s.start(22.9); s.stop(25.62); }
+  { const s = ac.createBufferSource(); s.buffer = noise; const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800;
+    const g = ac.createGain(); g.gain.setValueAtTime(0.35, 25.6); g.gain.exponentialRampToValueAtTime(0.001, 27.2);
+    s.connect(f).connect(g).connect(master); g.connect(dl); s.start(25.6); }
+  // a soft bell on the stamp and on the logo
+  const bell = (at, m) => { for (const [mul, a] of [[1, 0.12], [2.01, 0.05], [3.02, 0.025]]) { const o = ac.createOscillator(); o.frequency.value = hz(m) * mul; const g = ac.createGain(); g.gain.setValueAtTime(a, at); g.gain.exponentialRampToValueAtTime(0.0005, at + 1.6); o.connect(g).connect(master); g.connect(dl); o.start(at); o.stop(at + 1.7); } };
+  bell(1.46, 81); bell(16.8, 76); bell(25.65, 81); bell(26.6, 88);
+  // final fade
+  master.gain.setValueAtTime(0.8, 28.6); master.gain.linearRampToValueAtTime(0, 30);
+  return ac.startRendering();
+}
+
+// ── encode to MP4 (H.264 High + AAC) in the browser ─────────────────────
+async function encode(onProgress) {
+  const { Muxer, ArrayBufferTarget } = Mp4Muxer;
+  const muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: { codec: "avc", width: W, height: H, frameRate: FPS },
+    audio: { codec: "aac", numberOfChannels: 2, sampleRate: 48000 },
+    fastStart: "in-memory",
+  });
+  const ve = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { throw e; } });
+  ve.configure({ codec: "avc1.640028", width: W, height: H, bitrate: 14_000_000, framerate: FPS, avc: { format: "avc" } });
+  const total = DUR * FPS;
+  for (let f = 0; f < total; f++) {
+    render(f / FPS);
+    const frame = new VideoFrame(cv, { timestamp: Math.round((f * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+    ve.encode(frame, { keyFrame: f % (FPS * 2) === 0 });
+    frame.close();
+    while (ve.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 2));
+    if (f % 90 === 0) onProgress?.(f / total);
+  }
+  await ve.flush();
+  const buf = await soundtrack();
+  const ae = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { throw e; } });
+  ae.configure({ codec: "mp4a.40.2", sampleRate: 48000, numberOfChannels: 2, bitrate: 192_000 });
+  const L = buf.getChannelData(0), R = buf.getChannelData(1); const N = 1024;
+  for (let i = 0; i < buf.length; i += N) {
+    const n = Math.min(N, buf.length - i); const data = new Float32Array(n * 2); data.set(L.subarray(i, i + n), 0); data.set(R.subarray(i, i + n), n);
+    const ad = new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((i * 1e6) / 48000), data });
+    ae.encode(ad); ad.close();
+  }
+  await ae.flush();
+  muxer.finalize();
+  return new Uint8Array(muxer.target.buffer);
+}
+
+window.render = render;
+window.ready = (async () => { await document.fonts.ready; await Promise.all(["900 100px Archivo", "italic 400 100px 'Instrument Serif'", "800 100px 'JetBrains Mono'", "500 100px 'JetBrains Mono'", "500 100px Manrope"].map((f) => document.fonts.load(f))); if (!icon.complete) await new Promise((r) => (icon.onload = r)); return true; })();
+window.encodeToBase64Chunks = async () => {
+  const bytes = await encode((p) => console.log(`frames ${Math.round(p * 100)}%`));
+  const chunks = []; const SZ = 3 * 1024 * 1024;
+  for (let i = 0; i < bytes.length; i += SZ) { let s = ""; const part = bytes.subarray(i, i + SZ); for (let j = 0; j < part.length; j += 0x8000) s += String.fromCharCode.apply(null, part.subarray(j, j + 0x8000)); chunks.push(btoa(s)); }
+  window.__chunks = chunks; return chunks.length;
+};
+</script>
+</body>
+</html>
