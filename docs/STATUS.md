@@ -63,6 +63,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-26 (later): desk Permit2 top-up; landing outage fixed
+- **Desk:** founder-approved `approve(Permit2, 300 wBRL)` from the desk wallet ([tx](https://celoscan.io/tx/0x6a504066e76efc108f3891bc613d28c8986bf614f4f2237bdfc9f69abe2430c4)). Stitch is back with a LIVE maker session on all corridors. Both main pairs are on hold by the desk's own guards: wARS by the risk officer after a ~1% move, and wBRL because Textile prices it ~9% away from the fiat references (Textile 5.445 BRL/USDT vs ECB 5.05, ER-API 5.00, official cross 4.98).
+- **Outage:** "/" showed "This page couldn't load" on every visit. Cause: the wBRL/USDT Uniswap pool was drained to its max tick (liquidity 0), its "mid" (3.4e26) was stored on a receipt as `"3.4025679e+26"`, and the landing threw parsing it. Fixed in `cdd1070`: empty pools are no longer references, rates are never written in exponent form, and unparseable stored rates are skipped. Production swept clean afterwards.
+- **Pending:** redeploy arbolito-bot and desk-feed on Railway with `cdd1070` (they use the same reference code).
+
 ### 2026-10-26: full QA pass (audit + browser sweep), one fix batch
 - **How:** six read-only auditors (correctness, UX/state, API contract, resilience, misleading content, mobile) found 67 issues; each was checked by two independent skeptics trying to refute it against the code and the intended behaviour (45 confirmed by both, 17 contested, 5 refuted). A Playwright sweep loaded every page at 1440 and 390, clicked every button (the Mini App two levels deep in demo mode), and checked console errors, failed requests, overflow and stuck spinners.
 - **Worst finds, fixed:**
