@@ -69,6 +69,7 @@
 
 /* Layout */
 .mp-pad { display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 20px; }
+.mp-app:not(:has(.mp-tabs)) .mp-scroll:last-child > .mp-pad:last-child { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .mp-pad.wide { padding: 4px 20px 20px; }
 .mp-center { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 24px; }
 .mp-row { display: flex; align-items: center; gap: 12px; }
@@ -168,7 +169,7 @@
 .mp-mpsheet-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mp-mpsheet-btns button { height: 48px; border-radius: 24px; font-size: 16px; font-weight: 600; border: 1px solid var(--mp-sheet-line); background: transparent; color: var(--mp-sheet-text); }
 .mp-mpsheet-btns button.confirm { border: 0; background: var(--mp-sheet-text); color: var(--mp-sheet-bg); }
-.mp-toast { position: absolute; left: 16px; right: 16px; bottom: calc(110px + env(safe-area-inset-bottom)); background: var(--text); color: var(--bg); padding: 14px 16px; border-radius: 14px; font-size: 15px; line-height: 1.4; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); z-index: 50; }
+.mp-toast { position: absolute; left: 16px; right: 16px; top: calc(64px + env(safe-area-inset-top)); pointer-events: none; background: var(--text); color: var(--bg); padding: 14px 16px; border-radius: 14px; font-size: 15px; line-height: 1.4; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); z-index: 50; }
 
 /* Quote card and countdown */
 .mp-cd-track { height: 4px; background: var(--surface-2); }
@@ -182,6 +183,10 @@
 .mp-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: auto; }
 .mp-keypad button { height: 52px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font-size: 26px; font-weight: 600; }
 .mp-keypad button:active { background: var(--surface-2); }
+@media (max-height: 720px) {
+  .mp-keypad { gap: 2px; }
+  .mp-keypad button { height: 42px; font-size: 24px; }
+}
 .mp-caret { display: inline-block; width: 2px; height: 30px; background: var(--save-text); margin-left: 3px; vertical-align: -3px; animation: mpBlink 1s infinite; }
 .mp-swap { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--bg); background: var(--text); color: var(--bg); font-size: 18px; font-weight: 800; }
 
@@ -191,6 +196,7 @@
 .mp-bubble.user { align-self: flex-end; max-width: 80%; background: var(--text); color: var(--bg); border-radius: 18px 18px 4px 18px; }
 .mp-chat-card { align-self: flex-start; width: 90%; background: var(--surface); border: var(--bd-card); border-radius: 22px 18px 18px 4px; overflow: hidden; }
 .mp-composer { position: sticky; bottom: 0; flex: none; display: flex; gap: 8px; align-items: center; padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--hairline); }
+.mp-app:has(.mp-tabs) .mp-composer { padding-bottom: 10px; }
 .mp-composer input { flex: 1; min-width: 0; min-height: 48px; border-radius: 24px; background: var(--surface); border: 1px solid var(--hairline); color: var(--text); padding: 0 16px; font: 16px var(--fS); }
 .mp-composer .rec { flex: 1; min-height: 48px; border-radius: 24px; background: var(--danger-bg); color: var(--danger); display: flex; align-items: center; gap: 10px; padding: 0 16px; font-size: 16px; font-weight: 600; }
 .mp-mic { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 0; background: var(--primary-bg); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; touch-action: none; user-select: none; -webkit-user-select: none; }

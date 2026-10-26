@@ -168,6 +168,8 @@ export const AutonomyPlanRequest = z.object({
   limits: z.array(TokenLimit).min(1),
   /** Contact wallets the operator may pay (already resolved from phone numbers on the phone). */
   contacts: z.array(Address),
+  /** Contacts allowed today that the user switched off: the guard is told to stop paying them. */
+  removeContacts: z.array(Address).max(50).default([]),
   maxSlippageBps: z.number().int().min(1).max(1000),
   operatorDays: z.number().int().min(1).max(365),
 });
@@ -183,6 +185,9 @@ export const AutonomyStatus = z.object({
   limits: z.array(TokenLimit.extend({ spentToday: Atomic })),
   contacts: z.array(Address),
 });
+/** POST /api/miniapp/autonomy/pause: the account's signature over pauseText(account, paused, at). No transaction. */
+export const PauseRequest = z.object({ account: Address, paused: z.boolean(), at: z.string().datetime(), signature: Hex });
+export const PauseResponse = z.object({ paused: z.boolean() });
 /** POST /api/miniapp/autonomy/revoke-plan { account } → calls: revokeOperator + approvals back to 0. */
 export const RevokePlanRequest = z.object({ account: Address });
 

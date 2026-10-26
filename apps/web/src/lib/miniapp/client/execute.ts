@@ -24,8 +24,9 @@ export type ExecStage =
 
 export type ExecResult =
   | { kind: "done"; prepared: Prepared | null; hashes: Hex[]; receipt: Submitted | null }
-  | { kind: "cancelled" }
-  | { kind: "failed"; reason: "reverted" | "unknown" | "not-sent"; hashes: Hex[] }
+  /** `converted`: a call before the stop already went through and moved funds (e.g. the swap of a send). */
+  | { kind: "cancelled"; converted?: Hex }
+  | { kind: "failed"; reason: "reverted" | "unknown" | "not-sent"; hashes: Hex[]; converted?: Hex }
   /** The server refused before anything was sent (expired, price changed, no route…). */
   | { kind: "api-error"; code: ClientErrorCode };
 
@@ -78,9 +79,17 @@ export async function submitWithRetry(deps: ExecDeps, quoteId: string, hashes: H
   return null;
 }
 
-function outcomeToResult(o: SendOutcome): ExecResult | null {
-  if (o.kind === "cancelled") return { kind: "cancelled" };
-  if (o.kind === "failed") return { kind: "failed", reason: o.reason, hashes: o.hashes };
+const APPROVE = "0x095ea7b3";
+
+/** The hash of a confirmed call before `atIndex` that wasn't an approval: money already moved. */
+function convertedBefore(calls: readonly Call[], hashes: Hex[], atIndex: number): Hex | undefined {
+  for (let i = Math.min(atIndex, hashes.length) - 1; i >= 0; i--) if (!calls[i]?.data.startsWith(APPROVE)) return hashes[i];
+  return undefined;
+}
+
+function outcomeToResult(o: SendOutcome, calls: readonly Call[]): ExecResult | null {
+  if (o.kind === "cancelled") return { kind: "cancelled", converted: convertedBefore(calls, o.hashes, o.atIndex) };
+  if (o.kind === "failed") return { kind: "failed", reason: o.reason, hashes: o.hashes, converted: convertedBefore(calls, o.hashes, o.atIndex) };
   return null;
 }
 
@@ -102,7 +111,7 @@ export async function executeQuote(deps: ExecDeps, quoteId: string): Promise<Exe
   }
   const outcome = await sendWithStages(deps, prepared.calls);
   if (outcome.kind === "cancelled") reportRejection(deps, quoteId);
-  const bad = outcomeToResult(outcome);
+  const bad = outcomeToResult(outcome, prepared.calls);
   if (bad) return bad;
   deps.onStage?.({ stage: "submitting", hashes: outcome.hashes });
   const receipt = await submitWithRetry(deps, quoteId, outcome.hashes);
@@ -119,7 +128,7 @@ export async function executeCalls(deps: ExecDeps, getCalls: () => Promise<{ cal
     return { kind: "api-error", code: e instanceof ApiFailure ? e.code : "network" };
   }
   const outcome = await sendWithStages(deps, calls);
-  const bad = outcomeToResult(outcome);
+  const bad = outcomeToResult(outcome, calls);
   if (bad) return bad;
   return { kind: "done", prepared: null, hashes: outcome.hashes, receipt: null };
 }

@@ -317,13 +317,13 @@ export function SendDone() {
   const got = exec.to && exec.expectedOut ? fmtSym(exec.expectedOut, exec.to, lang) : "";
   const pay = exec.from && exec.amountIn ? fmtSym(exec.amountIn, exec.from, lang) : "";
   const name = exec.contactName ?? (c ? first(c.name) : "");
+  const digits = (c?.phone ?? "").replace(/\D/g, "");
   const tellWhatsApp = () => {
     toast(t.toastWA);
-    const digits = (c?.phone ?? "").replace(/\D/g, "");
-    if (!mock && digits) openLink(`https://wa.me/${digits}?text=${encodeURIComponent(fill(t.sentB, { n: name, x: got }))}`);
+    if (!mock) openLink(`https://wa.me/${digits}?text=${encodeURIComponent(fill(t.sentB, { n: name, x: got }))}`);
   };
   return (
-    <Frame primary={exec.receiptId ? { label: t.seeReceipt, onClick: () => openReceipt(exec.receiptId!) } : { label: t.backHome, onClick: () => go("home") }} secondary={{ label: t.notifyContact, onClick: tellWhatsApp }}>
+    <Frame primary={exec.receiptId ? { label: t.seeReceipt, onClick: () => openReceipt(exec.receiptId!) } : { label: t.backHome, onClick: () => go("home") }} secondary={digits ? { label: t.notifyContact, onClick: tellWhatsApp } : null}>
       <div className="mp-center">
         <div className="mp-circle ok" style={{ fontSize: 32 }}>
           ✓

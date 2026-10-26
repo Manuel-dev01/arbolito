@@ -9,12 +9,19 @@ import { fmtDate, useLocalEq } from "./Autonomy";
 
 /** The account's automatic rules, each with Cancel (signed in MiniPay). */
 function RulesList() {
-  const { t, lang, rules, refreshRules, cancelRule } = useApp();
+  const { t, lang, rules, rulesError, cancellingRule, refreshRules, cancelRule } = useApp();
   useEffect(() => refreshRules(), [refreshRules]);
   return (
     <div className="mp-card">
       <div style={{ padding: "14px 16px 4px", fontSize: 16, fontWeight: 700 }}>{t.rulesT}</div>
-      {rules === null ? (
+      {rules === null && rulesError ? (
+        <div className="mp-between" style={{ padding: "4px 16px 12px", gap: 10 }}>
+          <span className="mp-small">{t.rulesErr}</span>
+          <button type="button" className="mp-link inline" style={{ padding: "0 8px" }} onClick={refreshRules}>
+            {t.retry}
+          </button>
+        </div>
+      ) : rules === null ? (
         <div style={{ padding: 16 }}>
           <Spinner />
         </div>
@@ -34,8 +41,8 @@ function RulesList() {
                     ? fill(t.ruleNext, { d: fmtDate(new Date(r.nextRunAt), lang) })
                     : t.ruleWaiting}
               </span>
-              <button type="button" className="mp-link inline" style={{ minHeight: 0 }} onClick={() => cancelRule(r.ruleId)}>
-                {t.ruleCancel}
+              <button type="button" className="mp-link inline" style={{ padding: "0 8px" }} disabled={cancellingRule !== null} onClick={() => cancelRule(r.ruleId)}>
+                {cancellingRule === r.ruleId ? <Spinner size={16} color="currentColor" /> : t.ruleCancel}
               </button>
             </div>
           </div>
@@ -46,7 +53,7 @@ function RulesList() {
 }
 
 export function Security() {
-  const { t, lang, auto, contacts, setPaused, go } = useApp();
+  const { t, lang, auto, contacts, setPaused, go, editAuto } = useApp();
   const eq = useLocalEq();
   const on = !!auto?.configured;
   const paused = on && !!auto?.paused;
@@ -103,13 +110,13 @@ export function Security() {
                   </div>
                 </div>
               ) : null}
-              <button type="button" className="mp-list-row" style={{ minHeight: 56, justifyContent: "space-between", fontWeight: 600 }} onClick={() => go("auto-limits")}>
+              <button type="button" className="mp-list-row" style={{ minHeight: 56, justifyContent: "space-between", fontWeight: 600 }} onClick={() => editAuto("auto-limits")}>
                 <span>{t.secChangeLimits}</span>
                 <span className="mp-meta" style={{ fontWeight: 400 }}>
                   {t.secOneConfirm} ›
                 </span>
               </button>
-              <button type="button" className="mp-list-row" style={{ minHeight: 56, justifyContent: "space-between", fontWeight: 600 }} onClick={() => go("auto-contacts")}>
+              <button type="button" className="mp-list-row" style={{ minHeight: 56, justifyContent: "space-between", fontWeight: 600 }} onClick={() => editAuto("auto-contacts")}>
                 <span>{t.secContacts}</span>
                 <span className="mp-meta" style={{ fontWeight: 400 }}>
                   {names || auto?.contacts.length || 0} ›

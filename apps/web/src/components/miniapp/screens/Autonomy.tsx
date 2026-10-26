@@ -127,9 +127,10 @@ export function AutoContacts() {
 }
 
 export function AutoConsent() {
-  const { t, lang, contacts, autoDraft, go, activateAuto } = useApp();
+  const { t, lang, contacts, autoDraft, exec, go, activateAuto } = useApp();
   const eq = useLocalEq();
   const [op, day] = PRESETS[autoDraft.preset];
+  const step = exec.stage?.stage === "confirming" || exec.stage?.stage === "sent" ? exec.stage : null;
   const chosen = contacts.filter((c) => autoDraft.contactIds.includes(c.id) && c.address);
   const names = chosen.map((c) => c.name.split(" ")[0]).join(", ");
   const opEq = eq(op);
@@ -147,8 +148,8 @@ export function AutoConsent() {
   ];
   return (
     <Frame
-      note={t.mpNext}
-      primary={autoDraft.busy ? { label: t.openingMP, kind: "busy" } : { label: t.turnOn, onClick: activateAuto }}
+      note={t.autoMpNext}
+      primary={autoDraft.busy ? { label: step ? fill(t.confStep, { i: step.index + 1, n: step.total }) : t.openingMP, kind: "busy" } : { label: t.turnOn, onClick: activateAuto }}
       secondary={{ label: t.cancel, onClick: () => go("home") }}
     >
       <div className="mp-pad wide" style={{ gap: 14 }} lang={lang}>

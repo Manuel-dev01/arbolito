@@ -48,8 +48,10 @@ export function useReceipt(api: ApiClient, id: string | null): { data: Receipt |
 export function useReceiptList(api: ApiClient, ids: string[]): Map<string, Receipt> {
   const key = ids.join(",");
   const [map, setMap] = useState<Map<string, Receipt>>(() => new Map(ids.flatMap((i) => (cacheFor(api).has(i) ? [[i, cacheFor(api).get(i)!]] : []))));
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let stop = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const list = key ? key.split(",") : [];
     void Promise.all(
       list.map(async (id) => {
@@ -64,12 +66,15 @@ export function useReceiptList(api: ApiClient, ids: string[]): Map<string, Recei
         }
       }),
     ).then((rows) => {
-      if (!stop) setMap(new Map(rows.filter((r): r is readonly [string, Receipt] => r !== null)));
+      if (stop) return;
+      setMap(new Map(rows.filter((r): r is readonly [string, Receipt] => r !== null)));
+      if (rows.some((r) => r === null) && attempt < 3) retry = setTimeout(() => setAttempt((a) => a + 1), 4_000 * (attempt + 1));
     });
     return () => {
       stop = true;
+      if (retry) clearTimeout(retry);
     };
-  }, [api, key]);
+  }, [api, key, attempt]);
   return map;
 }
 

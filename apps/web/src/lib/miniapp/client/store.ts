@@ -28,6 +28,9 @@ export interface PendingSubmit {
   quoteId: string;
   txHashes: string[];
   at: string;
+  /** Absent on entries saved before 2026-10-26 (they were all conversions). */
+  kind?: "change" | "send";
+  to?: string;
 }
 
 const PREFIX = "arbolito.mp.";

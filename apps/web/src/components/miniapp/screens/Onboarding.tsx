@@ -43,8 +43,8 @@ export function Welcome() {
 export const ADD_CASH_URL = "https://link.minipay.xyz/add_cash?tokens=USDT,USDC,USDM";
 
 export function AddMoney() {
-  const { t, go, openLink, toast, mock } = useApp();
-  const later = () => go("done-ob");
+  const { t, go, openLink, toast, mock, store, account } = useApp();
+  const later = () => go(store.onboarded(account) ? "home" : "done-ob");
   return (
     <Frame secondary={{ label: t.later, onClick: later }}>
       <div className="mp-pad wide" style={{ paddingTop: 8 }}>
@@ -135,8 +135,9 @@ export function AddWaiting() {
     }
   }, [bal.data, pending, store, account, toast, t, go]);
   const next = () => {
+    const first = !store.onboarded(account);
     store.setOnboarded(account);
-    go("done-ob");
+    go(first ? "done-ob" : "home");
   };
   return (
     <Frame primary={{ label: t.next, onClick: next }}>

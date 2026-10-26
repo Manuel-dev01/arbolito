@@ -22,7 +22,16 @@ export interface MockScenario {
   /** /quotes/open returns a fresh quote once (a Telegram quote waiting to be confirmed). */
   openQuote?: boolean;
   fail?: MockFail | null;
+  /** The app's language, for the demo sheet's call labels. */
+  lang?: Lang;
 }
+
+/** Call labels on the demo's MiniPay sheet. */
+const CALL_LABEL: Record<Lang, { approve: string; change: string; send: string; changeSend: string; permit: string; activate: string; revoke: string }> = {
+  es: { approve: "Aprobar", change: "Cambiar", send: "Enviar", changeSend: "Cambiar y enviar", permit: "Permiso con límite", activate: "Activar Arbolito", revoke: "Revocar permiso" },
+  pt: { approve: "Aprovar", change: "Trocar", send: "Enviar", changeSend: "Trocar e enviar", permit: "Permissão com limite", activate: "Ativar o Arbolito", revoke: "Revogar permissão" },
+  en: { approve: "Approve", change: "Change", send: "Send", changeSend: "Change and send", permit: "Limited permission", activate: "Turn on Arbolito", revoke: "Revoke permission" },
+};
 
 /** Clearly fake demo account (never a real wallet). */
 export const MOCK_ACCOUNT: Address = "0x5a1c1a000000000000000000000000000000a4b0";
@@ -186,6 +195,7 @@ export function createMockServer(scenario: MockScenario) {
   const rejected: string[] = [];
   let autoOn = !!scenario.autoOn;
   let paused = !!scenario.paused;
+  const L = CALL_LABEL[scenario.lang ?? "es"];
 
   const usd = (cur: Cur, units: number) => BigInt(Math.round(((units * R[cur]) / R.USD) * 1e6));
 
@@ -263,8 +273,8 @@ export function createMockServer(scenario: MockScenario) {
       return json(200, {
         quoteId: q.quoteId,
         calls: [
-          { to: "0x0000000000000000000000000000000000000001", data: "0x095ea7b3", value: "0", label: `Aprobar ${q.from}` },
-          { to: "0x0000000000000000000000000000000000000002", data: "0x3593564c", value: "0", label: `Cambiar ${q.from} → ${q.to}` },
+          { to: "0x0000000000000000000000000000000000000001", data: "0x095ea7b3", value: "0", label: `${L.approve} ${q.from}` },
+          { to: "0x0000000000000000000000000000000000000002", data: "0x3593564c", value: "0", label: `${L.change} ${q.from} → ${q.to}` },
         ],
         expiresAt: new Date(Date.now() + 30_000).toISOString(),
         expectedOut: q.expectedOut,
@@ -330,15 +340,15 @@ export function createMockServer(scenario: MockScenario) {
       paused = false;
       return json(200, {
         calls: [
-          { to: "0x0000000000000000000000000000000000000003", data: "0x095ea7b3", value: "0", label: "Permiso con límite" },
-          { to: "0x0000000000000000000000000000000000000004", data: "0x8a8c523c", value: "0", label: "Activar Arbolito" },
+          { to: "0x0000000000000000000000000000000000000003", data: "0x095ea7b3", value: "0", label: L.permit },
+          { to: "0x0000000000000000000000000000000000000004", data: "0x8a8c523c", value: "0", label: L.activate },
         ],
       });
     }
     if (path === "/autonomy/revoke-plan") {
       autoOn = false;
       paused = false;
-      return json(200, { calls: [{ to: "0x0000000000000000000000000000000000000004", data: "0x2e1a7d4d", value: "0", label: "Revocar permiso" }] });
+      return json(200, { calls: [{ to: "0x0000000000000000000000000000000000000004", data: "0x2e1a7d4d", value: "0", label: L.revoke }] });
     }
     if (path === "/autonomy/pause") {
       paused = !!body.paused;
@@ -373,10 +383,10 @@ export function createMockServer(scenario: MockScenario) {
       const amountIn = parseHuman(String(body.amount), DECIMALS[body.from as Sym]);
       const out = convert(amountIn, body.from as Sym, body.to as Sym);
       const calls = body.from === body.to
-        ? [{ to: "0x0000000000000000000000000000000000000005", data: "0xa9059cbb", value: "0", label: "Enviar" }]
+        ? [{ to: "0x0000000000000000000000000000000000000005", data: "0xa9059cbb", value: "0", label: L.send }]
         : [
-            { to: "0x0000000000000000000000000000000000000001", data: "0x095ea7b3", value: "0", label: `Aprobar ${String(body.from)}` },
-            { to: "0x0000000000000000000000000000000000000002", data: "0x3593564c", value: "0", label: "Cambiar y enviar" },
+            { to: "0x0000000000000000000000000000000000000001", data: "0x095ea7b3", value: "0", label: `${L.approve} ${String(body.from)}` },
+            { to: "0x0000000000000000000000000000000000000002", data: "0x3593564c", value: "0", label: L.changeSend },
           ];
       return json(200, { calls, expectedOut: out.toString(), minOut: ((out * 995n) / 1000n).toString() });
     }
@@ -400,7 +410,7 @@ export interface SheetRequest {
 export function createMockWallet(opts: { confirm(req: SheetRequest): Promise<boolean>; fail?: MockFail | null; lang: Lang }): Wallet {
   const reject = () => Object.assign(new Error("User rejected the request."), { code: 4001, name: "UserRejectedRequestError" });
   const labels = new Map<Hex, string>();
-  const isApproval = (label: string) => /^(Aprobar|Permiso)/.test(label);
+  const isApproval = (data: string) => data.startsWith("0x095ea7b3");
   const sign = async () => {
     if (!(await opts.confirm({ kind: "sign", label: "Textile" }))) throw reject();
     return randHex(65);
@@ -413,7 +423,7 @@ export function createMockWallet(opts: { confirm(req: SheetRequest): Promise<boo
         if (!(await opts.confirm({ kind: "tx", label: call.label }))) throw reject();
         await sleep(500);
         const h = randHex(32);
-        labels.set(h, call.label);
+        labels.set(h, call.data);
         return h;
       },
     },

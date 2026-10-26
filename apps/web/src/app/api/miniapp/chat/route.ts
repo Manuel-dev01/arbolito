@@ -5,7 +5,8 @@ import { clientIp, readJson, respond } from "../../../../lib/miniapp/server/http
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// A voice note plus several tool rounds can pass a minute with a slow model.
+export const maxDuration = 120;
 
 export function POST(req: Request) {
   return respond("chat", ChatResponse, async () => chatTurn(getDeps(), await readJson(req, ChatRequest), clientIp(req)));

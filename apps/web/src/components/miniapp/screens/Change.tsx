@@ -104,7 +104,7 @@ export function ChangeScreen() {
             {fmtTyped(ch.amount, from, lang)}
             <span className="mp-caret" aria-hidden="true" />
           </div>
-          <button type="button" onClick={() => setCh({ amount: atomicToTyped(have, DECIMALS[ch.from]) })} style={{ alignSelf: "flex-start", textAlign: "left", minHeight: 32, border: 0, background: "transparent", padding: 0, color: "var(--muted)", fontSize: 14 }}>
+          <button type="button" onClick={() => setCh({ amount: atomicToTyped(have, DECIMALS[ch.from]) })} style={{ alignSelf: "flex-start", textAlign: "left", minHeight: 44, border: 0, background: "transparent", padding: "6px 0", color: "var(--muted)", fontSize: 14 }}>
             {t.available} {fmtSym(have, ch.from, lang)} · <b className="mp-save">{t.all}</b>
           </button>
         </div>
@@ -260,11 +260,10 @@ export function QuoteScreen() {
   }, [screen, expired, ch.busy, go]);
   if (!q) return <QuoteLoading />;
   const changed = screen === "quote-changed" && ch.prev;
-  const calls = q.usesTextile ? 2 : 1;
   let bar: Parameters<typeof Frame>[0];
   if (screen === "quote-expired") bar = { children: null, primary: { label: t.refresh, onClick: requestQuote }, secondary: { label: t.cancel, onClick: () => go("change") } };
   else if (changed) bar = { children: null, primary: ch.busy ? { label: t.openingMP, kind: "busy" } : { label: t.confirmNew, onClick: confirmQuote }, secondary: { label: t.cancel, onClick: () => go("change") } };
-  else bar = { children: null, note: calls > 1 ? fill(t.mpNextN, { n: calls }) : t.mpNext, primary: ch.busy ? { label: t.openingMP, kind: "busy" } : { label: t.confirmMP, onClick: confirmQuote }, secondary: { label: t.alts, onClick: () => go("alts") } };
+  else bar = { children: null, note: t.mpNext, primary: ch.busy ? { label: t.openingMP, kind: "busy" } : { label: t.confirmMP, onClick: confirmQuote }, secondary: { label: t.alts, onClick: () => go("alts") } };
   return (
     <Frame note={bar.note} primary={bar.primary} secondary={bar.secondary}>
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
@@ -297,10 +296,9 @@ export function QuoteScreen() {
 }
 
 export function NoMarket() {
-  const { t, ch, toast, requestQuote } = useApp();
+  const { t, ch, go, retryNoMarket } = useApp();
   return (
-    // TODO(contract): "Avisame cuando haya" needs a notify endpoint (e.g. POST /api/miniapp/notify { account, from, to }).
-    <Frame primary={{ label: t.notifyMe, onClick: () => toast(t.notifyToast) }} secondary={{ label: t.tryAgain, onClick: requestQuote }}>
+    <Frame primary={{ label: t.tryAgain, onClick: retryNoMarket }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
       <div className="mp-center" style={{ gap: 16 }}>
         <div className="mp-circle neutral" style={{ width: 56, height: 56, fontSize: 24 }}>
           —
@@ -410,9 +408,9 @@ export function ReceiptChip({ receiptId }: { receiptId: string | null }) {
         <span className="mp-mono" style={{ fontSize: 14, fontWeight: 600 }}>
           {receiptId ? receiptRef(receiptId) : "#—"}
         </span>
-        <span className="mp-meta">{t.receiptSaved}</span>
+        <span className="mp-meta">{receiptId ? t.receiptSaved : t.receiptSaving}</span>
       </div>
-      <ReceiptBadge status={r.data?.status ?? "registering"} t={t} />
+      {receiptId ? <ReceiptBadge status={r.data?.status ?? "registering"} t={t} /> : null}
     </div>
   );
 }
@@ -468,6 +466,7 @@ export function Failed() {
   const res = exec.result;
   const unknown = res?.kind === "failed" && res.reason === "unknown";
   const lastHash = res?.kind === "failed" ? res.hashes.at(-1) : undefined;
+  if (res?.kind === "failed" && res.converted && !unknown) return <ConvertedNotSent hash={res.converted} />;
   if (unknown)
     return (
       <Frame primary={lastHash ? { label: t.openActivity, onClick: () => openLink(minipayReceipt(lastHash)) } : { label: t.backHome, onClick: () => go("home") }} secondary={lastHash ? { label: t.backHome, onClick: () => go("home") } : null}>
@@ -482,12 +481,27 @@ export function Failed() {
     <Frame primary={{ label: t.newQuote, onClick: exec.flow === "send" ? requestSendQuote : requestQuote }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
       <div className="mp-center" style={{ gap: 16 }}>
         <div className="mp-circle bad">✕</div>
-        <h1 className="mp-h1">{t.failedT}</h1>
+        <h1 className="mp-h1">{exec.flow === "send" ? t.failedSendT : t.failedT}</h1>
         <NoMoneyMoved t={t} />
         <p className="mp-p ink">{fill(t.failedB, { y: payLabel(app) })}</p>
         <p className="mp-p" style={{ fontSize: 15 }}>
-          {res?.kind === "failed" && res.reason === "not-sent" ? t.notSent : t.failedWhy}
+          {res?.kind === "failed" && res.reason === "not-sent" ? t.notSent : exec.flow === "send" ? t.failedSendWhy : t.failedWhy}
         </p>
+      </div>
+    </Frame>
+  );
+}
+
+/** A send whose swap went through but whose transfer to the contact didn't: never "no money moved". */
+function ConvertedNotSent({ hash }: { hash: string }) {
+  const app = useApp();
+  const { t, exec, go, openLink, mock, toast } = app;
+  return (
+    <Frame primary={{ label: t.backHome, onClick: () => go("home") }} secondary={{ label: t.seeInMP, onClick: () => (mock ? toast(t.toastMP) : openLink(minipayReceipt(hash))) }}>
+      <div className="mp-center" style={{ gap: 16 }}>
+        <div className="mp-circle warn">!</div>
+        <h1 className="mp-h1">{t.convNotSentT}</h1>
+        <p className="mp-p ink">{fill(t.convNotSentB, { y: getLabel(app, exec.expectedOut), n: exec.contactName ?? "" })}</p>
       </div>
     </Frame>
   );
@@ -496,6 +510,7 @@ export function Failed() {
 export function Cancelled() {
   const app = useApp();
   const { t, exec, go, requestQuote, requestSendQuote } = app;
+  if (exec.result?.kind === "cancelled" && exec.result.converted) return <ConvertedNotSent hash={exec.result.converted} />;
   return (
     <Frame primary={{ label: t.backToQuote, onClick: exec.flow === "send" ? requestSendQuote : requestQuote }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
       <div className="mp-center" style={{ gap: 16 }}>

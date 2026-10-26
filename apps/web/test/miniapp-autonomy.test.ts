@@ -34,6 +34,7 @@ describe("autonomy plan", () => {
           { sym: "wARS", perTx: (30_000n * 10n ** 18n).toString(), perDay: (80_000n * 10n ** 18n).toString() },
         ],
         contacts: [CONTACT, CONTACT.toUpperCase().replace("0X", "0x")],
+        removeContacts: [],
         maxSlippageBps: 100,
         operatorDays: 30,
       }),
@@ -68,9 +69,20 @@ describe("autonomy plan", () => {
     expect(c.recipients).toEqual([{ recipient: CONTACT, allowed: true }]); // de-duplicated
   });
 
+  it("switches off contacts the user deselected, never one still picked", async () => {
+    const rig = guarded();
+    const OLD = "0x6666666666666666666666666666666666666666" as Address;
+    const res = await autonomyPlan(rig.deps, { account: ACCOUNT, limits: [{ sym: "USDT", perTx: "1", perDay: "2" }], contacts: [CONTACT], removeContacts: [OLD, CONTACT], maxSlippageBps: 50, operatorDays: 7 });
+    const cfg = decodeFunctionData({ abi: arbolitoGuardAbi, data: res.calls.at(-1)!.data as Hex });
+    expect((cfg.args![0] as { recipients: readonly unknown[] }).recipients).toEqual([
+      { recipient: CONTACT, allowed: true },
+      { recipient: OLD, allowed: false },
+    ]);
+  });
+
   it("rejects bad limits and contacts the guard would revert on", async () => {
     const rig = guarded();
-    const base = { account: ACCOUNT, contacts: [] as string[], maxSlippageBps: 50, operatorDays: 7 };
+    const base = { account: ACCOUNT, contacts: [] as string[], removeContacts: [] as string[], maxSlippageBps: 50, operatorDays: 7 };
     const plan = (over: object) => failure(autonomyPlan(rig.deps, { ...base, limits: [{ sym: "USDT", perTx: "1", perDay: "2" }], ...over }));
     expect((await plan({ limits: [{ sym: "USDT", perTx: "3", perDay: "2" }] })).message).toContain("above the daily");
     expect((await plan({ limits: [{ sym: "USDT", perTx: "0", perDay: "2" }] })).code).toBe("bad_request");
@@ -82,7 +94,7 @@ describe("autonomy plan", () => {
 
   it("answers not_ready until GUARD_ADDRESS and ARBOLITO_OPERATOR_ADDRESS are set", async () => {
     const rig = makeRig();
-    const f = await failure(autonomyPlan(rig.deps, { account: ACCOUNT, limits: [{ sym: "USDT", perTx: "1", perDay: "1" }], contacts: [], maxSlippageBps: 50, operatorDays: 1 }));
+    const f = await failure(autonomyPlan(rig.deps, { account: ACCOUNT, limits: [{ sym: "USDT", perTx: "1", perDay: "1" }], contacts: [], removeContacts: [], maxSlippageBps: 50, operatorDays: 1 }));
     expect([f.code, f.status]).toEqual(["not_ready", 503]);
     expect((await failure(autonomyStatus(rig.deps, ACCOUNT))).code).toBe("not_ready");
     expect((await failure(autonomyRevokePlan(rig.deps, { account: ACCOUNT }))).code).toBe("not_ready");

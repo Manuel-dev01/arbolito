@@ -135,7 +135,7 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
           <span style={{ fontSize: 16, color: "var(--muted)" }}>{when}</span>
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
         {(
           [
             [t.rcPaid, fmtSym(inn, r.from, lang)],
@@ -144,7 +144,7 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
         ).map(([k, v]) => (
           <div key={k} className="mp-soft mp-col">
             <span className="mp-meta">{k}</span>
-            <span className="mp-tab" style={{ fontSize: 20, fontWeight: 800 }}>
+            <span className="mp-tab" style={{ fontSize: 20, fontWeight: 800, overflowWrap: "anywhere" }}>
               {v}
             </span>
           </div>
@@ -180,7 +180,11 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
         <span className="mp-small">{r.savings ? fill(t.rcCompareNote, { p: fmtPct(r.savings.pct, lang) }) : t.rcNoSavings}</span>
         {r.vsWesternUnion ? (
           <span className="mp-small">
-            {r.vsWesternUnion.pct > 0 ? fill(t.wuReceiptMore, { p: fmtPct(r.vsWesternUnion.pct, lang), x: fmtSaved(r.vsWesternUnion.deltaOut, r.to, lang) }) : t.wuReceiptSame} {t.wuSource}
+            {r.vsWesternUnion.pct > 0
+              ? fill(t.wuReceiptMore, { p: fmtPct(r.vsWesternUnion.pct, lang), x: fmtSaved(r.vsWesternUnion.deltaOut, r.to, lang) })
+              : r.vsWesternUnion.pct > -0.5
+                ? t.wuReceiptSame
+                : fill(t.wuReceiptLess, { p: fmtPct(-r.vsWesternUnion.pct, lang) })} {t.wuSource}
           </span>
         ) : null}
       </div>

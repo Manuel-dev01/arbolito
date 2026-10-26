@@ -5,7 +5,7 @@ import { savingsVsOfficial } from "@arbolito/proof";
 import { plan, toAtomic, type Quote, type Reference, type Route } from "@arbolito/router";
 import { SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
 import type { MiniappDeps } from "./deps";
-import { badRequest, noRoute } from "./errors";
+import { badRequest, noRoute, notFound } from "./errors";
 import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
 import { vsWesternUnion } from "./competitors";
@@ -150,4 +150,11 @@ export async function createQuote(deps: MiniappDeps, req: z.infer<typeof QuoteRe
     expiresAt: new Date(deps.now() + QUOTE_TTL_MS),
   });
   return toQuoteResponse(row, q);
+}
+
+/** GET /quote/:id: one of the account's own quotes (any status), for a link that opens it. */
+export async function quoteById(deps: MiniappDeps, id: string, account: Address): Promise<z.infer<typeof QuoteResponse>> {
+  const row = await deps.store().getQuote(id.toLowerCase());
+  if (!row || row.account?.toLowerCase() !== account.toLowerCase()) throw notFound("Quote not found.");
+  return toQuoteResponse(row, decodePayload(row.payload));
 }

@@ -250,7 +250,11 @@ async function prepareTextile(
   if (expiresMs - deps.now() < FIRM_MARGIN_MS) await cancel(quoteExpired("The firm quote is about to expire. Ask for a new one."), "firm_quote_expiring");
 
   const calls: StoredCall[] = [];
-  if ((await allowance(deps, leg.quote.tokenIn, account, q.spender as Address)) < takerPays) {
+  const have = await allowance(deps, leg.quote.tokenIn, account, q.spender as Address).catch(async (e: unknown) => {
+    await deps.textile.cancel(firm.rfqId, firm.claimToken).catch((c: unknown) => logTextileError("prepare textile cancel", c));
+    throw e;
+  });
+  if (have < takerPays) {
     // Our own exact approve (takerPays to the verified reactor), not the API's approval calldata.
     const data = encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [q.spender as Address, takerPays] });
     calls.push(tagged(deps, { to: leg.quote.tokenIn, data, value: 0n, label: "approve to Textile reactor" }));
@@ -317,11 +321,13 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
     throw err;
   }
 
-  const ok = await store.updateQuote(
-    row.id,
-    { status: "prepared", prepared, account, ...(Date.parse(prepared.expiresAt) < row.expiresAt.getTime() ? { expiresAt: new Date(prepared.expiresAt) } : {}) },
-    ["quoted"],
-  );
+  const ok = await store
+    .updateQuote(row.id, { status: "prepared", prepared, account, ...(Date.parse(prepared.expiresAt) < row.expiresAt.getTime() ? { expiresAt: new Date(prepared.expiresAt) } : {}) }, ["quoted"])
+    .catch(async (e: unknown) => {
+      // The firm quote holds maker inventory: release it rather than leave the user's retry to fail.
+      if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((c: unknown) => logTextileError("prepare cancel", c));
+      throw e;
+    });
   if (!ok) {
     if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((e: unknown) => logTextileError("prepare cancel", e));
     throw badRequest("This quote changed state; ask for a new one.", 409);

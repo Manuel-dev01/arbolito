@@ -1,5 +1,5 @@
 import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
-import { activateRule, cancelRule, getRule, insertRuleDraft, linkCodes, listRules, messages, miniappQuotes, receipts, runsForAccount, users, type Db, type RuleRow, type RuleRunRow } from "@arbolito/db";
+import { activateRule, cancelRule, getRule, insertRuleDraft, isPaused, setPause, linkCodes, listRules, messages, miniappQuotes, receipts, runsForAccount, users, type Db, type RuleRow, type RuleRunRow } from "@arbolito/db";
 import type { ChatMessage } from "@arbolito/llm";
 
 /**
@@ -70,6 +70,10 @@ export interface MiniappStore {
   /** Draft, active and stopped rules of an account, newest first. */
   listRules(account: string): Promise<RuleRow[]>;
   ruleRuns(account: string, limit: number): Promise<(RuleRunRow & { kind: string })[]>;
+  /** "Pause Arbolito": signed, off chain, honoured by the rules runner. */
+  isPaused(account: string): Promise<boolean>;
+  /** False when a newer signed pause/resume is already stored. */
+  setPause(account: string, p: { paused: boolean; signedAt: Date; signature: string }): Promise<boolean>;
 }
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -211,6 +215,12 @@ export class DrizzleStore implements MiniappStore {
   }
   ruleRuns(account: string, limit: number) {
     return runsForAccount(this.db as Db, account, limit);
+  }
+  isPaused(account: string) {
+    return isPaused(this.db as Db, account);
+  }
+  setPause(account: string, p: { paused: boolean; signedAt: Date; signature: string }) {
+    return setPause(this.db as Db, account, p);
   }
 
   async transaction<T>(fn: (s: MiniappStore) => Promise<T>): Promise<T> {

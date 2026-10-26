@@ -24,8 +24,8 @@ export function LangSheet() {
 
 /** "Ver detalles": fees, route and tolerance. Hex and token tickers live only here. */
 export function DetailsSheet() {
-  const { t, ch, setSheet, lang } = useApp();
-  const q = ch.quote;
+  const { t, ch, send, screen, setSheet, lang } = useApp();
+  const q = screen === "send-quote" ? send.quote : ch.quote;
   const tol = q && BigInt(q.expectedOut) > 0n ? Number(((BigInt(q.expectedOut) - BigInt(q.minOut)) * 10000n) / BigInt(q.expectedOut)) / 100 : 0.5;
   const route = q ? (q.steps >= 2 ? `${q.from} → USDT → ${q.to}` : `${q.from} → ${q.to}`) : "—";
   const venues = q ? q.venues.map((v) => (v === "uniswap" ? "Uniswap" : "Textile")).join(" + ") : "";

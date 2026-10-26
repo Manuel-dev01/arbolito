@@ -14,10 +14,12 @@ import {
   withAttribution,
 } from "@arbolito/chain";
 import { erc20Abi } from "@arbolito/router";
-import { SYMBOLS, type AutonomyPlanRequest, type AutonomyStatus, type CallsResponse, type RevokePlanRequest } from "../contract";
+import { pauseText } from "@arbolito/rules";
+import { SYMBOLS, type AutonomyPlanRequest, type AutonomyStatus, type CallsResponse, type PauseRequest, type RevokePlanRequest } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, notReady, upstream } from "./errors";
 import { logError } from "./http";
+import { signedBy } from "./signature";
 
 /**
  * "Dejá que Arbolito actúe por vos" via ArbolitoGuard v2. The server only encodes calls; the
@@ -77,16 +79,17 @@ async function readContacts(deps: MiniappDeps, guard: Address, account: Address,
 export async function autonomyStatus(deps: MiniappDeps, account: Address, candidates: Address[] = []): Promise<z.infer<typeof AutonomyStatus>> {
   const guard = guardOf(deps);
   try {
-    const [settings, op, budgets, contacts] = await Promise.all([
+    const [settings, op, budgets, contacts, pausedHere] = await Promise.all([
       readGuardV2Settings(deps.chain, guard.address, account),
       readGuardV2Operator(deps.chain, guard.address, account),
       Promise.all(SYMBOLS.map(async (sym) => ({ sym, b: await readGuardV2Budget(deps.chain, guard.address, account, TOKENS[sym].address) }))),
       readContacts(deps, guard.address, account, candidates),
+      deps.store().isPaused(account),
     ]);
     return {
       account,
       configured: settings.configured,
-      paused: settings.paused,
+      paused: settings.paused || pausedHere,
       operatorActive: op.active && eq(op.operator, guard.operator),
       operatorExpiry: op.expiry > 0n ? new Date(Number(op.expiry) * 1000).toISOString() : null,
       maxSlippageBps: settings.maxSlippageBps,
@@ -132,6 +135,8 @@ export async function autonomyPlan(deps: MiniappDeps, req: z.infer<typeof Autono
   });
   const contacts = [...new Map(req.contacts.map((c) => [c.toLowerCase(), c as Address])).values()];
   for (const c of contacts) checkContact(c, account, guard.address);
+  const keep = new Set(contacts.map((c) => c.toLowerCase()));
+  const removed = [...new Map(req.removeContacts.map((c) => [c.toLowerCase(), c as Address])).values()].filter((c) => !keep.has(c.toLowerCase()));
 
   const expiry = BigInt(Math.floor(deps.now() / 1000) + req.operatorDays * 86_400);
   const calls = [
@@ -150,7 +155,10 @@ export async function autonomyPlan(deps: MiniappDeps, req: z.infer<typeof Autono
         paused: false,
         maxSlippageBps: req.maxSlippageBps,
         limits: limits.map(({ token, maxPerTx, maxPerDay }) => ({ token, maxPerTx, maxPerDay })),
-        recipients: contacts.map((recipient) => ({ recipient, allowed: true })),
+        recipients: [
+          ...contacts.map((recipient) => ({ recipient, allowed: true })),
+          ...removed.map((recipient) => ({ recipient, allowed: false })),
+        ],
         prices: [],
       }),
       "ArbolitoGuard.configure",
@@ -182,4 +190,22 @@ export async function autonomyRevokePlan(deps: MiniappDeps, req: z.infer<typeof 
       ),
     ],
   };
+}
+
+/** A signed pause/resume is accepted within this window of its own time. */
+const PAUSE_SIGNATURE_TTL_MS = 10 * 60_000;
+
+/**
+ * POST /autonomy/pause: "Pause Arbolito", instantly and with no fee. The account signs
+ * pauseText (no transaction); the rules runner skips paused accounts. Revoking stays the onchain stop.
+ */
+export async function autonomyPause(deps: MiniappDeps, req: z.infer<typeof PauseRequest>): Promise<{ paused: boolean }> {
+  const account = req.account.toLowerCase() as Address;
+  const at = Date.parse(req.at);
+  if (Math.abs(deps.now() - at) > PAUSE_SIGNATURE_TTL_MS) throw badRequest("This signature is too old; try again.");
+  if (!(await signedBy(deps, account, pauseText(account, req.paused, req.at), req.signature as Hex))) throw badRequest("The signature doesn't match.");
+  if (!(await deps.store().setPause(account, { paused: req.paused, signedAt: new Date(at), signature: req.signature }))) {
+    throw badRequest("A newer pause or resume is already saved.", 409);
+  }
+  return { paused: req.paused };
 }

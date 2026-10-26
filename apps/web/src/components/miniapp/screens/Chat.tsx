@@ -79,6 +79,12 @@ function ChatQuote({ m, now }: { m: Extract<ChatMsg, { kind: "quote" }>; now: nu
         <div className="mp-save" style={{ padding: "12px 16px", borderTop: "1px dashed var(--hairline)", fontSize: 15, fontWeight: 600 }}>
           ✓ {t.pA}
         </div>
+      ) : m.status === "failed" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12 }}>
+          <button type="button" className="mp-btn" style={{ borderRadius: 12, minHeight: 48, fontSize: 16 }} onClick={() => chatRefresh(m.id)}>
+            {t.refresh}
+          </button>
+        </div>
       ) : (
         <div style={{ height: 10 }} />
       )}

@@ -53,6 +53,16 @@ export class MemoryStore implements MiniappStore {
   async listRules(account: string) {
     return this.rules.filter((r) => r.account === account.toLowerCase() && r.status !== "cancelled").sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
+  pauses = new Map<string, { paused: boolean; signedAt: Date }>();
+  async isPaused(account: string) {
+    return this.pauses.get(account.toLowerCase())?.paused ?? false;
+  }
+  async setPause(account: string, p: { paused: boolean; signedAt: Date; signature: string }) {
+    const prev = this.pauses.get(account.toLowerCase());
+    if (prev && prev.signedAt >= p.signedAt) return false;
+    this.pauses.set(account.toLowerCase(), { paused: p.paused, signedAt: p.signedAt });
+    return true;
+  }
   async ruleRuns(account: string, limit: number) {
     const mine = new Set(this.rules.filter((r) => r.account === account.toLowerCase()).map((r) => r.id));
     return this.runs.filter((x) => mine.has(x.ruleId)).slice(0, limit);

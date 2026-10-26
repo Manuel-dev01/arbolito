@@ -76,8 +76,8 @@ export interface ApiClient {
   rates(): Promise<Rates>;
   balances(account: string): Promise<Balances>;
   quote(req: z.input<typeof QuoteRequest>): Promise<Quote>;
-  /** TODO(contract): GET /api/miniapp/quote/:id, so a Telegram deep link can show the quote it opens. */
-  quoteById(id: string): Promise<Quote>;
+  /** GET /api/miniapp/quote/:id?account=: one of the account's quotes (what a Telegram link opens). */
+  quoteById(id: string, account: string): Promise<Quote>;
   /** GET /api/miniapp/quotes/open: the account's latest open (quoted, unexpired) quote, or null. */
   openQuote(account: string): Promise<Quote | null>;
   listReceipts(account: string): Promise<z.infer<typeof ReceiptsListResponse>["receipts"]>;
@@ -90,7 +90,7 @@ export interface ApiClient {
   linkStatus(account: string): Promise<z.infer<typeof LinkStatusResponse>>;
   revokePlan(req: z.input<typeof RevokePlanRequest>): Promise<Calls>;
   /** TODO(contract): pausing "al instante, sin confirmar en MiniPay" needs a server endpoint. */
-  autonomyPause(account: string, paused: boolean): Promise<{ paused: boolean }>;
+  autonomyPause(req: { account: string; paused: boolean; at: string; signature: string }): Promise<{ paused: boolean }>;
   chat(req: z.input<typeof ChatRequest>): Promise<ChatReply>;
   linkConfirm(req: z.input<typeof LinkConfirmRequest>): Promise<LinkResult>;
   /**
@@ -170,7 +170,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     rates: () => call(RatesResponse, "/rates"),
     balances: (account) => call(BalancesResponse, `/balances${q(account)}`),
     quote: async (r) => call(QuoteResponse, "/quote", { method: "POST", body: req(QuoteRequest, r) }),
-    quoteById: (id) => call(QuoteResponse, `/quote/${encodeURIComponent(id)}`),
+    quoteById: (id, account) => call(QuoteResponse, `/quote/${encodeURIComponent(id)}?account=${account}`),
     openQuote: async (account) => (await call(OpenQuoteResponse, `/quotes/open${q(account)}`)).quote,
     listReceipts: async (account) => (await call(ReceiptsListResponse, `/receipts${q(account)}`)).receipts,
     prepare: async (r) => call(PrepareResponse, "/prepare", { method: "POST", body: req(PrepareRequest, r) }),
@@ -181,7 +181,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
       call(AutonomyStatus, `/autonomy/status${q(account)}${candidates.length ? `&candidates=${candidates.slice(0, 50).join(",")}` : ""}`),
     linkStatus: (account) => call(LinkStatusResponse, `/link/status${q(account)}`),
     revokePlan: async (r) => call(CallsResponse, "/autonomy/revoke-plan", { method: "POST", body: req(RevokePlanRequest, r) }),
-    autonomyPause: (account, paused) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: { account, paused } }),
+    autonomyPause: (req) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: req }),
     chat: async (r) => call(ChatResponse, "/chat", { method: "POST", body: req(ChatRequest, r) }),
     linkConfirm: async (r) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: req(LinkConfirmRequest, r) }),
     reject: async (r) => call(RejectResponse, "/reject", { method: "POST", body: req(RejectRequest, r) }),

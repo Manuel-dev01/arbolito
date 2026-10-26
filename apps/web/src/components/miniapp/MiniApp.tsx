@@ -8,14 +8,14 @@
  * triggered by a button that says "en MiniPay". Nothing is sent or re-sent automatically.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Address } from "viem";
+import { formatUnits, type Address } from "viem";
 import { fill, miniT, pickLang, DISPLAY_CUR, type Lang } from "../../i18n/miniapp";
-import { cancelText } from "@arbolito/rules";
+import { cancelText, pauseText } from "@arbolito/rules";
 import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Quote, type Rates, type Rule } from "../../lib/miniapp/client/api";
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
 import { mapApiError, type ClientErrorCode } from "../../lib/miniapp/client/errors";
 import { executeCalls, executeQuote, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
-import { atomicToTyped, DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
+import { atomicToTyped, DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, shortHex, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
 import {
   createMockServer,
   createMockWallet,
@@ -70,8 +70,13 @@ type Env =
   | { phase: "conn-fail" }
   | { phase: "ready"; mock: boolean; account: Address; api: ApiClient; wallet: Wallet; store: Store; persona: { name: string; phone: string } | null; scenario: MockScenario };
 
-/** A quote's input as an API/keypad amount ("10", "10.5"). Quotes come from 2-decimal typed amounts. */
+/** A quote's input as a keypad amount ("10", "10.5"): 2 decimals, for the keypad only. */
 const amountOf = (q: Quote) => atomicToTyped(BigInt(q.amountIn), DECIMALS[q.from]);
+/** A quote's exact input, for re-quoting the same size (chat quotes can carry more than 2 decimals). */
+const exactAmountOf = (q: Quote) => formatUnits(BigInt(q.amountIn), DECIMALS[q.from]);
+
+/** Screens that confirm or show money in flight: back must not land on them once the flow is done. */
+const FLOW_SCREENS: readonly Screen[] = ["quote", "quote-loading", "quote-changed", "quote-expired", "send-quote", "processing", "tg-quote"];
 
 const EMPTY_EXEC: ExecState ={ flow: "change", stage: null, result: null, total: 0, from: null, to: null, amountIn: null, expectedOut: null, contactName: null, receiptId: null };
 
@@ -95,6 +100,13 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [receipts, setReceipts] = useState<ReceiptIndexEntry[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [rules, setRules] = useState<Rule[] | null>(null);
+  const [rulesError, setRulesError] = useState(false);
+  const [cancellingRule, setCancellingRule] = useState<string | null>(null);
+  /** Set when a change or send finishes, so MiniPay's back can't reopen its confirm screen. */
+  const flowDone = useRef(false);
+  /** Which flow opened the no-market screen. */
+  const noMarketFlow = useRef<"change" | "send">("change");
+  const requestSendQuoteRef = useRef<() => Promise<void>>(async () => {});
   const [ch, setChState] = useState<ChangeState>({ from: "wBRL", to: "wARS", amount: "10", quote: null, quoteAt: 0, prev: null, busy: false });
   const [exec, setExec] = useState<ExecState>(EMPTY_EXEC);
   const [send, setSendState] = useState<SendState>({ contactId: null, pay: "USD", amount: "20", quote: null, quoteAt: 0, busy: false });
@@ -132,6 +144,13 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const s = (e.state as { mp?: unknown } | null)?.mp;
       depth.current = Math.max(0, depth.current - 1);
       if (isScreen(s)) {
+        // After a finished change or send, back skips its confirm screens: the money already moved.
+        if (flowDone.current && FLOW_SCREENS.includes(s)) {
+          window.history.replaceState({ mp: "home" }, "");
+          setScreen("home");
+          setSheet(null);
+          return;
+        }
         setScreen(s);
         setSheet(null);
       }
@@ -161,7 +180,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
 
     if (b.mock) {
       const alias = b.state ? STATE_ALIASES[b.state] : undefined;
-      const scenario: MockScenario = { ...(alias?.scenario ?? {}), fail: b.fail, openQuote: b.resume };
+      const scenario: MockScenario = { ...(alias?.scenario ?? {}), fail: b.fail, openQuote: b.resume, lang: l };
       const server = createMockServer(scenario);
       const api = createApiClient({ fetch: server.fetch });
       const store = createStore(memoryKV());
@@ -272,7 +291,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         const names = new Map(store.contacts(account).filter((c) => c.address).map((c) => [c.address!.toLowerCase(), c.name]));
         store.mergeReceipts(
           account,
-          list.map((r) => ({ receiptId: r.receiptId, kind: r.kind, to: r.recipient ? (names.get(r.recipient.toLowerCase()) ?? undefined) : undefined, at: r.at })),
+          list.map((r) => ({ receiptId: r.receiptId, kind: r.kind, to: r.recipient ? (names.get(r.recipient.toLowerCase()) ?? shortHex(r.recipient)) : undefined, at: r.at })),
         );
         setReceipts(store.receipts(account));
       },
@@ -286,7 +305,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         for (const p of pending) {
           try {
             const r = await api.submit({ quoteId: p.quoteId, account, txHashes: p.txHashes });
-            store.addReceipt(account, { receiptId: r.receiptId, kind: "change", at: p.at });
+            store.addReceipt(account, { receiptId: r.receiptId, kind: p.kind ?? "change", to: p.to, at: p.at });
           } catch {
             left.push(p);
           }
@@ -338,21 +357,34 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         if (rid) addReceipt({ receiptId: rid, kind, to: contactName ?? undefined, at: new Date().toISOString() });
         else if (q && res.hashes.length) {
           const list = ready.store.pendingSubmits(ready.account);
-          ready.store.setPendingSubmits(ready.account, [...list, { quoteId: q.quoteId, txHashes: res.hashes, at: new Date().toISOString() }]);
+          ready.store.setPendingSubmits(ready.account, [...list, { quoteId: q.quoteId, txHashes: res.hashes, at: new Date().toISOString(), kind, to: contactName ?? undefined }]);
         }
+        flowDone.current = true;
         setExec((e) => ({ ...e, receiptId: rid, expectedOut: res.prepared?.expectedOut ?? e.expectedOut }));
         go(kind === "send" ? "send-done" : "done", { replace: true });
         void refreshBalances();
         return;
       }
+      // A send whose swap went through but whose transfer didn't: the converted money is in the
+      // account. That's not "no money moved", and back mustn't reopen the confirm.
+      if ((res.kind === "cancelled" || res.kind === "failed") && res.converted) flowDone.current = true;
       if (res.kind === "cancelled") return go("cancelled", { replace: true });
       if (res.kind === "failed") return go("failed", { replace: true });
       const m = mapApiError(res.code);
-      if (m.kind === "expired") return go(kind === "send" ? "send-quote" : "quote-expired", { replace: true });
-      if (m.kind === "no-market") return go("quote-nomarket", { replace: true });
+      // A send's quote is used up once refused (expired or price changed): fetch a new one.
+      if (kind === "send" && (m.kind === "expired" || m.kind === "price-changed")) {
+        toast(t.toastRefreshed);
+        go("send-quote", { replace: true });
+        return void requestSendQuoteRef.current();
+      }
+      if (m.kind === "expired") return go("quote-expired", { replace: true });
+      if (m.kind === "no-market") {
+        noMarketFlow.current = kind;
+        return go("quote-nomarket", { replace: true });
+      }
       if (m.kind === "price-changed" && q && kind === "change") {
         try {
-          const amount = amountOf(q);
+          const amount = exactAmountOf(q);
           const q2 = await ready.api.quote({ from: q.from, to: q.to, amount, account: ready.account, lang });
           setCh({ prev: q, quote: q2, quoteAt: Date.now() });
           return go("quote-changed", { replace: true });
@@ -364,7 +396,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       showError(res.code);
       if (screen === "processing") go(kind === "send" ? "send-quote" : "quote", { replace: true });
     },
-    [ready, addReceipt, go, refreshBalances, lang, setCh, showError, screen],
+    [ready, addReceipt, go, refreshBalances, lang, setCh, showError, screen, toast, t],
   );
 
   // ── Change flow ──
@@ -372,6 +404,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     if (!ready) return;
     const amount = toApiAmount(ch.amount);
     if (!amount) return;
+    flowDone.current = false;
     setCh({ busy: true, prev: null });
     go("quote-loading", { replace: screen !== "change" });
     try {
@@ -382,8 +415,10 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       setCh({ busy: false });
       const code = (e as { code?: ClientErrorCode }).code ?? "network";
       const m = mapApiError(code);
-      if (m.kind === "no-market") go("quote-nomarket", { replace: true });
-      else {
+      if (m.kind === "no-market") {
+        noMarketFlow.current = "change";
+        go("quote-nomarket", { replace: true });
+      } else {
         showError(code);
         go("change", { replace: true });
       }
@@ -431,6 +466,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     if (!ready || !sendContact) return;
     const amount = toApiAmount(send.amount);
     if (!amount) return;
+    flowDone.current = false;
     if (send.pay === sendContact.cur) {
       setSend({ quote: null, quoteAt: Date.now() });
       if (screen !== "send-quote") go("send-quote");
@@ -446,10 +482,12 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const code = (e as { code?: ClientErrorCode }).code ?? "network";
       if (mapApiError(code).kind === "no-market") {
         setCh({ from: SYM_OF[send.pay], to: SYM_OF[sendContact.cur] });
+        noMarketFlow.current = "send";
         go("quote-nomarket");
       } else showError(code);
     }
   }, [ready, sendContact, send.amount, send.pay, screen, lang, go, setSend, setCh, showError]);
+  requestSendQuoteRef.current = requestSendQuote;
 
   const confirmSend = useCallback(async () => {
     if (!ready || !sendContact || send.busy) return;
@@ -492,10 +530,13 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     const [op, day] = PRESETS[autoDraft.preset];
     const limits = limitsFromUsd(op, day, prices);
     const addrs = contacts.filter((c) => autoDraft.contactIds.includes(c.id) && c.address).map((c) => c.address!) as Address[];
+    // Contacts the guard allows today but the user switched off are removed onchain, not left payable.
+    const picked = new Set(addrs.map((a) => a.toLowerCase()));
+    const removeContacts = (auto?.contacts ?? []).filter((a) => !picked.has(a.toLowerCase()));
     setAutoDraft({ busy: true });
     sheetAmount.current = `US$ ${op} / US$ ${day}`;
     const res = await executeCalls({ api: ready.api, wallet: ready.wallet, onStage }, () =>
-      ready.api.autonomyPlan({ account: ready.account, limits, contacts: addrs, maxSlippageBps: 50, operatorDays: 30 }),
+      ready.api.autonomyPlan({ account: ready.account, limits, contacts: addrs, removeContacts, maxSlippageBps: 50, operatorDays: 30 }),
     );
     setAutoDraft({ busy: false });
     if (res.kind === "done") {
@@ -506,7 +547,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     if (res.kind === "cancelled") return toast(t.toastCancelled);
     if (res.kind === "failed") return toast(res.reason === "unknown" ? t.unknownB : t.errGeneric);
     showError(res.code);
-  }, [ready, autoDraft, prices, contacts, setAutoDraft, onStage, refreshAuto, go, toast, t, showError]);
+  }, [ready, autoDraft, auto, prices, contacts, setAutoDraft, onStage, refreshAuto, go, toast, t, showError]);
 
   const revokeAuto = useCallback(async () => {
     if (!ready || autoDraft.busy) return;
@@ -528,11 +569,15 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     async (paused: boolean) => {
       if (!ready) return;
       try {
-        const r = await ready.api.autonomyPause(ready.account, paused);
+        // One signature, no transaction: the rules runner honours it right away.
+        const at = new Date().toISOString();
+        const signature = await ready.wallet.signer.personalSign(pauseText(ready.account as Address, paused, at));
+        const r = await ready.api.autonomyPause({ account: ready.account, paused, at, signature });
         setAuto((a) => (a ? { ...a, paused: r.paused, operatorActive: a.configured && !r.paused } : a));
         toast(r.paused ? t.pausedToast : t.resumedToast);
         void refreshAuto();
       } catch (e) {
+        if (isUserRejection(e)) return;
         showError((e as { code?: ClientErrorCode }).code ?? "network");
       }
     },
@@ -571,9 +616,10 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
 
   const refreshRules = useCallback(() => {
     if (!ready || ready.mock) return setRules([]);
+    setRulesError(false);
     ready.api.listRules(ready.account).then(
       (r) => setRules(r.rules.filter((x) => x.status !== "draft")),
-      () => {},
+      () => setRulesError(true),
     );
   }, [ready]);
 
@@ -603,7 +649,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
 
   const cancelRule = useCallback(
     async (ruleId: string) => {
-      if (!ready) return;
+      if (!ready || cancellingRule) return;
+      setCancellingRule(ruleId);
       try {
         const signature = await ready.wallet.signer.personalSign(cancelText(ruleId, ready.account as Address));
         await ready.api.cancelRule({ ruleId, account: ready.account, signature });
@@ -612,9 +659,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       } catch (e) {
         if (isUserRejection(e)) return;
         showError((e as { code?: ClientErrorCode }).code ?? "network");
+      } finally {
+        setCancellingRule(null);
       }
     },
-    [ready, toast, t, showError],
+    [ready, cancellingRule, toast, t, showError],
   );
 
   const chatText = useCallback(
@@ -641,7 +690,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     [pushMsgs, chatRequest, toast, t],
   );
 
-  const setChatQuote = (id: string, status: "live" | "used" | "cancelled" | "busy") =>
+  const setChatQuote = (id: string, status: "live" | "used" | "cancelled" | "busy" | "failed") =>
     setChat((c) => ({ ...c, msgs: c.msgs.map((m) => (m.id === id && m.kind === "quote" ? { ...m, status } : m)) }));
 
   const chatConfirm = useCallback(
@@ -670,6 +719,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (res.kind === "done") {
         const rid = res.receipt?.receiptId ?? null;
         if (rid) addReceipt({ receiptId: rid, kind: "change", at: new Date().toISOString() });
+        else if (res.hashes.length) {
+          // Same as the Change flow: register the receipt on the next launch (submit moves no money).
+          const list = ready.store.pendingSubmits(ready.account);
+          ready.store.setPendingSubmits(ready.account, [...list, { quoteId: q.quoteId, txHashes: res.hashes, at: new Date().toISOString(), kind: "change" }]);
+        }
         setChatQuote(msgId, "used");
         const got = fmtSym(res.prepared?.expectedOut ?? q.expectedOut, q.to, lang);
         const pct = q.vsOfficial ? ` · ${fmtPct(q.vsOfficial.pct, lang)} ${t.vsOff}.` : ".";
@@ -684,7 +738,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         setChatQuote(msgId, "cancelled");
         return pushMsgs({ id: newId(), kind: "cancel", quoteMsgId: msgId });
       }
-      setChatQuote(msgId, res.kind === "failed" ? "used" : "live");
+      setChatQuote(msgId, res.kind === "failed" ? "failed" : "live");
       setChat((c) => ({ ...c, msgs: c.msgs.filter((x) => x.kind !== "proc") }));
       if (res.kind === "failed") return pushMsgs({ id: newId(), kind: "bot", text: res.reason === "unknown" ? `${t.unknownT}. ${t.unknownB}` : res.reason === "not-sent" ? t.notSent : `${t.failedT}. ${t.noMoneyMoved}` });
       const mm = mapApiError(res.code);
@@ -709,7 +763,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const m = chat.msgs.find((x) => x.id === msgId);
       if (!m || m.kind !== "quote") return;
       const q = m.quote;
-      const amount = amountOf(q);
+      const amount = exactAmountOf(q);
       setChat((c) => ({ ...c, msgs: [...c.msgs, { id: newId(), kind: "typing" }] }));
       try {
         const q2 = await ready.api.quote({ from: q.from, to: q.to, amount, account: ready.account, lang });
@@ -751,18 +805,23 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (b.quoteId) {
         window.history.replaceState({ mp: "tg-quote" }, "");
         setScreen("tg-quote");
-        // Show the quote it opens: the account's open quote when it matches, else GET /quote/:id (TODO(contract)).
+        // Show the quote it opens: the account's open quote when it matches, else GET /quote/:id.
         let q: Quote | null = null;
         try {
           const open = await ready.api.openQuote(ready.account);
-          q = open && open.quoteId === b.quoteId ? open : await ready.api.quoteById(b.quoteId);
+          q = open && open.quoteId === b.quoteId ? open : await ready.api.quoteById(b.quoteId, ready.account);
         } catch {
           q = null;
         }
-        if (q) {
-          setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null });
-          go("quote", { replace: true });
+        if (!q) {
+          // Never prepare a quote we can't show: open home and say so.
+          window.history.replaceState({ mp: "home" }, "");
+          setScreen("home");
+          showError("bad_request");
+          return;
         }
+        setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null, amount: amountOf(q) });
+        go("quote", { replace: true });
         // Straight to prepare → MiniPay's sheet. The sheet is still the user's approval.
         void runQuote(q, b.quoteId);
         return;
@@ -842,7 +901,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         setChat((c) => ({ ...c, msgs }));
       })();
     }
-  }, [ready, lang, go, runQuote, setCh]);
+  }, [ready, lang, go, runQuote, setCh, showError]);
 
   // ── Render ──
   if (env.phase === "boot") return <div className="mp-root" aria-busy="true" />;
@@ -933,9 +992,21 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     chatRefresh: (id) => void chatRefresh(id),
     chatRuleConfirm: (id) => void chatRuleConfirm(id),
     rules,
+    rulesError,
+    cancellingRule,
     refreshRules,
     cancelRule: (id) => void cancelRule(id),
     chatAlts,
+    editAuto: (next) => {
+      // Start from what the guard has now: its contacts on, and the preset closest to its daily limit.
+      const allowed = new Set((auto?.contacts ?? []).map((a) => a.toLowerCase()));
+      const usd = auto?.limits.find((l) => l.sym === "USDT") ?? auto?.limits[0];
+      const perDay = usd ? Number(BigInt(usd.perDay) / 1_000_000n) : null;
+      const preset = perDay === null ? autoDraft.preset : (Object.entries(PRESETS) as [AutoDraft["preset"], [number, number]][]).reduce((best, [k, [, d]]) => (Math.abs(d - perDay) < Math.abs(PRESETS[best][1] - perDay) ? k : best), "mid" as AutoDraft["preset"]);
+      setAutoDraft({ preset, contactIds: env.store.contacts(env.account).filter((c) => c.address && allowed.has(c.address.toLowerCase())).map((c) => c.id) });
+      go(next);
+    },
+    retryNoMarket: () => (noMarketFlow.current === "send" ? void requestSendQuote() : void requestQuote()),
   };
 
   const head = HEADER[screen];

@@ -70,7 +70,7 @@ export type ChatMsg =
   | { id: string; kind: "user"; text: string }
   | { id: string; kind: "voice"; text: string | null; secs: number }
   | { id: string; kind: "typing" }
-  | { id: string; kind: "quote"; quote: Quote; at: number; status: "live" | "used" | "cancelled" | "busy" }
+  | { id: string; kind: "quote"; quote: Quote; at: number; status: "live" | "used" | "cancelled" | "busy" | "failed" }
   | { id: string; kind: "proc"; text: string }
   | { id: string; kind: "done"; title: string; text: string; receiptId: string | null }
   | { id: string; kind: "cancel"; quoteMsgId: string }
@@ -143,10 +143,18 @@ export interface AppCtx {
   chatRuleConfirm(msgId: string): void;
   /** The account's automatic rules (null until loaded). */
   rules: Rule[] | null;
+  /** The last rules load failed (shown with a retry instead of a spinner). */
+  rulesError: boolean;
+  /** The rule being cancelled (its button is busy). */
+  cancellingRule: string | null;
   refreshRules(): void;
   /** Cancels a rule: the user signs the cancel text in MiniPay. */
   cancelRule(ruleId: string): void;
   chatAlts(msgId: string): void;
+  /** Opens the limits or contacts step seeded from the guard's current settings. */
+  editAuto(next: "auto-limits" | "auto-contacts"): void;
+  /** "Try again" on the no-market screen: re-quotes the flow that opened it. */
+  retryNoMarket(): void;
 }
 
 export const AppContext = createContext<AppCtx | null>(null);

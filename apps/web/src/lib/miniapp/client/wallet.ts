@@ -195,9 +195,21 @@ export function createViemSender(provider: Eip1193Provider, account: Address, fe
 export function createFornoWaiter(timeoutMs = 90_000): ReceiptWaiter {
   const client = createPublicClient({ chain: celo, transport: http(PUBLIC_RPC, { retryCount: 2, timeout: 10_000 }) });
   return {
+    // One RPC error must not turn a landed swap into "unknown": keep polling until the deadline
+    // (a missing receipt and a transient error look the same here). Only the deadline gives up.
     async wait(hash) {
-      const r = await client.waitForTransactionReceipt({ hash, timeout: timeoutMs, pollingInterval: 1_000 });
-      return r.status;
+      const deadline = Date.now() + timeoutMs;
+      let last: unknown;
+      for (;;) {
+        try {
+          const r = await client.getTransactionReceipt({ hash });
+          return r.status;
+        } catch (e) {
+          last = e;
+        }
+        if (Date.now() >= deadline) throw last instanceof Error ? last : new Error(`no receipt for ${hash} after ${timeoutMs} ms`);
+        await new Promise((r) => setTimeout(r, 1_000));
+      }
     },
     nonce: (address) => client.getTransactionCount({ address, blockTag: "latest" }),
   };
