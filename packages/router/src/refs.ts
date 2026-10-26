@@ -5,7 +5,18 @@ import { poolAbi } from "./abis";
 import { fetchTextileTickers } from "./textile/tickers";
 import type { Reference } from "./types";
 
-const fmtRate = (n: number) => String(Number(n.toPrecision(8)));
+/** 8 significant digits as a plain decimal (never "1e+26": receipts store rates as decimal strings). */
+export const fmtRate = (n: number) => {
+  const s = String(Number(n.toPrecision(8)));
+  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(s);
+  if (!m) return s;
+  // Shift the decimal point by the exponent on the digits themselves (toFixed also goes exponent past 1e21).
+  const digits = m[2]! + (m[3] ?? "");
+  const point = 1 + Number(m[4]);
+  const plain =
+    point <= 0 ? `0.${"0".repeat(-point)}${digits}` : point >= digits.length ? digits + "0".repeat(point - digits.length) : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return m[1] + plain;
+};
 
 /** price of token1 in token0 units, from a v3 sqrtPriceX96, decimal-adjusted. */
 export function priceFromSqrtX96(sqrtPriceX96: bigint, dec0: number, dec1: number): number {
@@ -55,16 +66,19 @@ export async function brlRefs(timeoutMs = 1500): Promise<Reference[]> {
 /** Uniswap pool mids for the ARS and BRL corridors, as USD/ARS and USD/BRL (USDT as USD). */
 export async function uniswapRefs(client: PublicClient, blockNumber: bigint): Promise<Reference[]> {
   const wanted = POOLS.filter((p) => p.routable && (p.token0 === "wARS" || p.token1 === "wBRL"));
-  const slots = await client.multicall({
-    allowFailure: true,
-    blockNumber,
-    contracts: wanted.map((p) => ({ address: p.address, abi: poolAbi, functionName: "slot0" }) as const),
-  });
+  const [slots, liquidity] = await Promise.all([
+    client.multicall({ allowFailure: true, blockNumber, contracts: wanted.map((p) => ({ address: p.address, abi: poolAbi, functionName: "slot0" }) as const) }),
+    client.multicall({ allowFailure: true, blockNumber, contracts: wanted.map((p) => ({ address: p.address, abi: poolAbi, functionName: "liquidity" }) as const) }),
+  ]);
   const at = new Date().toISOString();
   const out: Reference[] = [];
   wanted.forEach((p, i) => {
     const s = slots[i];
     if (s?.status !== "success") return;
+    // A drained pool sits at the min/max tick with no liquidity in range (wBRL/USDT, 2026-10-26:
+    // tick 887271, "mid" 3.4e26): its price says nothing about the market, so it is no reference.
+    const l = liquidity[i];
+    if (l?.status !== "success" || l.result === 0n) return;
     const t0 = TOKENS[p.token0];
     const t1 = TOKENS[p.token1];
     const price1per0 = priceFromSqrtX96(s.result[0], t0.decimals, t1.decimals);

@@ -101,6 +101,12 @@ describe("receipt view", () => {
     expect(usdOut.find((c) => c.name === "official")!.rate).toBe((10n ** 36n) / parseDecimal("1540"));
   });
 
+  it("skips a stored rate in exponent form instead of throwing (drained-pool mid)", () => {
+    const refs = [{ name: "uniswap_mid" as const, pair: "USD/BRL", rate: "3.4025679e+26", source: "uniswap-v3:0x", at: "2026-10-26T00:00:00Z" }];
+    expect(resolveRate(refs, "uniswap_mid", "USD", "BRL")).toBeUndefined();
+    expect(buildReceiptView({ ...record(USD_BRL).bundle, references: refs }).comparisons).toEqual([]);
+  });
+
   it("compares with Western Union only for dollars → pesos (never inverted or crossed)", () => {
     const base = record(BRL_ARS).bundle.references[0]!;
     const refs = [{ ...base, name: "western_union" as const, pair: "USD/ARS", rate: "1600" }];

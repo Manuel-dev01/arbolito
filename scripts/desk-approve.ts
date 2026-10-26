@@ -47,5 +47,7 @@ runMain(async () => {
     ledger: fork ? new MemoryLedger() : new FileLedger(),
   });
   console.log(`approved Permit2 for ${human} ${sym}: ${fork ? r.hash : txUrl(r.hash)}`);
-  console.log(`allowance now ${formatUnits(await publicClient.readContract({ address: token.address as Address, abi: erc20Abi, functionName: "allowance", args: [desk.address, CONTRACTS.permit2 as Address], blockNumber: r.receipt.blockNumber }), token.decimals)}`);
+  // The approval is done; a flaky read here is not a failure (re-run without --live to check).
+  const after = await read("allowance").catch(() => undefined);
+  console.log(after === undefined ? "allowance read failed; re-run without --live to check it" : `allowance now ${formatUnits(after, token.decimals)}`);
 });

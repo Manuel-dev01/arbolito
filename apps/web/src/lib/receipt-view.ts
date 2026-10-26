@@ -97,6 +97,8 @@ const USD_BRIDGES: ReferenceName[] = ["uniswap_mid", "textile_mid", "official"];
 
 type Ref = ProofBundle["references"][number];
 
+const PLAIN_DECIMAL = /^\d+(\.\d+)?$/;
+
 const bps = (delta: bigint, base: bigint) => (base === 0n ? 0 : Number((delta * 10_000n) / base));
 
 /** Reference rate for BASE/QUOTE under `name`: direct, inverse, or a cross through USD. */
@@ -106,7 +108,9 @@ export function resolveRate(
   base: string,
   quote: string,
 ): { rate: bigint; ref: Ref; via?: { name: ReferenceName; pair: string } } | undefined {
-  const find = (n: ReferenceName, pair: string) => refs.find((r) => r.name === n && r.pair === pair);
+  // A stored rate that isn't a plain decimal (older receipts hold "3.4025679e+26" from a drained
+  // pool) is skipped, never thrown: one bad reference must not take the page down.
+  const find = (n: ReferenceName, pair: string) => refs.find((r) => r.name === n && r.pair === pair && PLAIN_DECIMAL.test(r.rate.trim()));
   const direct = find(name, `${base}/${quote}`);
   if (direct) return { rate: parseDecimal(direct.rate), ref: direct };
   const inverse = find(name, `${quote}/${base}`);
