@@ -19,6 +19,7 @@ const ENTRIES = {
   "desk-feed": "scripts/desk-feed.ts",
   "desk-stitch-config": "scripts/desk-stitch-config.ts",
   "desk-fund": "scripts/desk-fund.ts",
+  "desk-approve": "scripts/desk-approve.ts",
   "desk-stitch": "scripts/desk-stitch.ts",
   "anchor-wallet": "scripts/anchor-wallet.ts",
   "deploy-guard": "scripts/deploy-guard.ts",
