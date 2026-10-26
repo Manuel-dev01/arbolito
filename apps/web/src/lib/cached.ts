@@ -21,13 +21,31 @@ export const listReceiptsCached = unstable_cache(
   { revalidate: 60, tags: ["receipts"] },
 );
 
-const verifyCached = unstable_cache(async (_hash: string, bundle: ProofBundle) => verifyOnchain(bundle), ["verify-v1"], { revalidate: 3600 });
+/** Thrown inside the cache so a failed check is returned but never cached. */
+class NotVerified extends Error {
+  constructor(readonly result: Verification) {
+    super("not verified");
+  }
+}
+
+// Only a passing check is cached (an hour). A failure (not anchored yet, a lagging node) is
+// re-checked on the next view, so a receipt anchored late never shows "mismatch" from the cache.
+const verifyCached = unstable_cache(
+  async (_hash: string, bundle: ProofBundle) => {
+    const r = await verifyOnchain(bundle);
+    if (!r.ok) throw new NotVerified(r);
+    return r;
+  },
+  ["verify-v2"],
+  { revalidate: 3600 },
+);
 
 /** Verification, or the error message if the chain could not be reached right now. */
 export async function verifyReceipt(hash: string, bundle: ProofBundle): Promise<{ result?: Verification; error?: string }> {
   try {
     return { result: await withTimeout(verifyCached(hash, bundle), 12_000) };
   } catch (e) {
+    if (e instanceof NotVerified) return { result: e.result };
     return { error: e instanceof Error ? e.message.slice(0, 200) : "unknown error" };
   }
 }

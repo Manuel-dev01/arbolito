@@ -1,4 +1,4 @@
-import { decodeEventLog, type Address, type Hex, type PublicClient } from "viem";
+import { TransactionNotFoundError, TransactionReceiptNotFoundError, decodeEventLog, type Address, type Hex, type PublicClient } from "viem";
 import { attributionCodes } from "@arbolito/chain";
 import { receivedInTx } from "@arbolito/router";
 import { bundleHash, routeIdToBytes32 } from "./hash";
@@ -56,10 +56,10 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
   }
 
   const execHash = bundle.execution.txHash as Hex;
-  const [execReceipt, execTx] = await Promise.all([
-    o.client.getTransactionReceipt({ hash: execHash }).catch(() => null),
-    o.client.getTransaction({ hash: execHash }).catch(() => null),
-  ]);
+  const [execReceipt, execTx] = await Promise.all([o.client.getTransactionReceipt({ hash: execHash }).catch(notFound), o.client.getTransaction({ hash: execHash }).catch(notFound)]);
+  // A public RPC behind a load balancer sometimes has the tx but answers null for its receipt
+  // (seen on forno 2026-10-25). That is the node, not the receipt: say "try again", never "mismatch".
+  if (!execReceipt !== !execTx) throw new Error(`the RPC returned the execution tx ${execHash} without its receipt; try again`);
   if (!execReceipt || !execTx) errors.push(`execution tx ${execHash} not found`);
   else {
     if (execReceipt.status !== "success") errors.push("execution tx reverted");
@@ -71,7 +71,7 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
     // conversion, the recipient on a send (in the delivery transfer when the swap settled to the taker).
     const receiver = (bundle.request.recipient ?? bundle.request.taker) as Address;
     const deliveryHash = bundle.execution.deliveryTxHash as Hex | undefined;
-    const deliveryReceipt = deliveryHash ? await o.client.getTransactionReceipt({ hash: deliveryHash }).catch(() => null) : execReceipt;
+    const deliveryReceipt = deliveryHash ? await o.client.getTransactionReceipt({ hash: deliveryHash }).catch(notFound) : execReceipt;
     if (!deliveryReceipt) errors.push(`delivery tx ${deliveryHash} not found`);
     else {
       if (deliveryReceipt.status !== "success") errors.push("delivery tx reverted");
@@ -83,4 +83,10 @@ export async function verifyBundle(json: unknown, o: VerifyOptions): Promise<Ver
   }
 
   return { ok: errors.length === 0, bundleHash: h, anchor, errors };
+}
+
+/** "Not found" answers become null; any other RPC error is thrown, so callers show "unavailable", not a mismatch. */
+function notFound(e: unknown): null {
+  if (e instanceof TransactionNotFoundError || e instanceof TransactionReceiptNotFoundError) return null;
+  throw e;
 }
