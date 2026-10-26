@@ -426,7 +426,6 @@ export function Numbers({ lang, records, deskFills }: { lang: Lang; records: Rec
     deskFills === undefined
       ? { k: t.desk, v: t.soon, proof: t.pDesk, href: withLang("/desk", lang), soon: true }
       : { k: t.deskFills, v: String(deskFills), proof: t.pDesk, href: withLang("/desk", lang) },
-    { k: t.api, v: t.soon, proof: t.pApi, href: withLang("/metrics#soon", lang), soon: true },
   ];
   return (
     <section id="numeros" className="section section-dark">

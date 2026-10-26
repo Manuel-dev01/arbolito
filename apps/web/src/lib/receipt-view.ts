@@ -64,6 +64,8 @@ export interface ReceiptView {
   routeId: string;
   createdAt: string;
   taker: string;
+  /** Set on a send: the contact who received amountOut (taker is the sender). */
+  recipient?: string;
   tokenIn: TokenRef;
   tokenOut: TokenRef;
   amountIn: bigint;
@@ -137,6 +139,8 @@ export function compareToReferences(
   for (const name of COMPARE_ORDER) {
     const hit = resolveRate(refs, name, tokenIn.fiat, tokenOut.fiat);
     if (!hit) continue;
+    // Western Union is read for USD → ARS/BRL only; an inverse or cross of it is a rate it never offered.
+    if (name === "western_union" && (tokenIn.fiat !== "USD" || hit.via || hit.ref.pair !== `${tokenIn.fiat}/${tokenOut.fiat}`)) continue;
     const referenceOut = applyRate(amountIn, tokenIn.decimals, hit.rate, tokenOut.decimals);
     const delta = executedOut - referenceOut;
     out.push({
@@ -218,6 +222,7 @@ export function buildReceiptView(bundle: ProofBundle): ReceiptView {
     routeId: bundle.routeId,
     createdAt: bundle.createdAt,
     taker: bundle.request.taker,
+    recipient: bundle.request.recipient ?? undefined,
     tokenIn,
     tokenOut,
     amountIn,

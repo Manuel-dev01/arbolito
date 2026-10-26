@@ -53,7 +53,10 @@ export function VerifyPanel({ lang, bundleJson, receiptsAddress, rpcUrl, downloa
 
   useEffect(() => {
     const hash = computed.hash;
-    if (!hash || !receiptsAddress) return;
+    if (!hash || !receiptsAddress) {
+      setCheck({ state: "idle" });
+      return;
+    }
     let cancelled = false;
     const address = receiptsAddress as Address;
     setCheck({ state: "checking" });

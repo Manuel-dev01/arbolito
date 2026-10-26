@@ -101,6 +101,15 @@ describe("receipt view", () => {
     expect(usdOut.find((c) => c.name === "official")!.rate).toBe((10n ** 36n) / parseDecimal("1540"));
   });
 
+  it("compares with Western Union only for dollars → pesos (never inverted or crossed)", () => {
+    const base = record(BRL_ARS).bundle.references[0]!;
+    const refs = [{ ...base, name: "western_union" as const, pair: "USD/ARS", rate: "1600" }];
+    const WARS = tokenRef("0x0DC4F92879B7670e5f4e4e6e3c801D229129D90D");
+    const USDT = tokenRef("0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e");
+    expect(compareToReferences(refs, USDT, WARS, 1_000000n, 1610n * 10n ** 18n).map((c) => c.name)).toEqual(["western_union"]);
+    expect(compareToReferences(refs, WARS, USDT, 1600n * 10n ** 18n, 1_000000n)).toEqual([]);
+  });
+
   it("derives the USD notional of a route", () => {
     expect(usdNotionalMicros(record(BRL_ARS).bundle)).toBe(1_976342n);
   });

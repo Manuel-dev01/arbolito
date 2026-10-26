@@ -219,7 +219,7 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
           </>
         ) : (
           <>
-            <span className="rc-label">{s.got}</span>
+            <span className="rc-label">{v.recipient ? s.delivered : s.got}</span>
             <span className="rc-amount rc-amount-plain">{money(v.amountOut, v.tokenOut, locale)}</span>
             <span className="rc-sub">
               {v.savings ? s.lessVs(formatMoney(savedAbs, v.tokenOut.decimals, officialFiat, locale), officialPair) : s.noOfficialShort}
@@ -236,7 +236,7 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
             <span className="mono">{formatToken(v.amountIn, v.tokenIn.decimals, v.tokenIn.symbol, locale)}</span>
           </div>
           <div className="pair-tile">
-            <span className="muted">{s.got}</span>
+            <span className="muted">{v.recipient ? s.delivered : s.got}</span>
             <b>{money(v.amountOut, v.tokenOut, locale)}</b>
             <span className="mono">{formatToken(v.amountOut, v.tokenOut.decimals, v.tokenOut.symbol, locale)}</span>
           </div>
@@ -344,6 +344,16 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
                     {shortHex(v.taker, 6, 4)} ↗
                   </ExtLink>
                 </dd>
+                {v.recipient ? (
+                  <>
+                    <dt>{t.recipient}</dt>
+                    <dd>
+                      <ExtLink href={addressUrl(v.recipient)} className="mono">
+                        {shortHex(v.recipient, 6, 4)} ↗
+                      </ExtLink>
+                    </dd>
+                  </>
+                ) : null}
                 <dt>{t.attribution}</dt>
                 <dd className="mono">{v.execution.attribution.join(", ") || "—"}</dd>
               </dl>

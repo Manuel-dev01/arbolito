@@ -1428,7 +1428,7 @@ body:has(.pub) {
   & .pair-tile b {
     font-size: clamp(16px, 4.8vw, 20px);
     font-weight: 800;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   & .pair-tile .mono {
     font-size: 12px;

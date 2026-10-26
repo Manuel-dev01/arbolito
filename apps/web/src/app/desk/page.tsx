@@ -53,6 +53,18 @@ const perUsd = (fiat: string, fiatPerUsd: number, locale: Locale) => {
 };
 const time = (iso: string, locale: Locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TZ }).format(new Date(iso));
 
+/** The feed's hold reasons are English; es/pt show the known ones translated, others as a generic pause. */
+function holdReason(reason: string, lang: ReturnType<typeof getLang>): string {
+  if (lang === "en") return reason;
+  const es = lang === "es";
+  const fresh = /^only (\d+) fresh source/.exec(reason);
+  if (fresh) return es ? `solo ${fresh[1]} fuente(s) al día` : `só ${fresh[1]} fonte(s) atualizada(s)`;
+  const split = /^sources disagree: (\d+) within (\d+) bps/.exec(reason);
+  if (split) return es ? `las fuentes no coinciden (${split[1]} dentro de ${split[2]} pb)` : `as fontes não batem (${split[1]} dentro de ${split[2]} pb)`;
+  if (reason.startsWith("risk officer pause")) return es ? "pausa del oficial de riesgo" : "pausa do oficial de risco";
+  return es ? "pausa de seguridad" : "pausa de segurança";
+}
+
 function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof getLang> }) {
   const t = messages(lang).desk;
   const locale = LOCALE[lang];
@@ -73,7 +85,7 @@ function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof 
       </div>
       {!live && d.reason && (
         <p className="small muted">
-          {t.status.hold} {d.reason}
+          {t.status.hold} {holdReason(d.reason, lang)}
         </p>
       )}
       <dl className="desk-kv">
