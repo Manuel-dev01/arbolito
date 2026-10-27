@@ -68,6 +68,8 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Fix:** the supervisor's crash backoff was cancelled by every feed tick (10 s), so a broken Stitch restarted 70+ times instead of backing off. Now a config update during backoff only records the newest config (test added).
 - **Landing:** the story section is "Un día en la esquina" (design/Origin Story 2a Spec.dc.html).
 - **Watch:** an allowance at or under a sell cap stops Stitch; check `pnpm desk:approve <SYM> <n>` (plan mode) when a side sells down.
+- **Desk, later:** carry-aware inventory targets and dispersion-scaled buy caps live (`apps/desk/src/dynamic.ts`, shown on /desk). Vercel Web Analytics on.
+- **RPC:** Chainstack Celo mainnet Global Node is now the primary RPC (`CELO_RPC_URL`) for `.env` and Railway (bot, desk-feed), forno the fallback; both services redeployed. Vercel still needs the two variables (founder, dashboard). Rotate the key before submission (it was shared in chat).
 
 ### 2026-10-26 (later): desk Permit2 top-up; landing outage fixed
 - **Desk:** founder-approved `approve(Permit2, 300 wBRL)` from the desk wallet ([tx](https://celoscan.io/tx/0x6a504066e76efc108f3891bc613d28c8986bf614f4f2237bdfc9f69abe2430c4)). Stitch is back with a LIVE maker session on all corridors. Both main pairs are on hold by the desk's own guards: wARS by the risk officer after a ~1% move, and wBRL because Textile prices it ~9% away from the fiat references (Textile 5.445 BRL/USDT vs ECB 5.05, ER-API 5.00, official cross 4.98).
