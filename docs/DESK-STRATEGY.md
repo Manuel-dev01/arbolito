@@ -96,9 +96,11 @@ What running it taught us (2026-10-19), and what changed:
 - **wCOP and wMXN have no Uniswap pool and no Textile `/price`:** their fair value comes from Textile's own ticker levels cross-checked against two daily FX references.
 
 ## Results so far (honest)
-- **Fills:** 6, about US$ 90 executed, against independent takers and the RFQs our app's users send through Textile (the organisers confirmed those count).
-- **Edge at fair:** between −0.01% and +0.06% per fill. Five are at or above fair; one (2026-10-20) is 1 bp under, because fair moved between quote and fill. Spread earned so far is a few cents.
-- **NAV:** about US$ 120.2 against **120 USDT** of capital (three 40 USDT deposits).
+Updated 2026-10-27; every fill hash and the P&L split are in [TEXTILE-WRITEUP.md](TEXTILE-WRITEUP.md).
+- **Fills:** 13, US$ 129 executed, all against independent takers (each settlement checked onchain: none touches a wallet we control).
+- **Edge at fair:** spread earned +US$ 0.02, about +1.4 bps on volume. Three fills are a few bps under fair, because fair moved between quote and fill.
+- **NAV:** US$ 159.12 against **160 USDT** of capital (four 40 USDT deposits), −0.55%. The loss is inventory marked to fair (wBRL fell 5–6% against the dollar after the desk bought it), not trading.
+- **Risk calls that paid:** on 2026-10-26 the breaker held wBRL through a ~9% gap between Textile's price and the FX references, so the desk didn't buy into it; it came back on its own the next day, at 3.6 bps better than fair.
 - **The first inventory cost us:** the initial wBRL was bought on the thin Uniswap pool, above fair. Later inventory comes through the bid side.
 - **RFQ flow on these corridors is thin.** That's why uptime matters: a corridor that's quoting is ready when flow arrives. `/desk` shows uptime per corridor over 24 h and 7 days, measured every 5 minutes.
 - **Win rate isn't observable from our side.** Stitch logs only the RFQs our quote *won*, not the ones it answered and lost. `/desk` counts the wins it can see; we don't publish a win rate we can't measure.
