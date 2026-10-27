@@ -16,6 +16,8 @@
     "@arbolito/llm": "workspace:*",
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
+    "@arbolito/rules": "workspace:*",
+    "@vercel/analytics": "2.0.1",
     "@vercel/functions": "3.9.11",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.0",
@@ -23,8 +25,7 @@
     "react-dom": "19.3.0",
     "three": "0.186.1",
     "viem": "^2.57.3",
-    "zod": "^4.6.5",
-    "@arbolito/rules": "workspace:*"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
