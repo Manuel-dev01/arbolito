@@ -178,135 +178,221 @@ export function Hero({ lang, showcase, live, ticker, quote }: { lang: Lang; show
 }
 
 // ─────────────────────────────────────────────────────────────── 00 la historia
+// "Un día en la esquina" (design/Origin Story 2a Spec.dc.html): one day on Florida y Corrientes,
+// morning to dawn. The haggle, the count, seven $100 notes folding into the tree, then the same
+// haggle as a chat with the digital arbolito. Every motion is a function of --p (see globals.css).
 
-/** A line split into words (each with its index, for the scroll reveal); the middle part is italic. */
-function Words({ a, b, c, start = 0 }: { a: string; b: string; c: string; start?: number }) {
-  const parts = [
-    ...a.split(/(?<=\s)/).map((w) => ({ w, i: false })),
-    ...b.split(/(?<=\s)/).map((w) => ({ w, i: true })),
-    ...c.split(/(?<=\s)/).map((w) => ({ w, i: false })),
-  ].filter((x) => x.w);
+/** The real receipt the chat quotes: 1 USD₮ → 1.621,86 wARS, +5,31% vs oficial (2026-10-20). */
+const STORY_RECEIPT = { id: "9d940004-716e-4231-9181-5e73937544b5", rate: "1.621,86", vs: "+5,31%", tx: "0xdf5b…eab9", for100: "162.186" };
+
+/** The Arbolito mark at any size: three circles over a white trunk, on a navy tile. */
+function Mark({ className }: { className: string }) {
   return (
-    <>
-      {parts.map((x, k) => {
-        const style = { "--i": start + k } as CSSProperties;
-        return x.i ? (
-          <i key={k} className="story-w" style={style}>
-            {x.w}
-          </i>
-        ) : (
-          <span key={k} className="story-w" style={style}>
-            {x.w}
-          </span>
-        );
-      })}
-    </>
+    <span className={`os-mark ${className}`} aria-hidden="true">
+      <i className="os-mark-trunk" />
+      <i className="os-mark-blue" />
+      <i className="os-mark-pink" />
+      <i className="os-mark-lime" />
+    </span>
   );
 }
 
-const wordCount = (...s: string[]) => s.join("").split(/(?<=\s)/).filter(Boolean).length;
-
-/** The street figure: head, hands and body are the same shapes that become the Arbolito tree. */
-function StoryFigure() {
+/** One $100 note of the fan; --a is when it starts to fan, --r its angle, and its group sets the circle it becomes. */
+function Note({ a, r, group }: { a?: number; r: number; group: "pink" | "blue" | "lime" }) {
   return (
-    <svg className="story-figure" viewBox="0 0 512 512" aria-hidden="true">
-      <g className="sf-person">
-        <g className="sf-street">
-          <line x1="20" y1="476" x2="492" y2="476" />
-          <line x1="100" y1="476" x2="100" y2="250" />
-          <rect x="34" y="216" width="132" height="38" rx="4" />
-          <text x="100" y="242" textAnchor="middle">
-            FLORIDA
-          </text>
-        </g>
-        <line className="sf-limb" x1="244" y1="398" x2="232" y2="470" />
-        <line className="sf-limb" x1="268" y1="398" x2="282" y2="470" />
-        <line className="sf-limb" x1="232" y1="226" x2="196" y2="300" />
-        <line className="sf-limb" x1="280" y1="226" x2="318" y2="286" />
-        <g className="sf-bills">
-          <rect x="300" y="244" width="46" height="24" rx="3" transform="rotate(-24 323 256)" />
-          <rect x="304" y="250" width="46" height="24" rx="3" transform="rotate(-8 327 262)" />
-          <rect x="306" y="258" width="46" height="24" rx="3" transform="rotate(8 329 270)" />
-        </g>
-      </g>
-      <rect className="sf-body" x="226" y="198" width="60" height="210" rx="30" />
-      <circle className="sf-pink" cx="186" cy="237" r="70" />
-      <circle className="sf-lime" cx="326" cy="237" r="70" />
-      <circle className="sf-blue" cx="256" cy="147" r="77" />
-    </svg>
+    <div className={`os-note os-note-${group}`} style={{ "--a": a ?? 2, "--r": `${r}deg` } as CSSProperties}>
+      <div className="os-note-face">
+        <span>100</span>
+        <i />
+      </div>
+    </div>
   );
 }
 
-/** Calle Florida at night: the voices, the skyline, the man on the corner, and what he became. */
+function StoryReceipt({ lang }: { lang: Lang }) {
+  return (
+    <div className="os-receipt">
+      <div className="os-receipt-top mono">
+        <span>COMPROBANTE</span>
+        <span>CELO</span>
+      </div>
+      <b>100 USD → {STORY_RECEIPT.for100} ARS</b>
+      <div className="os-receipt-rows mono">
+        <div>
+          <span>Tasa</span>
+          <span>{STORY_RECEIPT.rate}</span>
+        </div>
+        <div>
+          <span>vs oficial</span>
+          <span>{STORY_RECEIPT.vs}</span>
+        </div>
+        <div>
+          <span>Verificar</span>
+          <a href={withLang(`/r/${STORY_RECEIPT.id}`, lang)}>{STORY_RECEIPT.tx} ↗</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Story({ lang }: { lang: Lang }) {
   const t = messages(lang).landing.story;
-  const n1 = wordCount(t.line1A, t.line1B, t.line1C);
-  const n2 = wordCount(t.line2A, t.line2B, t.line2C);
+  const hero = messages(lang).landing.hero;
+  const bot = (
+    <span className="os-bot">
+      {t.or} <span className="mono">@arbolitoo_bot</span>
+    </span>
+  );
+  const line1 = (
+    <>
+      {t.line1A}
+      <em>{t.line1B}</em>
+      {t.line1C}
+    </>
+  );
+  const line2 = (
+    <>
+      {t.line2A}
+      <em>{t.line2B}</em>
+      {t.line2C}
+    </>
+  );
   return (
     <StoryScroll labelledBy="story-title">
-      <div className="story-stage" style={{ "--n1": n1, "--n2": n2 } as CSSProperties}>
-        <div className="story-voices" aria-hidden="true">
-          {[0, 1, 2].map((row) => (
-            <div key={row} className={`story-voice-row story-voice-row-${row}`}>
-              {t.shouts.concat(t.shouts).map((s, k) => (
-                <span key={k}>{s}</span>
-              ))}
-            </div>
-          ))}
+      {/* Static: no JS, reduced motion, and before hydration. All four beats, the mark, the thread. */}
+      <div className="os-static">
+        <div className="os-static-card">
+          <span className="os-kicker">00 — {t.place}</span>
+          <h2 className="os-serif" id="story-title">
+            {line1}
+          </h2>
+          <p className="os-body">{t.why}</p>
+          <p className="os-serif">{line2}</p>
+          <p className="os-body">{t.coda}</p>
+          <div className="os-ctas">
+            <a className="btn btn-primary btn-lg" href={MINIPAY_URL} rel="noopener">
+              {hero.ctaMiniPay}
+            </a>
+            <a href={TELEGRAM_URL} rel="noopener" className="os-bot-link">
+              {bot}
+            </a>
+          </div>
         </div>
-        <svg className="story-city" viewBox="0 0 1600 360" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-          {[
-            [0, 150, 150], [150, 110, 220], [260, 170, 140], [430, 120, 260], [550, 160, 180], [710, 100, 300],
-            [810, 150, 200], [960, 130, 250], [1090, 170, 160], [1260, 110, 230], [1370, 140, 190], [1510, 90, 280],
-          ].map(([x, w, h], k) => (
-            <g key={k}>
-              <rect className="sc-bldg" x={x} y={360 - h!} width={w} height={h} />
-              {Array.from({ length: Math.floor(h! / 34) }, (_, r) =>
-                Array.from({ length: Math.floor(w! / 30) }, (_, c) => ((k * 7 + r * 3 + c * 5) % 4 === 0 ? <rect key={`${r}-${c}`} className={(k + r + c) % 9 === 0 ? "sc-win sc-win-lime" : "sc-win"} x={x! + 10 + c * 30} y={360 - h! + 14 + r * 34} width="12" height="16" /> : null)),
-              )}
-            </g>
-          ))}
-          <rect className="sc-street" x="0" y="352" width="1600" height="8" />
-        </svg>
-        <div className="story-lamp" aria-hidden="true" />
-        <div className="story-grid">
-          <div className="story-copy">
-            <div className="story-beat story-beat-1">
-              <span className="story-place mono">{t.place}</span>
-              <h2 className="story-line" id="story-title">
-                <Words a={t.line1A} b={t.line1B} c={t.line1C} />
-              </h2>
-              <p className="story-why">{t.why}</p>
+        <div className="os-static-mark">
+          <Mark className="os-mark-tile" />
+          <span className="mono">FLORIDA Y CORRIENTES</span>
+        </div>
+        <div className="os-static-thread" lang="es-AR">
+          <span className="os-bubble os-you">¿A cuánto está?</span>
+          <span className="os-bubble os-them">Mil seiscientos.</span>
+          <span className="os-bubble os-you">¿Y si te doy quinientos?</span>
+          <span className="os-bubble os-them os-wide">
+            Hoy te lo dejo a {STORY_RECEIPT.rate}. Un {STORY_RECEIPT.vs.slice(1)} mejor que el oficial.
+          </span>
+          <span className="os-bubble os-you">cambiá 100 dólares</span>
+          <StoryReceipt lang={lang} />
+        </div>
+      </div>
+
+      {/* Live: a sticky stage, the design drawn at its breakpoint size and scaled to fit. */}
+      <div className="os-stage">
+        <div className="os-ground" aria-hidden="true" />
+        <div className="os-canvas">
+          <div className="os-figure" aria-hidden="true">
+            <div className="os-shadow" />
+            <div className="os-tile" />
+            <div className="os-trunk" />
+            <div className="os-ghost os-ghost-blue" />
+            <div className="os-ghost os-ghost-pink" />
+            <div className="os-ghost os-ghost-lime" />
+            <Note group="pink" a={0.51} r={-45} />
+            <Note group="pink" a={0.485} r={-30} />
+            <Note group="lime" a={0.385} r={30} />
+            <Note group="lime" a={0.36} r={45} />
+            <Note group="blue" a={0.46} r={-15} />
+            <Note group="blue" r={0} />
+            <Note group="blue" a={0.41} r={15} />
+            <div className="os-count">
+              <div className="mono os-count-n">
+                $ <span data-os-pesos>0</span>
+              </div>
+              <div className="mono os-count-bills">
+                <span data-os-bills>0</span> BILLETES DE $100
+              </div>
             </div>
-            <div className="story-beat story-beat-2">
-              <Kicker className="story-kicker">{t.kicker}</Kicker>
-              <p className="story-line story-line-2">
-                <Words a={t.line2A} b={t.line2B} c={t.line2C} />
-              </p>
-              <p className="story-coda">{t.coda}</p>
-              <div className="cta-row story-ctas">
-                <a className="btn btn-lime btn-lg" href={MINIPAY_URL} rel="noopener">
-                  {messages(lang).landing.hero.ctaMiniPay}
+          </div>
+
+          <div className="os-clock mono" aria-hidden="true">
+            FLORIDA Y CORRIENTES · <span data-os-clock>08:00</span>
+          </div>
+
+          <div className="os-thread" lang="es-AR">
+            <div className="os-thread-inner">
+              <div className="os-msg os-msg-1 os-right">
+                <span className="os-who mono">VOS</span>
+                <span className="os-say">
+                  <span className="os-speech" aria-hidden="true">¿A cuánto está?</span>
+                  <span className="os-bubble os-you">¿A cuánto está?</span>
+                </span>
+              </div>
+              <div className="os-msg os-msg-2">
+                <span className="os-who mono">EL ARBOLITO</span>
+                <span className="os-row">
+                  <span className="os-avatar" aria-hidden="true">
+                    <i className="os-avatar-face" />
+                    <Mark className="os-avatar-mark" />
+                  </span>
+                  <span className="os-say">
+                    <span className="os-speech os-speech-i" aria-hidden="true">Mil seiscientos.</span>
+                    <span className="os-bubble os-them">Mil seiscientos.</span>
+                  </span>
+                </span>
+              </div>
+              <div className="os-msg os-msg-3 os-right">
+                <span className="os-who mono">VOS</span>
+                <span className="os-say">
+                  <span className="os-speech os-speech-sm" aria-hidden="true">¿Y si te doy quinientos?</span>
+                  <span className="os-bubble os-you">¿Y si te doy quinientos?</span>
+                </span>
+              </div>
+              <div className="os-msg os-msg-4 os-row">
+                <Mark className="os-avatar-mark os-avatar-static" />
+                <span className="os-bubble os-them os-wide">
+                  Hoy te lo dejo a {STORY_RECEIPT.rate}. Un {STORY_RECEIPT.vs.slice(1)} mejor que el oficial.
+                </span>
+              </div>
+              <div className="os-msg os-msg-5 os-right">
+                <span className="os-bubble os-you">cambiá 100 dólares</span>
+              </div>
+              <div className="os-msg-6">
+                <StoryReceipt lang={lang} />
+              </div>
+            </div>
+          </div>
+
+          <span className="os-kicker os-kicker-live" aria-hidden="true">00 — {t.place}</span>
+          <h2 className="os-serif os-line1">{line1}</h2>
+          <p className="os-serif os-why">{t.why}</p>
+          <div className="os-card">
+            <span className="os-kicker">00 — {t.place}</span>
+            <p className="os-serif os-line2">{line2}</p>
+            <div className="os-coda">
+              <p className="os-body">{t.coda}</p>
+              <div className="os-ctas os-ctas-card">
+                <a className="btn btn-primary btn-lg" href={MINIPAY_URL} rel="noopener">
+                  {hero.ctaMiniPay}
                 </a>
-                <a className="story-tg" href={TELEGRAM_URL} rel="noopener">
-                  {messages(lang).landing.hero.telegramHint}
+                <a href={TELEGRAM_URL} rel="noopener" className="os-bot-link">
+                  {bot}
                 </a>
               </div>
             </div>
           </div>
-          <div className="story-art">
-            <div className="story-shouts" aria-hidden="true">
-              {t.shouts.slice(0, 3).map((s, k) => (
-                <span key={k} className={`story-shout story-shout-${k}`}>
-                  {s}
-                </span>
-              ))}
-            </div>
-            <StoryFigure />
+          <div className="os-ctas-bar">
+            <a className="btn btn-primary btn-lg" href={MINIPAY_URL} rel="noopener">
+              {hero.ctaMiniPay}
+            </a>
           </div>
-        </div>
-        <div className="story-rail" aria-hidden="true">
-          <span />
         </div>
       </div>
     </StoryScroll>
