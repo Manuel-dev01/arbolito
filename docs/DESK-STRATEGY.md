@@ -95,6 +95,18 @@ What running it taught us (2026-10-19), and what changed:
 - **wMXN starts bid-only:** nobody on Textile was buying wMXN for USDT when we started (`USDT_MXN` had no bid), so the whole allocation sits on the buy side. The sell side fills only from what the desk has bought.
 - **wCOP and wMXN have no Uniswap pool and no Textile `/price`:** their fair value comes from Textile's own ticker levels cross-checked against two daily FX references.
 
+### 8. Parameters that follow the market ([`dynamic.ts`](../apps/desk/src/dynamic.ts), live 2026-10-27)
+Two numbers that used to be fixed now adapt. Both are shown per corridor on `/desk` and in `/state` under `dynamic`.
+- **Carry-aware inventory target.** Holding a currency that loses value against the dollar costs money every day.
+  - **Measuring carry:** each currency corridor measures its carry from the last week of snapshots. It takes one median per UTC day, then the **Theil–Sen** slope of ln(fiat per USD) across days. That's robust to a single dislocated day, and the result is clamped to ±25 bps/day.
+  - **Weighting:** the measurement is blended with a prior (the peso's crawl, 5 bps/day; 0 elsewhere) at weight days/14, so one noisy week moves it at most halfway.
+  - **The target:** `target = neutral − 0.02 × carry`, kept within 20–60%. The existing skew leans the quotes toward that target. The peso's prior reproduces the old hand-tuned 30%.
+  - **At launch:** raw week trends were wARS 25+, wBRL 20, wCOP 12 and wMXN 8 bps/day, giving targets of 20%, 27%, 37% and 41%.
+- **Dispersion-scaled buy caps.**
+  - **Why:** the breaker stops quoting once sources *disagree*. Sources drifting apart inside the band already mean fair is less certain.
+  - **How:** each corridor's buy cap scales with an exponentially smoothed dispersion (about a 3-minute time constant). It stays whole up to 30% of the breaker's band, then steps down to 25% by 90% of it, in quarter steps rounded down, so Stitch's config changes only at a few levels.
+  - **Buying only:** the rebalancer keeps the static cap, so an uncertain hour stops accumulation but never forces a sale.
+
 ## Results so far (honest)
 Updated 2026-10-27; every fill hash and the P&L split are in [TEXTILE-WRITEUP.md](TEXTILE-WRITEUP.md).
 - **Fills:** 13, US$ 129 executed, all against independent takers (each settlement checked onchain: none touches a wallet we control).

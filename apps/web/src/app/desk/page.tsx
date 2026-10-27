@@ -65,6 +65,8 @@ function holdReason(reason: string, lang: ReturnType<typeof getLang>): string {
   return es ? "pausa de seguridad" : "pausa de segurança";
 }
 
+const pct = (x: number, locale: Locale) => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 }).format(x);
+
 function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof getLang> }) {
   const t = messages(lang).desk;
   const locale = LOCALE[lang];
@@ -99,6 +101,22 @@ function CorridorStatus({ c, lang }: { c: FeedCorridor; lang: ReturnType<typeof 
           <dt>{t.status.skew}</dt>
           <dd className="mono">{formatBps(d.skewBps ?? 0, locale)}</dd>
         </div>
+        {c.dynamic && (
+          <>
+            <div>
+              <dt>{t.status.target}</dt>
+              <dd className="mono">
+                {c.dynamic.carryActedOn === null
+                  ? pct(c.dynamic.targetShare, locale)
+                  : t.status.targetVal(pct(c.dynamic.targetShare, locale), c.dynamic.carryActedOn.toLocaleString(locale, { maximumFractionDigits: 1 }))}
+              </dd>
+            </div>
+            <div>
+              <dt>{t.status.cap}</dt>
+              <dd className="mono">{t.status.capVal(`US$ ${c.dynamic.buyCapUsd.toLocaleString(locale, { maximumFractionDigits: 2 })}`, pct(c.dynamic.capScale, locale))}</dd>
+            </div>
+          </>
+        )}
         {bidPx !== undefined && askPx !== undefined && (
           <>
             <div>

@@ -87,14 +87,17 @@ if (hasFlag("once")) {
     ledger,
     risk,
     log,
-    onTick: ({ balances, usdtPerSoft }) => {
+    onTick: ({ balances, usdtPerSoft, capScale }) => {
       if (!supervisor || !ready || !balances) return;
-      const next = buySidesOff(balances, CORRIDORS, usdtPerSoft, buyOff);
+      // The buy side uses caps scaled down by source dispersion (dynamic.ts); the rebalancer keeps
+      // the static caps, so an uncertain hour stops buying but never forces a sale.
+      const buyCaps = CORRIDORS.map((c) => ({ ...c, maxSoftUsd: c.maxSoftUsd * (capScale[c.pair] ?? 1) }));
+      const next = buySidesOff(balances, buyCaps, usdtPerSoft, buyOff);
       const changed = next.size !== buyOff.size || [...next].some((p) => !buyOff.has(p));
       if (changed) log(`inventory caps: buy side off for [${[...next].join(", ") || "none"}]`);
       buyOff = next;
       // Size each buy side to the room left under its cap, so one fill can't overshoot it.
-      const sizes = buySizes(balances, CORRIDORS, usdtPerSoft, buySize);
+      const sizes = buySizes(balances, buyCaps, usdtPerSoft, buySize);
       if ([...sizes].some(([p, v]) => buySize.get(p) !== v)) log(`buy sizes: ${[...sizes].map(([p, v]) => `${p}=${Number(v) / 1e6}`).join(", ")}`);
       buySize = sizes;
       supervisor.apply(stitchConfig());

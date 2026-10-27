@@ -3,7 +3,7 @@
  * the feed service's tick, so a fill is recorded with the fair price of the moment it was seen.
  * Reads the chain and writes our own database only; never sends a transaction.
  */
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, gte } from "drizzle-orm";
 import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import { TOKENS } from "@arbolito/config";
 import { deskFills, deskRfqs, deskSnapshots, deskState, type Db } from "@arbolito/db";
@@ -146,6 +146,23 @@ export class DeskLedger {
   /** Fills seen in the last windowMs, by pair. */
   recentFills(windowMs: number, now = Date.now()) {
     return this.recent.filter((f) => now - f.at <= windowMs);
+  }
+
+  /** Fair prices from the snapshots of the last windowMs, as fiat per USD by pair (for the carry estimate). */
+  async fairHistory(windowMs: number, now = Date.now()): Promise<Map<string, { at: number; fiatPerUsd: number }[]>> {
+    const rows = await this.db
+      .select({ at: deskSnapshots.at, fairs: deskSnapshots.fairs })
+      .from(deskSnapshots)
+      .where(gte(deskSnapshots.at, new Date(now - windowMs)));
+    const out = new Map<string, { at: number; fiatPerUsd: number }[]>();
+    for (const r of rows) {
+      for (const [pair, usdtPerSoft] of Object.entries((r.fairs ?? {}) as Record<string, number | string | null>)) {
+        const v = Number(usdtPerSoft);
+        if (!(v > 0)) continue;
+        (out.get(pair) ?? out.set(pair, []).get(pair)!).push({ at: r.at.getTime(), fiatPerUsd: 1 / v });
+      }
+    }
+    return out;
   }
 
   async latestSnapshot() {

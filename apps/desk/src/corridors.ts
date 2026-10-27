@@ -74,7 +74,16 @@ export interface Corridor {
     /** The tightest honest margin vs fair after skew, bps. */
     floorBps: number;
   };
+  /**
+   * Carry-aware target (dynamic.ts): the soft share to hold = neutralShare − sharePerBpsDay ×
+   * carry (bps/day the currency loses vs USD), within [minShare, maxShare]. priorBpsPerDay is
+   * used until a week of fair history exists. Without it the corridor keeps skew.targetShare.
+   */
+  carry?: { neutralShare: number; sharePerBpsDay: number; minShare: number; maxShare: number; priorBpsPerDay: number };
 }
+
+/** A floating LatAm currency: 0.02 of share per bps/day of (history-weighted) depreciation, within 20–60%. */
+const floating = (priorBpsPerDay: number, neutralShare = 0.5) => ({ neutralShare, sharePerBpsDay: 0.02, minShare: 0.2, maxShare: 0.6, priorBpsPerDay });
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -106,6 +115,8 @@ export const CORRIDORS: readonly Corridor[] = [
     jumpBps: 80,
     jumpConfirmMs: 30_000,
     skew: { targetShare: 0.3, bandShare: 0.3, maxBps: 10, floorBps: 2 },
+    // The peso's crawl (~1.5%/month ≈ 5 bps/day) on a 0.4 neutral gives the 0.3 above until carry is measured.
+    carry: floating(5, 0.4),
   },
   {
     pair: "wbrl-usdt",
@@ -127,6 +138,7 @@ export const CORRIDORS: readonly Corridor[] = [
     jumpBps: 80,
     jumpConfirmMs: 30_000,
     skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 4, floorBps: 2 },
+    carry: floating(0),
   },
   ...(["USDC", "USAT"] as const).map(
     (soft): Corridor => ({
@@ -173,6 +185,7 @@ export const CORRIDORS: readonly Corridor[] = [
     jumpBps: 100,
     jumpConfirmMs: 30_000,
     skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 6, floorBps: 3 },
+    carry: floating(0),
   },
   {
     pair: "wmxn-usdt",
@@ -194,6 +207,7 @@ export const CORRIDORS: readonly Corridor[] = [
     jumpBps: 100,
     jumpConfirmMs: 30_000,
     skew: { targetShare: 0.5, bandShare: 0.35, maxBps: 6, floorBps: 3 },
+    carry: floating(0),
   },
 ];
 
@@ -222,6 +236,9 @@ export function validateCorridor(c: Corridor): string[] {
   if (c.buyCapUsdt <= 0n || c.sellCapSoft <= 0n) errs.push(`${c.pair}: side caps must be positive and fixed`);
   if (c.minSources < 2) errs.push(`${c.pair}: minSources must be at least 2 (one source can't be cross-checked)`);
   if (c.sources.reduce((n, s) => n + (s.weight > 0 ? 1 : 0), 0) < c.minSources) errs.push(`${c.pair}: fewer weighted sources than minSources`);
+  const k = c.carry;
+  if (k && !(k.minShare > 0 && k.minShare <= k.neutralShare && k.neutralShare <= k.maxShare && k.maxShare < 1 && k.sharePerBpsDay >= 0))
+    errs.push(`${c.pair}: carry needs 0 < minShare ≤ neutralShare ≤ maxShare < 1 and sharePerBpsDay ≥ 0`);
   const dec = TOKENS[c.soft].decimals;
   if ((c.fiat === "USD" ? dec !== 6 : dec !== 18) || TOKENS.USDT.decimals !== 6) errs.push(`${c.pair}: unexpected token decimals`);
   return errs;

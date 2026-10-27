@@ -11,6 +11,7 @@
 import { createServer, type Server } from "node:http";
 import type { Address, PublicClient } from "viem";
 import { CORRIDORS, validateCorridor, type Corridor } from "./corridors";
+import { CARRY_WINDOW_MS, capScale, carryTarget, effectiveCarry, estimateCarry, smooth, type CarryEstimate } from "./dynamic";
 import { fairValue } from "./fair";
 import { step, type Decision, type FeedState, type Published } from "./feed";
 import { corridorShares, readBalances, type Balances } from "./inventory";
@@ -30,8 +31,11 @@ export interface FeedServiceOptions {
   ledger?: DeskLedger;
   /** LLM risk officer: may pause a corridor for 15–120 min, nothing else (risk.ts). */
   risk?: { llm: LlmClient; model: string; everyMs?: number };
-  /** Called after every tick with the balances and fair prices (USDT per soft) it computed. */
-  onTick?: (t: { balances?: Balances; usdtPerSoft: Record<string, number | undefined> }) => void;
+  /**
+   * Called after every tick with the balances, fair prices (USDT per soft) and each corridor's
+   * buy-cap multiplier from source dispersion (dynamic.ts; 1 = the full cap).
+   */
+  onTick?: (t: { balances?: Balances; usdtPerSoft: Record<string, number | undefined>; capScale: Record<string, number> }) => void;
   /** Extra fields merged into /state (e.g. the Stitch supervisor). */
   extraState?: () => Record<string, unknown>;
 }
@@ -56,7 +60,10 @@ export class FeedService {
   private balances?: Balances;
   private running = false;
   /** Last hour of healthy fair samples and breaker holds, per pair (for the risk officer). */
-  private history = new Map<string, { samples: { at: number; fiatPerUsd: number }[]; holds: number[]; dispersionBps?: number; share?: number }>();
+  private history = new Map<string, { samples: { at: number; fiatPerUsd: number }[]; holds: number[]; dispersionBps?: number; dispersionSmooth?: number; share?: number }>();
+  /** Carry per corridor (dynamic.ts), refreshed hourly from the ledger's week of snapshots; priors until then. */
+  private carry = new Map<string, CarryEstimate>();
+  private carryNextAt = 0;
   /** Pauses set by the risk officer: until (ms) and why. */
   private pauses = new Map<string, { until: number; reason: string }>();
   private risk: { lastReviewAt?: string; lastError?: string; lastDecisions: RiskDecision[]; reviewing: boolean; nextAt: number } = { lastDecisions: [], reviewing: false, nextAt: 0 };
@@ -65,7 +72,33 @@ export class FeedService {
     this.corridors = o.corridors ?? CORRIDORS;
     const errs = this.corridors.flatMap(validateCorridor);
     if (errs.length) throw new Error(`unsafe corridor config:\n- ${errs.join("\n- ")}`);
-    for (const c of this.corridors) this.rt.set(c.pair, { state: {}, decisions: [] });
+    for (const c of this.corridors) {
+      this.rt.set(c.pair, { state: {}, decisions: [] });
+      if (c.carry) this.carry.set(c.pair, { bpsPerDay: c.carry.priorBpsPerDay, source: "prior", days: 0 });
+    }
+  }
+
+  /** Re-estimate carry from the last week of snapshots (in the background; a failure keeps the last estimate). */
+  async refreshCarry(now = Date.now()): Promise<void> {
+    if (!this.o.ledger) return;
+    try {
+      const hist = await this.o.ledger.fairHistory(CARRY_WINDOW_MS, now);
+      for (const c of this.corridors) {
+        if (!c.carry) continue;
+        const est = estimateCarry(hist.get(c.pair) ?? [], now, c.carry.priorBpsPerDay);
+        const before = this.carry.get(c.pair);
+        this.carry.set(c.pair, est);
+        if (!before || before.bpsPerDay !== est.bpsPerDay || before.source !== est.source)
+          this.o.log?.(`carry ${c.pair}: ${est.bpsPerDay} bps/day (${est.source}${est.days ? `, ${est.days} days` : ""}; acting on ${effectiveCarry(c, est)}) → hold ${Math.round(carryTarget(c, est) * 100)}%`);
+      }
+    } catch (e) {
+      this.o.log?.(`carry: no update (${(e as Error).message})`);
+    }
+  }
+
+  /** The corridor as this tick should quote it: its skew aims at the carry-aware target. */
+  private effective(c: Corridor): Corridor {
+    return c.carry ? { ...c, skew: { ...c.skew, targetShare: carryTarget(c, this.carry.get(c.pair)) } } : c;
   }
 
   /** One round: observe every source, compute fair, read inventory, step each corridor. */
@@ -74,6 +107,10 @@ export class FeedService {
     this.running = true;
     const log = this.o.log ?? (() => {});
     try {
+      if (this.o.ledger && now >= this.carryNextAt) {
+        this.carryNextAt = now + 3_600_000;
+        void this.refreshCarry(now);
+      }
       const { byPair, errors } = await observeAll(this.o.client, this.corridors);
       const fairs = new Map(this.corridors.map((c) => [c.pair, fairValue(c, byPair.get(c.pair) ?? [], now)] as const));
       if (this.o.deskAddress) {
@@ -94,12 +131,13 @@ export class FeedService {
         const paused = !!pause && now < pause.until;
         if (pause && !paused) this.pauses.delete(c.pair);
         else if (pause) fair = { ok: false, reason: `risk officer pause: ${pause.reason}`, used: fair.used, dropped: fair.dropped };
-        const res = step(c, r.state, fair, shares.get(c.pair), now);
+        const res = step(this.effective(c), r.state, fair, shares.get(c.pair), now);
         const h = this.history.get(c.pair) ?? { samples: [], holds: [] };
         const raw = fairs.get(c.pair)!;
         if (raw.ok) {
           h.samples.push({ at: now, fiatPerUsd: raw.fiatPerUsd });
           h.dispersionBps = raw.dispersionBps;
+          h.dispersionSmooth = smooth(h.dispersionSmooth, raw.dispersionBps);
         }
         // Only the breaker's own holds count. Holds caused by the officer's pause would read as an
         // unstable market and re-trigger the pause (it kept wBRL off for ~10 h on 2026-10-19).
@@ -137,7 +175,7 @@ export class FeedService {
         const usdtPerSoft: Record<string, number | undefined> = {};
         for (const [pair, f] of fiat) usdtPerSoft[pair] = 1 / f;
         try {
-          this.o.onTick({ balances: this.balances, usdtPerSoft });
+          this.o.onTick({ balances: this.balances, usdtPerSoft, capScale: this.capScales() });
         } catch (e) {
           errors.push(`onTick: ${(e as Error).message}`);
         }
@@ -148,6 +186,11 @@ export class FeedService {
     } finally {
       this.running = false;
     }
+  }
+
+  /** Each corridor's buy-cap multiplier from its smoothed source dispersion. */
+  capScales(): Record<string, number> {
+    return Object.fromEntries(this.corridors.map((c) => [c.pair, capScale(this.history.get(c.pair)?.dispersionSmooth, c.maxDevBps)]));
   }
 
   /** The signals the risk officer sees, per corridor. */
@@ -207,9 +250,20 @@ export class FeedService {
         : { enabled: false },
       corridors: this.corridors.map((c) => {
         const r = this.rt.get(c.pair)!;
+        const h = this.history.get(c.pair);
+        const scale = capScale(h?.dispersionSmooth, c.maxDevBps);
         return {
           pair: c.pair,
           params: { live: c.live, buyOffsetBps: c.buyOffsetBps, sellOffsetBps: c.sellOffsetBps, buyCapUsdt: c.buyCapUsdt.toString(), sellCapSoft: c.sellCapSoft.toString(), skew: c.skew },
+          // What adapts to the market (dynamic.ts): the inventory target follows carry, the buy cap follows dispersion.
+          dynamic: {
+            carry: this.carry.get(c.pair) ?? null,
+            carryActedOn: effectiveCarry(c, this.carry.get(c.pair)) ?? null,
+            targetShare: carryTarget(c, this.carry.get(c.pair)),
+            dispersionBps: h?.dispersionSmooth === undefined ? null : Math.round(h.dispersionSmooth * 10) / 10,
+            capScale: scale,
+            buyCapUsd: Math.round(c.maxSoftUsd * scale * 100) / 100,
+          },
           served: r.served ?? null,
           decisions: r.decisions.slice(-20),
         };

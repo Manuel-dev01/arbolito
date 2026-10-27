@@ -75,6 +75,8 @@ export interface DeskSnapshotRecord {
 export interface FeedCorridor {
   pair: string;
   params: { live?: boolean; buyOffsetBps: number; sellOffsetBps: number };
+  /** What adapts to the market (apps/desk/src/dynamic.ts); absent on an older feed. */
+  dynamic?: { carryActedOn: number | null; targetShare: number; capScale: number; buyCapUsd: number };
   served: { price: number; timestamp: number } | null;
   decisions: { action: "publish" | "hold"; reason?: string; fiatPerUsd?: number; skewBps?: number; used: string[]; at: string }[];
 }
