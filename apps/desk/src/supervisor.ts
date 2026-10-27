@@ -31,6 +31,8 @@ export class StitchSupervisor {
   private timer?: ReturnType<typeof setTimeout>;
   private stopping = false;
   private crashBackoff = 5_000;
+  /** While Stitch is down after a crash, restarts wait for this time (ms epoch); 0 when not backing off. */
+  private crashRetryAt = 0;
 
   constructor(private o: SupervisorOptions) {
     mkdirSync(o.dir, { recursive: true });
@@ -41,6 +43,9 @@ export class StitchSupervisor {
   apply(toml: string): void {
     if (toml === this.current && this.child) return;
     this.pending = toml;
+    // Crashed and backing off: keep the newest config for the backoff timer instead of restarting now.
+    // (The feed applies every tick; restarting here made a crash loop every ~10 s, 2026-10-27.)
+    if (!this.child && Date.now() < this.crashRetryAt) return;
     const wait = Math.max(0, (this.o.minRestartMs ?? 60_000) - (Date.now() - this.lastStart));
     clearTimeout(this.timer);
     this.timer = setTimeout(() => void this.restart(), this.child ? wait : 0);
@@ -83,8 +88,11 @@ export class StitchSupervisor {
       this.child = undefined;
       if (this.stopping) return;
       this.o.log?.(`stitch exited (code ${code}, signal ${signal}); restarting in ${this.crashBackoff / 1000}s`);
+      this.crashRetryAt = Date.now() + this.crashBackoff;
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => {
-        this.pending = this.current;
+        this.crashRetryAt = 0;
+        this.pending ??= this.current;
         void this.restart();
       }, this.crashBackoff);
       this.crashBackoff = Math.min(this.crashBackoff * 2, 5 * 60_000);

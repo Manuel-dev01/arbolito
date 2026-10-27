@@ -63,6 +63,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-10-27: desk back up; supervisor crash loop fixed; landing story 2a
+- **Desk:** four wARS fills on 10-26 sold the desk's whole wARS side (16,115 wARS); the Permit2 allowance left (15,884.6) fell under the 16,000 wARS sell cap and Stitch refused to start. Founder-approved `approve(Permit2, 160,000 wARS)` ([tx](https://celoscan.io/tx/0xa3deeacf34aec7371c4d51085e810e0f3095bae4d871e1e62284b1757c48dfbf)); live session accepted 14:32 UTC. Totals: 13 fills, US$ 129 volume, 8 RFQs won, −US$ 0.88 on 160 capital.
+- **Fix:** the supervisor's crash backoff was cancelled by every feed tick (10 s), so a broken Stitch restarted 70+ times instead of backing off. Now a config update during backoff only records the newest config (test added).
+- **Landing:** the story section is "Un día en la esquina" (design/Origin Story 2a Spec.dc.html).
+- **Watch:** an allowance at or under a sell cap stops Stitch; check `pnpm desk:approve <SYM> <n>` (plan mode) when a side sells down.
+
 ### 2026-10-26 (later): desk Permit2 top-up; landing outage fixed
 - **Desk:** founder-approved `approve(Permit2, 300 wBRL)` from the desk wallet ([tx](https://celoscan.io/tx/0x6a504066e76efc108f3891bc613d28c8986bf614f4f2237bdfc9f69abe2430c4)). Stitch is back with a LIVE maker session on all corridors. Both main pairs are on hold by the desk's own guards: wARS by the risk officer after a ~1% move, and wBRL because Textile prices it ~9% away from the fiat references (Textile 5.445 BRL/USDT vs ECB 5.05, ER-API 5.00, official cross 4.98).
 - **Outage:** "/" showed "This page couldn't load" on every visit. Cause: the wBRL/USDT Uniswap pool was drained to its max tick (liquidity 0), its "mid" (3.4e26) was stored on a receipt as `"3.4025679e+26"`, and the landing threw parsing it. Fixed in `cdd1070`: empty pools are no longer references, rates are never written in exponent form, and unparseable stored rates are skipped. Production swept clean afterwards.
