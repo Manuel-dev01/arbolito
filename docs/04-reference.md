@@ -8,7 +8,7 @@ Last verified 2026-10-04 via Celo mainnet RPC and live sponsor docs; onchain ent
 | Celo mainnet chainId | 42220 (`eip155:42220`) |
 | Celo Sepolia chainId | 11142220 (`eip155:11142220`). **Textile does not support it.** |
 | Public RPC | https://forno.celo.org (fallback since 2026-10-27; it sometimes answers null for an existing receipt, and rate-limits Stitch's reads with 409s) |
-| Primary RPC | Chainstack Global Node, Celo mainnet (hackathon perk), `https://celo-mainnet.core.chainstack.com/<key>`: the key is a secret, kept in `.env`, Railway (bot, desk-feed) and Vercel as `CELO_RPC_URL`, with `CELO_RPC_URL_FALLBACK=https://forno.celo.org`. Free plan: 25 requests/s. Verified 2026-10-27: chainId 42220, a receipt forno dropped returned 6/6. Browser code (Mini App receipts) keeps using forno, so the key never reaches a user. |
+| Primary RPC | Chainstack Global Node, Celo mainnet (hackathon perk), `https://celo-mainnet.core.chainstack.com/<key>`: the key is a secret, kept in `.env`, Railway (bot, desk-feed) and Vercel as `CELO_RPC_URL`, with `CELO_RPC_URL_FALLBACK=https://forno.celo.org`. Free plan: 25 requests/s and **not an archive node**: it refuses `eth_getLogs` and state reads on old blocks ("Archive, Debug and Trace requests are not available on your plan"), so every client puts forno behind it (`packages/chain` clients, `apps/web/src/lib/chain.ts`, the landing rates), and anvil forks use the fallback. Verified 2026-10-27: chainId 42220, a receipt forno dropped returned 6/6. Browser code (Mini App receipts) keeps using forno, so the key never reaches a user. |
 | Explorer | https://celoscan.io |
 
 ## Tokens (Celo mainnet)
