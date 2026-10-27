@@ -51,7 +51,10 @@ export async function setup(project: TestProject) {
   const root = findRepoRoot();
   execFileSync("forge", ["build", "--root", "contracts"], { cwd: root, stdio: "inherit" });
 
-  const upstream = loadEnv().CELO_RPC_URL;
+  // A fork reads state at its pinned block for the whole run, which needs an archive node. The
+  // primary (Chainstack's free Global Node) isn't one, so fork from the fallback (forno) when set.
+  const env = loadEnv();
+  const upstream = env.CELO_RPC_URL_FALLBACK ?? env.CELO_RPC_URL;
   const forkBlock = process.env.FORK_BLOCK ? BigInt(process.env.FORK_BLOCK) : (await latestBlock(upstream)) - 2n;
 
   // Refuse to run against someone else's node: if the port already answers, our anvil could not

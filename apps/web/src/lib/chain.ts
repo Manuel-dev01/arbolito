@@ -1,4 +1,4 @@
-import { createPublicClient, http, type Address, type Hex, type PublicClient } from "viem";
+import { createPublicClient, fallback, http, type Address, type Hex, type PublicClient } from "viem";
 import { celo } from "viem/chains";
 import { CONTRACTS } from "@arbolito/config";
 import { bundleHash, receiptsAbi, verifyBundle, type ProofBundle } from "@arbolito/proof";
@@ -11,10 +11,17 @@ export const RECEIPTS_ADDRESS = CONTRACTS.arbolitoReceipts as Address | undefine
 export const PUBLIC_RPC_URL = "https://forno.celo.org";
 
 let client: PublicClient | undefined;
+/**
+ * The keyed primary (CELO_RPC_URL) with forno behind it. The primary may not be an archive node:
+ * Chainstack's free Global Node refuses eth_getLogs on week-old blocks ("Archive, Debug and Trace
+ * requests are not available on your plan", 2026-10-27), which every receipt check needs, so
+ * those reads fall through to forno.
+ */
 function publicClient(): PublicClient {
+  const urls = [...new Set([process.env.CELO_RPC_URL, process.env.CELO_RPC_URL_FALLBACK, PUBLIC_RPC_URL].filter((u): u is string => !!u))];
   client ??= createPublicClient({
     chain: celo,
-    transport: http(process.env.CELO_RPC_URL || "https://forno.celo.org", { retryCount: 1, timeout: 8_000 }),
+    transport: fallback(urls.map((u) => http(u, { retryCount: 1, timeout: 8_000 }))),
   }) as PublicClient;
   return client;
 }

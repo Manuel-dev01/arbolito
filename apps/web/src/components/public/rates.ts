@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { createPublicClient, http, type PublicClient } from "viem";
+import { createPublicClient, fallback, http, type PublicClient } from "viem";
 import { celo } from "viem/chains";
 import { fetchReferences } from "@arbolito/router";
 import type { ProofBundle } from "@arbolito/proof";
@@ -21,9 +21,11 @@ export interface LiveRefs {
 
 const fetchLive = unstable_cache(
   async (): Promise<LiveRefs> => {
+    // The keyed primary first, forno behind it (the primary may rate-limit or refuse a read).
+    const urls = [...new Set([process.env.CELO_RPC_URL, process.env.CELO_RPC_URL_FALLBACK, "https://forno.celo.org"].filter((u): u is string => !!u))];
     const client = createPublicClient({
       chain: celo,
-      transport: http(process.env.CELO_RPC_URL || "https://forno.celo.org", { retryCount: 1, timeout: 4_000 }),
+      transport: fallback(urls.map((u) => http(u, { retryCount: 1, timeout: 4_000 }))),
     }) as PublicClient;
     // Without a block the Uniswap mids are skipped (fetchReferences reports them unavailable).
     const block = await client.getBlockNumber().catch(() => 0n);
