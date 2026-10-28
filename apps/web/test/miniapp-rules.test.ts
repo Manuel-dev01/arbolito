@@ -14,12 +14,15 @@ const MAMA = "0x2222222222222222222222222222222222222222" as Address;
 const EXPIRY = BigInt(T0 / 1000 + 30 * 86_400);
 
 /** A rig whose account has autonomy on with Mamá as an allowed contact. */
-function autonomous(opts: { contact?: boolean; operator?: Address } = {}) {
+function autonomous(opts: { contact?: boolean; operator?: Address; perDay?: bigint } = {}) {
   const rig = makeRig({ guard: { address: GUARD, operator: OPERATOR } });
   rig.chain.reads = {
     settings: () => [true, false, 50],
     operatorOf: () => [opts.operator ?? OPERATOR, EXPIRY, true],
     isRecipient: (a) => (opts.contact ?? true) && (a[1] as string).toLowerCase() === MAMA.toLowerCase(),
+    // US$ 10 per transaction, US$ 25 a day by default.
+    limits: () => [10_000_000n, opts.perDay ?? 25_000_000n],
+    spentToday: () => 0n,
   };
   return rig;
 }
@@ -49,6 +52,16 @@ describe("standing rules (Mini App backend)", () => {
     const card = await draftRule(autonomous().deps, ACCOUNT, "es", SEND);
     expect(card).toMatchObject({ status: "draft", kind: "send", description: "Cada mes, el día 1: enviar US$ 5,00 a Mamá, que recibe pesos (wARS)." });
     expect(card.message).toContain(`ID: ${card.ruleId}`);
+  });
+
+  it("allows a monthly send above the per-transaction limit (it runs in pieces) but not above the daily limit", async () => {
+    const send = (usd: number) => ({ ...SEND, params: { ...SEND.params, amountUsdt: String(usd * 1_000_000) } });
+    // US$ 20 over a US$ 10 per-transaction limit: fine, it runs as two transfers.
+    expect(await draftRule(autonomous().deps, ACCOUNT, "es", send(20))).toMatchObject({ status: "draft" });
+    // US$ 30 over a US$ 25 day could never finish: refused, with what to change.
+    const f = await failure(draftRule(autonomous().deps, ACCOUNT, "es", send(30)));
+    expect(f.message).toContain("daily limit");
+    expect(f.message).toContain("25");
   });
 
   it("turns on only with the account's own signature over the exact text, once", async () => {

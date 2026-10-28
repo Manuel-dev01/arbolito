@@ -4,7 +4,7 @@
  *   pnpm ops:send buy USDT 30 --fork <rpc>      rehearse on an anvil fork
  *   pnpm ops:send desk USDT 40 --live [--yes]   Celo mainnet
  *   pnpm ops:send 0xAbc… USDT 5 --gift --live   a welcome credit to an address the founder approved
- * Destinations are the desk and buy payer wallets (derived from their keys) or, only with --gift,
+ * Destinations are the desk, buy payer and reserve wallets (derived from their keys) or, only with --gift,
  * an explicit address. Every send goes through sendGuarded (caps, simulation, ERC-8021 suffix), is
  * never retried, and a live one is appended to docs/TREASURY.md so every dollar stays accounted for.
  */
@@ -19,25 +19,30 @@ const STABLES = ["USDT", "USDC", "USAT"] as const;
 
 runMain(async () => {
   const [dest, sym, human] = process.argv.slice(2).filter((a) => !a.startsWith("--") && !/^https?:/.test(a));
-  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|0xAddress --gift> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
+  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|reserve|0xAddress --gift> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
   if (!(STABLES as readonly string[]).includes(sym)) throw new Error(`only dollar stablecoins (${STABLES.join(", ")}): ${sym}`);
   const token = TOKENS[sym as (typeof STABLES)[number]];
   const amount = parseUnits(human, token.decimals);
   if (amount <= 0n) throw new Error("amount must be positive");
 
   const env = loadEnv();
-  const roleKey = { desk: env.DESK_PRIVATE_KEY, buy: env.BUY_PAYER_PRIVATE_KEY }[dest];
+  const roles = {
+    desk: { key: env.DESK_PRIVATE_KEY, name: "DESK_PRIVATE_KEY", label: "desk wallet" },
+    buy: { key: env.BUY_PAYER_PRIVATE_KEY, name: "BUY_PAYER_PRIVATE_KEY", label: "buy payer" },
+    reserve: { key: env.RESERVE_PRIVATE_KEY, name: "RESERVE_PRIVATE_KEY", label: "reserve" },
+  } as const;
   let to: Address;
   let label: string;
-  if (dest === "desk" || dest === "buy") {
-    if (!roleKey) throw new Error(`${dest === "desk" ? "DESK" : "BUY_PAYER"}_PRIVATE_KEY is not set`);
-    to = privateKeyToAccount(roleKey as Hex).address;
-    label = dest === "desk" ? "desk wallet" : "buy payer";
+  if (dest in roles) {
+    const role = roles[dest as keyof typeof roles];
+    if (!role.key) throw new Error(`${role.name} is not set`);
+    to = privateKeyToAccount(role.key as Hex).address;
+    label = role.label;
   } else if (isAddress(dest) && hasFlag("gift")) {
     to = getAddress(dest);
     label = "welcome credit";
   } else {
-    throw new Error("destination must be desk, buy, or an address with --gift");
+    throw new Error("destination must be desk, buy, reserve, or an address with --gift");
   }
 
   const fork = forkUrl();

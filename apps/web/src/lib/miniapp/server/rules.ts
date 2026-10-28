@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { Address, Hex } from "viem";
+import { formatUnits, type Address, type Hex } from "viem";
 import type { z } from "zod";
-import { readGuardV2IsContact, readGuardV2Operator, readGuardV2Settings } from "@arbolito/chain";
+import { TOKENS } from "@arbolito/config";
+import { readGuardV2Budget, readGuardV2IsContact, readGuardV2Operator, readGuardV2Settings } from "@arbolito/chain";
 import { cancelText, describeRule, nextMonthlyRun, parseRule, ruleText, type Lang, type RuleSpec } from "@arbolito/rules";
 import type { RuleCancelRequest, RuleCard, RuleConfirmRequest, RulesListResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
@@ -45,10 +46,25 @@ async function checkAutonomy(deps: MiniappDeps, account: Address, contact?: Addr
   }
 }
 
+/**
+ * A monthly send runs in pieces no bigger than the per-transaction limit, so it may be above that
+ * limit; but it all runs on one day, so it can't be above the daily limit (it could never finish).
+ */
+async function checkSendFitsLimits(deps: MiniappDeps, account: Address, amountUsdt: bigint) {
+  if (!deps.guard) return;
+  const budget = await readGuardV2Budget(deps.chain, deps.guard.address, account, TOKENS.USDT.address as Address);
+  if (budget.maxPerDay > 0n && amountUsdt > budget.maxPerDay) {
+    throw badRequest(
+      `US$ ${formatUnits(amountUsdt, 6)} a month is above your daily limit of US$ ${formatUnits(budget.maxPerDay, 6)}, so it could never run in full. Lower the amount, or raise the daily limit in Settings → Limits & security.`,
+    );
+  }
+}
+
 /** Creates a draft (nothing runs until the account signs it). */
 export async function draftRule(deps: MiniappDeps, account: Address, lang: string, spec: RuleSpec): Promise<z.infer<typeof RuleCard>> {
   const acct = account.toLowerCase() as Address;
   await checkAutonomy(deps, acct, spec.kind === "send" ? (spec.params.contact as Address) : undefined);
+  if (spec.kind === "send") await checkSendFitsLimits(deps, acct, BigInt(spec.params.amountUsdt));
   const store = deps.store();
   const live = (await store.listRules(acct)).filter((r) => r.status === "active");
   if (live.length >= MAX_ACTIVE_RULES) throw badRequest(`You already have ${MAX_ACTIVE_RULES} rules on. Cancel one first.`);

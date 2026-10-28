@@ -17,6 +17,13 @@ function refRate(rates: Rates | null | undefined, pair: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+/**
+ * A holding must be worth at least this (micro-USD, = US$ 0.01) to price its currency. The server
+ * rounds each value to whole micro-dollars, so dust can't: 0.0001 wBRL "worth" 1 micro priced the
+ * real at R$ 112 per dollar on the founder's home screen (2026-10-28). Below it, the references price it.
+ */
+export const MIN_PRICING_MICROS = 10_000n;
+
 export function pricesFrom(balances: Balances | null | undefined, rates?: Rates | null): Prices {
   const p: Prices = { USD: MICRO };
   for (const b of balances?.balances ?? []) {
@@ -24,7 +31,7 @@ export function pricesFrom(balances: Balances | null | undefined, rates?: Rates 
     if (cur === "USD" || p[cur]) continue;
     const amt = BigInt(b.amount);
     const usd = BigInt(balances?.usdMicros[b.sym] ?? "0");
-    if (amt > 0n && usd > 0n) p[cur] = (usd * 10n ** BigInt(b.decimals)) / amt;
+    if (amt > 0n && usd >= MIN_PRICING_MICROS) p[cur] = (usd * 10n ** BigInt(b.decimals)) / amt;
   }
   const usdArs = refRate(rates, "USD/ARS");
   if (!p.ARS && usdArs) p.ARS = BigInt(Math.round(1e6 / usdArs));

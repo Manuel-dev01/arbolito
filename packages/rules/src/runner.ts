@@ -17,6 +17,7 @@ import { parseAbiItem, type Address, type Hex, type LocalAccount, type PublicCli
 import { POOLS, TOKENS } from "@arbolito/config";
 import {
   BroadcastError,
+  capsFromEnv,
   encodeGuardV2SendFor,
   encodeGuardV2SwapFor,
   encodeV3Path,
@@ -36,7 +37,7 @@ export interface RunnerStore {
   dueSendRules(now: Date): Promise<StoredRule[]>;
   activeSplitRules(): Promise<StoredRule[]>;
   claimRun(ruleId: string, trigger: string, amountIn: bigint | null): Promise<{ id: string } | null>;
-  finishRun(runId: string, r: { status: "done" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void>;
+  finishRun(runId: string, r: { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void>;
   setNextRun(ruleId: string, at: Date): Promise<void>;
   setCursor(ruleId: string, block: bigint): Promise<void>;
   stopRule(ruleId: string, reason: string): Promise<void>;
@@ -71,7 +72,26 @@ export interface RunnerOptions {
   slippageBps?: number;
   /** Blocks to wait before treating an incoming transfer as final. */
   confirmations?: bigint;
+  /** Arbolito's own cap per operator transaction (micro-USD); defaults to the build caps sendGuarded enforces. */
+  maxActionMicros?: bigint;
 }
+
+/** At most this many transactions per run, so a large rule over small limits stays cheap and bounded. */
+export const MAX_CHUNKS_PER_RUN = 10;
+
+/**
+ * How one run will move money: `total` (what the account asked for, cut to what its limits, balance
+ * and allowance allow today) in pieces of at most `chunk` (its per-transaction limit and Arbolito's
+ * per-action cap). `limitedBy` says why `total` is under what was asked, when it is.
+ */
+interface Plan {
+  want: bigint;
+  total: bigint;
+  chunk: bigint;
+  limitedBy?: string;
+}
+
+const isPlan = (x: Outcome | Plan): x is Plan => "chunk" in x;
 
 const USDT = TOKENS.USDT.address as Address;
 const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
@@ -101,13 +121,19 @@ function failed(sent: Extract<Sent, { ok: false }>, prior: Hex[] = []): Outcome 
   };
 }
 
-type Outcome = { status: "done" | "partial" | "failed" | "skipped"; amountOut?: bigint; txHashes: Hex[]; error?: string; stop?: string };
+/**
+ * done: all of it · limited: part of it, the rest stayed in the account (limits, balance, or a later
+ * piece failed) · partial: changed but not sent · failed · skipped: nothing moved.
+ */
+type Outcome = { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountIn?: bigint; amountOut?: bigint; txHashes: Hex[]; error?: string; stop?: string };
 
-const MSG: Record<Lang, { done: string; partial: string; skipped: string; failed: string; stopped: string }> = {
-  es: { done: "Arbolito hizo tu regla", partial: "Arbolito cambió pero no pudo enviar (la plata quedó en tu cuenta)", skipped: "Arbolito no pudo hacer tu regla esta vez", failed: "Falló tu regla; no se movió plata", stopped: "Arbolito pausó tu regla" },
-  pt: { done: "O Arbolito fez a sua regra", partial: "O Arbolito trocou mas não conseguiu enviar (o dinheiro ficou na sua conta)", skipped: "O Arbolito não conseguiu fazer a sua regra desta vez", failed: "A sua regra falhou; nenhum dinheiro foi movido", stopped: "O Arbolito pausou a sua regra" },
-  en: { done: "Arbolito ran your rule", partial: "Arbolito changed the money but couldn't send it (it stayed in your account)", skipped: "Arbolito couldn't run your rule this time", failed: "Your rule failed; no money moved", stopped: "Arbolito paused your rule" },
+const MSG: Record<Lang, { done: string; limited: string; partial: string; skipped: string; failed: string; stopped: string }> = {
+  es: { done: "Arbolito hizo tu regla", limited: "Arbolito hizo parte de tu regla, hasta tus límites (el resto quedó en tu cuenta)", partial: "Arbolito cambió pero no pudo enviar (la plata quedó en tu cuenta)", skipped: "Arbolito no pudo hacer tu regla esta vez", failed: "Falló tu regla; no se movió plata", stopped: "Arbolito pausó tu regla" },
+  pt: { done: "O Arbolito fez a sua regra", limited: "O Arbolito fez parte da sua regra, até os seus limites (o resto ficou na sua conta)", partial: "O Arbolito trocou mas não conseguiu enviar (o dinheiro ficou na sua conta)", skipped: "O Arbolito não conseguiu fazer a sua regra desta vez", failed: "A sua regra falhou; nenhum dinheiro foi movido", stopped: "O Arbolito pausou a sua regra" },
+  en: { done: "Arbolito ran your rule", limited: "Arbolito ran part of your rule, up to your limits (the rest stayed in your account)", partial: "Arbolito changed the money but couldn't send it (it stayed in your account)", skipped: "Arbolito couldn't run your rule this time", failed: "Your rule failed; no money moved", stopped: "Arbolito paused your rule" },
 };
+
+const usdtText = (micros: bigint) => `US$ ${(Number(micros) / 1e6).toFixed(2)}`;
 
 export class RulesRunner {
   private busy = false;
@@ -159,21 +185,54 @@ export class RulesRunner {
   }
 
   private async executeSend(account: Address, p: SendParams): Promise<Outcome> {
-    const amount = BigInt(p.amountUsdt);
     const contact = p.contact as Address;
-    const pre = await this.preflight(account, amount, contact);
-    if (pre) return pre;
-    if (p.receive === "USDT") {
-      const sent = await this.send(encodeGuardV2SendFor(account, USDT, contact, amount), amount, `rule send US$ to ${contact}`);
-      return sent.ok ? { status: "done", amountOut: amount, txHashes: [sent.hash] } : failed(sent);
+    const plan = await this.preflight(account, BigInt(p.amountUsdt), contact);
+    if (!isPlan(plan)) return plan;
+    return this.inChunks(plan, async (amount) => {
+      if (p.receive === "USDT") {
+        const sent = await this.send(encodeGuardV2SendFor(account, USDT, contact, amount), amount, `rule send US$ to ${contact}`);
+        return sent.ok ? { status: "done", amountOut: amount, txHashes: [sent.hash] } : failed(sent);
+      }
+      const swap = await this.swap(account, p.receive, amount);
+      if (swap.status !== "done") return swap;
+      const token = TOKENS[p.receive].address as Address;
+      const sent = await this.send(encodeGuardV2SendFor(account, token, contact, swap.amountOut!), amount, `rule send ${p.receive} to ${contact}`);
+      if (sent.ok) return { status: "done", amountOut: swap.amountOut, txHashes: [...swap.txHashes, sent.hash] };
+      // The swap landed but the payment didn't: the converted funds are in the account's own wallet.
+      return { ...failed(sent, swap.txHashes), status: "partial", amountOut: swap.amountOut };
+    });
+  }
+
+  /**
+   * Runs a plan piece by piece (each piece one guarded swap or send, so each stays within the
+   * per-transaction limit). Stops at the first piece that doesn't fully succeed and reports what
+   * already landed: a rule is never all-or-nothing just because it's larger than one transaction.
+   */
+  private async inChunks(plan: Plan, step: (amount: bigint) => Promise<Outcome>): Promise<Outcome> {
+    const hashes: Hex[] = [];
+    let done = 0n;
+    let out = 0n;
+    while (done < plan.total) {
+      const amount = plan.total - done < plan.chunk ? plan.total - done : plan.chunk;
+      const r = await step(amount);
+      hashes.push(...r.txHashes);
+      if (r.status !== "done") {
+        if (done === 0n) return { ...r, txHashes: hashes };
+        const partial = r.status === "partial";
+        return {
+          status: partial ? "partial" : "limited",
+          amountIn: done,
+          amountOut: out + (partial ? (r.amountOut ?? 0n) : 0n),
+          txHashes: hashes,
+          error: `${usdtText(done)} of ${usdtText(plan.want)} done, then: ${r.error ?? r.status}`,
+          ...(r.stop ? { stop: r.stop } : {}),
+        };
+      }
+      done += amount;
+      out += r.amountOut ?? 0n;
     }
-    const swap = await this.swap(account, p.receive, amount);
-    if (swap.status !== "done") return swap;
-    const token = TOKENS[p.receive].address as Address;
-    const sent = await this.send(encodeGuardV2SendFor(account, token, contact, swap.amountOut!), amount, `rule send ${p.receive} to ${contact}`);
-    if (sent.ok) return { status: "done", amountOut: swap.amountOut, txHashes: [...swap.txHashes, sent.hash] };
-    // The swap landed but the payment didn't: the converted funds are in the account's own wallet.
-    return { ...failed(sent, swap.txHashes), status: "partial", amountOut: swap.amountOut };
+    if (done < plan.want) return { status: "limited", amountIn: done, amountOut: out, txHashes: hashes, error: `${usdtText(done)} of ${usdtText(plan.want)}, capped by ${plan.limitedBy}` };
+    return { status: "done", amountIn: done, amountOut: out, txHashes: hashes };
   }
 
   // ── splits ──────────────────────────────────────────────────────────────
@@ -199,7 +258,7 @@ export class RulesRunner {
         const run = await this.o.store.claimRun(r.id, splitTrigger(l.transactionHash!, l.logIndex!), amountIn);
         if (!run) continue;
         const out = await this.preflight(account, amountIn)
-          .then(async (pre) => pre ?? (await this.swap(account, spec.params.to, amountIn)))
+          .then((plan) => (isPlan(plan) ? this.inChunks(plan, (amount) => this.swap(account, spec.params.to, amount)) : plan))
           .catch(beforeAnyTx);
         await this.finish(r, spec, run.id, out, value);
       }
@@ -208,8 +267,12 @@ export class RulesRunner {
   }
 
   // ── building blocks ─────────────────────────────────────────────────────
-  /** Checks the guard and the wallet before claiming gas: a "skipped" outcome, or null when ready. */
-  private async preflight(account: Address, amountUsdt: bigint, contact?: Address): Promise<Outcome | null> {
+  /**
+   * Checks the guard and the wallet before spending gas: a "skipped" outcome, or the plan for the
+   * run. A rule bigger than the per-transaction limit runs in pieces; one bigger than what's left
+   * today (or than the balance or allowance) runs as far as that and says why it stopped there.
+   */
+  private async preflight(account: Address, want: bigint, contact?: Address): Promise<Outcome | Plan> {
     const { publicClient: c, guard, operator } = this.o;
     const [settings, op, budget, balance, allowance] = await Promise.all([
       readGuardV2Settings(c, guard, account),
@@ -224,11 +287,29 @@ export class RulesRunner {
     if (contact && !(await readGuardV2IsContact(c, guard, account, contact))) return stop("the contact is no longer allowed in the guard");
     const skip = (why: string): Outcome => ({ status: "skipped", txHashes: [], error: why });
     if (settings.paused || (await this.o.store.isPaused?.(account))) return skip("the account paused Arbolito");
-    if (amountUsdt > budget.maxPerTx) return skip(`over the per-transaction limit (${budget.maxPerTx})`);
-    if (budget.spentToday + amountUsdt > budget.maxPerDay) return skip("over today's limit");
-    if (balance < amountUsdt) return skip("not enough USDT in the account");
-    if (allowance < amountUsdt) return skip("the guard's allowance ran out; renew the permission");
-    return null;
+    // One piece: the account's per-transaction limit, and never more than Arbolito's own per-action cap.
+    const cap = this.o.maxActionMicros ?? capsFromEnv().maxActionMicros;
+    const chunk = budget.maxPerTx < cap ? budget.maxPerTx : cap;
+    if (chunk <= 0n) return skip("the per-transaction limit is zero");
+    const dayLeft = budget.maxPerDay > budget.spentToday ? budget.maxPerDay - budget.spentToday : 0n;
+    let total = want;
+    let limitedBy: string | undefined;
+    const cut = (to: bigint, why: string) => {
+      if (to < total) {
+        total = to;
+        limitedBy = why;
+      }
+    };
+    cut(dayLeft, `your daily limit (${usdtText(budget.maxPerDay)} a day)`);
+    cut(balance, "the USDT in your account");
+    cut(allowance, "the guard's allowance (renew the permission)");
+    cut(chunk * BigInt(MAX_CHUNKS_PER_RUN), `${MAX_CHUNKS_PER_RUN} transactions per run`);
+    if (total <= 0n) {
+      if (dayLeft === 0n) return skip("today's limit is used up");
+      if (balance === 0n) return skip("not enough USDT in the account");
+      return skip("the guard's allowance ran out; renew the permission");
+    }
+    return { want, total, chunk, limitedBy };
   }
 
   private async swap(account: Address, to: RuleSym, amountIn: bigint): Promise<Outcome> {
@@ -281,7 +362,7 @@ export class RulesRunner {
     this.log(`rule ${r.id} (${r.kind}) → ${out.status}${out.error ? `: ${out.error}` : ""}${out.txHashes.length ? ` ${out.txHashes.join(" ")}` : ""}`);
     if (!this.o.notify) return;
     const m = MSG[lang];
-    const head = out.stop ? m.stopped : out.status === "done" ? m.done : out.status === "partial" ? m.partial : out.status === "skipped" ? m.skipped : m.failed;
+    const head = out.stop ? m.stopped : out.status === "done" ? m.done : out.status === "limited" ? m.limited : out.status === "partial" ? m.partial : out.status === "skipped" ? m.skipped : m.failed;
     const lines = [`${head}: ${describeRule(spec, lang)}`];
     if (incoming !== undefined) lines.push(`(${usd(incoming, lang)} ${lang === "en" ? "arrived" : lang === "pt" ? "chegaram" : "llegaron"})`);
     if (out.error) lines.push(out.error);

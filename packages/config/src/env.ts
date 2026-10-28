@@ -54,6 +54,8 @@ export const envSchema = z.object({
   BUY_COMPUTE_URL: z.string().url().default("https://usebuy.ai/google/vm"),
   BUY_PAYER_PRIVATE_KEY: opt(privateKey),
   BUY_PAY_TOKEN: z.enum(["USAT", "USDT", "USDC"]).default("USAT"),
+  /** Reserve wallet (local only, never on a server): holds ops' float now that ops, the agent wallet, pays buy from the bot. */
+  RESERVE_PRIVATE_KEY: opt(privateKey),
   /** Refresh Western Union rates through buy from the bot process (apps/agent/src/competitors.ts): off or live. */
   COMPETITORS_RUNNER: z.enum(["off", "live"]).default("off"),
 

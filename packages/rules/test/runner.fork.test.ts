@@ -124,6 +124,7 @@ describe("rules runner through the deployed guard", () => {
       notify: async (_a, text) => void notes.push(text),
       now: () => clock,
       confirmations: 0n,
+      maxActionMicros: 5_000_000n, // the bot's per-action cap on Railway
     });
   });
 
@@ -163,11 +164,30 @@ describe("rules runner through the deployed guard", () => {
     expect(store.runs.filter((r) => r.ruleId === id)).toHaveLength(1); // the cursor moved on
   });
 
-  it("skips a run over the account's per-transaction cap, and stops when the permission is revoked", async () => {
-    const big = store.add({ account: USER.address.toLowerCase(), kind: "send", params: { contact: CONTACT, contactName: "Mamá", amountUsdt: "6000000", receive: "USDT", dayOfMonth: 1 }, nextRunAt: new Date("2026-11-01T13:00:00Z"), cursorBlock: null });
+  it("runs a rule over the per-transaction limit in pieces, stops at the daily limit, and stops when the permission is revoked", async () => {
+    // So far today: 3 USDT (the send) + 1.5 USDT (the split) of a 12 USDT day; 4 USDT per transaction.
+    const contact0 = await bal(USDT, CONTACT);
+    const pieces = store.add({ account: USER.address.toLowerCase(), kind: "send", params: { contact: CONTACT, contactName: "Mamá", amountUsdt: "6000000", receive: "USDT", dayOfMonth: 1 }, nextRunAt: new Date("2026-11-01T13:00:00Z"), cursorBlock: null });
+    const capped = store.add({ account: USER.address.toLowerCase(), kind: "send", params: { contact: CONTACT, contactName: "Papá", amountUsdt: "10000000", receive: "USDT", dayOfMonth: 1 }, nextRunAt: new Date("2026-11-01T13:00:00Z"), cursorBlock: null });
     await runner.tick();
-    expect(store.runs.find((r) => r.ruleId === big)).toMatchObject({ status: "skipped", txHashes: [] });
-    expect(store.rules.get(big)!.status).toBe("active"); // next month may fit
+
+    // 6 USDT over a 4 USDT limit: two transfers (4 + 2), all of it delivered.
+    const p = store.runs.find((r) => r.ruleId === pieces)!;
+    expect(p).toMatchObject({ status: "done", amountOut: 6_000_000n });
+    expect(p.txHashes).toHaveLength(2);
+    // Then 10 USDT with 1.5 USDT left today: it sends the 1.5 and says why it stopped.
+    const c = store.runs.find((r) => r.ruleId === capped)!;
+    expect(c).toMatchObject({ status: "limited", amountOut: 1_500_000n });
+    expect(c.txHashes).toHaveLength(1);
+    expect(c.error).toContain("daily limit");
+    expect(notes.at(-1)).toContain("hizo parte de tu regla");
+    expect((await bal(USDT, CONTACT)) - contact0).toBe(7_500_000n);
+    expect(store.rules.get(capped)!.status).toBe("active"); // next month runs again
+
+    // Nothing left today: the next run is skipped, with nothing sent.
+    const later = store.add({ account: USER.address.toLowerCase(), kind: "send", params: { contact: CONTACT, contactName: "Mamá", amountUsdt: "1000000", receive: "USDT", dayOfMonth: 1 }, nextRunAt: new Date("2026-11-01T13:00:00Z"), cursorBlock: null });
+    await runner.tick();
+    expect(store.runs.find((r) => r.ruleId === later)).toMatchObject({ status: "skipped", txHashes: [], error: "today's limit is used up" });
 
     await userSends(GUARD, encodeGuardV2RevokeOperator(), "revokeOperator");
     clock = new Date("2026-12-01T13:00:05Z");

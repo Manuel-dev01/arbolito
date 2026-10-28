@@ -440,7 +440,7 @@ const es = {
     soonLead: "El market maker de Arbolito en Textile, con sus propios números: cotizaciones, fills, inventario y P&L.",
     soonLink: "ver /desk",
     comingSoon: "También en vivo",
-    buy: { title: "Comprado con buy", lead: "Para comparar con Western Union, Arbolito alquila un navegador con buy (x402, en USDT) y lee las tasas en su web. Cada lectura, con su pago en Celo.", empty: "Todavía no hay lecturas.", rate: "tasa", paid: "pagado", payer: "Billetera que paga" },
+    buy: { title: "Comprado con buy", lead: "Para comparar con Western Union, Arbolito alquila un navegador con buy (x402, en USDT) y lee las tasas en su web. Cada lectura, con su pago en Celo.", empty: "Todavía no hay lecturas.", rate: "tasa", paid: "pagado", payer: "Billetera que paga", payerAgent: "(la del agente, ERC-8004 #9976)", payerBefore: "hasta el 28/10:" },
     soon: [
       { key: "desk", title: "Arbolito Desk", body: "Cotizaciones a pedidos de Textile, fills, inventario y P&L del market maker propio." },
     ],
@@ -867,7 +867,7 @@ const pt: Messages = {
     soonLead: "O market maker do Arbolito na Textile, com os próprios números: cotações, fills, estoque e P&L.",
     soonLink: "ver /desk",
     comingSoon: "Também ao vivo",
-    buy: { title: "Comprado com buy", lead: "Para comparar com a Western Union, o Arbolito aluga um navegador com buy (x402, em USDT) e lê as taxas no site dela. Cada leitura, com seu pagamento na Celo.", empty: "Ainda não há leituras.", rate: "taxa", paid: "pago", payer: "Carteira que paga" },
+    buy: { title: "Comprado com buy", lead: "Para comparar com a Western Union, o Arbolito aluga um navegador com buy (x402, em USDT) e lê as taxas no site dela. Cada leitura, com seu pagamento na Celo.", empty: "Ainda não há leituras.", rate: "taxa", paid: "pago", payer: "Carteira que paga", payerAgent: "(a do agente, ERC-8004 #9976)", payerBefore: "até 28/10:" },
     soon: [
       { key: "desk", title: "Arbolito Desk", body: "Cotações para pedidos da Textile, fills, estoque e P&L do market maker próprio." },
     ],
@@ -1292,7 +1292,7 @@ const en: Messages = {
     soonLead: "Arbolito's market maker on Textile, with its own numbers: quotes, fills, inventory and P&L.",
     soonLink: "see /desk",
     comingSoon: "Also live",
-    buy: { title: "Bought with buy", lead: "To compare with Western Union, Arbolito rents a browser through buy (x402, paid in USDT) and reads the rates on its site. Each reading, with its payment on Celo.", empty: "No readings yet.", rate: "rate", paid: "paid", payer: "Paying wallet" },
+    buy: { title: "Bought with buy", lead: "To compare with Western Union, Arbolito rents a browser through buy (x402, paid in USDT) and reads the rates on its site. Each reading, with its payment on Celo.", empty: "No readings yet.", rate: "rate", paid: "paid", payer: "Paying wallet", payerAgent: "(the agent's, ERC-8004 #9976)", payerBefore: "until Oct 28:" },
     soon: [
       { key: "desk", title: "Arbolito Desk", body: "Quotes to Textile requests, fills, inventory and P&L of our own market maker." },
     ],

@@ -8,7 +8,7 @@ import { formatBps, formatFixed, formatMoney, formatToken, shortHex } from "../.
 import { RECEIPTS_ADDRESS } from "../../lib/chain";
 import { computeMetrics } from "../../lib/metrics";
 import { addressUrl, txUrl } from "../../lib/receipts-abi";
-import { BUY_PAYER, loadBuyPurchases } from "../../lib/buy-public";
+import { BUY_PAYER, BUY_PAYER_BEFORE, loadBuyPurchases } from "../../lib/buy-public";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -278,6 +278,10 @@ export default async function MetricsPage({ searchParams }: Props) {
           {t.buy.payer}:{" "}
           <ExtLink href={addressUrl(BUY_PAYER)} className="mono">
             {shortHex(BUY_PAYER, 6, 4)} ↗
+          </ExtLink>{" "}
+          {t.buy.payerAgent} · {t.buy.payerBefore}{" "}
+          <ExtLink href={addressUrl(BUY_PAYER_BEFORE)} className="mono">
+            {shortHex(BUY_PAYER_BEFORE, 6, 4)} ↗
           </ExtLink>
         </p>
       </section>

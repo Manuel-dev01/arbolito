@@ -87,7 +87,7 @@ export async function claimRun(db: Db, ruleId: string, trigger: string, amountIn
   return rows[0] ?? null;
 }
 
-export async function finishRun(db: Db, id: string, r: { status: "done" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void> {
+export async function finishRun(db: Db, id: string, r: { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void> {
   await db
     .update(ruleRuns)
     .set({ status: r.status, amountOut: r.amountOut?.toString() ?? null, txHashes: r.txHashes, error: r.error?.slice(0, 1000) ?? null })
