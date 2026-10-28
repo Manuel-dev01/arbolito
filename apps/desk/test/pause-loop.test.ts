@@ -30,8 +30,38 @@ describe("risk officer pause", () => {
     await svc.reviewRisk(t0);
     for (let i = 1; i <= 5; i++) await svc.tick(t0 + i * 5_000);
     const brl = svc.riskSignals(t0 + 25_000).find((s) => s.pair === "wbrl-usdt")!;
-    expect(brl.paused).toBe("test");
+    expect(brl.pausedForMin).toBe(0);
     expect(brl.holds).toBe(0);
     expect(svc.served("wbrl-usdt")).toBeDefined(); // served before the pause, held (stale) since
+  });
+
+  it("never shows the officer its own pause reason (a past reason is not evidence)", async () => {
+    const svc = new FeedService({ client: {} as PublicClient, port: 0, risk: { llm: pausingLlm, model: "m" } });
+    const t0 = Date.now();
+    await svc.tick(t0);
+    await svc.reviewRisk(t0);
+    const brl = svc.riskSignals(t0 + 10 * 60_000).find((s) => s.pair === "wbrl-usdt")!;
+    expect(brl.pausedForMin).toBe(10);
+    expect(JSON.stringify(brl)).not.toContain("test");
+  });
+
+  it("caps a renewed pause at MAX_CONTINUOUS_PAUSE_MIN, then lets the corridor quote (2026-10-28: wARS re-paused for 10+ h)", async () => {
+    const { MAX_CONTINUOUS_PAUSE_MIN } = await import("../src");
+    const svc = new FeedService({ client: {} as PublicClient, port: 0, risk: { llm: pausingLlm, model: "m", everyMs: 15 * 60_000 } });
+    const t0 = Date.now();
+    await svc.tick(t0);
+    const pausedAt = (t: number) => svc.riskSignals(t).find((s) => s.pair === "wbrl-usdt")!.pausedForMin;
+    // The officer renews every 15 min, as it did live.
+    for (let m = 0; m < MAX_CONTINUOUS_PAUSE_MIN; m += 15) await svc.reviewRisk(t0 + m * 60_000);
+    expect(pausedAt(t0 + (MAX_CONTINUOUS_PAUSE_MIN - 1) * 60_000)).toBe(MAX_CONTINUOUS_PAUSE_MIN - 1);
+    // At the cap: no renewal, the corridor quotes again.
+    await svc.reviewRisk(t0 + MAX_CONTINUOUS_PAUSE_MIN * 60_000);
+    expect(pausedAt(t0 + MAX_CONTINUOUS_PAUSE_MIN * 60_000)).toBeUndefined();
+    // And the next review can't re-pause it straight away.
+    await svc.reviewRisk(t0 + (MAX_CONTINUOUS_PAUSE_MIN + 15) * 60_000);
+    expect(pausedAt(t0 + (MAX_CONTINUOUS_PAUSE_MIN + 15) * 60_000)).toBeUndefined();
+    // After the cooldown a fresh pause is allowed again, counted from zero.
+    await svc.reviewRisk(t0 + (MAX_CONTINUOUS_PAUSE_MIN + 30) * 60_000);
+    expect(pausedAt(t0 + (MAX_CONTINUOUS_PAUSE_MIN + 30) * 60_000)).toBe(0);
   });
 });

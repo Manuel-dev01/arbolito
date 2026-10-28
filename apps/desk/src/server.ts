@@ -17,7 +17,7 @@ import { step, type Decision, type FeedState, type Published } from "./feed";
 import { corridorShares, readBalances, type Balances } from "./inventory";
 import type { DeskLedger, FairNow } from "./ledger";
 import type { LlmClient } from "@arbolito/llm";
-import { reviewRisk, windowStats, type CorridorSignals, type RiskDecision } from "./risk";
+import { MAX_CONTINUOUS_PAUSE_MIN, reviewRisk, windowStats, type CorridorSignals, type RiskDecision } from "./risk";
 import { observeAll } from "./sources";
 
 export interface FeedServiceOptions {
@@ -64,8 +64,10 @@ export class FeedService {
   /** Carry per corridor (dynamic.ts), refreshed hourly from the ledger's week of snapshots; priors until then. */
   private carry = new Map<string, CarryEstimate>();
   private carryNextAt = 0;
-  /** Pauses set by the risk officer: until (ms) and why. */
-  private pauses = new Map<string, { until: number; reason: string }>();
+  /** Pauses set by the risk officer: until (ms), why, and since when the corridor has been paused without a break. */
+  private pauses = new Map<string, { until: number; reason: string; since: number }>();
+  /** After a pause hits MAX_CONTINUOUS_PAUSE_MIN, the corridor quotes again and can't be re-paused before this (ms). */
+  private pauseCooldown = new Map<string, number>();
   private risk: { lastReviewAt?: string; lastError?: string; lastDecisions: RiskDecision[]; reviewing: boolean; nextAt: number } = { lastDecisions: [], reviewing: false, nextAt: 0 };
 
   constructor(private o: FeedServiceOptions) {
@@ -211,7 +213,7 @@ export class FeedService {
         share: h?.share === undefined ? undefined : Math.round(h.share * 1000) / 1000,
         fills: mine.length,
         avgEdgeBps: edges.length ? Math.round((edges.reduce((a, b) => a + b, 0) / edges.length) * 100) / 100 : undefined,
-        paused: pause && now < pause.until ? pause.reason : undefined,
+        pausedForMin: pause && now < pause.until ? Math.round((now - pause.since) / 60_000) : undefined,
       };
     });
   }
@@ -226,9 +228,27 @@ export class FeedService {
       this.risk.lastError = error;
       this.risk.lastDecisions = decisions;
       for (const d of decisions) {
-        if (d.action === "pause") this.pauses.set(d.pair, { until: now + d.minutes * 60_000, reason: d.reason });
-        else this.pauses.delete(d.pair); // "normal" lifts the officer's own pause; the breaker is separate
-        if (d.action === "pause") this.o.log?.(`risk officer: pause ${d.pair} for ${d.minutes} min (${d.reason})`);
+        if (d.action !== "pause") {
+          this.pauses.delete(d.pair); // "normal" lifts the officer's own pause; the breaker is separate
+          continue;
+        }
+        if (now < (this.pauseCooldown.get(d.pair) ?? 0)) {
+          this.o.log?.(`risk officer: pause ${d.pair} refused (cooling down after a ${MAX_CONTINUOUS_PAUSE_MIN}-min pause)`);
+          continue;
+        }
+        const prev = this.pauses.get(d.pair);
+        // A renewal at or before the previous pause's end continues it (back-to-back short pauses can't dodge the cap).
+        const since = prev && now <= prev.until ? prev.since : now;
+        const capAt = since + MAX_CONTINUOUS_PAUSE_MIN * 60_000;
+        if (now >= capAt) {
+          // Renewed up to the cap: quote again, and give the market one review interval before another pause.
+          this.pauses.delete(d.pair);
+          this.pauseCooldown.set(d.pair, now + (this.o.risk.everyMs ?? 15 * 60_000) * 2);
+          this.o.log?.(`risk officer: ${d.pair} paused ${MAX_CONTINUOUS_PAUSE_MIN} min without a break; resuming (cap)`);
+          continue;
+        }
+        this.pauses.set(d.pair, { until: Math.min(now + d.minutes * 60_000, capAt), reason: d.reason, since });
+        this.o.log?.(`risk officer: pause ${d.pair} for ${d.minutes} min (${d.reason})`);
       }
       if (error) this.o.log?.(`risk officer: no decision (${error})`);
     } finally {
@@ -246,7 +266,7 @@ export class FeedService {
       sourceErrors: this.lastErrors,
       ...(this.o.extraState?.() ?? {}),
       riskOfficer: this.o.risk
-        ? { enabled: true, lastReviewAt: this.risk.lastReviewAt ?? null, lastError: this.risk.lastError ?? null, decisions: this.risk.lastDecisions, pauses: Object.fromEntries([...this.pauses].map(([k, v]) => [k, { until: new Date(v.until).toISOString(), reason: v.reason }])) }
+        ? { enabled: true, lastReviewAt: this.risk.lastReviewAt ?? null, lastError: this.risk.lastError ?? null, decisions: this.risk.lastDecisions, pauses: Object.fromEntries([...this.pauses].map(([k, v]) => [k, { until: new Date(v.until).toISOString(), since: new Date(v.since).toISOString(), reason: v.reason }])) }
         : { enabled: false },
       corridors: this.corridors.map((c) => {
         const r = this.rt.get(c.pair)!;

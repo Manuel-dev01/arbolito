@@ -12,6 +12,12 @@ import type { Corridor } from "./corridors";
 
 export const MIN_PAUSE_MIN = 15;
 export const MAX_PAUSE_MIN = 120;
+/**
+ * Longest a corridor may stay paused without a break, however often the officer renews it. Shown
+ * its own pause reason, it re-paused wARS every review for 10+ hours over one fill that had left
+ * the window long before (2026-10-28); renewals now stop here and the corridor quotes again.
+ */
+export const MAX_CONTINUOUS_PAUSE_MIN = 120;
 
 export interface CorridorSignals {
   pair: string;
@@ -31,8 +37,8 @@ export interface CorridorSignals {
   /** Fills in the window and their average edge vs fair, bps. */
   fills: number;
   avgEdgeBps?: number;
-  /** Currently paused by the officer, and why. */
-  paused?: string;
+  /** Minutes this corridor has been paused by the officer without a break (absent when not paused). Never the reason: a past reason is not evidence. */
+  pausedForMin?: number;
 }
 
 export interface RiskDecision {
@@ -89,6 +95,7 @@ A pause has a real cost: the desk is judged on the volume it quotes and fills, a
 - many breaker holds in the hour (the breaker's own, not pauses);
 - a stablecoin moving away from 1.00 (fairNow is fiat per USD; for USDC/USA₮ it should be ~1).
 Do NOT pause for source dispersion below the corridor's breakerMaxDevBps: different sources (exchange quotes, official and parallel rates, a thin pool) routinely sit tens of bps apart, and the breaker already drops outliers. Do not pause for a share of 0 on its own.
+pausedForMin tells you a corridor is already paused. Renew a pause only if this hour's signals show the problem now (for example fills > 0 with negative avgEdgeBps); a pause you set earlier is not evidence, and a corridor with no fills, holds or unusual move this hour should go back to NORMAL.
 Otherwise return NORMAL: a quiet market is the normal case. Keep reasons short and factual. Always call the decide tool once, covering every corridor.
 If you cannot call tools, reply with only the same JSON object: {"corridors":[{"pair":"…","action":"normal"|"pause","minutes":15-120,"reason":"…"}]}.`;
 
