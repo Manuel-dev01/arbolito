@@ -13,7 +13,7 @@ Built for **Celo · Agents on Open Rails** (deadline Nov 9, 2026). Everything be
 |---|---|
 | Website | [arbolito-livid.vercel.app](https://arbolito-livid.vercel.app) |
 | Mini App | Built for MiniPay (Discover listing pending). Open `https://arbolito-livid.vercel.app/app` in MiniPay, or try the demo at [`/app?mock=1`](https://arbolito-livid.vercel.app/app?mock=1) |
-| Telegram | [@arbolitoo_bot](https://t.me/arbolitoo_bot) (private beta) |
+| Telegram | [@arbolitoo_bot](https://t.me/arbolitoo_bot) (open to everyone) |
 | Public metrics | [/metrics](https://arbolito-livid.vercel.app/metrics): conversions, receipts and volume, each linked to its transactions |
 | Arbolito Desk | [/desk](https://arbolito-livid.vercel.app/desk): live quotes, fills, inventory, P&L and uptime; the strategy is in [docs/DESK-STRATEGY.md](docs/DESK-STRATEGY.md) |
 | Agent identity | ERC-8004 **agentId 9976** ([registration](https://arbolito-livid.vercel.app/.well-known/agent-registration.json)) |
