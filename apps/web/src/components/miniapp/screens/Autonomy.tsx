@@ -3,7 +3,7 @@
 import { fill } from "../../../i18n/miniapp";
 import { usdToCur } from "../../../lib/miniapp/client/derive";
 import { fmtMoney, maskPhone } from "../../../lib/miniapp/client/format";
-import { Frame, PRESETS, useApp, type Preset } from "../context";
+import { Frame, PRESETS, customValid, draftLimits, useApp, type Preset } from "../context";
 import { Switch } from "../ui";
 
 /** "≈ ARS 40.200" for a USD amount, in the display currency (empty when that is dollars). */
@@ -50,13 +50,20 @@ export function AutoIntro() {
 export function AutoLimits() {
   const { t, autoDraft, setAutoDraft, go } = useApp();
   const eq = useLocalEq();
-  const opts: [Preset, string][] = [
+  const opts: [Exclude<Preset, "custom">, string][] = [
     ["low", t.limLow],
     ["mid", t.limMid],
     ["high", t.limHigh],
   ];
+  const custom = autoDraft.preset === "custom";
+  const ok = !custom || customValid(autoDraft.custom);
+  const setCustom = (i: 0 | 1, v: string) => {
+    const next: [number, number] = [autoDraft.custom[0], autoDraft.custom[1]];
+    next[i] = Number(v.replace(",", "."));
+    setAutoDraft({ custom: next });
+  };
   return (
-    <Frame primary={{ label: t.next, onClick: () => go("auto-contacts") }}>
+    <Frame primary={ok ? { label: t.next, onClick: () => go("auto-contacts") } : { label: t.next, kind: "off" }}>
       <div className="mp-pad wide" style={{ gap: 14 }}>
         <h1 className="mp-h1 md">{t.limT}</h1>
         <p className="mp-p">{t.limB}</p>
@@ -82,6 +89,34 @@ export function AutoLimits() {
               </button>
             );
           })}
+          <div role="radio" aria-checked={custom} tabIndex={0} className={`mp-option radio ${custom ? "on" : ""}`} onClick={() => !custom && setAutoDraft({ preset: "custom" })} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !custom && setAutoDraft({ preset: "custom" })}>
+            <span className={`mp-radio ${custom ? "on" : ""}`} />
+            <span className="mp-grow mp-col" style={{ gap: 8 }}>
+              <span style={{ fontSize: 17, fontWeight: 700 }}>{t.limCustom}</span>
+              {custom ? (
+                <>
+                  {([0, 1] as const).map((i) => (
+                    <label key={i} className="mp-row" style={{ gap: 8, alignItems: "center", fontSize: 16, flexWrap: "wrap" }}>
+                      <span>US$</span>
+                      <input
+                        className="mp-input"
+                        inputMode="decimal"
+                        aria-label={i === 0 ? t.perOp : t.perDay}
+                        defaultValue={String(autoDraft.custom[i])}
+                        onChange={(e) => setCustom(i, e.target.value)}
+                        style={{ width: 110 }}
+                      />
+                      <span>{i === 0 ? t.perOp : t.perDay}</span>
+                      <span style={{ color: "var(--muted)" }}>{Number.isFinite(autoDraft.custom[i]) && autoDraft.custom[i] > 0 ? eq(autoDraft.custom[i]) : ""}</span>
+                    </label>
+                  ))}
+                  {!ok ? <span className="mp-small" style={{ color: "var(--neg, #c0392b)" }}>{t.limCustomErr}</span> : null}
+                </>
+              ) : (
+                <span style={{ fontSize: 15, color: "var(--muted)" }}>{t.limCustomB}</span>
+              )}
+            </span>
+          </div>
         </div>
         <div className="mp-small">{t.limNote2}</div>
       </div>
@@ -129,7 +164,7 @@ export function AutoContacts() {
 export function AutoConsent() {
   const { t, lang, contacts, autoDraft, exec, go, activateAuto } = useApp();
   const eq = useLocalEq();
-  const [op, day] = PRESETS[autoDraft.preset];
+  const [op, day] = draftLimits(autoDraft);
   const step = exec.stage?.stage === "confirming" || exec.stage?.stage === "sent" ? exec.stage : null;
   const chosen = contacts.filter((c) => autoDraft.contactIds.includes(c.id) && c.address);
   const names = chosen.map((c) => c.name.split(" ")[0]).join(", ");
@@ -175,7 +210,7 @@ export function AutoConsent() {
 
 export function AutoOn() {
   const { t, lang, auto, contacts, autoDraft, go } = useApp();
-  const [op, day] = PRESETS[autoDraft.preset];
+  const [op, day] = draftLimits(autoDraft);
   const names = contacts.filter((c) => autoDraft.contactIds.includes(c.id) && c.address).map((c) => c.name.split(" ")[0]).join(", ") || "—";
   const expiry = auto?.operatorExpiry ? new Date(auto.operatorExpiry) : new Date(Date.now() + 30 * 86_400_000);
   return (

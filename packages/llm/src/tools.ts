@@ -138,7 +138,7 @@ const descriptions: Record<ToolName, string> = {
   connect_minipay:
     "Connect (or reconnect) the user's MiniPay wallet to this Telegram chat: sends them a message with a fresh 4-digit code and where to type it in MiniPay. Use it whenever the user asks to connect, link, reconnect or for a code. Don't invent or repeat codes yourself.",
   list_rules: "List the user's automatic rules (monthly payments, payday splits), their status and the latest runs. Read-only.",
-  get_limits: "Read the user's per-action and daily limits and how much is left today. Read-only. Limits can't be changed here.",
+  get_limits: "Read the limits that apply to the user: none from Arbolito on conversions they confirm themselves, and, for automatic rules, the per-operation and daily limits the user set onchain (and how much is used today). Read-only. Limits can't be changed here.",
   deposit_info: "Show how to deposit into the user's Arbolito wallet (address, network, supported tokens).",
   withdraw_guide: "Explain how to cash out to a local bank account (off-ramp guide).",
   help: "List what Arbolito can do.",

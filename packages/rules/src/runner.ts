@@ -8,8 +8,9 @@
  *   worse than its TWAP floor. The operator can't change any of that.
  * - A run is claimed in the database before anything is sent; (rule, trigger) is unique, so a
  *   month or an incoming payment is executed at most once, even across crashes and restarts.
- * - Every transaction goes through sendGuarded: simulated first, ERC-8021 tagged, and charged
- *   to Arbolito's own build caps (≤ US$ 5 per action, ≤ US$ 25 per day) on top of the user's.
+ * - Every transaction goes through sendGuarded: simulated first and ERC-8021 tagged. The only
+ *   money limits are the account's own, set and signed by the user and enforced by the guard
+ *   onchain: Arbolito adds no cap of its own on a user's rule (founder's call, 2026-10-28).
  * - Nothing is retried. A failure before broadcast skips this run; an unconfirmed broadcast
  *   stops the rule until a human checks it.
  */
@@ -17,7 +18,6 @@ import { parseAbiItem, type Address, type Hex, type LocalAccount, type PublicCli
 import { POOLS, TOKENS } from "@arbolito/config";
 import {
   BroadcastError,
-  capsFromEnv,
   encodeGuardV2SendFor,
   encodeGuardV2SwapFor,
   encodeV3Path,
@@ -27,6 +27,7 @@ import {
   readGuardV2Operator,
   readGuardV2Settings,
   sendGuarded,
+  type Caps,
   type SpendLedger,
 } from "@arbolito/chain";
 import { UniswapV3Adapter, erc20Abi, receivedInTx } from "@arbolito/router";
@@ -72,12 +73,18 @@ export interface RunnerOptions {
   slippageBps?: number;
   /** Blocks to wait before treating an incoming transfer as final. */
   confirmations?: bigint;
-  /** Arbolito's own cap per operator transaction (micro-USD); defaults to the build caps sendGuarded enforces. */
-  maxActionMicros?: bigint;
+  /** Optional extra caps on the operator's transactions (tests). Default none: the account's guard limits are the limits. */
+  operatorCaps?: Caps;
 }
 
-/** At most this many transactions per run, so a large rule over small limits stays cheap and bounded. */
-export const MAX_CHUNKS_PER_RUN = 10;
+/**
+ * At most this many transactions per run: a gas bound, not a money limit. It only bites when the
+ * account's per-transaction limit is under 2% of the rule's amount.
+ */
+export const MAX_CHUNKS_PER_RUN = 50;
+
+/** No cap of Arbolito's own on a user's rule: the guard enforces the account's limits onchain. */
+const NO_OPERATOR_CAP: Caps = { maxActionMicros: 2n ** 128n, maxDailyMicros: 2n ** 128n };
 
 /**
  * How one run will move money: `total` (what the account asked for, cut to what its limits, balance
@@ -287,9 +294,9 @@ export class RulesRunner {
     if (contact && !(await readGuardV2IsContact(c, guard, account, contact))) return stop("the contact is no longer allowed in the guard");
     const skip = (why: string): Outcome => ({ status: "skipped", txHashes: [], error: why });
     if (settings.paused || (await this.o.store.isPaused?.(account))) return skip("the account paused Arbolito");
-    // One piece: the account's per-transaction limit, and never more than Arbolito's own per-action cap.
-    const cap = this.o.maxActionMicros ?? capsFromEnv().maxActionMicros;
-    const chunk = budget.maxPerTx < cap ? budget.maxPerTx : cap;
+    // One piece: the account's own per-transaction limit (and an operator cap only if one is configured).
+    const cap = this.o.operatorCaps?.maxActionMicros;
+    const chunk = cap !== undefined && cap < budget.maxPerTx ? cap : budget.maxPerTx;
     if (chunk <= 0n) return skip("the per-transaction limit is zero");
     const dayLeft = budget.maxPerDay > budget.spentToday ? budget.maxPerDay - budget.spentToday : 0n;
     let total = want;
@@ -344,6 +351,7 @@ export class RulesRunner {
         usdMicros,
         purpose,
         ledger: this.o.ledger,
+        caps: this.o.operatorCaps ?? NO_OPERATOR_CAP,
         // A 1.25x base-fee cap keeps the operator's small CELO float enough for each send.
         fees: { maxFeePerGas: (base * 5n) / 4n + tip, maxPriorityFeePerGas: tip },
       });

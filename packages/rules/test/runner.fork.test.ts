@@ -124,7 +124,6 @@ describe("rules runner through the deployed guard", () => {
       notify: async (_a, text) => void notes.push(text),
       now: () => clock,
       confirmations: 0n,
-      maxActionMicros: 5_000_000n, // the bot's per-action cap on Railway
     });
   });
 

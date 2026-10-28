@@ -29,7 +29,7 @@ import {
 } from "../../lib/miniapp/client/mock";
 import { createStore, newId, type Contact, type ReceiptIndexEntry, type Store } from "../../lib/miniapp/client/store";
 import { createMiniPayWallet, detectMiniPay, getAccount, isUserRejection, pickFeeCurrency, type Wallet } from "../../lib/miniapp/client/wallet";
-import { AppContext, PRESETS, type AppCtx, type AutoDraft, type BalState, type ChangeState, type ChatMsg, type ExecState, type SendState } from "./context";
+import { AppContext, PRESETS, draftLimits, type AppCtx, type AutoDraft, type BalState, type ChangeState, type ChatMsg, type ExecState, type SendState } from "./context";
 import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen } from "./screens";
 import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
@@ -110,7 +110,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [ch, setChState] = useState<ChangeState>({ from: "wBRL", to: "wARS", amount: "10", quote: null, quoteAt: 0, prev: null, busy: false });
   const [exec, setExec] = useState<ExecState>(EMPTY_EXEC);
   const [send, setSendState] = useState<SendState>({ contactId: null, pay: "USD", amount: "20", quote: null, quoteAt: 0, busy: false });
-  const [autoDraft, setAutoDraftState] = useState<AutoDraft>({ preset: "mid", contactIds: [], busy: false });
+  const [autoDraft, setAutoDraftState] = useState<AutoDraft>({ preset: "mid", custom: [25, 100], contactIds: [], busy: false });
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [chat, setChat] = useState<{ msgs: ChatMsg[]; recording: boolean; busy: boolean }>({ msgs: [], recording: false, busy: false });
 
@@ -527,7 +527,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   // ── Autonomy ──
   const activateAuto = useCallback(async () => {
     if (!ready || autoDraft.busy) return;
-    const [op, day] = PRESETS[autoDraft.preset];
+    const [op, day] = draftLimits(autoDraft);
     const limits = limitsFromUsd(op, day, prices);
     const addrs = contacts.filter((c) => autoDraft.contactIds.includes(c.id) && c.address).map((c) => c.address!) as Address[];
     // Contacts the guard allows today but the user switched off are removed onchain, not left payable.
@@ -875,7 +875,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
           if (s === "send-done") setExec({ ...EMPTY_EXEC, flow: "send", from: "USDT", to: SYM_OF[c.cur], amountIn: q?.amountIn ?? "20000000", expectedOut: q?.expectedOut ?? "20000000", contactName: c.name.split(" ")[0] ?? c.name, receiptId: ready.store.receipts(ready.account)[1]?.receiptId ?? null });
         }
       }
-      if (s === "auto-contacts" || s === "auto-consent" || s === "auto-on") setAutoDraftState({ preset: "mid", contactIds: mockContacts.slice(0, 2).map((c) => c.id), busy: false });
+      if (s === "auto-contacts" || s === "auto-consent" || s === "auto-on") setAutoDraftState({ preset: "mid", custom: [25, 100], contactIds: mockContacts.slice(0, 2).map((c) => c.id), busy: false });
       if (s === "receipt") setReceiptId(ready.store.receipts(ready.account)[0]?.receiptId ?? null);
       if (s === "chat") seedChat(b.chat ?? "quote");
     }
@@ -998,12 +998,13 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     cancelRule: (id) => void cancelRule(id),
     chatAlts,
     editAuto: (next) => {
-      // Start from what the guard has now: its contacts on, and the preset closest to its daily limit.
+      // Start from what the guard has now: its contacts on, and its own limits (a preset when they match one).
       const allowed = new Set((auto?.contacts ?? []).map((a) => a.toLowerCase()));
       const usd = auto?.limits.find((l) => l.sym === "USDT") ?? auto?.limits[0];
-      const perDay = usd ? Number(BigInt(usd.perDay) / 1_000_000n) : null;
-      const preset = perDay === null ? autoDraft.preset : (Object.entries(PRESETS) as [AutoDraft["preset"], [number, number]][]).reduce((best, [k, [, d]]) => (Math.abs(d - perDay) < Math.abs(PRESETS[best][1] - perDay) ? k : best), "mid" as AutoDraft["preset"]);
-      setAutoDraft({ preset, contactIds: env.store.contacts(env.account).filter((c) => c.address && allowed.has(c.address.toLowerCase())).map((c) => c.id) });
+      const now: [number, number] | null = usd ? [Number(usd.perTx) / 1e6, Number(usd.perDay) / 1e6] : null;
+      const match = now && (Object.entries(PRESETS) as [Exclude<AutoDraft["preset"], "custom">, [number, number]][]).find(([, [op, d]]) => op === now[0] && d === now[1]);
+      const preset: AutoDraft["preset"] = now === null ? autoDraft.preset : match ? match[0] : "custom";
+      setAutoDraft({ preset, custom: now ?? autoDraft.custom, contactIds: env.store.contacts(env.account).filter((c) => c.address && allowed.has(c.address.toLowerCase())).map((c) => c.id) });
       go(next);
     },
     retryNoMarket: () => (noMarketFlow.current === "send" ? void requestSendQuote() : void requestQuote()),

@@ -56,14 +56,23 @@ export interface SendState {
   busy: boolean;
 }
 
-export type Preset = "low" | "mid" | "high";
-export const PRESETS: Record<Preset, [number, number]> = { low: [10, 50], mid: [25, 100], high: [100, 500] };
+/** Autonomy limits: three presets, or any amounts the user types (Arbolito sets no ceiling of its own). */
+export type Preset = "low" | "mid" | "high" | "custom";
+export const PRESETS: Record<Exclude<Preset, "custom">, [number, number]> = { low: [10, 50], mid: [25, 100], high: [100, 500] };
 
 export interface AutoDraft {
   preset: Preset;
+  /** US$ per operation and per day when preset is "custom". */
+  custom: [number, number];
   contactIds: string[];
   busy: boolean;
 }
+
+/** The [per operation, per day] US$ the draft asks for. */
+export const draftLimits = (d: Pick<AutoDraft, "preset" | "custom">): [number, number] => (d.preset === "custom" ? d.custom : PRESETS[d.preset]);
+
+/** A typed custom pair is usable: both positive and the per-operation limit not above the daily one. */
+export const customValid = ([op, day]: [number, number]) => Number.isFinite(op) && Number.isFinite(day) && op > 0 && day > 0 && op <= day;
 
 export type ChatMsg =
   | { id: string; kind: "bot"; text: string }

@@ -1,7 +1,7 @@
 import type { Address } from "viem";
 import type { z } from "zod";
 import { CELO_MAINNET_ID, TOKENS, tokenByAddress } from "@arbolito/config";
-import { formatUsd } from "@arbolito/chain";
+import { formatUsd, readGuardV2Budget } from "@arbolito/chain";
 import { LlmConfigError, LlmError, TOKEN_SYMBOLS, ToolUserError, detectLanguage, runAgentTurn, type ToolHandlers } from "@arbolito/llm";
 import { parseRule } from "@arbolito/rules";
 import { effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
@@ -150,11 +150,17 @@ export function buildChatHandlers(
     },
 
     async get_limits() {
+      // The only limits are the user's own: none on conversions they confirm in MiniPay, and the
+      // ones they signed into ArbolitoGuard for automatic rules. Arbolito sets no cap of its own.
+      const budget = deps.guard ? await readGuardV2Budget(deps.chain, deps.guard.address, account, TOKENS.USDT.address as Address).catch(() => null) : null;
       return {
         data: {
-          perAction: formatUsd(BigInt(user.maxActionMicros)),
-          perDay: formatUsd(BigInt(user.maxDailyMicros)),
-          note: "Every conversion is confirmed in MiniPay. Autonomy limits are set in the app, never in chat.",
+          conversions: "No limit from Arbolito on conversions the user confirms in MiniPay; only what the market can fill.",
+          automaticRules:
+            budget && budget.maxPerDay > 0n
+              ? { perOperation: formatUsd(budget.maxPerTx), perDay: formatUsd(budget.maxPerDay), usedToday: formatUsd(budget.spentToday), setBy: "the user, onchain" }
+              : "Off. The user picks their own limits when turning on automatic rules (Settings → Limits & security).",
+          note: "Autonomy limits are set in the app, never in chat.",
         },
       };
     },

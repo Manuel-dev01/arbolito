@@ -1,6 +1,6 @@
 import type { Address } from "viem";
-import { TOKENS } from "@arbolito/config";
-import { formatUsd } from "@arbolito/chain";
+import { TOKENS, loadEnv } from "@arbolito/config";
+import { formatUsd, readGuardV2Budget } from "@arbolito/chain";
 import { erc20Abi, fmtAmount } from "@arbolito/router";
 import { TOKEN_SYMBOLS, ToolUserError, type AgentCard, type ToolHandlers, type ToolOutput } from "@arbolito/llm";
 import { MiniAppApiError } from "./api";
@@ -133,10 +133,17 @@ export function buildHandlers(s: Services, flow: CardFlow, user: User): ToolHand
     },
 
     async get_limits() {
+      // The only limits are the user's own: none on conversions they confirm, and the ones they
+      // signed into ArbolitoGuard for automatic rules. Arbolito sets no cap of its own.
+      const guard = loadEnv().GUARD_ADDRESS as Address | undefined;
+      const budget = user.walletAddress && guard ? await readGuardV2Budget(s.chain, guard, user.walletAddress as Address, TOKENS.USDT.address as Address).catch(() => null) : null;
       return {
         data: {
-          perAction: formatUsd(BigInt(user.maxActionMicros)),
-          perDay: formatUsd(BigInt(user.maxDailyMicros)),
+          conversions: "No limit from Arbolito on conversions the user confirms in MiniPay; only what the market can fill.",
+          automaticRules:
+            budget && budget.maxPerDay > 0n
+              ? { perOperation: formatUsd(budget.maxPerTx), perDay: formatUsd(budget.maxPerDay), usedToday: formatUsd(budget.spentToday), setBy: "the user, onchain" }
+              : "Off. The user picks their own limits when turning on automatic rules in the app.",
           note: "Limits change only in the Arbolito app, never in chat.",
         },
       };
