@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public test fixtures, not secrets"
+# Anvil/Hardhat dev account #0: a well-known public key used only on the local fork.
+regexes = ['''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''']
+# Vendored forge-std ships its own test vectors.
+paths = ['''contracts/lib/forge-std/''']

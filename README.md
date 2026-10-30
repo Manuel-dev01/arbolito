@@ -109,13 +109,17 @@ Arbolito Desk: price feed ─► Stitch (Textile filler) ◄─► Textile RFQ; 
 | `contracts/` | ArbolitoReceipts, ArbolitoGuard (Foundry) |
 
 ## Run it locally
+Needs Node 22+, pnpm and [Foundry](https://getfoundry.sh). forge-std is vendored, so a plain `git clone` is enough (no submodules).
+
 ```bash
 pnpm install
+pnpm test                 # Foundry tests + unit tests; offline, no .env needed
 cp .env.example .env      # fill in what you need; every variable is documented there
-pnpm test:unit            # unit tests
 pnpm quote wBRL wARS 200  # live quote from mainnet (read-only)
 pnpm --filter @arbolito/web dev   # then open http://localhost:3000/app?mock=1
 ```
+
+The other test sets need outside services: `pnpm test:db` needs `DATABASE_URL` (Postgres), and `pnpm test:fork` needs `anvil` and a Celo RPC (it forks mainnet locally; nothing is sent). `pnpm test:all` runs everything.
 
 ## More docs
 | File | What's in it |
