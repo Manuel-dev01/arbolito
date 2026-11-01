@@ -63,6 +63,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-01: back after the Railway pause
+- Railway was paused (billing) from about 10-31 18:14 UTC; both services came back. Desk feed ticking, Stitch session live, all 6 pairs priced, risk officer "normal" on all. Desk holds ≈ US$ 158.6 against 160 put in. Totals: 34 fills, US$ 298 volume, 43 RFQs won.
+- The Western Union runner stopped itself on boot (paid browser call timed out: payment uncertain). Onchain check: no transfer from the payer since 10-30 18:21 UTC, so nothing settled. Redeployed the bot; it paid 0.004212 USDT ([tx](https://celoscan.io/tx/0xa7d6f020fc270520be3ee79614249e8814d768ed68fbbba8c810bed120b4ac03)) and read USD-BRL 5.2246, USD-ARS 1654.
+- Gap noted: users can convert wARS, wBRL and the USD stables; wCOP and wMXN are desk-only (no Uniswap pool; user-side Textile RFQ is off).
+
 ### 2026-10-30: AskBots review fixes; desk check
 - **AskBots review (GitHub issue #1):** root tests failed in a clean clone (`forge-std/Test.sol not found`, a submodule not fetched without `--recursive`). forge-std v1.17.0 is now vendored, `pnpm test` is Foundry + unit tests with no `.env` or services (db and fork sets under `test:db` / `test:fork` / `test:all`), README lists prerequisites, and `.gitleaks.toml` allowlists the public anvil dev key. Checked from a fresh clone with no `.env`: 105 forge tests and 467 unit tests pass. Secret scan of the full history: clean.
 - **Desk:** 31 fills, US$ 277.68 volume, 37 RFQs won, +US$ 0.04 spread earned. All 31 fills come from 6 outside wallets; none from ops, reserve, desk, operator or the founder's MiniPay (no self-fills). wCOP paused by the breaker (sources disagree), so NAV shows "—". Uptime 24 h: USA₮, USDC, wARS, wMXN 100%, wBRL 97%, wCOP 39%.
