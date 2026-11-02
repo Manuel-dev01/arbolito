@@ -63,6 +63,14 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-02: wCOP and wMXN for users, tested on mainnet; desk down on spent allowances
+- **Users can convert pesos colombianos (wCOP) both ways and sell wMXN for dollars** in the Mini App and the bot (deployed: Vercel + bot on Railway). Textile is the only venue (no Uniswap pool). New: COP/MXN currency, phone-region display currency (es-CO → COP), an "interbank" reference (ER-API COP, ECB MXN; Colombia's TRM API refuses servers, so nothing says "official"), Textile-preview pricing for wFIAT without a pool, a `below_minimum` error for Textile's ~US$ 1 RFQ minimum, and a "wait a few seconds" answer when a declined quote still commits the user's funds (~60 s). Buying wMXN answers "no market": no maker holds it.
+- **E2E on mainnet** (`pnpm e2e:miniapp`, team test wallet `0x1CF9…64eA`, funded 3 USDT from ops, labelled in TREASURY): 1 USDT → 3,206.63 wCOP and 1 USDT → 3,207.36 wCOP, then 6,400 wCOP → 1.993791 USDT, each rehearsed on a fork first; receipts anchored and verified. No desk self-fill (the desk's takers are still six outside wallets).
+- **Fix:** `receivedInTx` counted Celo's gas refund (a mint from 0x0 when gas is paid in the received token) as swap output.
+- **Desk down ~17 h:** Stitch crash-looped on "missing Permit2 approvals": wARS 12,667 < 16,000 sell cap, USDT 20.01 < 25 of buys. Code fix committed (`0df2daf`: sizes clamp to live allowances, loud log, `/state` stitch.allowanceLow), **not deployed yet**; top-ups `desk:approve wARS 160000` and `USDT 1000` planned. Both wait for the founder's go-ahead.
+- **Loops update drafted** (wCOP/wMXN truth, agent-wallet payer, 36 fills, honest users line). Not sent.
+- Desk totals: 36 fills, US$ 317.87 volume, 45 RFQs won, all six takers outside.
+
 ### 2026-11-01: back after the Railway pause
 - Railway was paused (billing) from about 10-31 18:14 UTC; both services came back. Desk feed ticking, Stitch session live, all 6 pairs priced, risk officer "normal" on all. Desk holds ≈ US$ 158.6 against 160 put in. Totals: 34 fills, US$ 298 volume, 43 RFQs won.
 - The Western Union runner stopped itself on boot (paid browser call timed out: payment uncertain). Onchain check: no transfer from the payer since 10-30 18:21 UTC, so nothing settled. Redeployed the bot; it paid 0.004212 USDT ([tx](https://celoscan.io/tx/0xa7d6f020fc270520be3ee79614249e8814d768ed68fbbba8c810bed120b4ac03)) and read USD-BRL 5.2246, USD-ARS 1654.
