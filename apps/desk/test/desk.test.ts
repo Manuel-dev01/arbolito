@@ -65,6 +65,19 @@ describe("fair value", () => {
     expect(f.ok).toBe(false);
   });
 
+  it("prices wBRL when the thin pool strays and the official cross is weekend-stale (2026-11-01)", () => {
+    const f = fairValue(
+      brl,
+      [obs("textile_price", 5.45), obs("uniswap_mid", 5.32), obs("dolar_official_cross", 5.55, 40 * 3_600_000), obs("er_api", 5.437), obs("ecb", 5.4325, 2 * 86_400_000)],
+      NOW,
+    );
+    expect(f.ok).toBe(true);
+    if (!f.ok) return;
+    expect(f.fiatPerUsd).toBeGreaterThan(5.43);
+    expect(f.fiatPerUsd).toBeLessThan(5.46);
+    expect(f.used).not.toContain("uniswap_mid");
+  });
+
   it("ignores invalid prints", () => {
     const f = fairValue(brl, [obs("textile_price", 0), obs("dolar_official_cross", NaN), obs("uniswap_mid", 5.03)], NOW);
     expect(f.ok).toBe(false);

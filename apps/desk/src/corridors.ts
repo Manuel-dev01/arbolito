@@ -32,7 +32,7 @@ export type SourceId =
   | "peg" // a stablecoin's 1.00 peg (stable corridors only)
   | "textile_ticker" // Textile /tickers maker levels (USDT_COP, USDT_MXN): mid, or the one side quoted
   | "er_api" // ExchangeRate-API open access (open.er-api.com), daily; attribution required when shown
-  | "ecb"; // ECB reference rate via Frankfurter (MXN; no COP)
+  | "ecb"; // ECB reference rate via Frankfurter (MXN, BRL; no COP)
 
 export interface SourceSpec {
   id: SourceId;
@@ -132,6 +132,11 @@ export const CORRIDORS: readonly Corridor[] = [
       { id: "textile_price", weight: 3, maxAgeMs: 10 * MIN },
       { id: "dolar_official_cross", weight: 1, maxAgeMs: 26 * HOUR },
       { id: "uniswap_mid", weight: 1, maxAgeMs: 5 * MIN },
+      // Independent of Textile and Uniswap. Over the weekend of 2026-11-01 the official cross aged
+      // out, the thin pool (5.32) and Textile (5.45) disagreed past maxDevBps, and the breaker held
+      // wBRL for a day; ER-API (5.437) and the ECB (5.4325) sided with Textile.
+      { id: "er_api", weight: 1, maxAgeMs: 26 * HOUR },
+      { id: "ecb", weight: 1, maxAgeMs: 4 * 24 * HOUR }, // the ECB skips weekends and holidays
     ],
     minSources: 2,
     maxDevBps: 150,
