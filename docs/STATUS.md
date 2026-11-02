@@ -68,7 +68,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **E2E on mainnet** (`pnpm e2e:miniapp`, team test wallet `0x1CF9…64eA`, funded 3 USDT from ops, labelled in TREASURY): 1 USDT → 3,206.63 wCOP and 1 USDT → 3,207.36 wCOP, then 6,400 wCOP → 1.993791 USDT, each rehearsed on a fork first; receipts anchored and verified. No desk self-fill (the desk's takers are still six outside wallets).
 - **Fix:** `receivedInTx` counted Celo's gas refund (a mint from 0x0 when gas is paid in the received token) as swap output.
 - **Desk down ~17 h:** Stitch crash-looped on "missing Permit2 approvals": wARS 12,667 < 16,000 sell cap, USDT 20.01 < 25 of buys. Founder-approved, fork-rehearsed top-ups: [wARS → 160,000](https://celoscan.io/tx/0x5ceb8bd69050ba906c8d559dea9284603cbb57e5d209a3c31874ffe7956846b1), [USDT → 1,000](https://celoscan.io/tx/0x3cd60059f1e15197a74c6c86b68cdb607621ca713528f6724e0c095fd44b1140). The fix (`0df2daf`: sizes clamp to the live allowances, loud log, `/state` stitch.allowanceLow) is deployed; RFQ session back 06:57 UTC, quoting 5 of 6 pairs (wBRL held by the breaker: Uniswap 5.32 vs Textile 5.45).
-- **Loops entry updated** (founder's yes): wCOP/wMXN truth, agent-wallet payer, 36 fills from six outside wallets, honest users line, welcome credit disclosed.
+- **Loops entry updated** (founder's yes): wCOP/wMXN truth, agent-wallet payer, 36 fills from six outside wallets, honest users line (the welcome credit is not mentioned, founder's call).
 - **Next:** welcome credits (US$ 2 each, cap US$ 100, ≤ US$ 30/day, batches approved by the founder); a third wBRL source so two disagreeing ones can't hold it.
 - Desk totals: 36 fills, US$ 317.87 volume, 45 RFQs won, all six takers outside.
 
