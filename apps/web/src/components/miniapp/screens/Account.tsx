@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { fill } from "../../../i18n/miniapp";
-import { fmtSym, maskPhone } from "../../../lib/miniapp/client/format";
+import { balanceOf } from "../../../lib/miniapp/client/derive";
+import { CUR_OF, fmtSym, maskPhone } from "../../../lib/miniapp/client/format";
 import { Frame, useApp } from "../context";
 import { Badge, Logo, Spinner, Switch } from "../ui";
 import { fmtDate, useLocalEq } from "./Autonomy";
@@ -245,12 +246,18 @@ export function Settings() {
   );
 }
 
-/** Ripio off-ramp (docs/04-reference.md); dollars stay in MiniPay (its Pockets screen). */
+/**
+ * Ripio off-ramp (docs/04-reference.md); dollars stay in MiniPay (its Pockets screen). With country,
+ * chain, token and the wallet, Ripio opens its sell form pre-filled (checked 2026-11-02; the bare URL
+ * opened an empty form). No amount: with one, Ripio jumps straight into a fixed-amount sale.
+ */
 const RIPIO_OFFRAMP = "https://ramp.ripio.com/offramp";
+const offrampUrl = (sym: "wARS" | "wBRL", account: string) =>
+  `${RIPIO_OFFRAMP}?${new URLSearchParams({ country: sym === "wBRL" ? "BR" : "AR", chain: "42220", token: sym === "wBRL" ? "WBRL" : "WARS", address: account }).toString()}`;
 const MINIPAY_POCKETS = "https://link.minipay.xyz/balance";
 
 export function Withdraw() {
-  const { t, openLink, toast, mock } = useApp();
+  const { t, lang, account, bal, openLink, toast, mock } = useApp();
   const open = (url: string, msg: string) => {
     toast(msg);
     if (!mock) openLink(url);
@@ -259,21 +266,23 @@ export function Withdraw() {
     // TODO(contract): the design's in-app "ARS 50.000 → tu cuenta Ripio" needs an off-ramp prepare endpoint; until then this hands off to Ripio.
     <div className="mp-scroll">
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
-        <button type="button" className="mp-option" style={{ border: "2px solid var(--save-text)", borderRadius: 18 }} onClick={() => open(RIPIO_OFFRAMP, t.toastMP.replace("MiniPay", "Ripio"))}>
-          <span className="mp-between" style={{ width: "100%" }}>
-            <span style={{ fontSize: 17, fontWeight: 700 }}>{t.wdRipioT}</span>
-            <span style={{ display: "flex" }}>
-              <Badge cur="ARS" size={32} />
-              <span style={{ marginLeft: -10 }}>
-                <Badge cur="BRL" size={32} />
-              </span>
+        <p className="mp-small" style={{ margin: 0 }}>
+          {t.wdRipioB}
+        </p>
+        {(["wARS", "wBRL"] as const).map((sym) => (
+          <button key={sym} type="button" className="mp-option" style={{ border: "2px solid var(--save-text)", borderRadius: 18 }} onClick={() => open(offrampUrl(sym, account), t.toastMP.replace("MiniPay", "Ripio"))}>
+            <span className="mp-between" style={{ width: "100%" }}>
+              <span style={{ fontSize: 17, fontWeight: 700 }}>{t.curName[CUR_OF[sym]]} → Ripio</span>
+              <Badge cur={CUR_OF[sym]} size={32} />
             </span>
-          </span>
-          <span className="mp-small">{t.wdRipioB}</span>
-          <span className="mp-link inline" style={{ minHeight: 0 }}>
-            {t.openRipioOff} ↗
-          </span>
-        </button>
+            <span className="mp-small">
+              {t.available} {fmtSym(balanceOf(bal.data, sym), sym, lang)}
+            </span>
+            <span className="mp-link inline" style={{ minHeight: 0 }}>
+              {t.openRipioOff} ↗
+            </span>
+          </button>
+        ))}
         <button type="button" className="mp-option" onClick={() => open(MINIPAY_POCKETS, t.toastMP)}>
           <span className="mp-between" style={{ width: "100%" }}>
             <span style={{ fontSize: 17, fontWeight: 700 }}>{t.wdUsdT}</span>
