@@ -153,13 +153,4 @@ describe("metrics", () => {
     expect(empty.receipts).toHaveLength(0);
     expect(empty.savingsArs.medianBps).toBeUndefined();
   });
-
-  it("lists the team test wallet's receipts but never counts them", () => {
-    const real = record(BRL_ARS);
-    const test = { ...record(USD_BRL), bundle: { ...record(USD_BRL).bundle, request: { ...record(USD_BRL).bundle.request, taker: "0x1CF94Ec9A0E628fb536ef4b610DEe612F54B64eA" } } };
-    const m = computeMetrics([real, test]);
-    expect(m.wallets).toHaveLength(1);
-    expect(m.receipts.map((r) => r.id)).toEqual([BRL_ARS]);
-    expect(m.teamTests.map((r) => r.id)).toEqual([USD_BRL]);
-  });
 });

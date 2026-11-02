@@ -1,6 +1,5 @@
 import type { ProofBundle } from "@arbolito/proof";
 import type { ReceiptRecord } from "../../lib/data";
-import { isTeamTest } from "../../lib/metrics";
 import { resolveRate, type ReferenceName } from "../../lib/receipt-view";
 
 /**
@@ -55,7 +54,7 @@ export function calcRows(refs: Ref[]): CalcRows {
 
 /** The receipt the landing shows: the newest active one with a positive saving, else the newest active one. */
 export function pickShowcase(records: ReceiptRecord[]): ReceiptRecord | undefined {
-  const active = records.filter((r) => !r.supersededBy && !isTeamTest(r));
+  const active = records.filter((r) => !r.supersededBy);
   return active.find((r) => r.bundle.savings && BigInt(r.bundle.savings.delta) > 0n) ?? active[0];
 }
 
