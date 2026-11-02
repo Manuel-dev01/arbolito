@@ -61,7 +61,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 | # | Do | You should see | Capture |
 |---|---|---|---|
 | 3.1 | MiniPay → Settings → About → tap the version number until developer mode turns on | "Developer mode" toast | 📸 |
-| 3.2 | Settings → Developer Settings → **Load test page** → **clear the field first** (it keeps the last address) → type `https://arbolito-livid.vercel.app/app` → Load | Arbolito loading inside MiniPay | 📸 |
+| 3.2 | MiniPay → **Developer settings** → **Open URL…** → in **Load Mini App**, **clear the field first** (it keeps the last address) → type `https://arbolito-livid.vercel.app/app` → **Load** | Arbolito loading inside MiniPay ("Mini App Test" at the top) | 📸 |
 | 3.3 | **First launch only:** tap **Empezar** (Get started), and on the "add money" screen tap **Lo hago después** (I'll do it later) until you reach Home. **Then set the currency:** tap **Ajustes** (Settings, 4th tab at the bottom) → **Idioma** (Language) if you want English → **Moneda para mostrar** (Display currency) → **Pesos COP** → tap **Inicio** (Home, 1st tab) | Home reads "Tu plata, en pesos colombianos" ("Your money, in Colombian pesos"), with your balances and the four tabs at the bottom | 📸 the currency list · 📸 Home |
 | 3.4 | Chat tab → type **"cámbiame 2 dólares a pesos colombianos"** (or hold the mic and say it) | Your message, then Arbolito's reply with a quote card | 🎥 typing → reply · 📸 the card |
 | 3.5 | Look at the quote card | **Pagás US$ 2 · Recibís COP ~6.400**, the rate, the comparison with the interbank rate, a countdown | 📸 close-up |
