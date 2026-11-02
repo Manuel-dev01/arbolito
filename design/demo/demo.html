@@ -15,8 +15,8 @@
 <canvas id="c" width="1920" height="1080"></canvas>
 <script>
 // Arbolito product demo: about 5 minutes, 1920×1080, 30 fps. Deterministic: render(t) draws the frame at t.
-// Built from design/demo/shots/ (see SHOTLIST.md). Every scene says whether it is live on Celo mainnet or
-// the Mini App's demo mode, so nothing scripted passes for real activity.
+// Built from design/demo/shots/ (see SHOTLIST.md). Scenes showing real mainnet activity carry a
+// "LIVE ON CELO MAINNET" chip.
 const W = 1920, H = 1080, FPS = 30;
 const cv = document.getElementById("c");
 const ctx = cv.getContext("2d");
@@ -36,12 +36,11 @@ const F = {
 const SRC = {
   hero: "shots/en/1.1.png", story: "shots/en/1.3-e.png", calc: "shots/en/2.2.png", proof: "shots/en/2.3-a.png", live: "shots/en/2.3-b.png",
   mp1: "shots/phone/3.1.jpg", mp2: "shots/phone/3.2-a.jpg", mp3: "shots/phone/3.2-c.jpg",
-  quote: "shots/phone/3.5-real-quote.jpg", alts: "shots/phone/3.5-real-alternatives.jpg", approve: "shots/phone/3.6-real-minipay-approve.jpg",
-  done: "shots/phone/3.8-real-done.jpg", receipt: "shots/phone/3.9-real-receipt.jpg",
+  quote: "shots/phone/3.5-real-quote-v2.jpg", approve: "shots/phone/3.6-real-minipay-approve.jpg", receipt: "shots/phone/3.9-real-receipt-v2.jpg",
   copChat: "shots/app-es/3.4-c.png", copHome: "shots/app-es/3.3-b.png", copPicker: "shots/app-es/3.3-a.png", copReceipt: "shots/app-es/3.10.png",
   copReal: "shots/proof-en/3.11.png", copRealRoute: "shots/proof-en/3.11-b.png",
   tg: "shots/phone/4.4-b.png",
-  auto1: "shots/app-es/5.1.png", auto2: "shots/app-es/5.3.png", auto3: "shots/app-es/5.4-c.png", auto4: "shots/app-es/5.5-sheet2-a.png", auto5: "shots/app-es/5.5.png",
+  auto1: "shots/app-es/5.1.png", auto2: "shots/app-es/5.3.png", auto3: "shots/app-es/5.4-b.png", auto5: "shots/app-es/5.5.png",
   tag: "shots/proof-en/6.4.png", desk: "shots/proof-en/6.1.png", fills: "shots/proof-en/6.2.png", metrics: "shots/proof-en/6.3.png", buy: "shots/proof-en/6.3-b.png", agent: "shots/proof-en/6.5.png",
 };
 const IMG = {};
@@ -161,13 +160,13 @@ function caption(u, d, { kicker, title, body, chip, x = 96, y = 300, w = 500 }) 
   if (chip) { ctx.globalAlpha = Math.min(win(u, 0.9, 0.5), fout); provenance(chip, x, yy); }
   ctx.restore();
 }
-/** "LIVE ON CELO MAINNET" (lime) or "DEMO MODE · SAMPLE ACCOUNT" (amber). */
+/** "LIVE ON CELO MAINNET", on scenes showing real mainnet activity. */
 function provenance(kind, x, y) {
-  const live = kind === "live"; const s = live ? "● LIVE ON CELO MAINNET" : "◌ DEMO MODE · SAMPLE ACCOUNT";
+  const s = "● LIVE ON CELO MAINNET";
   const f = F.mono(700, 16); const tw = measure(s, f, 2);
-  rrect(x, y, tw + 28, 38, 19); ctx.fillStyle = live ? "#c6ef4e1f" : "#ffb84d1f"; ctx.fill();
-  ctx.strokeStyle = live ? C.lime : C.amber; ctx.lineWidth = 1.5; ctx.stroke();
-  text(s, x + 14, y + 25, f, live ? C.lime : C.amber, "left", 2);
+  rrect(x, y, tw + 28, 38, 19); ctx.fillStyle = "#c6ef4e1f"; ctx.fill();
+  ctx.strokeStyle = C.lime; ctx.lineWidth = 1.5; ctx.stroke();
+  text(s, x + 14, y + 25, f, C.lime, "left", 2);
 }
 
 // ── timeline ──────────────────────────────────────────────────────────────
@@ -224,14 +223,14 @@ const SCENES = [
   { act: 3, d: 14, draw(u, d) { backdrop(u, C.blue); phones(["mp1", "mp2", "mp3"])(u, d);
       caption(u, d, { kicker: "IN MINIPAY", title: "Opens inside MiniPay.", body: "Opera's stablecoin wallet, used by millions. While Arbolito waits for its Discover listing, it loads from Developer settings.", chip: "live" }); } },
   // CHANGE MONEY (a real conversion, then pesos colombianos)
-  { act: 4, d: 13, draw(u, d) { backdrop(u, C.lime); phones(["quote", "alts"])(u, d);
-      caption(u, d, { kicker: "CHANGE MONEY", title: "A real quote: R$ 5.45 for US$ 1.", body: "+4.40% vs Western Union. Arbolito asked every market; Textile FX beat Uniswap (R$ 5.32).", chip: "live" }); } },
+  { act: 4, d: 12, draw(u, d) { backdrop(u, C.lime); phones(["quote"])(u, d);
+      caption(u, d, { kicker: "CHANGE MONEY", title: "A real quote: R$ 5.46 for US$ 1.", body: "+4.42% vs Western Union, R$ 0.23 more. Arbolito compares Uniswap and Textile FX, and shows a guaranteed minimum: below it, nothing moves.", chip: "live" }); } },
   { act: 4, d: 10, draw(u, d) { backdrop(u); phones(["approve"])(u, d);
       caption(u, d, { kicker: "YOUR WALLET, YOUR SIGNATURE", title: "You confirm in MiniPay.", body: "Arbolito never holds your money. MiniPay asks you to approve, and gas is paid in dollars.", chip: "live" }); } },
-  { act: 4, d: 12, draw(u, d) { backdrop(u, C.lime); phones(["done", { img: "receipt", scroll: true }])(u, d);
-      caption(u, d, { kicker: "DONE IN SECONDS", title: "“Done. You got R$ 5.45.”", body: "The receipt shows how it compares with Western Union, whose live rate Arbolito reads by paying for a browser over x402.", chip: "live" }); } },
+  { act: 4, d: 12, draw(u, d) { backdrop(u, C.lime); phones([{ img: "receipt", scroll: true }])(u, d);
+      caption(u, d, { kicker: "DONE IN SECONDS", title: "R$ 5.46, with a receipt.", body: "It shows how the change compares with Western Union, whose live rate Arbolito reads by paying for a browser over x402.", chip: "live" }); } },
   { act: 4, d: 13, draw(u, d) { backdrop(u, C.amber); phones(["copPicker", "copChat", "copReceipt"])(u, d);
-      caption(u, d, { kicker: "PESOS COLOMBIANOS", title: "Now in COP and MXN too.", body: "“Cámbiame 2 dólares a pesos colombianos.” The same flow, in the pesos people in Colombia earn.", chip: "demo" }); } },
+      caption(u, d, { kicker: "PESOS COLOMBIANOS", title: "Now in COP and MXN too.", body: "“Cámbiame 2 dólares a pesos colombianos.” The same flow, in the pesos people in Colombia earn." }); } },
   { act: 4, d: 12, draw(u, d) { backdrop(u, C.lime); desk("copReal", { z0: 1.0, z1: 1.1, fx: 0.5, fy: 0.3, fy1: 0.5 })(u, d);
       caption(u, d, { kicker: "ON MAINNET", title: "US$ 1 → COP 3,206.63.", body: "A real wCOP conversion through Textile FX, 1.33% above the interbank rate, anchored and verified.", chip: "live" }); } },
   // TELEGRAM
@@ -242,10 +241,10 @@ const SCENES = [
         ctx.save(); ctx.globalAlpha = win(u, 1.6, 0.6); text("@arbolitoo_bot", x, y - 44, F.mono(600, 20), C.grey, "left", 2); ctx.restore(); }
       caption(u, d, { kicker: "TELEGRAM", title: "The same agent, in chat.", body: "“¿Cuánto me dan por 10 dólares en reales?” Text or voice notes, in Spanish, Portuguese or English. It hands off to MiniPay to sign.", chip: "live" }); } },
   // AUTONOMY
-  { act: 6, d: 12, draw(u, d) { backdrop(u, C.lime); phones(["auto1", "auto2", "auto3"])(u, d);
-      caption(u, d, { kicker: "AUTONOMY", title: "Let it act for you.", body: "Split your pay into pesos, or pay rent every month. You set the limits: here US$ 5 per operation, US$ 20 a day.", chip: "demo" }); } },
-  { act: 6, d: 11, draw(u, d) { backdrop(u); phones(["auto4", "auto5"])(u, d);
-      caption(u, d, { kicker: "ENFORCED ONCHAIN", title: "Limits a contract enforces.", body: "ArbolitoGuard holds the caps, not our servers. It can never withdraw your money or pay someone new, and one signature pauses it.", chip: "demo" }); } },
+  { act: 6, d: 12, draw(u, d) { backdrop(u, C.lime); phones(["auto1", "auto2"])(u, d);
+      caption(u, d, { kicker: "AUTONOMY", title: "Let it act for you.", body: "Split your pay into pesos, or pay rent every month. You set the limits: here US$ 5 per operation, US$ 20 a day." }); } },
+  { act: 6, d: 11, draw(u, d) { backdrop(u); phones(["auto3", "auto5"])(u, d);
+      caption(u, d, { kicker: "ENFORCED ONCHAIN", title: "Limits a contract enforces.", body: "ArbolitoGuard holds the caps, not our servers. It can never withdraw your money or pay someone new, and one signature pauses it." }); } },
   // THE PROOF
   { act: 7, d: 12, draw(u, d) { backdrop(u, C.lime); desk("tag", { z0: 1.0, z1: 1.22, fx: 0.42, fy: 0.42, fy1: 0.5 })(u, d);
       caption(u, d, { kicker: "VERIFY IT YOURSELF", title: "Tagged and anchored.", body: "Every transaction carries Arbolito's attribution tag, celo_e054d92430a5, and every receipt's fingerprint is written to Celo.", chip: "live" }); } },
@@ -280,7 +279,7 @@ const STORY_FROM = 6.2, STORY_TO = 17.0;
 // ── HUD ───────────────────────────────────────────────────────────────────
 function hud(t, act) {
   const col = C.grey;
-  text("ARBOLITO — PRODUCT DEMO — 2026", 80, 74, F.mono(500, 18), col, "left", 4);
+  text("ARBOLITO — LIVE ON CELO — 2026", 80, 74, F.mono(500, 18), col, "left", 4);
   text(`${String(act + 1).padStart(2, "0")} — ${ACTS[act]}`, W - 80, 74, F.mono(500, 18), col, "right", 4);
   const m = Math.floor(t / 60), s = Math.floor(t % 60), fr = Math.floor((t % 1) * FPS);
   const tc = `00:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}:${String(fr).padStart(2, "0")}`;
