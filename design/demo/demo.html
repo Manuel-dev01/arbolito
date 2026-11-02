@@ -364,7 +364,7 @@ async function encode(onProgress) {
   const { Muxer, ArrayBufferTarget } = Mp4Muxer;
   const muxer = new Muxer({ target: new ArrayBufferTarget(), video: { codec: "avc", width: W, height: H, frameRate: FPS }, audio: { codec: "aac", numberOfChannels: 2, sampleRate: 48000 }, fastStart: "in-memory" });
   const ve = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { throw e; } });
-  ve.configure({ codec: "avc1.640028", width: W, height: H, bitrate: 10_000_000, framerate: FPS, avc: { format: "avc" } });
+  ve.configure({ codec: "avc1.640028", width: W, height: H, bitrate: 4_500_000, framerate: FPS, avc: { format: "avc" } });
   const total = Math.round(DUR * FPS);
   for (let f = 0; f < total; f++) {
     await render(f / FPS);
