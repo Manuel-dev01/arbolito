@@ -65,7 +65,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 | 4.2 | Tap the button | A 4-digit code, valid 10 minutes | 📸 |
 | 4.3 | Phone: Arbolito → Ajustes → Telegram → type the code | "Conectado" | 📸 phone |
 | 4.4 | Telegram: send a **voice note**: *"¿cuánto me dan por 10 dólares en reales?"* | The transcript, then a quote with **vs Western Union** | 🎥 sending the voice note · 📸 the reply |
-| 4.5 | Type: *"mandale 1 dólar a Mamá en reales"* (use your saved contact) | A send card with **"Confirmar en MiniPay"** | 📸 |
+| 4.5 | Save the contact in the bot (its contacts are separate from the phone's): *"guardá a Mamá: 0x…"* (her address). Then: *"mandale 1 dólar a Mamá en reales"* | "Guardé a Mamá", then a send card with **"Confirmar en MiniPay"** | 📸 the card |
 | 4.6 | Tap it, confirm in MiniPay | The send completes; Telegram gets the receipt | 📸 phone done screen · 📸 Telegram receipt message |
 
 ## Act 5. Let it act on its own, within your limits (3:05 – 4:00), phone
@@ -77,7 +77,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 | 5.3 | Pick **Personalizado**, enter 5 per operation and 20 per day | The two inputs filled | 📸 |
 | 5.4 | Continue → contacts → consent | Who it can pay, what it can never do | 📸 consent |
 | 5.5 | Confirm the MiniPay sheets (permissions are set onchain, in the guard contract) | "Arbolito ya puede actuar por vos" | 📸 |
-| 5.6 | Chat: *"cuando me lleguen dólares, pasá el 50% a reales"* | A rule card to sign | 📸 |
+| 5.6 | Chat: *"cuando me lleguen más de 1 dólar, pasá el 50% a reales"* | A rule card to sign | 📸 |
 | 5.7 | Sign it in MiniPay | The rule shows as active | 📸 |
 | 5.8 | Tell me in chat when 5.7 is done. I'll send US$ 2 from the team test wallet (with your OK), the rule fires, and Arbolito converts half **without you touching anything** | Telegram: "I acted for you…"; a new receipt in Comprobantes | 📸 Telegram message · 📸 receipt |
 
