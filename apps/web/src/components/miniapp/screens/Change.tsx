@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Sym } from "../../../lib/miniapp/contract";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { balanceOf, usdToCur } from "../../../lib/miniapp/client/derive";
+import { balanceOf, byCurrency, usdToCur } from "../../../lib/miniapp/client/derive";
 import {
   atomicToTyped,
   CUR_OF,
+  CURS,
   DECIMALS,
   decimalKey,
   fmtMoney,
@@ -25,11 +26,10 @@ import {
 import { isPositive, KEYS, pressKey, type Key } from "../../../lib/miniapp/client/keypad";
 import { fill, type MiniDict } from "../../../i18n/miniapp";
 import { Frame, useApp, useNow } from "../context";
-import { Badge, CountdownBar, CountdownText, NoMoneyMoved, ReceiptBadge, Spinner } from "../ui";
+import { Badge, CountdownBar, CountdownText, NoMoneyMoved, ReceiptBadge, Sheet, Spinner } from "../ui";
 import { useReceipt } from "../useReceipts";
 import { receiptRef } from "../../../lib/miniapp/client/format";
 
-const CYCLE: Cur[] = ["BRL", "USD", "ARS", "COP", "MXN"];
 
 export function Keypad({ value, onChange }: { value: string; onChange(v: string): void }) {
   const { lang, t } = useApp();
@@ -41,6 +41,32 @@ export function Keypad({ value, onChange }: { value: string; onChange(v: string)
         </button>
       ))}
     </div>
+  );
+}
+
+/** The currency list behind a pill's ▾: every currency, with what the user holds in it. */
+export function CurPicker({ title, value, onPick, onClose }: { title: string; value: Cur; onPick(c: Cur): void; onClose(): void }) {
+  const { t, lang, bal } = useApp();
+  const held = byCurrency(bal.data);
+  return (
+    <Sheet label={title} onClose={onClose}>
+      <div className="mp-sheet-title">{title}</div>
+      {CURS.map((c) => (
+        <button key={c} type="button" className="mp-lang-opt" aria-pressed={c === value} onClick={() => onPick(c)}>
+          <span className="mp-row" style={{ gap: 10 }}>
+            <Badge cur={c} size={28} /> {t.curName[c]}
+          </span>
+          <span className="mp-row" style={{ gap: 8 }}>
+            <span className="mp-mono" style={{ fontSize: 13, color: "var(--muted)" }}>
+              {fmtMoney(held[c].amount18, 18, c, lang)}
+            </span>
+            <span className="mp-save" style={{ fontWeight: 800, minWidth: 12 }}>
+              {c === value ? "✓" : ""}
+            </span>
+          </span>
+        </button>
+      ))}
+    </Sheet>
   );
 }
 
@@ -79,13 +105,15 @@ export function ChangeScreen() {
   const over = bal.data !== null && isPositive(ch.amount) && parseHuman(ch.amount, DECIMALS[ch.from]) > have;
   const est = estimate(ch.amount, from, to, prices);
   const rate = estimate("1", from, to, prices);
-  const cycle = (which: "from" | "to") => {
+  const [picking, setPicking] = useState<"from" | "to" | null>(null);
+  // Picking the currency already on the other side swaps the two, on purpose.
+  const pick = (which: "from" | "to", c: Cur) => {
     const cur = which === "from" ? from : to;
     const other = which === "from" ? to : from;
-    const nx = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length]!;
-    const p: { from?: Sym; to?: Sym } = { [which]: SYM_OF[nx] };
-    if (nx === other) p[which === "from" ? "to" : "from"] = SYM_OF[cur];
+    const p: { from?: Sym; to?: Sym } = { [which]: SYM_OF[c] };
+    if (c === other) p[which === "from" ? "to" : "from"] = SYM_OF[cur];
     setCh({ ...p, quote: null });
+    setPicking(null);
   };
   const primary = !isPositive(ch.amount)
     ? { label: t.review, kind: "off" as const }
@@ -98,7 +126,7 @@ export function ChangeScreen() {
         <div className="mp-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6, overflow: "visible" }}>
           <div className="mp-between">
             <span className="mp-small">{t.chPay}</span>
-            <CurPill cur={from} onClick={() => cycle("from")} />
+            <CurPill cur={from} onClick={() => setPicking("from")} />
           </div>
           <div className="mp-amount" style={{ fontSize: 43 }} aria-live="polite">
             {fmtTyped(ch.amount, from, lang)}
@@ -116,7 +144,7 @@ export function ChangeScreen() {
         <div className="mp-sunk">
           <div className="mp-between">
             <span className="mp-small">{t.chGet}</span>
-            <CurPill cur={to} onClick={() => cycle("to")} />
+            <CurPill cur={to} onClick={() => setPicking("to")} />
           </div>
           <div className="mp-amount mp-save" style={{ fontSize: 36, lineHeight: 1.15 }}>
             {est !== null ? `≈ ${fmtMoney(est, 18, to, lang)}` : `${PREFIX[to]} —`}
@@ -136,6 +164,9 @@ export function ChangeScreen() {
         </div>
         <Keypad value={ch.amount} onChange={(v) => setCh({ amount: v })} />
       </div>
+      {picking ? (
+        <CurPicker title={picking === "from" ? t.chPay : t.chGet} value={picking === "from" ? from : to} onPick={(c) => pick(picking, c)} onClose={() => setPicking(null)} />
+      ) : null}
     </Frame>
   );
 }

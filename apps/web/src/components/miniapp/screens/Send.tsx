@@ -9,7 +9,7 @@ import { isPositive } from "../../../lib/miniapp/client/keypad";
 import { newId, type Contact } from "../../../lib/miniapp/client/store";
 import { Frame, useApp, useNow } from "../context";
 import { Badge, CountdownBar, CountdownText } from "../ui";
-import { CurPill, Keypad, MiniPayReceiptLink, ReceiptChip } from "./Change";
+import { CurPicker, CurPill, Keypad, MiniPayReceiptLink, ReceiptChip } from "./Change";
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const first = (name: string) => name.split(" ")[0] ?? name;
@@ -176,10 +176,10 @@ export function SendAdd() {
   );
 }
 
-const CYCLE: Cur[] = ["USD", "BRL", "ARS", "COP", "MXN"];
 
 export function SendAmount() {
   const { t, lang, contacts, send, setSend, bal, prices, requestSendQuote } = useApp();
+  const [picking, setPicking] = useState(false);
   const c = contacts.find((x) => x.id === send.contactId);
   if (!c) return <SendList />;
   const paySym = SYM_OF[send.pay];
@@ -207,7 +207,7 @@ export function SendAmount() {
         <div className="mp-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
           <div className="mp-between">
             <span className="mp-small">{t.sendLbl}</span>
-            <CurPill cur={send.pay} onClick={() => setSend({ pay: CYCLE[(CYCLE.indexOf(send.pay) + 1) % CYCLE.length]!, quote: null })} />
+            <CurPill cur={send.pay} onClick={() => setPicking(true)} />
           </div>
           <div className="mp-amount" style={{ fontSize: 43 }} aria-live="polite">
             {fmtTyped(send.amount, send.pay, lang)}
@@ -228,6 +228,17 @@ export function SendAmount() {
         </div>
         <Keypad value={send.amount} onChange={(v) => setSend({ amount: v, quote: null })} />
       </div>
+      {picking ? (
+        <CurPicker
+          title={t.sendLbl}
+          value={send.pay}
+          onPick={(cur) => {
+            setSend({ pay: cur, quote: null });
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      ) : null}
     </Frame>
   );
 }
