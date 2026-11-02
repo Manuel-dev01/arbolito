@@ -195,8 +195,6 @@ async function prepareTextile(
   route: Route,
   account: Address,
   proof: z.infer<typeof TakerProof> | undefined,
-  /** The quote's own expiresAt (ms): the prepared deadline never runs past it. */
-  quoteDeadlineMs: number,
   recipient?: Address,
 ): Promise<PreparedTextile> {
   const leg = route.legs[0]!;
@@ -249,8 +247,10 @@ async function prepareTextile(
   if (!eq(q.spender, reactor) || !eq(swapTx.to, reactor)) await cancel(upstream("Textile returned an unexpected contract."), "textile_bad_quote");
   if (swapTx.chainId !== deps.chainId || BigInt(swapTx.value) !== 0n) await cancel(upstream("Textile returned an unexpected transaction."), "textile_bad_quote");
   if (buyAmount < route.minOut) await cancel(priceChanged(), "price_changed");
-  // Effective deadline: the firm quote's expiry, clamped to the quote card's own expiresAt.
-  const expiresMs = Math.min(parseExpiry(q.expiresAt), quoteDeadlineMs);
+  // The firm quote is fresh (taken now, its own ~60 s), and its price was checked against the card's
+  // guaranteed minimum above, so its expiry is the deadline. Clamping it to the card's countdown made
+  // a Confirm tapped late on the card fail as "about to expire" (founder's first try, 2026-11-02).
+  const expiresMs = parseExpiry(q.expiresAt);
   if (expiresMs - deps.now() < FIRM_MARGIN_MS) await cancel(quoteExpired("The firm quote is about to expire. Ask for a new one."), "firm_quote_expiring");
 
   const calls: StoredCall[] = [];
@@ -317,7 +317,7 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
     if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row, opts.recipient);
     else if (kind === "textile") {
       if (!deps.textileEnabled) throw final(notReady("Textile execution is not enabled yet."), "textile_disabled");
-      prepared = await prepareTextile(deps, route, account, req.takerProof, row.expiresAt.getTime(), opts.recipient);
+      prepared = await prepareTextile(deps, route, account, req.takerProof, opts.recipient);
     } else throw final(noRoute("This route can't be executed from a wallet in one go."), "no_route");
   } catch (err) {
     const error = err instanceof ApiFailure ? quoteError.get(err) : undefined;
@@ -326,7 +326,7 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
   }
 
   const ok = await store
-    .updateQuote(row.id, { status: "prepared", prepared, account, ...(Date.parse(prepared.expiresAt) < row.expiresAt.getTime() ? { expiresAt: new Date(prepared.expiresAt) } : {}) }, ["quoted"])
+    .updateQuote(row.id, { status: "prepared", prepared, account, expiresAt: new Date(prepared.expiresAt) }, ["quoted"])
     .catch(async (e: unknown) => {
       // The firm quote holds maker inventory: release it rather than leave the user's retry to fail.
       if (prepared.kind === "textile") await deps.textile.cancel(prepared.rfqId, prepared.claimToken).catch((c: unknown) => logTextileError("prepare cancel", c));

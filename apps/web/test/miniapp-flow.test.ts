@@ -362,14 +362,15 @@ describe("Textile: 409 proof → firm quote → submit", () => {
     expect(rig.store.quotes[0]).toMatchObject({ status: "failed", error: "price_changed", prepared: null });
   });
 
-  it("clamps the prepared deadline to the quote's own expiresAt", async () => {
+  it("uses the fresh firm quote's own deadline, not the card's countdown (a late Confirm failed on 2026-11-02)", async () => {
     const rig = makeRig();
     const q = await textileQuote(rig);
     rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, 17_000n * E18, 120_000); // firm outlives the card
     const body = await challenge(rig, q.quoteId);
     const signature = await wallet.signTypedData(takerControlTypedData(wallet.address, 42220, body.nonce as Hex, body.issuedAt));
     const p = await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, takerProof: { nonce: body.nonce, issuedAt: body.issuedAt, signature, scheme: "eip712" } });
-    expect(p.expiresAt).toBe(q.expiresAt);
+    expect(Date.parse(p.expiresAt)).toBeGreaterThan(Date.parse(q.expiresAt));
+    expect(rig.store.quotes[0]!.expiresAt.toISOString()).toBe(p.expiresAt);
     // Firm sooner than the card: the stored expiresAt follows the firm deadline.
     const rig2 = makeRig();
     rig2.textile.hasPartnerKey = true;
