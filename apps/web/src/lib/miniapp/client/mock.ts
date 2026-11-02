@@ -365,7 +365,8 @@ export function createMockServer(scenario: MockScenario) {
       const said = (text ?? transcript ?? "").toLowerCase();
       const amt = /(\d+(?:[.,]\d+)?)/.exec(said)?.[1]?.replace(",", ".") ?? (lang === "pt" ? "200" : "100");
       const from: Sym = /real|reai|brl|r\$/.test(said) ? "wBRL" : /peso|ars/.test(said) && !/a pesos|to pesos|por pesos/.test(said) ? "wARS" : "USDT";
-      const to: Sym = from === "wARS" ? "USDT" : "wARS";
+      // Which pesos: colombianos and mexicanos are named; plain "pesos" means Argentine ones.
+      const to: Sym = from === "wARS" ? "USDT" : /colombian|\bcop\b/.test(said) ? "wCOP" : /mexican|\bmxn\b/.test(said) ? "wMXN" : "wARS";
       if (fail === "no_route") return json(200, { transcript, reply: lang === "en" ? "No market right now for that pair." : "Ahora no hay mercado para ese cambio.", quotes: [] });
       const q = mockQuote(from, to, amt);
       quotes.set(q.quoteId, q);
