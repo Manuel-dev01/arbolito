@@ -15,11 +15,16 @@ export default async function NotFound() {
   return (
     <Shell lang={lang} path="/">
       <section className="card">
-        <h1>{t.notFoundTitle}</h1>
-        <p className="muted">{t.notFoundBody}</p>
-        <a className="btn" href={lang === "es" ? "/" : `/?lang=${lang}`}>
-          ← Arbolito
-        </a>
+        <h1>{t.pageNotFoundTitle}</h1>
+        <p className="muted">{t.pageNotFoundBody}</p>
+        <p style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <a className="btn" href={lang === "es" ? "/app" : `/app?lang=${lang}`}>
+            {t.openApp}
+          </a>
+          <a className="btn" href={lang === "es" ? "/" : `/?lang=${lang}`}>
+            ← Arbolito
+          </a>
+        </p>
       </section>
     </Shell>
   );

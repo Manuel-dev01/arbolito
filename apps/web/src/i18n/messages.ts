@@ -372,6 +372,9 @@ const es = {
     earlierVersion: "ver la versión anterior",
     rawTitle: "Todas las cotizaciones consideradas",
     notFoundTitle: "No encontramos ese comprobante",
+    pageNotFoundTitle: "No encontramos esa página",
+    pageNotFoundBody: "Revisá la dirección. Para abrir Arbolito en MiniPay, la dirección es arbolito-livid.vercel.app/app (todo en minúsculas). Si buscabas un comprobante, se publica unos segundos después de cada operación.",
+    openApp: "Abrir Arbolito",
     notFoundBody: "Revisá el enlace. Los comprobantes se publican unos segundos después de cada operación.",
   },
   verify: {
@@ -800,6 +803,9 @@ const pt: Messages = {
     earlierVersion: "ver a versão anterior",
     rawTitle: "Todas as cotações consideradas",
     notFoundTitle: "Não encontramos esse comprovante",
+    pageNotFoundTitle: "Não encontramos essa página",
+    pageNotFoundBody: "Confira o endereço. Para abrir o Arbolito no MiniPay, o endereço é arbolito-livid.vercel.app/app (tudo em minúsculas). Se você procurava um comprovante, ele é publicado alguns segundos depois de cada operação.",
+    openApp: "Abrir o Arbolito",
     notFoundBody: "Confira o link. Os comprovantes são publicados alguns segundos depois de cada operação.",
   },
   verify: {
@@ -1226,6 +1232,9 @@ const en: Messages = {
     earlierVersion: "see the earlier version",
     rawTitle: "Every quote considered",
     notFoundTitle: "We couldn't find that receipt",
+    pageNotFoundTitle: "We couldn't find that page",
+    pageNotFoundBody: "Check the address. To open Arbolito in MiniPay, it's arbolito-livid.vercel.app/app (all lowercase). If you were looking for a receipt, it's published a few seconds after each trade.",
+    openApp: "Open Arbolito",
     notFoundBody: "Check the link. Receipts are published a few seconds after each trade.",
   },
   verify: {
