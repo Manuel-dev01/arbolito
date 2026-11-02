@@ -44,7 +44,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 | # | Do | You should see | Capture |
 |---|---|---|---|
 | 3.1 | MiniPay → Settings → About → tap the version number until developer mode turns on | "Developer mode" toast | 📸 |
-| 3.2 | Settings → Developer Settings → **Load test page** → paste `https://arbolito-livid.vercel.app/app` (with https://, all lowercase) → Load | Arbolito loading inside MiniPay | 📸 |
+| 3.2 | Settings → Developer Settings → **Load test page** → **clear the field first** (it keeps the last address) → type `https://arbolito-livid.vercel.app/app` → Load | Arbolito loading inside MiniPay | 📸 |
 | 3.3 | Ajustes → **Moneda para mostrar** → **Pesos COP**, then Inicio | "Tu plata, en pesos colombianos", the rates strip, the tabs Inicio · Chat · Comprobantes · Ajustes | 📸 the picker · 📸 Home |
 | 3.4 | Chat tab → type **"cámbiame 2 dólares a pesos colombianos"** (or hold the mic and say it) | Your message, then Arbolito's reply with a quote card | 🎥 typing → reply · 📸 the card |
 | 3.5 | Look at the quote card | **Pagás US$ 2 · Recibís COP ~6.400**, the rate, the comparison with the interbank rate, a countdown | 📸 close-up |

@@ -72,6 +72,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **wBRL back:** ER-API and the ECB added as BRL sources (founder's yes, deployed). All six pairs quoting at 07:20 UTC, wBRL at ~5.454.
 - **Mini App:** display currency is now a picker in Ajustes (it only followed language and region); demo mode has COP/MXN rates.
 - **Metrics:** every wallet counts the same on the landing and /metrics (founder's call; no wallet is classified as a test wallet).
+- **MiniPay test page 404 (root cause from Vercel request logs):** the "Load test page" field keeps the last address, so typing appended to it and MiniPay requested `/apphttps:/arbolito-livid.vercel.app/appThis%20link`. `proxy.ts` now sends any `/app`-prefixed path that isn't `/app` or `/app/link` to `/app` (query kept); the 404 says "page" (not "receipt"), shows the requested address and has an Open Arbolito button.
 - **Demo:** `design/demo/SHOTLIST.md`, a 5-minute shot list in seven acts that is also the tester path.
 - **Next:** the founder shoots the demo; welcome credits (US$ 2 each, cap US$ 100, ≤ US$ 30/day, batches approved by the founder).
 - Desk totals: 36 fills, US$ 317.87 volume, 45 RFQs won, all six takers outside.
