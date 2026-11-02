@@ -34,7 +34,7 @@ import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen }
 import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
 import { ScreenView } from "./screens/ScreenView";
-import { DetailsSheet, LangSheet, MiniPaySheet } from "./sheets";
+import { CurSheet, DetailsSheet, LangSheet, MiniPaySheet } from "./sheets";
 import { codeFromUrl, LinkScreen } from "./screens/Link";
 
 const MOCK_FAILS: MockFail[] = ["reject", "revert", "no_route", "price_changed", "proof", "expired", "not_ready", "upstream", "mismatch"];
@@ -84,6 +84,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [lang, setLangState] = useState<Lang>("es");
   /** navigator.language, read on boot (not during render, so server and client markup match). */
   const [locale, setLocale] = useState<string | null>(null);
+  /** The display currency the user picked in Settings (null = from language and region). */
+  const [curPick, setCurPick] = useState<Cur | null>(null);
   const t = miniT(lang);
   const [env, setEnv] = useState<Env>({ phase: "boot" });
   const bootRef = useRef<Boot | null>(null);
@@ -91,7 +93,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const depth = useRef(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [sheet, setSheet] = useState<"lang" | "details" | null>(null);
+  const [sheet, setSheet] = useState<"lang" | "cur" | "details" | null>(null);
   const [mpReq, setMpReq] = useState<{ req: SheetRequest; resolve(ok: boolean): void } | null>(null);
   const sheetAmount = useRef<string>("");
 
@@ -181,6 +183,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     const l = pickLang(b.lang ?? store0.lang(), navLang);
     setLangState(l);
     setLocale(navLang);
+    setCurPick(store0.displayCur());
 
     if (b.mock) {
       const alias = b.state ? STATE_ALIASES[b.state] : undefined;
@@ -225,6 +228,15 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     (l: Lang) => {
       setLangState(l);
       ready?.store.setLang(l);
+      setSheet(null);
+    },
+    [ready],
+  );
+
+  const setDisplayCur = useCallback(
+    (c: Cur) => {
+      setCurPick(c);
+      ready?.store.setDisplayCur(c);
       setSheet(null);
     },
     [ready],
@@ -933,7 +945,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     wallet: env.wallet,
     store: env.store,
     persona: env.persona,
-    displayCur: displayCurFor(lang, locale),
+    displayCur: curPick ?? displayCurFor(lang, locale),
+    setDisplayCur,
     screen,
     go,
     back,
@@ -1045,6 +1058,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
             </div>
           ) : null}
           {sheet === "lang" ? <LangSheet /> : null}
+          {sheet === "cur" ? <CurSheet /> : null}
           {sheet === "details" ? <DetailsSheet /> : null}
           {mpReq ? (
             <MiniPaySheet

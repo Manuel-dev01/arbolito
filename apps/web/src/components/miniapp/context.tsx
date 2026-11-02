@@ -89,6 +89,7 @@ export interface AppCtx {
   t: MiniDict;
   lang: Lang;
   setLang(l: Lang): void;
+  setDisplayCur(c: Cur): void;
   mock: boolean;
   account: Address;
   api: ApiClient;
@@ -102,7 +103,7 @@ export interface AppCtx {
   back(): void;
   toast(msg: string): void;
   showError(code: ClientErrorCode): void;
-  setSheet(s: "lang" | "details" | null): void;
+  setSheet(s: "lang" | "cur" | "details" | null): void;
   /** Opens a link in the same view (MiniPay rule: no new tabs). */
   openLink(url: string): void;
 

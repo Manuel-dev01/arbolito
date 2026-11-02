@@ -209,12 +209,12 @@ export function Settings() {
             <span>{t.setLang}</span>
             <span style={{ fontWeight: 400, color: "var(--muted)" }}>{t.langName} ›</span>
           </button>
-          <div className="mp-list-row" style={{ ...row, cursor: "default" }}>
+          <button type="button" className="mp-list-row" style={row} onClick={() => setSheet("cur")}>
             <span>{t.setDisp}</span>
             <span className="mp-row" style={{ gap: 8, fontWeight: 400, color: "var(--muted)" }}>
-              <Badge cur={displayCur} size={24} /> {t.curName[displayCur]} ({displayCur})
+              <Badge cur={displayCur} size={24} /> {t.curName[displayCur]} ({displayCur}) ›
             </span>
-          </div>
+          </button>
           <button type="button" className="mp-list-row" style={row} onClick={() => go("send")}>
             <span>{t.setContacts}</span>
             <span style={{ fontWeight: 400, color: "var(--muted)" }}>{contacts.length} ›</span>

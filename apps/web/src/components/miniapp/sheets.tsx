@@ -1,9 +1,10 @@
 "use client";
 
 import { MINIAPP_LANGS } from "../../i18n/miniapp";
+import { CURS } from "../../lib/miniapp/client/format";
 import type { SheetRequest } from "../../lib/miniapp/client/mock";
 import { useApp } from "./context";
-import { Sheet } from "./ui";
+import { Badge, Sheet } from "./ui";
 
 export function LangSheet() {
   const { t, lang, setLang, setSheet } = useApp();
@@ -15,6 +16,26 @@ export function LangSheet() {
           <span>{t.langLabels[l]}</span>
           <span className="mp-save" style={{ fontWeight: 800 }}>
             {l === lang ? "✓" : ""}
+          </span>
+        </button>
+      ))}
+    </Sheet>
+  );
+}
+
+/** Display currency: which money totals and equivalents are shown in. Kept on this phone. */
+export function CurSheet() {
+  const { t, displayCur, setDisplayCur, setSheet } = useApp();
+  return (
+    <Sheet label={t.setDisp} onClose={() => setSheet(null)}>
+      <div className="mp-sheet-title">{t.setDisp}</div>
+      {CURS.map((c) => (
+        <button key={c} type="button" className="mp-lang-opt" aria-pressed={c === displayCur} onClick={() => setDisplayCur(c)}>
+          <span className="mp-row" style={{ gap: 10 }}>
+            <Badge cur={c} size={28} /> {t.curName[c]} ({c})
+          </span>
+          <span className="mp-save" style={{ fontWeight: 800 }}>
+            {c === displayCur ? "✓" : ""}
           </span>
         </button>
       ))}

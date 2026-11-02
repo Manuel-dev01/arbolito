@@ -71,6 +71,9 @@ export function createStore(kv: KV | null = defaultKV()) {
   return {
     lang: () => read<Lang | null>("lang", null),
     setLang: (l: Lang) => write("lang", l),
+    /** The user's own pick; null = follow the language and phone region. */
+    displayCur: () => read<Cur | null>("displayCur", null),
+    setDisplayCur: (c: Cur) => write("displayCur", c),
     onboarded: (account: string) => read<boolean>(`onboarded.${acct(account)}`, false),
     setOnboarded: (account: string) => write(`onboarded.${acct(account)}`, true),
 
