@@ -51,6 +51,7 @@ const asToolError = (err: unknown): never => {
   if (err instanceof ApiFailure && err.code === "no_route") throw new ToolUserError(NO_ROUTE, "no_route");
   if (err instanceof ApiFailure && err.code === "bad_request") throw new ToolUserError(err.message, "bad_request");
   if (err instanceof ApiFailure && err.code === "not_ready") throw new ToolUserError(err.message, "not_ready");
+  if (err instanceof ApiFailure && err.code === "below_minimum") throw new ToolUserError(err.message, "below_minimum");
   throw err;
 };
 

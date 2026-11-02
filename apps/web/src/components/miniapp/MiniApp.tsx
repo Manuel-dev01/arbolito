@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits, type Address } from "viem";
-import { fill, miniT, pickLang, DISPLAY_CUR, type Lang } from "../../i18n/miniapp";
+import { displayCurFor, fill, miniT, pickLang, type Lang } from "../../i18n/miniapp";
 import { cancelText, pauseText } from "@arbolito/rules";
 import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Quote, type Rates, type Rule } from "../../lib/miniapp/client/api";
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
@@ -82,6 +82,8 @@ const EMPTY_EXEC: ExecState ={ flow: "change", stage: null, result: null, total:
 
 export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [lang, setLangState] = useState<Lang>("es");
+  /** navigator.language, read on boot (not during render, so server and client markup match). */
+  const [locale, setLocale] = useState<string | null>(null);
   const t = miniT(lang);
   const [env, setEnv] = useState<Env>({ phase: "boot" });
   const bootRef = useRef<Boot | null>(null);
@@ -175,8 +177,10 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     const b = bootRef.current ?? readBoot();
     bootRef.current = b;
     const store0 = createStore();
-    const l = pickLang(b.lang ?? store0.lang(), typeof navigator !== "undefined" ? navigator.language : null);
+    const navLang = typeof navigator !== "undefined" ? navigator.language : null;
+    const l = pickLang(b.lang ?? store0.lang(), navLang);
     setLangState(l);
+    setLocale(navLang);
 
     if (b.mock) {
       const alias = b.state ? STATE_ALIASES[b.state] : undefined;
@@ -329,7 +333,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     (code: ClientErrorCode) => {
       const m = mapApiError(code);
       const key = m.kind === "toast" ? m.message : "generic";
-      toast({ notReady: t.errNotReady, rateLimited: t.errRate, upstream: t.errUpstream, offline: t.errOffline, generic: t.errGeneric }[key]);
+      toast({ notReady: t.errNotReady, rateLimited: t.errRate, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
     },
     [t, toast],
   );
@@ -929,7 +933,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     wallet: env.wallet,
     store: env.store,
     persona: env.persona,
-    displayCur: DISPLAY_CUR[lang] as Cur,
+    displayCur: displayCurFor(lang, locale),
     screen,
     go,
     back,

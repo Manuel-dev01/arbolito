@@ -16,16 +16,16 @@ import { ACCOUNT, BLOCK, makeRig } from "./miniapp-helpers";
 afterEach(() => setDeps(undefined));
 
 describe("GET /balances and /rates", () => {
-  it("reads the 5 tokens at one block with USD values", async () => {
+  it("reads the 7 tokens at one block with USD values", async () => {
     const rig = makeRig();
     rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 12_500_000n);
     rig.chain.balances.set(`${TOKENS.wARS.address}:${ACCOUNT}`.toLowerCase(), 16_000n * 10n ** 18n);
     rig.chain.quoterOut = (_t, a) => a / 10n ** 12n / 1600n; // wARS → USDT at 1600
     const b = BalancesResponse.parse(await getBalances(rig.deps, ACCOUNT));
     expect(b.blockNumber).toBe(BLOCK.toString());
-    expect(b.balances.map((x) => x.sym)).toEqual(["wARS", "wBRL", "USDT", "USAT", "USDC"]);
+    expect(b.balances.map((x) => x.sym)).toEqual(["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"]);
     expect(b.balances.find((x) => x.sym === "wARS")).toEqual({ sym: "wARS", amount: (16_000n * 10n ** 18n).toString(), decimals: 18 });
-    expect(b.usdMicros).toEqual({ wARS: "10000000", wBRL: "0", USDT: "12500000", USAT: "0", USDC: "0" });
+    expect(b.usdMicros).toEqual({ wARS: "10000000", wBRL: "0", wCOP: "0", wMXN: "0", USDT: "12500000", USAT: "0", USDC: "0" });
   });
 
   it("route handlers validate the account and serve rates", async () => {

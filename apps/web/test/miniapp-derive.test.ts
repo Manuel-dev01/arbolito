@@ -43,4 +43,16 @@ describe("pricesFrom", () => {
     expect(dollarsPer(p.BRL)).toBeCloseTo(53 / 9.97, 2);
     expect(MIN_PRICING_MICROS).toBe(10_000n);
   });
+
+  it("prices COP and MXN from a USD/X reference when the user holds none", () => {
+    const p = pricesFrom({ account: ACCOUNT, balances: [], usdMicros: {}, blockNumber: "1" } as never, {
+      at: "2026-11-01T12:00:00Z",
+      references: [
+        { name: "interbank", pair: "USD/COP", rate: "3190", source: "x", at: "2026-11-01T12:00:00Z" },
+        { name: "textile_mid", pair: "USD/MXN", rate: "18.77", source: "x", at: "2026-11-01T12:00:00Z" },
+      ],
+    } as never);
+    expect(dollarsPer(p.COP)).toBeCloseTo(3190, -1);
+    expect(dollarsPer(p.MXN)).toBeCloseTo(18.77, 0);
+  });
 });

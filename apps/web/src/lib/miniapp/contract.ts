@@ -18,7 +18,7 @@
  */
 import { z } from "zod";
 
-export const SYMBOLS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
+export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
 export type Sym = z.infer<typeof Sym>;
 
@@ -32,6 +32,7 @@ export const Lang = z.enum(["es", "pt", "en"]);
 export const ApiErrorCode = z.enum([
   "bad_request",
   "no_route", // no market can quote this pair/size now
+  "below_minimum", // under the market's minimum order (Textile: about US$ 1): ask for a larger amount
   "quote_expired", // past expiresAt: request a new quote
   "price_changed", // re-quote at prepare moved below the shown minimum
   "needs_taker_proof", // Textile firm quote needs the user's one-time proof (see PrepareResponse)

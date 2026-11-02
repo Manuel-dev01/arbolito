@@ -35,6 +35,11 @@ const STRINGS = {
     pt: "Você pediu muitas cotações seguidas. Espere um minuto e tente de novo. <b>Nenhum dinheiro foi movido.</b>",
     en: "That's a lot of quotes in a row. Wait a minute and try again. <b>No money moved.</b>",
   },
+  quoteMin: {
+    es: "El mínimo para esa moneda es US$ 1. Probá con un monto un poco mayor. <b>No se movió plata.</b>",
+    pt: "O mínimo para essa moeda é US$ 1. Tente um valor um pouco maior. <b>Nenhum dinheiro foi movido.</b>",
+    en: "The minimum for that currency is US$ 1. Try a slightly larger amount. <b>No money moved.</b>",
+  },
   quoteBad: {
     es: "No pude cotizar ese monto. Revisá el monto y las monedas. <b>No se movió plata.</b>",
     pt: "Não consegui cotar esse valor. Confira o valor e as moedas. <b>Nenhum dinheiro foi movido.</b>",

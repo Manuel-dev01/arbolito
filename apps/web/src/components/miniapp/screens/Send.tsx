@@ -176,7 +176,7 @@ export function SendAdd() {
   );
 }
 
-const CYCLE: Cur[] = ["USD", "BRL", "ARS"];
+const CYCLE: Cur[] = ["USD", "BRL", "ARS", "COP", "MXN"];
 
 export function SendAmount() {
   const { t, lang, contacts, send, setSend, bal, prices, requestSendQuote } = useApp();
@@ -207,7 +207,7 @@ export function SendAmount() {
         <div className="mp-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
           <div className="mp-between">
             <span className="mp-small">{t.sendLbl}</span>
-            <CurPill cur={send.pay} onClick={() => setSend({ pay: CYCLE[(CYCLE.indexOf(send.pay) + 1) % 3]!, quote: null })} />
+            <CurPill cur={send.pay} onClick={() => setSend({ pay: CYCLE[(CYCLE.indexOf(send.pay) + 1) % CYCLE.length]!, quote: null })} />
           </div>
           <div className="mp-amount" style={{ fontSize: 43 }} aria-live="polite">
             {fmtTyped(send.amount, send.pay, lang)}

@@ -29,7 +29,7 @@ import { Badge, CountdownBar, CountdownText, NoMoneyMoved, ReceiptBadge, Spinner
 import { useReceipt } from "../useReceipts";
 import { receiptRef } from "../../../lib/miniapp/client/format";
 
-const CYCLE: Cur[] = ["BRL", "USD", "ARS"];
+const CYCLE: Cur[] = ["BRL", "USD", "ARS", "COP", "MXN"];
 
 export function Keypad({ value, onChange }: { value: string; onChange(v: string): void }) {
   const { lang, t } = useApp();

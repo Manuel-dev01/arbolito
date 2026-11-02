@@ -100,6 +100,18 @@ describe("POST /quote", () => {
     expect(q2.alternatives[0]!.venues).toEqual(["textile"]);
   });
 
+  it("won't offer a Textile-only route under Textile's US$ 1 minimum (3,206 wCOP was refused on 2026-11-01)", async () => {
+    const rig = makeRig();
+    rig.textileVenue.pairs["USDT>wCOP"] = (a) => a * 3207n * 10n ** 12n;
+    const f = await failure(createQuote(rig.deps, { from: "USDT", to: "wCOP", amount: "0.99" }));
+    expect([f.code, f.status]).toEqual(["below_minimum", 422]);
+    expect((await createQuote(rig.deps, { from: "USDT", to: "wCOP", amount: "1" })).venues).toEqual(["textile"]);
+
+    // A Textile route under the minimum gives way to an executable Uniswap one.
+    rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1700n);
+    expect((await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "0.5" })).venues).toEqual(["uniswap"]);
+  });
+
   it("route handler validates the body and returns the contract error shape", async () => {
     const rig = makeRig();
     setDeps(rig.deps);

@@ -5,10 +5,24 @@ import { savingsVsOfficial } from "@arbolito/proof";
 import { plan, toAtomic, type Quote, type Reference, type Route } from "@arbolito/router";
 import { SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
 import type { MiniappDeps } from "./deps";
-import { badRequest, noRoute, notFound } from "./errors";
+import { badRequest, belowMinimum, noRoute, notFound } from "./errors";
 import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
 import { vsWesternUnion } from "./competitors";
+
+/**
+ * Textile's smallest RFQ is about US$ 1 (it refused 3,206 wCOP with "below the RFQ minimum
+ * (3208…)" on 2026-11-01). A Textile-only route under it can't be prepared, so it isn't offered.
+ */
+export const TEXTILE_MIN_USD_MICROS = 1_000_000n;
+
+/** The dollar side of a single-leg route (USD stables are 6 decimals), or null if neither end is a dollar. */
+function usdSideMicros(route: Route): bigint | null {
+  const usd = (a: Address) => tokenByAddress(a).kind === "usd";
+  if (usd(route.tokenIn)) return route.amountIn;
+  if (usd(route.tokenOut)) return route.expectedOut;
+  return null;
+}
 
 /** How long a quote card stays confirmable. */
 export const QUOTE_TTL_MS = 60_000;
@@ -89,8 +103,10 @@ export async function planQuote(deps: MiniappDeps, from: Sym, to: Sym, amountIn:
     deps.references(blockNumber).catch(() => ({ references: [] as Reference[], unavailable: ["all"] })),
   ]);
   const all = planned.best ? [planned.best, ...planned.alternatives] : [];
-  const route = all.find((r) => isMiniPayExecutable(r, deps.textileEnabled));
-  if (!route) throw noRoute();
+  const executable = all.filter((r) => isMiniPayExecutable(r, deps.textileEnabled));
+  const tooSmall = (r: Route) => routeKind(r) === "textile" && (usdSideMicros(r) ?? TEXTILE_MIN_USD_MICROS) < TEXTILE_MIN_USD_MICROS;
+  const route = executable.find((r) => !tooSmall(r));
+  if (!route) throw executable.length ? belowMinimum() : noRoute();
   return {
     route,
     alternatives: all.filter((r) => r !== route),

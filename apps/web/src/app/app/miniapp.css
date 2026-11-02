@@ -101,6 +101,8 @@
 .mp-badge.ARS { background: var(--ars-bg); color: var(--ars-fg); font-size: 15px; }
 .mp-badge.BRL { background: var(--brl-bg); color: var(--brl-fg); }
 .mp-badge.USD { background: var(--usd-bg); color: var(--usd-fg); }
+.mp-badge.COP { background: var(--cop-bg); color: var(--cop-fg); font-size: 15px; }
+.mp-badge.MXN { background: var(--mxn-bg); color: var(--mxn-fg); font-size: 15px; }
 .mp-tag { display: inline-flex; align-items: center; gap: 4px; font: 600 12px/1 var(--fM); padding: 6px 8px; border-radius: var(--r-tag); }
 .mp-tag.save { color: var(--save-text); background: var(--save-bg); }
 .mp-tag.warn { color: var(--attention-text); background: var(--attention-bg); }

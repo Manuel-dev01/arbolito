@@ -16,7 +16,7 @@ import {
 } from "@arbolito/router";
 import type { PrepareRequest, PrepareResponse, TakerProof } from "../contract";
 import type { MiniappDeps } from "./deps";
-import { ApiFailure, badRequest, noRoute, notFound, notReady, priceChanged, quoteExpired, upstream } from "./errors";
+import { ApiFailure, badRequest, belowMinimum, noRoute, notFound, notReady, priceChanged, quoteExpired, rateLimited, upstream } from "./errors";
 import { logError, logTextileError } from "./http";
 import { routeKind } from "./quote";
 import { decodePayload } from "./serde";
@@ -221,6 +221,10 @@ async function prepareTextile(
       const code = textileCode(err);
       if (err.status === 401 || code === "proof_of_control_required") throw takerProofChallenge(deps, account, "Textile needs a fresh wallet proof. Sign again.");
       if (code === "corridor_unavailable") throw final(noRoute(), "no_route");
+      if (/below the RFQ minimum/.test(err.body)) throw final(belowMinimum(), "textile_below_minimum");
+      // A cancelled or unused firm quote keeps the taker's funds committed until it expires (~60 s):
+      // a retry right after declining in MiniPay is refused as insufficient_funds (2026-11-01).
+      if (/"committed":"[1-9]/.test(err.body)) throw rateLimited("A previous quote still holds these funds for a few seconds. Try again shortly."); // transient: the quote stays confirmable
       if (err.status >= 400 && err.status < 500) throw final(badRequest(`Textile declined the firm quote (${code}).`, 422), `textile_${code}`);
     }
     logError("prepare textile request", err);

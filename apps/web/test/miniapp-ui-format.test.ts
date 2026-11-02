@@ -15,7 +15,7 @@ import {
 import { DEFAULT_RULES, isPositive, pressKey, type Key } from "../src/lib/miniapp/client/keypad";
 import { countdown } from "../src/lib/miniapp/client/countdown";
 import { mapApiError } from "../src/lib/miniapp/client/errors";
-import { fill, miniT, pickLang } from "../src/i18n/miniapp";
+import { displayCurFor, fill, miniT, pickLang } from "../src/i18n/miniapp";
 
 const E18 = 10n ** 18n;
 
@@ -165,5 +165,19 @@ describe("i18n", () => {
     expect(pickLang("pt", "es-AR")).toBe("pt");
     expect(pickLang(null, "pt-BR")).toBe("pt");
     expect(pickLang(undefined, "fr-FR")).toBe("es");
+  });
+
+  it("shows totals in the pesos of the phone region (a Colombian phone in Spanish sees COP, not ARS)", () => {
+    expect(displayCurFor("es", "es-CO")).toBe("COP");
+    expect(displayCurFor("es", "es-MX")).toBe("MXN");
+    expect(displayCurFor("es", "es-AR")).toBe("ARS");
+    expect(displayCurFor("es", "es")).toBe("ARS");
+    expect(displayCurFor("en", "en-US")).toBe("USD");
+    expect(displayCurFor("pt", null)).toBe("BRL");
+  });
+
+  it("formats Colombian and Mexican pesos", () => {
+    expect(fmtSym(6416_714000000000000000n, "wCOP", "es")).toBe("COP 6.416,71");
+    expect(fmtSym(187_65n * 10n ** 16n, "wMXN", "en")).toBe("MX$ 187.65");
   });
 });

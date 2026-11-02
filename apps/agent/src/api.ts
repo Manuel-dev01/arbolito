@@ -72,7 +72,7 @@ export function createMiniAppClient(opts: MiniAppClientOptions): MiniAppClient {
 }
 
 /** Which user-facing copy a failed quote gets. `no_route` gets its own card, not a plain line. */
-export type QuoteErrorCopy = "noMarket" | "rateLimited" | "quoteBad" | "error";
+export type QuoteErrorCopy = "noMarket" | "rateLimited" | "quoteBad" | "quoteMin" | "error";
 
 export function quoteErrorCopy(err: unknown): QuoteErrorCopy {
   if (!(err instanceof MiniAppApiError)) return "error";
@@ -81,6 +81,8 @@ export function quoteErrorCopy(err: unknown): QuoteErrorCopy {
       return "noMarket";
     case "rate_limited":
       return "rateLimited";
+    case "below_minimum":
+      return "quoteMin";
     case "bad_request":
       return "quoteBad";
     default:

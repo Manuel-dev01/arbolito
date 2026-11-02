@@ -191,7 +191,8 @@ export function Home() {
           <div className="mp-kicker" style={{ padding: "14px 16px 4px" }}>
             {t.balances}
           </div>
-          {CURS.map((c) => {
+          {/* Dollars and the display currency always; other pesos only when held (five rows of zeros is noise). */}
+          {CURS.filter((c) => c === "USD" || c === displayCur || cur[c].amount18 > 0n).map((c) => {
             const eq = c === displayCur ? null : usdToCur(cur[c].usdMicros, displayCur, prices);
             // Small amounts keep their cents ("≈ US$ 1.01", not "≈ US$ 1").
             const eqDp = eq !== null && eq < 100n * 10n ** 18n ? 2 : 0;

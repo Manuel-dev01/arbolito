@@ -9,7 +9,7 @@ import type { Lang } from "./i18n";
 export const decimalsOf = (sym: Sym): number => TOKENS[sym].decimals;
 
 /** "ARS 160.800,00", "R$ 200,00", "US$ 100,00": currency the user thinks in, not the token. */
-const PREFIX: Record<Sym, string> = { wARS: "ARS", wBRL: "R$", USDT: "US$", USAT: "US$", USDC: "US$" };
+const PREFIX: Record<Sym, string> = { wARS: "ARS", wBRL: "R$", wCOP: "COP", wMXN: "MX$", USDT: "US$", USAT: "US$", USDC: "US$" };
 
 const seps = (lang: Lang) => (lang === "en" ? { group: ",", dec: "." } : { group: ".", dec: "," });
 

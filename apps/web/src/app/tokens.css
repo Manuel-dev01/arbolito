@@ -42,6 +42,10 @@
   --brl-fg: oklch(0.38 0.1 135);
   --usd-bg: oklch(0.93 0.05 350);
   --usd-fg: oklch(0.45 0.19 350);
+  --cop-bg: oklch(0.94 0.1 90);
+  --cop-fg: oklch(0.45 0.11 75);
+  --mxn-bg: oklch(0.92 0.06 185);
+  --mxn-fg: oklch(0.42 0.09 190);
 
   /* Spacing (4-pt base) */
   --s-1: 4px;

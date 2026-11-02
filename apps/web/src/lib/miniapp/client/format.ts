@@ -7,18 +7,18 @@ import type { Sym } from "../contract";
 
 export type Lang = "es" | "pt" | "en";
 /** The fiat a user thinks in. Tokens map onto these; the UI never shows token tickers on primary screens. */
-export type Cur = "ARS" | "BRL" | "USD";
+export type Cur = "ARS" | "BRL" | "COP" | "MXN" | "USD";
 
-export const CURS: readonly Cur[] = ["ARS", "BRL", "USD"];
+export const CURS: readonly Cur[] = ["ARS", "BRL", "COP", "MXN", "USD"];
 
-export const DECIMALS: Record<Sym, number> = { wARS: 18, wBRL: 18, USDT: 6, USAT: 6, USDC: 6 };
-export const CUR_OF: Record<Sym, Cur> = { wARS: "ARS", wBRL: "BRL", USDT: "USD", USAT: "USD", USDC: "USD" };
+export const DECIMALS: Record<Sym, number> = { wARS: 18, wBRL: 18, wCOP: 18, wMXN: 18, USDT: 6, USAT: 6, USDC: 6 };
+export const CUR_OF: Record<Sym, Cur> = { wARS: "ARS", wBRL: "BRL", wCOP: "COP", wMXN: "MXN", USDT: "USD", USAT: "USD", USDC: "USD" };
 /** Token used when the user picks a currency (dollars default to USDT, MiniPay's main dollar). */
-export const SYM_OF: Record<Cur, Sym> = { ARS: "wARS", BRL: "wBRL", USD: "USDT" };
+export const SYM_OF: Record<Cur, Sym> = { ARS: "wARS", BRL: "wBRL", COP: "wCOP", MXN: "wMXN", USD: "USDT" };
 /** Money prefix ("R$ 10,00"). */
-export const PREFIX: Record<Cur, string> = { ARS: "ARS", BRL: "R$", USD: "US$" };
+export const PREFIX: Record<Cur, string> = { ARS: "ARS", BRL: "R$", COP: "COP", MXN: "MX$", USD: "US$" };
 /** Glyph inside the round currency badge. */
-export const GLYPH: Record<Cur, string> = { ARS: "$", BRL: "R$", USD: "US$" };
+export const GLYPH: Record<Cur, string> = { ARS: "$", BRL: "R$", COP: "$", MXN: "$", USD: "US$" };
 
 const SEP: Record<Lang, { group: string; dec: string }> = {
   es: { group: ".", dec: "," },

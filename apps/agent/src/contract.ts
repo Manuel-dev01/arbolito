@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 
-export const SYMBOLS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
+export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
 export type Sym = z.infer<typeof Sym>;
 
@@ -19,6 +19,7 @@ export const Lang = z.enum(["es", "pt", "en"]);
 export const ApiErrorCode = z.enum([
   "bad_request",
   "no_route",
+  "below_minimum", // under the market's minimum order (Textile: about US$ 1): ask for a larger amount
   "quote_expired",
   "price_changed",
   "needs_taker_proof",

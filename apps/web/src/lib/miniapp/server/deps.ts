@@ -94,7 +94,9 @@ export function buildDeps(): MiniappDeps {
     },
     chain,
     chainId: CELO_MAINNET_ID,
-    adapters: [new UniswapV3Adapter(chain), new TextileRfqAdapter()],
+    // Textile is the only venue for wCOP and wMXN, and a cold corridor's first preview took 2.9 s
+    // (2026-11-01): at the 1.5 s default that read as "no market" to the user.
+    adapters: [new UniswapV3Adapter(chain), new TextileRfqAdapter(undefined, undefined, 3_500)],
     async references(blockNumber) {
       if (refsCache && Date.now() - refsCache.at < REFS_TTL_MS) return refsCache.value;
       // Market references, plus Western Union's latest rates read through buy (best effort).

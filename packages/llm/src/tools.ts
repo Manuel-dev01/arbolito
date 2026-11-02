@@ -13,7 +13,9 @@ import type { ToolDefinition } from "./client";
  * runs are bounded onchain by ArbolitoGuard (caps and contacts the user set).
  */
 
-export const TOKEN_SYMBOLS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
+export const TOKEN_SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
+/** Automatic rules run through ArbolitoGuard and Uniswap, which has no wCOP or wMXN pool: they stay out of rules. */
+const RULE_TOKENS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
 export type TokenSymbol = (typeof TOKEN_SYMBOLS)[number];
 
 const tokenDecimals = (t: TokenSymbol): number => TOKENS[t].decimals;
@@ -96,7 +98,7 @@ export const toolSchemas = {
       .regex(/^(0|[1-9]d{0,9})(.d{1,6})?$/, 'plain decimal, e.g. "50" or "12.5"')
       .refine((x) => /[1-9]/.test(x), "must be greater than zero")
       .describe("US dollars spent each month (paid from the user's USDT), as a plain decimal string."),
-    receive: token.optional().describe("Currency the contact receives (default USDT). wARS/wBRL/USAT/USDC are bought with the USDT first."),
+    receive: z.enum(RULE_TOKENS).optional().describe("Currency the contact receives (default USDT). wARS/wBRL/USAT/USDC are bought with the USDT first."),
     dayOfMonth: z.number().int().min(1).max(28).describe("Day of the month it runs (1–28)."),
   }),
   prepare_payday_split: z.strictObject({

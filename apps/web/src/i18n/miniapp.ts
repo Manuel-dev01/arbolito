@@ -10,8 +10,8 @@ export const MINIAPP_LANGS: Lang[] = ["es", "pt", "en"];
 const es = {
   back: "Atrás", close: "Cerrar", langName: "Español", langPick: "Idioma",
   langLabels: { es: "Español (Argentina)", pt: "Português (Brasil)", en: "English" } as Record<Lang, string>,
-  curName: { ARS: "Pesos", BRL: "Reales", USD: "Dólares" } as Record<Cur, string>,
-  curLower: { ARS: "pesos", BRL: "reales", USD: "dólares" } as Record<Cur, string>,
+  curName: { ARS: "Pesos ARS", BRL: "Reales", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dólares" } as Record<Cur, string>,
+  curLower: { ARS: "pesos argentinos", BRL: "reales", COP: "pesos colombianos", MXN: "pesos mexicanos", USD: "dólares" } as Record<Cur, string>,
 
   noMpTitle: "Abrí Arbolito desde MiniPay", noMpBody: "Arbolito funciona dentro de MiniPay, la billetera de Opera. Mientras llega a Descubrir, abrilo así (o mirá la demo):", noMp1: "En MiniPay: Ajustes → Acerca de → tocá el número de versión hasta que se active el modo desarrollador.", noMp2: "Volvé a Ajustes → Ajustes de desarrollador → Cargar página de prueba.", noMp3: "Pegá arbolito-livid.vercel.app/app y tocá Cargar.", openMP: "Abrir MiniPay", tryDemo: "Ver la demo",
   connTitle: "No pudimos conectar con tu MiniPay", connBody: "Puede ser la conexión a internet. Probá de nuevo en unos segundos.", noMoneyMoved: "No se movió plata.", retry: "Probar de nuevo",
@@ -77,6 +77,7 @@ const es = {
   lnkTitle: "Conectá tu MiniPay con Telegram", lnkBody: "Revisá que este código sea el mismo que ves en Telegram.", lnkConnect: "Conectar", lnkDoneT: "Listo, conectado", lnkDoneB: "Ya podés pedirle cosas a Arbolito desde Telegram{n} y confirmarlas acá.", lnkBadCode: "Este link no tiene un código válido. Pedí uno nuevo en Telegram.", lnkFail: "No pudimos conectar. Pedí un código nuevo en Telegram.", lnkNote: "No te pedimos firmar nada: solo confirmás que el código coincide.",
   tgQuoteT: "Tu cotización de Telegram", tgQuoteB: "Preparando la operación para que la confirmes en MiniPay…",
   chatHi: "Hola{n}. Decime qué querés cambiar o enviar. Podés escribir o mandar un audio.", chatAsk: "pasá 100 dólares a pesos", chip2: "mandale 20 dólares a mamá", chatProc: "Haciendo el cambio… te aviso acá.", expiredShort: "Venció", recording: "Grabando… soltá para enviar", voice: "Mandar audio", send: "Enviar", altsShort: "Alternativas", micDenied: "No pudimos usar el micrófono. Escribile a Arbolito.", chatErr: "No te pude responder. Probá de nuevo.", heard: "Entendí: {t}",
+  errMin: "El mínimo para esta moneda es US$ 1. Probá con un monto un poco mayor. No se movió plata.",
   errNotReady: "Esto todavía no está disponible. No se movió plata.", errRate: "Muchos pedidos seguidos. Esperá unos segundos.", errUpstream: "Algo falló de nuestro lado. No se movió plata. Probá de nuevo.", errOffline: "Sin conexión. Probá de nuevo cuando vuelva.", errGeneric: "No pudimos hacerlo. No se movió plata.",
   toastMP: "Abriendo MiniPay…", toastRefreshed: "Actualizamos la cotización", toastCancelled: "Cancelaste en MiniPay. No se movió plata.", toastSaved: "Contacto guardado", autoNeedsBal: "Para calcular tus límites en pesos y reales necesitamos tus saldos. Probá de nuevo en unos segundos.", toastWA: "Abriendo WhatsApp…", toastContacts: "Abriendo tus contactos…", noContactPicked: "No elegiste ningún contacto.",
 };
@@ -86,8 +87,8 @@ export type MiniDict = typeof es;
 const pt: MiniDict = {
   back: "Voltar", close: "Fechar", langName: "Português", langPick: "Idioma",
   langLabels: es.langLabels,
-  curName: { ARS: "Pesos", BRL: "Reais", USD: "Dólares" },
-  curLower: { ARS: "pesos", BRL: "reais", USD: "dólares" },
+  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dólares" },
+  curLower: { ARS: "pesos argentinos", BRL: "reais", COP: "pesos colombianos", MXN: "pesos mexicanos", USD: "dólares" },
   noMpTitle: "Abra o Arbolito pelo MiniPay", noMpBody: "O Arbolito funciona dentro do MiniPay, a carteira da Opera. Enquanto não chega ao Descobrir, abra assim (ou veja a demo):", noMp1: "No MiniPay: Configurações → Sobre → toque no número da versão até ativar o modo desenvolvedor.", noMp2: "Volte a Configurações → Configurações de desenvolvedor → Carregar página de teste.", noMp3: "Cole arbolito-livid.vercel.app/app e toque em Carregar.", openMP: "Abrir MiniPay", tryDemo: "Ver a demo",
   connTitle: "Não conseguimos conectar com seu MiniPay", connBody: "Pode ser a conexão. Tente de novo em alguns segundos.", noMoneyMoved: "Nenhum dinheiro foi movido.", retry: "Tentar de novo",
   welTitle: "Troque e envie pesos, reais e dólares.", welBody: "Pelo melhor preço do momento, no seu idioma, com um comprovante que prova.", welS1: "Você escreve ou manda um áudio: \"manda 200 reais pra Lucía\".", welS2: "O Arbolito busca o melhor preço e te mostra.", welS3: "Você confirma no MiniPay e recebe o comprovante.", welLangNote: "Escolhemos português pelo seu celular. Mude acima.", start: "Começar",
@@ -152,6 +153,7 @@ const pt: MiniDict = {
   lnkTitle: "Conecte seu MiniPay ao Telegram", lnkBody: "Confira se este código é o mesmo que aparece no Telegram.", lnkConnect: "Conectar", lnkDoneT: "Pronto, conectado", lnkDoneB: "Agora você pode pedir coisas ao Arbolito pelo Telegram{n} e confirmar aqui.", lnkBadCode: "Este link não tem um código válido. Peça um novo no Telegram.", lnkFail: "Não conseguimos conectar. Peça um código novo no Telegram.", lnkNote: "Não pedimos assinatura: você só confirma que o código confere.",
   tgQuoteT: "Sua cotação do Telegram", tgQuoteB: "Preparando a operação para você confirmar no MiniPay…",
   chatHi: "Olá{n}. Diga o que quer trocar ou enviar. Pode escrever ou mandar um áudio.", chatAsk: "troca 200 reais por pesos", chip2: "manda 200 reais pra Lucía", chatProc: "Fazendo a troca… aviso aqui.", expiredShort: "Expirou", recording: "Gravando… solte para enviar", voice: "Enviar áudio", send: "Enviar", altsShort: "Alternativas", micDenied: "Não conseguimos usar o microfone. Escreva para o Arbolito.", chatErr: "Não consegui responder. Tente de novo.", heard: "Entendi: {t}",
+  errMin: "O mínimo para esta moeda é US$ 1. Tente um valor um pouco maior. Nenhum dinheiro foi movido.",
   errNotReady: "Isto ainda não está disponível. Nenhum dinheiro foi movido.", errRate: "Muitos pedidos seguidos. Espere alguns segundos.", errUpstream: "Algo falhou do nosso lado. Nenhum dinheiro foi movido. Tente de novo.", errOffline: "Sem conexão. Tente de novo quando voltar.", errGeneric: "Não conseguimos fazer. Nenhum dinheiro foi movido.",
   toastMP: "Abrindo o MiniPay…", toastRefreshed: "Atualizamos a cotação", toastCancelled: "Você cancelou no MiniPay. Nenhum dinheiro foi movido.", toastSaved: "Contato salvo", autoNeedsBal: "Para calcular seus limites em pesos e reais precisamos dos seus saldos. Tente de novo em alguns segundos.", toastWA: "Abrindo o WhatsApp…", toastContacts: "Abrindo seus contatos…", noContactPicked: "Você não escolheu nenhum contato.",
 };
@@ -159,8 +161,8 @@ const pt: MiniDict = {
 const en: MiniDict = {
   back: "Back", close: "Close", langName: "English", langPick: "Language",
   langLabels: es.langLabels,
-  curName: { ARS: "Pesos", BRL: "Reais", USD: "Dollars" },
-  curLower: { ARS: "pesos", BRL: "reais", USD: "dollars" },
+  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dollars" },
+  curLower: { ARS: "Argentine pesos", BRL: "reais", COP: "Colombian pesos", MXN: "Mexican pesos", USD: "dollars" },
   noMpTitle: "Open Arbolito from MiniPay", noMpBody: "Arbolito runs inside MiniPay, the Opera wallet. Until it reaches Discover, open it like this (or see the demo):", noMp1: "In MiniPay: Settings → About → tap the version number until developer mode turns on.", noMp2: "Back in Settings → Developer Settings → Load test page.", noMp3: "Paste arbolito-livid.vercel.app/app and tap Load.", openMP: "Open MiniPay", tryDemo: "See the demo",
   connTitle: "We couldn't connect to your MiniPay", connBody: "It may be your connection. Try again in a few seconds.", noMoneyMoved: "No money moved.", retry: "Try again",
   welTitle: "Change and send pesos, reais and dollars.", welBody: "At the best rate right now, in your language, with a receipt that proves it.", welS1: "Type or send a voice note: \"change 100 dollars to pesos\".", welS2: "Arbolito finds the best rate and shows it to you.", welS3: "You confirm in MiniPay and get your receipt.", welLangNote: "We picked English from your phone. Change it above.", start: "Get started",
@@ -225,6 +227,7 @@ const en: MiniDict = {
   lnkTitle: "Connect your MiniPay to Telegram", lnkBody: "Check that this code is the same one you see in Telegram.", lnkConnect: "Connect", lnkDoneT: "Done, connected", lnkDoneB: "You can now ask Arbolito for things on Telegram{n} and confirm them here.", lnkBadCode: "This link has no valid code. Ask for a new one on Telegram.", lnkFail: "We couldn't connect. Ask for a new code on Telegram.", lnkNote: "We don't ask you to sign anything: you just confirm the code matches.",
   tgQuoteT: "Your quote from Telegram", tgQuoteB: "Preparing the operation for you to confirm in MiniPay…",
   chatHi: "Hi{n}. Tell me what to change or send. Type or send a voice note.", chatAsk: "change 100 dollars to pesos", chip2: "send 20 dollars to mom", chatProc: "Changing it now… I'll tell you here.", expiredShort: "Expired", recording: "Recording… release to send", voice: "Send voice note", send: "Send", altsShort: "Alternatives", micDenied: "We couldn't use the microphone. Type to Arbolito instead.", chatErr: "I couldn't answer. Try again.", heard: "I heard: {t}",
+  errMin: "The minimum for this currency is US$ 1. Try a slightly larger amount. No money moved.",
   errNotReady: "This isn't available yet. No money moved.", errRate: "Too many requests in a row. Wait a few seconds.", errUpstream: "Something failed on our side. No money moved. Try again.", errOffline: "You're offline. Try again when you're back.", errGeneric: "We couldn't do it. No money moved.",
   toastMP: "Opening MiniPay…", toastRefreshed: "We refreshed the quote", toastCancelled: "You cancelled in MiniPay. No money moved.", toastSaved: "Contact saved", autoNeedsBal: "We need your balances to set limits in pesos and reais. Try again in a few seconds.", toastWA: "Opening WhatsApp…", toastContacts: "Opening your contacts…", noContactPicked: "You didn't pick a contact.",
 };
@@ -251,3 +254,11 @@ export function pickLang(param: string | null | undefined, navigatorLang?: strin
 
 /** The display currency per language (design: es → pesos, pt → reais, en → dollars). */
 export const DISPLAY_CUR: Record<Lang, Cur> = { es: "ARS", pt: "BRL", en: "USD" };
+
+const REGION_CUR: Record<string, Cur> = { AR: "ARS", BR: "BRL", CO: "COP", MX: "MXN" };
+
+/** The phone region decides which pesos ("es-CO" → COP, "es-MX" → MXN); otherwise the language default. */
+export function displayCurFor(lang: Lang, navigatorLang: string | null): Cur {
+  const region = (navigatorLang ?? "").split(/[-_]/)[1]?.toUpperCase();
+  return (region && REGION_CUR[region]) || DISPLAY_CUR[lang];
+}

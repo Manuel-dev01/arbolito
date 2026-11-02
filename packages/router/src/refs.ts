@@ -95,13 +95,39 @@ export async function uniswapRefs(client: PublicClient, blockNumber: bigint): Pr
   return out;
 }
 
-/** Textile ticker mids for the Celo LatAm corridors, as USD/ARS and USD/BRL. */
+/** Textile ticker mids for the Celo LatAm corridors, as USD/ARS, USD/BRL, USD/COP and USD/MXN. */
 export async function textileRefs(timeoutMs = 1500): Promise<Reference[]> {
   const t = await fetchTextileTickers(timeoutMs);
   if (!t) return [];
   return t.tickers
-    .filter((x) => x.base === "USDT" && (x.target === "WARS" || x.target === "WBRL"))
+    .filter((x) => x.base === "USDT" && ["WARS", "WBRL", "WCOP", "WMXN"].includes(x.target))
     .map((x) => ({ name: "textile_mid", pair: `USD/${x.target.slice(1)}`, rate: fmtRate(x.mid), source: `${t.source}#${x.tickerId}`, at: t.at }));
+}
+
+const erApiSchema = z.object({ result: z.literal("success"), time_last_update_utc: z.string(), rates: z.record(z.string(), z.number()) });
+const frankfurterSchema = z.object({ date: z.string(), rates: z.record(z.string(), z.number()) });
+
+/**
+ * Interbank (mid-market) references for the peso corridors without an Argentine-style official
+ * rate here: USD/COP from ExchangeRate-API's open feed (daily; it asks for attribution where shown,
+ * which the receipt's source link gives) and USD/MXN from the ECB via Frankfurter. Colombia's TRM
+ * (datos.gov.co) refuses server requests, so nothing is labelled "official" for COP.
+ */
+export async function interbankRefs(timeoutMs = 1500): Promise<Reference[]> {
+  const erUrl = "https://open.er-api.com/v6/latest/USD";
+  const ecbUrl = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=MXN";
+  const [er, ecb] = await Promise.allSettled([getJson(erUrl, timeoutMs), getJson(ecbUrl, timeoutMs)]);
+  const out: Reference[] = [];
+  const erParsed = er.status === "fulfilled" ? erApiSchema.safeParse(er.value) : null;
+  if (erParsed?.success && erParsed.data.rates.COP) {
+    out.push({ name: "interbank", pair: "USD/COP", rate: fmtRate(erParsed.data.rates.COP), source: `${erUrl}#COP`, at: new Date(erParsed.data.time_last_update_utc).toISOString() });
+  }
+  const ecbParsed = ecb.status === "fulfilled" ? frankfurterSchema.safeParse(ecb.value) : null;
+  if (ecbParsed?.success && ecbParsed.data.rates.MXN) {
+    out.push({ name: "interbank", pair: "USD/MXN", rate: fmtRate(ecbParsed.data.rates.MXN), source: `${ecbUrl}#MXN`, at: `${ecbParsed.data.date}T00:00:00.000Z` });
+  }
+  if (!out.length) throw new Error("no interbank source answered");
+  return out;
 }
 
 /** Fiat code for a token: USD stables → "USD", wFIAT → the ISO code ("wBRL" → "BRL"). */
@@ -141,6 +167,7 @@ export async function fetchReferences(client: PublicClient, blockNumber: bigint,
     ["dolarapi /cotizaciones", brlRefs(timeoutMs)],
     ["uniswap slot0", uniswapRefs(client, blockNumber)],
     ["textile /tickers", textileRefs(timeoutMs)],
+    ["interbank (er-api, ecb)", interbankRefs(timeoutMs)],
   ];
   const settled = await Promise.allSettled(sources.map(([, p]) => p));
   const references: Reference[] = [];

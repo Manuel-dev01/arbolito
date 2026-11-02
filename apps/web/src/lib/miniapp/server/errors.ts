@@ -20,6 +20,7 @@ export class ApiFailure extends Error {
 export const badRequest = (message: string, status = 400) => new ApiFailure("bad_request", message, status);
 export const notFound = (message: string) => new ApiFailure("bad_request", message, 404);
 export const noRoute = (message = "No market can quote this pair and size right now.") => new ApiFailure("no_route", message, 422);
+export const belowMinimum = (message = "This market's minimum is US$ 1. Try a slightly larger amount.") => new ApiFailure("below_minimum", message, 422);
 export const quoteExpired = (message = "This quote expired. Ask for a new one.") => new ApiFailure("quote_expired", message, 410);
 export const priceChanged = (message = "The price moved below the guaranteed minimum. Ask for a new quote.") =>
   new ApiFailure("price_changed", message, 409);

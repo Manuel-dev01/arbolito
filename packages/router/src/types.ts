@@ -61,8 +61,11 @@ export interface VenueAdapter {
 }
 
 export interface Reference {
-  /** western_union: read in a browser rented through buy (packages/competitors); the source names the payment. */
-  name: "official" | "mep" | "ccl" | "crypto" | "blue" | "textile_mid" | "uniswap_mid" | "western_union";
+  /**
+   * western_union: read in a browser rented through buy (packages/competitors); the source names the payment.
+   * interbank: a published mid-market rate (ER-API for COP, the ECB for MXN), never labelled "official".
+   */
+  name: "official" | "mep" | "ccl" | "crypto" | "blue" | "textile_mid" | "uniswap_mid" | "western_union" | "interbank";
   /** Quote convention BASE/QUOTE: units of QUOTE per 1 BASE, e.g. "USD/ARS" = 1545. */
   pair: string;
   rate: string;

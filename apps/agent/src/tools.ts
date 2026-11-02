@@ -45,7 +45,14 @@ function quoteFailure(r: Extract<CreateResult, { ok: false }>, from: string, to:
   if (r.error === "noMarket") {
     return { data: { status: "no_route", note: "No market can quote this pair and size right now. A message saying so, with a retry button, is shown. Nothing moved." }, card: noMarketCard(from, to, amount) };
   }
-  const why = r.error === "rateLimited" ? "Too many quotes in a short time; ask the user to wait a minute." : r.error === "quoteBad" ? "The backend rejected the amount or pair." : "The quote service failed. Nothing moved.";
+  const why =
+    r.error === "rateLimited"
+      ? "Too many quotes in a short time; ask the user to wait a minute."
+      : r.error === "quoteMin"
+        ? "Below the market minimum of US$ 1 for this currency; suggest a slightly larger amount."
+        : r.error === "quoteBad"
+          ? "The backend rejected the amount or pair."
+          : "The quote service failed. Nothing moved.";
   throw new ToolUserError(why, r.error);
 }
 
