@@ -69,7 +69,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Fix:** `receivedInTx` counted Celo's gas refund (a mint from 0x0 when gas is paid in the received token) as swap output.
 - **Desk down ~17 h:** Stitch crash-looped on "missing Permit2 approvals": wARS 12,667 < 16,000 sell cap, USDT 20.01 < 25 of buys. Founder-approved, fork-rehearsed top-ups: [wARS → 160,000](https://celoscan.io/tx/0x5ceb8bd69050ba906c8d559dea9284603cbb57e5d209a3c31874ffe7956846b1), [USDT → 1,000](https://celoscan.io/tx/0x3cd60059f1e15197a74c6c86b68cdb607621ca713528f6724e0c095fd44b1140). The fix (`0df2daf`: sizes clamp to the live allowances, loud log, `/state` stitch.allowanceLow) is deployed; RFQ session back 06:57 UTC, quoting 5 of 6 pairs (wBRL held by the breaker: Uniswap 5.32 vs Textile 5.45).
 - **Loops entry updated** (founder's yes): wCOP/wMXN truth, agent-wallet payer, 36 fills from six outside wallets, honest users line (the welcome credit is not mentioned, founder's call).
-- **Next:** welcome credits (US$ 2 each, cap US$ 100, ≤ US$ 30/day, batches approved by the founder); a third wBRL source so two disagreeing ones can't hold it.
+- **wBRL back:** ER-API and the ECB added as BRL sources (founder's yes, deployed). All six pairs quoting at 07:20 UTC, wBRL at ~5.454.
+- **Mini App:** display currency is now a picker in Ajustes (it only followed language and region); demo mode has COP/MXN rates.
+- **Metrics:** the team test wallet's receipts are listed on /metrics but no longer counted (the landing had shown 3 wallets and 9 operations including it).
+- **Demo:** `design/demo/SHOTLIST.md`, a 5-minute shot list in seven acts that is also the tester path.
+- **Next:** the founder shoots the demo; welcome credits (US$ 2 each, cap US$ 100, ≤ US$ 30/day, batches approved by the founder).
 - Desk totals: 36 fills, US$ 317.87 volume, 45 RFQs won, all six takers outside.
 
 ### 2026-11-01: back after the Railway pause
