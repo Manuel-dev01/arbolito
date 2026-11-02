@@ -5,6 +5,7 @@ import {
   fmtNumber,
   fmtPct,
   fmtRateLine,
+  fmtSaved,
   fmtSym,
   fmtTyped,
   maskPhone,
@@ -176,7 +177,13 @@ describe("i18n", () => {
     expect(displayCurFor("pt", null)).toBe("BRL");
   });
 
-  it("formats Colombian and Mexican pesos", () => {
+  it("shows cents for a small saving (a US$ 1 change read \"R$ 0 more than Western Union\")", () => {
+    expect(fmtSaved(230_000000000000000n, "wBRL", "en")).toBe("R$ 0.23");
+    expect(fmtSaved(8_718n * E18, "wARS", "es")).toBe("ARS 8.718");
+    expect(fmtSaved(420_000n, "USDT", "en")).toBe("US$ 0.42");
+  });
+
+    it("formats Colombian and Mexican pesos", () => {
     expect(fmtSym(6416_714000000000000000n, "wCOP", "es")).toBe("COP 6.416,71");
     expect(fmtSym(187_65n * 10n ** 16n, "wMXN", "en")).toBe("MX$ 187.65");
   });

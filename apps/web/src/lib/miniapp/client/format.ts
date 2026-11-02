@@ -81,9 +81,14 @@ export function gainOf<T extends { deltaOut: string }>(s: T | null | undefined):
   return s && BigInt(s.deltaOut) > 0n ? s : null;
 }
 
-/** The saved amount: whole pesos and reais, cents for dollars (a dollar gain is usually under $1). */
+/**
+ * The saved amount: whole pesos and reais, but cents when it is under 100 units (and always for
+ * dollars). A US$ 1 change once read "R$ 0 more than Western Union" for a R$ 0.23 gain (2026-11-02).
+ */
 export function fmtSaved(deltaOut: string | bigint, sym: Sym, lang: Lang): string {
-  return fmtSym(deltaOut, sym, lang, { dp: CUR_OF[sym] === "USD" ? 2 : 0 });
+  const v = typeof deltaOut === "string" ? BigInt(deltaOut) : deltaOut;
+  const small = (v < 0n ? -v : v) < 100n * 10n ** BigInt(DECIMALS[sym]);
+  return fmtSym(v, sym, lang, { dp: CUR_OF[sym] === "USD" || small ? 2 : 0 });
 }
 
 /** "+5,24%" / "+5.24%" from a percentage number (5.24). */
