@@ -225,6 +225,22 @@ export default async function MetricsPage({ searchParams }: Props) {
             </tbody>
           </table>
         </div>
+        {m.teamTests.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <h3 className="small muted" style={{ fontWeight: 700 }}>
+              {t.teamTestTitle}
+            </h3>
+            <ul className="list-plain">
+              {m.teamTests.map((s) => (
+                <li key={s.id}>
+                  <a href={rHref(s.id)} className="mono">
+                    {s.id}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {m.superseded.length > 0 && (
           <div style={{ marginTop: 18 }}>
             <h3 className="small muted" style={{ fontWeight: 700 }}>

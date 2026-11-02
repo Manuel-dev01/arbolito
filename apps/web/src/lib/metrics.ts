@@ -27,6 +27,8 @@ export interface MetricsReceipt {
 export interface Metrics {
   receipts: MetricsReceipt[];
   superseded: { id: string; supersededBy: string | null; executionTx: string }[];
+  /** Receipts from the team's test wallet: listed, never counted. */
+  teamTests: { id: string; executionTx: string }[];
   wallets: { address: string; receiptIds: string[] }[];
   executionTxs: string[];
   anchorTxs: string[];
@@ -40,6 +42,13 @@ export interface Metrics {
 }
 
 const isWfiat = (t: TokenRef) => /^w[A-Z]{3}$/.test(t.symbol);
+
+/**
+ * The team's e2e test wallet (pnpm e2e:miniapp; docs/TREASURY.md). Its receipts are real and stay
+ * listed, but it is not a user, so it never counts toward wallets, operations or volume.
+ */
+export const TEAM_TEST_WALLETS: ReadonlySet<string> = new Set(["0x1cf94ec9a0e628fb536ef4b610dee612f54b64ea"]);
+export const isTeamTest = (r: ReceiptRecord) => TEAM_TEST_WALLETS.has(r.bundle.request.taker.toLowerCase());
 
 export function toMetricsReceipt(rec: ReceiptRecord, anchorTx: string | null = rec.anchorTx): MetricsReceipt {
   const b = rec.bundle;
@@ -62,7 +71,7 @@ export function toMetricsReceipt(rec: ReceiptRecord, anchorTx: string | null = r
 }
 
 export function computeMetrics(records: ReceiptRecord[], anchors: Map<string, string | null> = new Map()): Metrics {
-  const active = records.filter((r) => !r.supersededBy);
+  const active = records.filter((r) => !r.supersededBy && !isTeamTest(r));
   const receipts = active.map((r) => toMetricsReceipt(r, anchors.get(r.id) ?? r.anchorTx));
 
   const wallets = new Map<string, { address: string; receiptIds: string[] }>();
@@ -115,6 +124,7 @@ export function computeMetrics(records: ReceiptRecord[], anchors: Map<string, st
     superseded: records
       .filter((r) => r.supersededBy)
       .map((r) => ({ id: r.id, supersededBy: r.supersededBy, executionTx: r.bundle.execution.txHash })),
+    teamTests: records.filter((r) => !r.supersededBy && isTeamTest(r)).map((r) => ({ id: r.id, executionTx: r.bundle.execution.txHash })),
     wallets: [...wallets.values()],
     executionTxs: [...new Set(receipts.map((r) => r.executionTx))],
     anchorTxs: [...new Set(receipts.map((r) => r.anchorTx).filter((x): x is string => !!x))],
