@@ -79,7 +79,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 | 5.5 | Confirm the MiniPay sheets (permissions are set onchain, in the guard contract) | "Arbolito ya puede actuar por vos" | 📸 |
 | 5.6 | Chat: *"cuando me lleguen más de 1 dólar, pasá el 50% a reales"* | A rule card to sign | 📸 |
 | 5.7 | Sign it in MiniPay | The rule shows as active | 📸 |
-| 5.8 | Tell me in chat when 5.7 is done. I'll send US$ 2 from the team test wallet (with your OK), the rule fires, and Arbolito converts half **without you touching anything** | Telegram: "I acted for you…"; a new receipt in Comprobantes | 📸 Telegram message · 📸 receipt |
+| 5.8 | Tell me in chat when 5.7 is done. I'll send US$ 2 from the e2e wallet (with your OK), the rule fires, and Arbolito converts half **without you touching anything** | Telegram: "I acted for you…"; a new receipt in Comprobantes | 📸 Telegram message · 📸 receipt |
 
 > Rules work for pesos argentinos and reais (they route through Uniswap). Pesos colombianos are for changes you confirm yourself.
 
@@ -110,4 +110,4 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 I'll cut it into a 5-minute demo in the launch reel's style: the real screens framed on a device, timed captions, and a short version for X.
 
 ## Budget for one full run
-About US$ 3–4 from your MiniPay: 2 (Act 3) + 1 (Act 4 send) + cents of gas. Plus US$ 2 from the team test wallet for Act 5, after your OK. Most of it stays in your wallet as pesos or reais.
+About US$ 3–4 from your MiniPay: 2 (Act 3) + 1 (Act 4 send) + cents of gas. Plus US$ 2 from the e2e wallet for Act 5, after your OK. Most of it stays in your wallet as pesos or reais.

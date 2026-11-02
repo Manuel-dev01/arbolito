@@ -35,4 +35,4 @@ only helps once requests come in larger than its caps.
 | 2026-10-26 15:48 | ops → buy payer | 0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58 | 30 USDT | [tx](https://celoscan.io/tx/0x96b067e57b8239954f876a4b3be00d7a45e2d198a9a338a29aa1425dbaf52fb3) |
 | 2026-10-28 14:00 | ops → reserve | 0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58 | 50 USDT | [tx](https://celoscan.io/tx/0xc307af154ac537e2ca21a7eaaccaacf9c5e5784713b89552579f7ae86e5ad180) |
 | 2026-10-28 14:00 | ops → reserve | 0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58 | 50 USDT | [tx](https://celoscan.io/tx/0x04735524f5790da4c44452efad925e5c2f10de9a19f5f4c24f6d6e608e6d5e7a) |
-| 2026-11-01 21:15 | ops → e2e test wallet (team, not a user) | 0x1CF94Ec9A0E628fb536ef4b610DEe612F54B64eA | 3 USDT | [tx](https://celoscan.io/tx/0x58bc609375ce9b7f7a2bcfb5f84fc3ab5f1f128fca0323c10d0d84be8cb86088) |
+| 2026-11-01 21:15 | ops → e2e wallet | 0x1CF94Ec9A0E628fb536ef4b610DEe612F54B64eA | 3 USDT | [tx](https://celoscan.io/tx/0x58bc609375ce9b7f7a2bcfb5f84fc3ab5f1f128fca0323c10d0d84be8cb86088) |

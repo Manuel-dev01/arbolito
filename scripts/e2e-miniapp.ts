@@ -1,7 +1,7 @@
 /**
  * End-to-end check of a Mini App conversion. It drives the same server code MiniPay hits
  * (createQuote → prepareQuote → the wallet sends each call → submitQuote) and signs as the team's
- * e2e test wallet (E2E_PRIVATE_KEY, labelled in docs/TREASURY.md, never counted as a user).
+ * e2e wallet (E2E_PRIVATE_KEY).
  *   pnpm e2e:miniapp USDT wCOP 1                 plan only: quote + prepare, then release the quote
  *   pnpm e2e:miniapp USDT wCOP 1 --fork <rpc>    the calls run on an anvil fork; the firm Textile quote
  *                                               is real (Textile checks mainnet funds) and is released after

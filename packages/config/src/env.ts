@@ -56,7 +56,7 @@ export const envSchema = z.object({
   BUY_PAY_TOKEN: z.enum(["USAT", "USDT", "USDC"]).default("USAT"),
   /** Reserve wallet (local only, never on a server): holds ops' float now that ops, the agent wallet, pays buy from the bot. */
   RESERVE_PRIVATE_KEY: opt(privateKey),
-  /** Team e2e test wallet (local only): drives Mini App conversions end to end (pnpm e2e:miniapp). Never counted as a user. */
+  /** e2e wallet (local only): drives Mini App conversions end to end (pnpm e2e:miniapp). */
   E2E_PRIVATE_KEY: opt(privateKey),
   /** Refresh Western Union rates through buy from the bot process (apps/agent/src/competitors.ts): off or live. */
   COMPETITORS_RUNNER: z.enum(["off", "live"]).default("off"),
