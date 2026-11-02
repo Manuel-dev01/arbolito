@@ -6,18 +6,19 @@
  * Feed-only by default: reads public prices and the desk wallet's balances, holds no key.
  * With DESK_STITCH_BIN + DESK_RFQ_API_KEY + DESK_PRIVATE_KEY it also runs Stitch on a config it
  * regenerates every tick, switching a buy side off when that corridor's inventory cap is reached
- * (apps/desk/src/limits.ts) and restarting Stitch only when the config changes.
+ * (apps/desk/src/limits.ts), clamping sizes to the live Permit2 allowances (a short one shrinks the
+ * quotes instead of stopping Stitch), and restarting Stitch only when the config changes.
  */
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { loadEnv } from "@arbolito/config";
+import { CONTRACTS, TOKENS, loadEnv } from "@arbolito/config";
 import { makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { DbLedger, getDb } from "@arbolito/db";
-import { textileFirmEnabled } from "@arbolito/router";
+import { erc20Abi, textileFirmEnabled } from "@arbolito/router";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, buySidesOff, buySizes, parseRfqResult, stitchToml } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, allowanceShortfalls, buySidesOff, buySizes, parseRfqResult, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -78,7 +79,24 @@ if (hasFlag("once")) {
   let buyOff = new Set<string>();
   let buySize = new Map<string, bigint>();
   let ready = false;
-  const stitchConfig = () => stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, buySize, rfq: DESK_MAKER });
+  // Permit2 allowances, read every minute: Stitch won't start when one is under what it trades.
+  let allowance: Map<string, bigint> | undefined;
+  let short: string[] = [];
+  const allowanceSyms = ["USDT", ...new Set(CORRIDORS.filter((c) => c.live).map((c) => c.soft))] as (keyof typeof TOKENS)[];
+  const readAllowances = async () => {
+    if (!address) return;
+    const res = await client.multicall({
+      allowFailure: false,
+      contracts: allowanceSyms.map((s) => ({ address: TOKENS[s].address as Address, abi: erc20Abi, functionName: "allowance", args: [address, CONTRACTS.permit2] }) as const),
+    });
+    allowance = new Map(allowanceSyms.map((s, i) => [s, res[i] as bigint]));
+  };
+  if (supervisor) {
+    void readAllowances().catch((e: Error) => log(`allowance read failed: ${e.message}`));
+    setInterval(() => void readAllowances().catch((e: Error) => log(`allowance read failed: ${e.message}`)), 60_000);
+  }
+  const stitchConfig = () =>
+    stitchToml(CORRIDORS, { feedBaseUrl: `http://127.0.0.1:${env.DESK_FEED_PORT}`, rpcUrl: env.CELO_RPC_URL, buyOff, buySize, allowance, rfq: DESK_MAKER });
 
   const svc = new FeedService({
     client,
@@ -100,6 +118,11 @@ if (hasFlag("once")) {
       const sizes = buySizes(balances, buyCaps, usdtPerSoft, buySize);
       if ([...sizes].some(([p, v]) => buySize.get(p) !== v)) log(`buy sizes: ${[...sizes].map(([p, v]) => `${p}=${Number(v) / 1e6}`).join(", ")}`);
       buySize = sizes;
+      const nextShort = allowanceShortfalls(CORRIDORS, { buyOff, buySize, allowance });
+      if (nextShort.join() !== short.join()) {
+        log(nextShort.length ? `PERMIT2 ALLOWANCE LOW for [${nextShort.join(", ")}]: quoting smaller; top up with pnpm desk:approve <SYM> <amount>` : "permit2 allowances cover every cap again");
+      }
+      short = nextShort;
       supervisor.apply(stitchConfig());
       if (rebalancer) {
         rebalancer.observe(buyOff);
@@ -107,7 +130,7 @@ if (hasFlag("once")) {
       }
     },
     extraState: () => ({
-      ...(supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff] } } : {}),
+      ...(supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff], allowanceLow: short } } : {}),
       ...(rebalancer ? { rebalancer: rebalancer.status() } : {}),
     }),
   });

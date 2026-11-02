@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { TOKENS } from "@arbolito/config";
 import {
   CORRIDORS,
+  allowanceShortfalls,
+  buyTotals,
   corridor,
   corridorShares,
   fairValue,
@@ -184,5 +186,36 @@ describe("stitch.toml", () => {
     expect(toml).not.toMatch(/^\[rfq\]/m);
     // Root keys must come before the first table, or TOML attaches them to it.
     expect(toml.indexOf("book_enabled")).toBeLessThan(toml.indexOf("[feed]"));
+  });
+
+  describe("Permit2 allowances (2026-11-01: wARS at 12,667 under a 16,000 cap kept Stitch down for 17 h)", () => {
+    const E18 = 10n ** 18n;
+    const live = CORRIDORS.filter((c) => c.live);
+    const allowance = new Map<string, bigint>([
+      ["USDT", 20_014_000n],
+      ["wARS", 12_666n * E18],
+      ...live.filter((c) => c.soft !== "wARS").map((c) => [c.soft, c.sellCapSoft * 2n] as [string, bigint]),
+    ]);
+    const buySize = new Map(live.map((c) => [c.pair, 10_000_000n]));
+
+    it("clamps a sell side to its allowance instead of asking for more", () => {
+      const t = stitchToml(CORRIDORS, { feedBaseUrl: "http://feed", buySize, allowance });
+      expect(t).toContain(`sell_total_liquidity_collateral = "${12_666n * E18}"`);
+      expect(t).toContain(`sell_total_liquidity_collateral = "${brl.sellCapSoft}"`);
+    });
+
+    it("scales the buy sides together to fit the USDT allowance, switching off any under one slice", () => {
+      const totals = buyTotals(live, { buySize, allowance });
+      const sum = [...totals.values()].reduce((a, b) => a + b, 0n);
+      expect(sum).toBeLessThanOrEqual(20_014_000n);
+      for (const v of totals.values()) expect(v === 0n || v >= 5_000_000n).toBe(true);
+      // Without an allowance map nothing changes.
+      expect([...buyTotals(live, { buySize }).values()].every((v) => v === 10_000_000n)).toBe(true);
+    });
+
+    it("names the short tokens so the feed can log them", () => {
+      expect(allowanceShortfalls(CORRIDORS, { buySize, allowance }).sort()).toEqual(["USDT", "wARS"]);
+      expect(allowanceShortfalls(CORRIDORS, { buySize })).toEqual([]);
+    });
   });
 });

@@ -20,8 +20,50 @@ export interface StitchOptions {
   buyOff?: ReadonlySet<string>;
   /** Per pair, the USDT the buy side may offer (limits.ts buySizes); under one slice means off. Default: buyCapUsdt. */
   buySize?: ReadonlyMap<string, bigint>;
+  /**
+   * The desk's live Permit2 allowance per token symbol (USDT and each soft token). Stitch refuses to
+   * start when a token's allowance is under the total it is configured to trade (summed over pools
+   * for USDT): fills spend it down, and the desk sat dark for 17 h on 2026-11-01 with wARS at 12,667
+   * under a 16,000 sell cap. Clamping to it keeps the desk quoting smaller until a top-up.
+   */
+  allowance?: ReadonlyMap<string, bigint>;
   /** The maker registration; when given, the [rfq] block is written here instead of by `stitch connect`. */
   rfq?: { streamUrl: string; makerId: string; validationContract: string };
+}
+
+const min = (a: bigint, b: bigint | undefined) => (b !== undefined && b < a ? b : a);
+
+/** USDT each live pool's buy side offers (0 = off), scaled down together to fit the USDT allowance. */
+export function buyTotals(corridors: readonly Corridor[], o: Pick<StitchOptions, "buyOff" | "buySize" | "allowance" | "minSliceUsdt">): Map<string, bigint> {
+  const slice = o.minSliceUsdt ?? 5_000_000n;
+  const want = new Map<string, bigint>();
+  for (const c of corridors) {
+    const size = min(c.buyCapUsdt, o.buySize?.get(c.pair));
+    want.set(c.pair, o.buyOff?.has(c.pair) || size < slice ? 0n : size);
+  }
+  const total = [...want.values()].reduce((a, b) => a + b, 0n);
+  const room = o.allowance?.get("USDT");
+  if (room === undefined || total <= room) return want;
+  // Proportional cut, then any side under one slice goes off.
+  return new Map([...want].map(([p, v]) => {
+    const cut = (v * room) / total;
+    return [p, cut < slice ? 0n : cut];
+  }));
+}
+
+/** Tokens whose allowance is below what the desk would otherwise trade (for a loud log line). */
+export function allowanceShortfalls(all: readonly Corridor[], o: Pick<StitchOptions, "buyOff" | "buySize" | "allowance" | "minSliceUsdt">): string[] {
+  if (!o.allowance) return [];
+  const corridors = all.filter((c) => c.live);
+  const out: string[] = [];
+  const usdt = [...buyTotals(corridors, { ...o, allowance: undefined }).values()].reduce((a, b) => a + b, 0n);
+  const usdtRoom = o.allowance.get("USDT");
+  if (usdtRoom !== undefined && usdtRoom < usdt) out.push("USDT");
+  for (const c of corridors) {
+    const room = o.allowance.get(c.soft);
+    if (room !== undefined && room < c.sellCapSoft) out.push(c.soft);
+  }
+  return out;
 }
 
 export const feedUrl = (base: string, pair: string) => `${base.replace(/\/$/, "")}/feed/${pair}`;
@@ -47,9 +89,11 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
     `url = "${feedUrl(o.feedBaseUrl, corridors[0]!.pair)}"`,
     `staleness_secs = ${o.stalenessSecs ?? 20}`,
   ];
+  const buys = buyTotals(corridors, o);
   for (const c of corridors) {
-    const size = o.buySize?.get(c.pair) ?? c.buyCapUsdt;
-    const buyOff = o.buyOff?.has(c.pair) || size < BigInt(slice);
+    const size = buys.get(c.pair) ?? 0n;
+    const buyOff = size === 0n;
+    const sell = min(c.sellCapSoft, o.allowance?.get(c.soft));
     lines.push(
       "",
       "[[pools]]",
@@ -60,10 +104,10 @@ export function stitchToml(all: readonly Corridor[], o: StitchOptions): string {
       `debt_decimals = ${TOKENS.USDT.decimals}`,
       `feed_url = "${feedUrl(o.feedBaseUrl, c.pair)}"`,
       ...(buyOff
-        ? ["# buy side off: inventory cap reached (apps/desk/src/limits.ts)"]
-        : [`buy_offset_bps = ${c.buyOffsetBps}`, `buy_total_liquidity_debt = "${size < c.buyCapUsdt ? size : c.buyCapUsdt}"`, `buy_min_slice_debt = "${slice}"`, "buy_max_orders = 4"]),
+        ? ["# buy side off: inventory cap reached (apps/desk/src/limits.ts) or no USDT allowance left"]
+        : [`buy_offset_bps = ${c.buyOffsetBps}`, `buy_total_liquidity_debt = "${size}"`, `buy_min_slice_debt = "${slice}"`, "buy_max_orders = 4"]),
       `sell_offset_bps = ${c.sellOffsetBps}`,
-      `sell_total_liquidity_collateral = "${c.sellCapSoft}"`,
+      `sell_total_liquidity_collateral = "${sell}"`,
       `sell_min_slice_debt = "${slice}"`,
       "sell_max_orders = 4",
       "ttl_secs = 120",
