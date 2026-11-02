@@ -21,6 +21,7 @@ const ENTRIES = {
   "desk-fund": "scripts/desk-fund.ts",
   "desk-approve": "scripts/desk-approve.ts",
   "ops-send": "scripts/ops-send.ts",
+  "e2e-miniapp": "scripts/e2e-miniapp.ts",
   "desk-stitch": "scripts/desk-stitch.ts",
   "anchor-wallet": "scripts/anchor-wallet.ts",
   "deploy-guard": "scripts/deploy-guard.ts",
