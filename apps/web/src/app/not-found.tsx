@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { Shell } from "../components/chrome";
+import { RequestedUrl } from "../components/requested-url";
 import { messages } from "../i18n/messages";
 
 /** A 404 can't see ?lang=, so it follows the browser's language (Spanish by default). */
@@ -17,6 +18,7 @@ export default async function NotFound() {
       <section className="card">
         <h1>{t.pageNotFoundTitle}</h1>
         <p className="muted">{t.pageNotFoundBody}</p>
+        <RequestedUrl />
         <p style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <a className="btn" href={lang === "es" ? "/app" : `/app?lang=${lang}`}>
             {t.openApp}
