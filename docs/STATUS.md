@@ -18,7 +18,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 ## Infrastructure (2026-10-09)
 | Piece | Where | State |
 |---|---|---|
-| Repo | https://github.com/Manuel-dev01/arbolito | **Private** for now; make it public before submission (founder's call). History scanned: no `.env` value appears in any commit |
+| Repo | https://github.com/Manuel-dev01/arbolito | **Public** (checked 2026-11-02). History scanned (gitleaks clean, 2026-10-30): no `.env` value appears in any commit |
 | Web (Mini App, `/r/:id`, `/metrics`) | **https://arbolito-livid.vercel.app** (Vercel project `arbolito`, root `apps/web`, Next.js 16.4) | **Public** (founder, 2026-10-09). Git-connected: pushes to `main` deploy to production. Vercel Authentication turned off so the production URL isn't behind a login. First deploy `dpl_D2U8uhBT9HDwTLpKQoj7CzzEgjRB` (commit `6b1195c`) READY. `PUBLIC_BASE_URL` set. Not reachable from the Claude sandbox until `*.vercel.app` is allowlisted |
 | Postgres | Neon `arbolito-db` via Vercel marketplace (us-east-1, pooled) | `DATABASE_URL` set in `.env` and in Vercel env. No billing balance attached (free plan). Unreachable from the Claude sandbox until `*.neon.tech` is allowlisted |
 | Bot / API hosting | Railway project `arbolito` (`e8a7b24e-50ec-4f14-88d5-7e93bf85a796`), service **`arbolito-bot`** | **Live** (2026-10-11), long polling as @arbolitoo_bot; private beta `TELEGRAM_ALLOWED_USERS=@ola_nuell`. Built from `Dockerfile.bot` (via `RAILWAY_DOCKERFILE_PATH`; Railpack failed on pnpm 11). Deployed from a clean `git archive` snapshot with `railway up`, because GitHub auto-deploy isn't connected (Railway's GitHub app likely lacks access to the private repo). 20 env vars, least privilege: **no private keys** on Railway |
