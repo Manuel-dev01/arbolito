@@ -14,7 +14,21 @@ Each step says **what to do**, **what you should see**, and **what to capture**.
 - [ ] **Phone:** Do Not Disturb on, brightness up, battery charged, one theme (light *or* dark) for the whole shoot.
 - [ ] **Desktop:** Chrome, window about 1440×900, zoom 100%, bookmarks bar hidden, no other tabs.
 - [ ] **MiniPay holds about US$ 8 in USDT** (the demo spends about US$ 3–4; gas is paid in USDT, cents).
-- [ ] **Arbolito in Spanish** (Ajustes → Idioma → Español), **display currency COP** (Ajustes → Moneda para mostrar → Pesos COP).
+- [ ] **Pick the app language.** English is easiest to shoot; Spanish looks more local. Either works: the table below gives both words.
+
+### Spanish → English, for the app's buttons
+| In the app (Spanish) | Means | Where |
+|---|---|---|
+| **Empezar** | Get started | first screen |
+| **Lo hago después** | I'll do it later | "add money" screen on first launch |
+| **Inicio** | Home | bottom bar, 1st tab |
+| **Chat** | Chat | bottom bar, 2nd tab |
+| **Comprobantes** | Receipts | bottom bar, 3rd tab |
+| **Ajustes** | Settings (not "adjust") | bottom bar, 4th tab |
+| **Idioma** | Language | inside Ajustes |
+| **Moneda para mostrar** | Display currency | inside Ajustes |
+| **Límites y seguridad** | Limits & security | inside Ajustes |
+| **Confirmar en MiniPay** | Confirm in MiniPay | quote card |
   Colombia is the story: pesos colombianos, then reais or pesos argentinos for the remittance part.
 - [ ] Save one contact in Send → Add (a second wallet of yours or a friend's), e.g. "Mamá".
 - [ ] Telegram open on the desktop (Telegram Desktop or web.telegram.org) for Act 4.
@@ -22,6 +36,9 @@ Each step says **what to do**, **what you should see**, and **what to capture**.
 If MiniPay blocks screenshots on its confirmation sheet, take a photo of the phone with another device, or skip it: I can recreate that sheet.
 
 ---
+
+> ✅ **Acts 1 and 2 are captured already** (driven by script from the live site, Spanish and English):
+> `design/demo/shots/{es,en}/` holds `1.1.png`, `1.2.webm` (story scroll video), `1.3-a…e.png`, `2.1.png`, `2.2.png`, `2.3-a.png`, `2.3-b.png`. Nothing to do for you there.
 
 ## Act 1. The hook (0:00 – 0:25), desktop
 
@@ -45,7 +62,7 @@ If MiniPay blocks screenshots on its confirmation sheet, take a photo of the pho
 |---|---|---|---|
 | 3.1 | MiniPay → Settings → About → tap the version number until developer mode turns on | "Developer mode" toast | 📸 |
 | 3.2 | Settings → Developer Settings → **Load test page** → **clear the field first** (it keeps the last address) → type `https://arbolito-livid.vercel.app/app` → Load | Arbolito loading inside MiniPay | 📸 |
-| 3.3 | Ajustes → **Moneda para mostrar** → **Pesos COP**, then Inicio | "Tu plata, en pesos colombianos", the rates strip, the tabs Inicio · Chat · Comprobantes · Ajustes | 📸 the picker · 📸 Home |
+| 3.3 | **First launch only:** tap **Empezar** (Get started), and on the "add money" screen tap **Lo hago después** (I'll do it later) until you reach Home. **Then set the currency:** tap **Ajustes** (Settings, 4th tab at the bottom) → **Idioma** (Language) if you want English → **Moneda para mostrar** (Display currency) → **Pesos COP** → tap **Inicio** (Home, 1st tab) | Home reads "Tu plata, en pesos colombianos" ("Your money, in Colombian pesos"), with your balances and the four tabs at the bottom | 📸 the currency list · 📸 Home |
 | 3.4 | Chat tab → type **"cámbiame 2 dólares a pesos colombianos"** (or hold the mic and say it) | Your message, then Arbolito's reply with a quote card | 🎥 typing → reply · 📸 the card |
 | 3.5 | Look at the quote card | **Pagás US$ 2 · Recibís COP ~6.400**, the rate, the comparison with the interbank rate, a countdown | 📸 close-up |
 | 3.6 | Tap **Confirmar en MiniPay** | MiniPay's own confirmation sheet (first: approve, then: the swap) | 📸 each sheet |

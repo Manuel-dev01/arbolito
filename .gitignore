@@ -23,3 +23,6 @@ coverage/
 # Next.js (apps/web)
 next-env.d.ts
 *.tsbuildinfo
+
+# Demo screenshots and frames (large; kept local)
+design/demo/shots/
