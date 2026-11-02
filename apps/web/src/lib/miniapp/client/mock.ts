@@ -213,6 +213,9 @@ export function createMockServer(scenario: MockScenario) {
         references: [
           { name: "Oficial", pair: "USD/ARS", rate: "1545.00", source: "BCRA", at: now },
           { name: "Oficial", pair: "BRL/ARS", rate: "302.89", source: "BCRA", at: now },
+          // Same scale as R above, so a total shown in COP or MXN matches the persona's balances.
+          { name: "interbank", pair: "USD/COP", rate: "3190", source: "ER-API", at: now },
+          { name: "interbank", pair: "USD/MXN", rate: "18.77", source: "ECB", at: now },
         ],
       });
     }
