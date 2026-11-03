@@ -10,7 +10,7 @@
  * also counts against the build caps; a payment whose outcome is unclear stops the runner, and
  * nothing is retried. The rating is a separate, tagged, gas-only transaction.
  */
-import type { Address, Hex } from "viem";
+import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { TOKENS, type Env } from "@arbolito/config";
 import { REPUTATION_REGISTRY, capsFromEnv, encodeGiveFeedback, log, makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
@@ -29,13 +29,15 @@ export interface Provider {
   maxUsdMicros: bigint;
   /** What Arbolito uses the answer for (shown on /agent). */
   usedFor: string;
+  /** The seller announces v2 but reads v1 payment envelopes (see payV2's legacyEnvelope). */
+  legacyEnvelope?: boolean;
 }
 
 /** Outside agents Arbolito buys from (checked on 8004scan; quoted free before any payment). */
 export const PROVIDERS: Provider[] = [
   // RemitRoute (#9308, Mento FX route, US$ 0.01) refused every standard v2 payment on 2026-11-03 ("Unable to find
   // matching payment requirements"; nothing settled), so it is off the list until its endpoint accepts them.
-  { name: "CeloFX", agentId: 10, url: "https://celofx.vercel.app/api/premium-signals", pay: "USDC", maxUsdMicros: 150_000n, usedFor: "FX signals from another Celo FX agent: a second opinion next to the desk's measured carry" },
+  { name: "CeloFX", agentId: 10, url: "https://celofx.vercel.app/api/premium-signals", pay: "USDC", maxUsdMicros: 150_000n, usedFor: "FX signals from another Celo FX agent: a second opinion next to the desk's measured carry", legacyEnvelope: true },
 ];
 
 const REFRESH_MS = 12 * 3_600_000;
@@ -47,6 +49,21 @@ export interface BuyResult {
   paymentTx: string | null;
   feedbackTx: string | null;
   body: unknown;
+}
+
+const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
+const isTxHash = (x: string | null | undefined): x is string => !!x && /^0x[0-9a-fA-F]{64}$/.test(x);
+
+/**
+ * Some sellers' settlements name an internal id, not the transaction (CeloFX answered
+ * "97ebe151-…" on 2026-11-03). Find the transfer itself: the payer's latest payment of exactly
+ * `amount` to `payTo` in the last ~200 blocks.
+ */
+async function findPaymentTx(client: PublicClient, token: Address, from: Address, payTo: Address, amount: bigint): Promise<string | null> {
+  const head = await client.getBlockNumber();
+  const logs = await client.getLogs({ address: token, event: TRANSFER, args: { from, to: payTo }, fromBlock: head - 200n, toBlock: head }).catch(() => []);
+  const hit = logs.filter((l) => l.args.value === amount).at(-1);
+  return hit?.transactionHash ?? null;
 }
 
 /** Micro-USD already spent on agent purchases (sent or unclear), the budget's numerator. */
@@ -89,8 +106,10 @@ export async function buyFromProvider(db: Db, env: Env, p: Provider): Promise<Bu
       caps: capsFromEnv(),
       purpose: `x402 ${p.name} (agent #${p.agentId})`,
       builderCode: env.ATTRIBUTION_CODE,
+      legacyEnvelope: p.legacyEnvelope,
     });
-    paymentTx = paid.settlement?.transaction ?? null;
+    const settled = paid.settlement?.transaction ?? null;
+    paymentTx = isTxHash(settled) ? settled : await findPaymentTx(publicClient, TOKENS[p.pay].address as Address, payer.address, quote.requirement.payTo as Address, price);
     body = paid.body;
     ok = paid.body !== null;
   } catch (e) {

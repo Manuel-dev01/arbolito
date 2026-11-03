@@ -71,9 +71,22 @@ export interface PayV2Options {
   caps: Caps;
   purpose: string;
   builderCode?: string;
+  /**
+   * Send the signed authorization in the v1 envelope ({ x402Version: 1, scheme, network, payload }),
+   * in both PAYMENT-SIGNATURE and X-PAYMENT. For sellers whose 402 says v2 but whose matching still
+   * reads v1 payments (CeloFX, RemitRoute: "Unable to find matching payment requirements").
+   */
+  legacyEnvelope?: boolean;
   now?: () => Date;
   fetch?: FetchLike;
   timeoutMs?: number;
+}
+
+/** The v1 envelope around a v2-signed EIP-3009 authorization (the signature is the same). */
+function legacyHeaders(payload: PaymentPayload): Record<string, string> {
+  const accepted = payload.accepted as { scheme: string; network: string };
+  const v1 = Buffer.from(JSON.stringify({ x402Version: 1, scheme: accepted.scheme, network: accepted.network, payload: payload.payload })).toString("base64");
+  return { "PAYMENT-SIGNATURE": v1, "X-PAYMENT": v1 };
 }
 
 export interface PaidV2 {
@@ -113,7 +126,8 @@ export async function payV2(url: string, o: PayV2Options): Promise<PaidV2> {
   }
   let res: Response;
   try {
-    res = await f(url, { headers: reader.encodePaymentSignatureHeader(payload), signal: AbortSignal.timeout(o.timeoutMs ?? 60_000) });
+    const headers = o.legacyEnvelope ? legacyHeaders(payload) : reader.encodePaymentSignatureHeader(payload);
+    res = await f(url, { headers, signal: AbortSignal.timeout(o.timeoutMs ?? 60_000) });
   } catch (e) {
     throw new PaymentUncertainError(`no answer after paying ${url} (${(e as Error).message}); check the payer's transfers before trying again`);
   }

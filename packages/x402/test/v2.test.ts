@@ -67,4 +67,18 @@ describe("payV2", () => {
     expect(calls).toBe(1);
     expect(await ledger.spent(new Date().toISOString().slice(0, 10))).toBe(0n);
   });
+
+  it("sends the v1 envelope in both headers for sellers that still read v1 payments", async () => {
+    const quote = await quoteV2(URL, TOKENS.USDT.address, async () => challenge());
+    let seen: Record<string, string> = {};
+    await payV2(URL, {
+      account, quote, maxAmount: 10_000n, usdMicros: 5_000n, ledger: new MemoryLedger(), caps, purpose: "test", legacyEnvelope: true,
+      fetch: async (_u, init) => ((seen = init?.headers as Record<string, string>), Response.json({ ok: true })),
+    });
+    const v1 = JSON.parse(Buffer.from(seen["X-PAYMENT"]!, "base64").toString("utf8"));
+    expect(seen["PAYMENT-SIGNATURE"]).toBe(seen["X-PAYMENT"]);
+    expect(v1).toMatchObject({ x402Version: 1, scheme: "exact", network: "eip155:42220" });
+    expect(v1.payload.authorization).toMatchObject({ from: account.address, value: "5000" });
+    expect(v1).not.toHaveProperty("accepted");
+  });
 });

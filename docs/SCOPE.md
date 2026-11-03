@@ -42,7 +42,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | x402 via Celo's facilitator: Arbolito charges other agents in wARS/wBRL/wCOP/wMXN or dollars (`/api/x402/*`); first settlement 2026-11-03 (the team's test, USDT). Left: a wFIAT-paid settlement, and outside payers | ✅ 👤 |
 | | Hireable by agents: MCP (`/api/mcp`), A2A (`/api/a2a`, agent card), OASF; all in the ERC-8004 file (`x402Support: true`) | ✅ |
 | | ERC-8004 reputation: users rate Arbolito from a verified receipt; Arbolito rates agents it pays | ✅ |
-| | Pays outside agents over x402, each rated onchain: built; RemitRoute's endpoint refuses standard v2 payments (nothing moved); CeloFX (#10, US$ 0.10) pending the founder's yes; `AGENT_BUYS` off | 🟡 👤 |
+| | Pays outside agents over x402, each rated onchain: first purchase 2026-11-03 (CeloFX #10, 0.10 USDC, rated 100; its report carries Mento's BRL rate). Recurring runner (`AGENT_BUYS`) off, the founder's call | ✅ |
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |

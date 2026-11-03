@@ -68,7 +68,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - **Loops entry updated** (`--confirm`, founder's yes): new tagline; charges/pays/settles with the x402 `payTo`; the guardian; MCP/A2A; an honest status (the first x402 payment was the team's test). Missing fields: none.
   - The `/agent` label for the team's test sale stays as is.
   - **Welcome-gift and testing budget to the founder's wallet** `0xDeE58b439A29d68d5c2cAc3c65C2504Beb7EeE9A` (the founder gifts testers and tests from there): 99.50 USDT from the reserve ([50](https://celoscan.io/tx/0xfad2c29e1100749e253f7897f64a76c344dbf29f8d29baa60053be6453babc30), [49.50](https://celoscan.io/tx/0xd79512272a390f9fefa1df8b7e3ebb2bf60f9ce54d4caee0e88e31b89704d117)), fork-rehearsed, gas in USDT. The last 0.50 of the 100 agreed stayed under today's US$ 100 cap. The reserve keeps 31.36 USDT. `pnpm ops:send … --from reserve` is new.
-  - **Agent purchases now target CeloFX** (#10, US$ 0.10 USDC, founder's yes); RemitRoute is off the list. The first paid call was refused by this session's permission check, so it isn't sent yet.
+  - **Agent purchases now target CeloFX** (#10, US$ 0.10 USDC, founder's yes); RemitRoute is off the list.
+  - **First payment to another agent:** Arbolito paid CeloFX 0.10 USDC ([tx](https://celoscan.io/tx/0x9ec72765c99c86112b4eb53ba2e491621e186efee507ba5a5f4000ca75b69c62)) and rated it 100 on ERC-8004 ([tx](https://celoscan.io/tx/0xdc035706cf41e8e46373c348f3c7c76ad1da72e6d3edcdec046b6c7c502a5834)).
+    - The answer carries Mento's live BRL rate (5.4805 vs forex 5.4934): an independent BRL reference.
+    - CeloFX (like RemitRoute) announces v2 but matches v1 payment envelopes. `payV2`'s `legacyEnvelope` sends `{ x402Version: 1, scheme, network, payload }` in both headers.
+    - Its settlement named an internal id, not a tx. The runner now finds the actual transfer onchain, and the row was corrected; that rating's `feedbackURI` points at the id, and it is onchain as sent.
+    - `AGENT_BUYS` stays off (the founder's call); 0.40 USDC is left for about 4 calls.
 - **First autonomous run on mainnet (the peso guardian):**
   - The founder signed a wBRL guardian at 15:25 (wallet `0xdee5…ee9a`; 50% base, 5-point band).
   - 15:26: the desk measured the real losing ~24 bps/day, so the target was 70% in dollars and the guardian decided to **protect** (sell ~7.08 wBRL). The guard refused it ("the market pays less than the guard's price floor"), nothing moved.
