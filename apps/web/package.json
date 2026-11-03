@@ -17,6 +17,7 @@
     "@arbolito/proof": "workspace:*",
     "@arbolito/router": "workspace:*",
     "@arbolito/rules": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@vercel/analytics": "2.0.1",
     "@vercel/functions": "3.9.11",
     "@x402/core": "2.28.0",
