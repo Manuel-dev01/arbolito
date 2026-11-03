@@ -12,7 +12,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
-- 👤 **A first autonomous run on mainnet:** sign a peso guardian (or a payday split) in MiniPay. /agent shows 0 automatic runs so far.
+- ✅ **First autonomous run on mainnet** (2026-11-03): the founder's wBRL guardian re-entered 0.68 USDT → 3.696 wBRL through the guard.
 - 👤 **An outside agent paying Arbolito's x402 API**, ideally in wFIAT (another team's agent). Then update the Loops entry (with `payTo`) and add the video.
 - Done 2026-11-03: x402 seller (settling), MCP/A2A/OASF, ERC-8004 reputation, peso guardian, /agent, README and ARCHITECTURE.md, internal docs untracked.
 
@@ -47,7 +47,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
 | | Standing rules: payday split, monthly sends (signed in MiniPay; runner in the bot; Telegram notice per run) | ✅ |
-| | Peso guardian: keeps a dollar share of savings tilted by the desk's measured carry, rebalances both ways (fork-tested on the deployed guard). Left: a first mainnet run (the founder signs one in MiniPay) | ✅ 👤 |
+| | Peso guardian: keeps a dollar share of savings tilted by the desk's measured carry, rebalances both ways (fork-tested on the deployed guard). First mainnet run 2026-11-03: re-entered 0.68 USDT → 3.696 wBRL ([tx](https://celoscan.io/tx/0xed8005950e1c65d03d377bd8abec5c1899e93a0cd1e4a966b9bbaf58b6af3096)); an earlier sale into the drained Uniswap pool was refused by the guard's floor | ✅ |
 | | ERC-8004 file lists MCP/A2A/OASF/x402; endpoint verified on 8004scan; URI re-announced onchain (2026-11-03) | ✅ |
 | | `/agent`: what the agent charges, pays and settles, each with its tx | ✅ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |

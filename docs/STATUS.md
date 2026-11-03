@@ -64,6 +64,15 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 
 ## Log
 ### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
+- **First autonomous run on mainnet (the peso guardian):**
+  - The founder signed a wBRL guardian at 15:25 (wallet `0xdee5…ee9a`; 50% base, 5-point band).
+  - 15:26: the desk measured the real losing ~24 bps/day, so the target was 70% in dollars and the guardian decided to **protect** (sell ~7.08 wBRL). The guard refused it ("the market pays less than the guard's price floor"), nothing moved.
+  - The founder then converted the wBRL by hand through Textile.
+  - 15:36: with the wallet ~100% in dollars, the guardian **re-entered**: 0.68 USDT → 3.696 wBRL through ArbolitoGuard ([tx](https://celoscan.io/tx/0xed8005950e1c65d03d377bd8abec5c1899e93a0cd1e4a966b9bbaf58b6af3096), success, tagged).
+- **The Uniswap wBRL/USDT pool is drained** (147,084 wBRL, 23 USDT): selling any wBRL there returns ~0.026 USDT.
+  - The Mini App had valued balances from that quote (R$ 10.91 ≈ "US$ 0.03" while Textile quoted US$ 1.98). Fixed (`5c3ae3d`): wFIAT is valued at the better of Uniswap and Textile. Live: the desk's 94.15 wBRL reads US$ 17.12.
+  - The desk already drops Uniswap as an outlier for wBRL.
+  - The guard (Uniswap-only) can't sell wBRL until the pool refills; the guardian then refuses rather than dumping.
 - **ERC-8004, end of day:**
   - 8004scan verified the endpoint (`verify-endpoint`).
   - `setAgentURI(9976, same URI)` re-announced the file onchain (fork-rehearsed; [tx](https://celoscan.io/tx/0x7e8b3e178115b3636437ff487439e6ec2b90710cd7a78dd1e2665afd14060aa1), gas only, tagged; `pnpm set:8004-uri`). The indexer's re-parse is pending.
