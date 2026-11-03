@@ -63,6 +63,34 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
+- **Why:** 8004scan scored agent 9976 at 12 (rank ~194k) against 92–93 for AjoAI, RemitRoute and CeloFX: no MCP/A2A service, x402 off, no feedback. T1 asks for x402 via Celo's facilitator, ERC-8004 and an agent that acts on its own. Plan of record: charge, pay, settle; volume only from real counterparties and real agent actions, never our own wallets cycling.
+- **Repo:** internal working files (MASTER_PROMPT, PLAN, AGENTS/CLAUDE.md, skills, `design/`, internal and planning docs) are gitignored and untracked (`01f9242`, founder's call; history unchanged). Links and code comments no longer point at them.
+- **Charges (x402 seller):**
+  - `GET /api/x402/quote` (US$ 0.01) and `/api/x402/rates` (US$ 0.005), live on Vercel.
+  - The 402 offers wARS/wBRL/wCOP/wMXN via Permit2 with gasless EIP-2612 (all four tokens support it, read onchain) and USDT/USDC/USA₮ via EIP-3009. `payTo` = agent wallet `0x7e03…6c3c`; builder code declared; v1 refused explicitly; settle only after the handler succeeds; wFIAT prices at the desk's fair value, two significant figures.
+  - Built on `@x402/*` 2.28.0. `pnpm x402:check`: the facilitator's free `/verify` returns **isValid: true** for USDT and wCOP payloads from the e2e wallet against production.
+  - **Blocked:** `/settle` needs `X402_API_KEY` (x402.celo.org, founder), and migration 0009 (`x402_sales`, `agent_purchases`) needs `pnpm --filter @arbolito/db db:migrate` (the auto-mode classifier refused it here). Until then a payment verifies but does not settle.
+- **Hireable:** MCP at `/api/mcp` (free: rates summary, desk state, verify receipt; paid: x402 over MCP); A2A 0.3.0 at `/api/a2a` and the agent card; OASF; the ERC-8004 file lists them all with `x402Support: true` (live; 8004scan re-parse pending).
+- **Reputation:** Reputation Registry on Celo is v2.0.0 (`giveFeedback(agentId, int128 value, uint8 decimals, tag1, tag2, endpoint, feedbackURI, feedbackHash)`, no pre-authorization, self-feedback refused; checked against the bytecode and simulated). Users rate Arbolito from a verified receipt in the Mini App; only the converting wallet can.
+- **Peso guardian (rule kind `guardian`, wARS/wBRL):**
+  - Keeps a chosen dollar share of savings, tilted by the desk's measured carry (+2 points per bps/day, ±20), and rebalances past a band, both ways, at most once a day each way.
+  - Stands down on the desk breaker.
+  - Drafted in the chat (`prepare_peso_guardian`), signed in MiniPay; evaluated hourly by the bot's runner from the desk feed.
+  - Fork test on the deployed guard: 3/3 (re-enter in pieces 10+10+1 USDT, hold on breaker, protect).
+- **Pays:** `apps/agent/src/agent-buys.ts` pays RemitRoute's Mento FX route (#9308, US$ 0.01 USDC; its v2 402 names the price `maxAmountRequired`) and rates it on ERC-8004. Off until `AGENT_BUYS=live`; budget US$ 2 lifetime. The agent wallet holds no USDC yet (31.29 USDT).
+- **/agent:** what the agent charges, pays and settles, its books, how to hire it.
+- **Docs:** README rewritten as the judges' front door (contents, a 5-minute path, a track map, charges/pays/settles, hire-it); new [ARCHITECTURE.md](ARCHITECTURE.md) (components, wallets, every money flow as a sequence diagram, safety, data, tests).
+- **Tests:** 506 unit + Foundry green; guardian fork 3/3.
+- **Next (founder):**
+  - `X402_API_KEY` on Vercel, then one settle test ≤ US$ 0.01.
+  - Run migration 0009.
+  - Go-ahead to swap ~US$ 0.50 USDT→USDC in the agent wallet and turn on `AGENT_BUYS`.
+  - Refresh the 8004 profile on 8004scan.
+  - Turn on a guardian on the founder's wallet.
+  - Outreach to outside agents to call the API.
+  - Loops entry update with the `payTo` address.
+
 ### 2026-11-02: wCOP and wMXN for users, tested on mainnet; desk down on spent allowances
 - **Users can convert pesos colombianos (wCOP) both ways and sell wMXN for dollars** in the Mini App and the bot (deployed: Vercel + bot on Railway). Textile is the only venue (no Uniswap pool). New: COP/MXN currency, phone-region display currency (es-CO → COP), an "interbank" reference (ER-API COP, ECB MXN; Colombia's TRM API refuses servers, so nothing says "official"), Textile-preview pricing for wFIAT without a pool, a `below_minimum` error for Textile's ~US$ 1 RFQ minimum, and a "wait a few seconds" answer when a declined quote still commits the user's funds (~60 s). Buying wMXN answers "no market": no maker holds it.
 - **E2E on mainnet** (`pnpm e2e:miniapp`, e2e wallet `0x1CF9…64eA`, funded 3 USDT from ops): 1 USDT → 3,206.63 wCOP and 1 USDT → 3,207.36 wCOP, then 6,400 wCOP → 1.993791 USDT, each rehearsed on a fork first; receipts anchored and verified. No desk self-fill (the desk's takers are still six outside wallets).

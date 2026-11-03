@@ -4,7 +4,7 @@ The one place to see what's done, what's next and what's left, mapped to how eac
 judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
 STATUS.md log.
 
-**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-10-20 (20 days left).
+**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-03 (6 days left).
 
 Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped · 👤 needs the founder (a decision, an approval, money or an account)
 
@@ -33,11 +33,16 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | Gas paid in stablecoins (MiniPay pays in USDT itself; our sender supports fee adapters) | ✅ |
 | | ERC-8004 identity registration (agentId 9976, URI served at `/.well-known/agent-registration.json`) | ✅ |
 | | Self agent ID: dropped (Self needs a passport; the founder has none). ERC-8004 covers agent identity | ➖ |
-| | x402 via Celo's facilitator (see T2b) | ⬜ |
+| | x402 via Celo's facilitator: Arbolito charges other agents in wARS/wBRL/wCOP/wMXN or dollars (`/api/x402/*`; payloads verify; settling needs `X402_API_KEY`) | 🟡 👤 |
+| | Hireable by agents: MCP (`/api/mcp`), A2A (`/api/a2a`, agent card), OASF; all in the ERC-8004 file (`x402Support: true`) | ✅ |
+| | ERC-8004 reputation: users rate Arbolito from a verified receipt; Arbolito rates agents it pays | ✅ |
+| | Pays outside agents over x402 (RemitRoute #9308), each rated onchain; off until `AGENT_BUYS=live` | 🟡 👤 |
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
 | | Standing rules: payday split, monthly sends (signed in MiniPay; runner in the bot; Telegram notice per run) | ✅ |
+| | Peso guardian: keeps a dollar share of savings tilted by the desk's measured carry, rebalances both ways (fork-tested on the deployed guard) | ✅ |
+| | `/agent`: what the agent charges, pays and settles, each with its tx | ✅ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | Mini App home polish: agent status chip, today's dollar, icons, split bar (2026-10-20) | ✅ |
 | | MiniPay Mini App: all designed screens, auto-connect, amounts in local currency | ✅ |
