@@ -64,6 +64,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 
 ## Log
 ### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
+- **Founder's calls (evening):**
+  - **Loops entry updated** (`--confirm`, founder's yes): new tagline; charges/pays/settles with the x402 `payTo`; the guardian; MCP/A2A; an honest status (the first x402 payment was the team's test). Missing fields: none.
+  - The `/agent` label for the team's test sale stays as is.
+  - **Welcome-gift and testing budget to the founder's wallet** `0xDeE58b439A29d68d5c2cAc3c65C2504Beb7EeE9A` (the founder gifts testers and tests from there): 99.50 USDT from the reserve ([50](https://celoscan.io/tx/0xfad2c29e1100749e253f7897f64a76c344dbf29f8d29baa60053be6453babc30), [49.50](https://celoscan.io/tx/0xd79512272a390f9fefa1df8b7e3ebb2bf60f9ce54d4caee0e88e31b89704d117)), fork-rehearsed, gas in USDT. The last 0.50 of the 100 agreed stayed under today's US$ 100 cap. The reserve keeps 31.36 USDT. `pnpm ops:send … --from reserve` is new.
+  - **Agent purchases now target CeloFX** (#10, US$ 0.10 USDC, founder's yes); RemitRoute is off the list. The first paid call was refused by this session's permission check, so it isn't sent yet.
 - **First autonomous run on mainnet (the peso guardian):**
   - The founder signed a wBRL guardian at 15:25 (wallet `0xdee5…ee9a`; 50% base, 5-point band).
   - 15:26: the desk measured the real losing ~24 bps/day, so the target was 70% in dollars and the guardian decided to **protect** (sell ~7.08 wBRL). The guard refused it ("the market pays less than the guard's price floor"), nothing moved.

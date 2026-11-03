@@ -33,7 +33,9 @@ export interface Provider {
 
 /** Outside agents Arbolito buys from (checked on 8004scan; quoted free before any payment). */
 export const PROVIDERS: Provider[] = [
-  { name: "RemitRoute", agentId: 9308, url: "https://remitroute.vercel.app/api/fx-route", pay: "USDC", maxUsdMicros: 20_000n, usedFor: "Mento FX route and live rate: a second opinion next to Arbolito's own references" },
+  // RemitRoute (#9308, Mento FX route, US$ 0.01) refused every standard v2 payment on 2026-11-03 ("Unable to find
+  // matching payment requirements"; nothing settled), so it is off the list until its endpoint accepts them.
+  { name: "CeloFX", agentId: 10, url: "https://celofx.vercel.app/api/premium-signals", pay: "USDC", maxUsdMicros: 150_000n, usedFor: "FX signals from another Celo FX agent: a second opinion next to the desk's measured carry" },
 ];
 
 const REFRESH_MS = 12 * 3_600_000;
