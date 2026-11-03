@@ -60,6 +60,10 @@ export const envSchema = z.object({
   E2E_PRIVATE_KEY: opt(privateKey),
   /** Refresh Western Union rates through buy from the bot process (apps/agent/src/competitors.ts): off or live. */
   COMPETITORS_RUNNER: z.enum(["off", "live"]).default("off"),
+  /** Pay outside Celo agents over x402 and rate them on ERC-8004 (apps/agent/src/agent-buys.ts): off or live. */
+  AGENT_BUYS: z.enum(["off", "live"]).default("off"),
+  /** Total the agent may ever spend on those purchases, US$. */
+  AGENT_BUYS_MAX_USD: z.coerce.number().min(0).max(25).default(2),
 
   // LLM / speech
   LLM_PROVIDER: z.enum(["deepseek", "anthropic"]).default("deepseek"),

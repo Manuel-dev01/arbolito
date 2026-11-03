@@ -11,6 +11,7 @@ import { loadEnv } from "@arbolito/config";
 import { log } from "@arbolito/chain";
 import { closeDb, getDb } from "@arbolito/db";
 import { createBot } from "./bot";
+import { startAgentBuysRunner } from "./agent-buys";
 import { startCompetitorsRunner } from "./competitors";
 import { startRulesRunner } from "./rules";
 
@@ -57,6 +58,8 @@ const runner = run(bot);
 const stopRules = startRulesRunner(getDb(), bot.api, env);
 // Western Union rates through buy (COMPETITORS_RUNNER=live), for "vs Western Union" on quotes and receipts.
 const stopCompetitors = startCompetitorsRunner(getDb(), env);
+// Paid calls to other Celo agents, each rated on ERC-8004 (AGENT_BUYS=live).
+const stopAgentBuys = startAgentBuysRunner(getDb(), env);
 
 const stop = async () => {
   log("[bot] stopping");
@@ -64,6 +67,7 @@ const stop = async () => {
   linker.stop();
   stopRules?.();
   stopCompetitors?.();
+  stopAgentBuys?.();
   if (runner.isRunning()) await runner.stop();
   await closeDb();
   process.exit(0);

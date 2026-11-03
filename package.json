@@ -10,6 +10,7 @@
     "verify:addresses": "node scripts/run.mjs verify-addresses",
     "quote": "node scripts/run.mjs quote",
     "x402:check": "node scripts/run.mjs x402-check",
+    "agent:buy": "node scripts/run.mjs agent-buy",
     "smoke:convert": "node scripts/run.mjs smoke-convert",
     "deploy:receipts": "pnpm contracts:build && node scripts/run.mjs deploy-receipts",
     "deploy:guard": "pnpm contracts:build && node scripts/run.mjs deploy-guard",

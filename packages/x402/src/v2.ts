@@ -34,9 +34,12 @@ export async function quoteV2(url: string, asset: string, f: FetchLike = fetch):
   const res = await f(url, { signal: AbortSignal.timeout(20_000) });
   if (res.status !== 402) throw new NotPaywalledError(`${url} answered ${res.status} without payment; expected 402`);
   const body = await res.json().catch(() => undefined);
-  const paymentRequired = reader.getPaymentRequiredResponse((h) => res.headers.get(h), body);
+  const raw = reader.getPaymentRequiredResponse((h) => res.headers.get(h), body);
+  // Some v2 sellers still name the price `maxAmountRequired` (the v1 field): read it as `amount`.
+  const paymentRequired = { ...raw, accepts: raw.accepts.map((r) => (r.amount ? r : { ...r, amount: (r as { maxAmountRequired?: string }).maxAmountRequired ?? "" })) };
   const requirement = paymentRequired.accepts.find((r) => r.network === CELO_V2 && r.asset.toLowerCase() === asset.toLowerCase());
   if (!requirement) throw new Error(`${url} doesn't accept ${asset} on Celo`);
+  if (!/^\d+$/.test(requirement.amount)) throw new Error(`${url} names no price for ${asset}`);
   return { paymentRequired, requirement, amount: BigInt(requirement.amount) };
 }
 
