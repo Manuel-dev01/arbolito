@@ -64,6 +64,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 
 ## Log
 ### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
+- **Later the same day:**
+  - Migration 0009 applied to Neon.
+  - The founder created the facilitator key (500 free mainnet settlements) and put it in `.env`. It is now on Vercel production as a sensitive `X402_API_KEY`, with production redeployed; `/verify` still says isValid for the e2e wallet's USDT payload.
+  - 8004scan endpoint verification queued (`POST /agents/verify-endpoint/42220/9976`); a metadata re-read needs the owner's signature on 8004scan.
+  - The agent wallet's 0.5 USDT → USDC top-up was rehearsed on a fork (0.4995 USDC, receipt verified); the live run was refused by this session's permission check, so the founder runs it.
+  - `pnpm x402:check … --e2e --pay` is the settle test, run by the founder.
 - **Why:** 8004scan scored agent 9976 at 12 (rank ~194k) against 92–93 for AjoAI, RemitRoute and CeloFX: no MCP/A2A service, x402 off, no feedback. T1 asks for x402 via Celo's facilitator, ERC-8004 and an agent that acts on its own. Plan of record: charge, pay, settle; volume only from real counterparties and real agent actions, never our own wallets cycling.
 - **Repo:** internal working files (MASTER_PROMPT, PLAN, AGENTS/CLAUDE.md, skills, `design/`, internal and planning docs) are gitignored and untracked (`01f9242`, founder's call; history unchanged). Links and code comments no longer point at them.
 - **Charges (x402 seller):**

@@ -8,14 +8,17 @@
  * --e2e signs with the local e2e wallet instead, so a funded payer gets a full yes from /verify.
  * Still free: /verify never settles, and the payload goes only to the facilitator.
  * --amount <atomic> checks a smaller amount than the 402 asks (a payer short of the price).
+ * --pay (with --e2e) then pays it for real, once, after a typed confirmation: the settle test.
+ * It moves money (the 402's price, from the e2e wallet to payTo), so it needs the founder's go-ahead.
  */
 import { createPublicClient, http } from "viem";
 import { celo } from "viem/chains";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { loadEnv, tokenBySymbol } from "@arbolito/config";
-import { quoteV2, signV2, verifyV2 } from "@arbolito/x402";
+import { MemoryLedger, capsFromEnv } from "@arbolito/chain";
+import { payV2, quoteV2, signV2, verifyV2 } from "@arbolito/x402";
 import type { Hex } from "viem";
-import { flagValue, hasFlag, positional } from "./lib/cli";
+import { confirm, flagValue, hasFlag, positional } from "./lib/cli";
 
 const [url, sym = "wBRL"] = positional();
 if (!url) throw new Error("usage: pnpm x402:check <url> [asset symbol]");
@@ -37,3 +40,13 @@ const payload = await signV2({ account, publicClient: publicClient as never, quo
 console.log(`signed by ${hasFlag("e2e") ? "e2e wallet" : "throwaway"} ${account.address}; payload extensions: ${Object.keys(payload.extensions ?? {}).join(", ") || "none"}`);
 const result = await verifyV2(env.X402_FACILITATOR_URL, payload, quote.requirement);
 console.log(`facilitator /verify: ${JSON.stringify(result)}`);
+
+if (hasFlag("pay")) {
+  if (!hasFlag("e2e") || override) throw new Error("--pay needs --e2e and the 402's own price (no --amount)");
+  if (!result.isValid) throw new Error("the facilitator wouldn't accept this payment; nothing paid");
+  const usdMicros = token.decimals === 6 ? quote.amount : 0n;
+  if (!(await confirm(`Pay ${quote.amount} (${token.decimals} dp) ${token.symbol} from the e2e wallet to ${quote.requirement.payTo} for ${url}?`, "pay"))) process.exit(1);
+  const paid = await payV2(url, { account, publicClient: publicClient as never, quote, maxAmount: quote.amount, usdMicros, ledger: new MemoryLedger(), caps: capsFromEnv(), purpose: `x402 settle test ${url}`, builderCode: env.ATTRIBUTION_CODE });
+  console.log(`status ${paid.status}; settlement ${JSON.stringify(paid.settlement)}`);
+  console.log(`answer: ${JSON.stringify(paid.body).slice(0, 300)}`);
+}
