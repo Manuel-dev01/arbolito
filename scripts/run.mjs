@@ -30,6 +30,7 @@ const ENTRIES = {
   "buy": "scripts/buy.ts",
   "x402-check": "scripts/x402-check.ts",
   "agent-buy": "scripts/agent-buy.ts",
+  "set-8004-uri": "scripts/set-8004-uri.ts",
 };
 
 const name = process.argv[2];

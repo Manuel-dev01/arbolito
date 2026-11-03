@@ -15,6 +15,7 @@
     "deploy:receipts": "pnpm contracts:build && node scripts/run.mjs deploy-receipts",
     "deploy:guard": "pnpm contracts:build && node scripts/run.mjs deploy-guard",
     "register:8004": "node scripts/run.mjs register-8004",
+    "set:8004-uri": "node scripts/run.mjs set-8004-uri",
     "reanchor:receipt": "node scripts/run.mjs reanchor-receipt",
     "verify:receipt": "node scripts/run.mjs verify-receipt",
     "contracts:build": "forge build --root contracts",

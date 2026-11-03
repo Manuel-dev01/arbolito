@@ -145,6 +145,25 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - **Crediting meanwhile:** the gateway attributes settlements to the API key that made them, and **judges credit by `payTo` address**.
   - **Organisers, 2026-10-15:** "For all x402 txs, we need your payTo wallet address. Attribution tags are not yet supported by x402." **The submission must list our FX API's `payTo` address.**
 
+- **Arbolito's seller (live 2026-11-03):** `GET /api/x402/quote` (US$ 0.01) and `/api/x402/rates` (US$ 0.005) on the web app, `packages/x402/src/seller.ts` on `@x402/*` 2.28.0.
+  - `payTo` = the agent wallet `0x7e0316b2533F6dF2E651295A9B11481BB8346c3c`.
+  - The 402 offers wARS/wBRL/wCOP/wMXN with `assetTransferMethod: "permit2"` and USDT/USDC/USA₮ (EIP-3009). It declares `builder-code` (`a`) and `eip2612GasSponsoring`.
+  - EIP-712 domains, read onchain with `eip712Domain()`: wARS "Peso Argentino", wBRL "Real Brasileño", wCOP "Peso Colombiano", wMXN "Peso Mexicano", all version "1" and all EIP-2612.
+  - First settlement: [tx `0x876c55d7…5763`](https://celoscan.io/tx/0x876c55d7234597dd4bf0cc86ed20ee626d354bd430a45b6c65e986066e185763) (the team's e2e wallet, US$ 0.005 USDT).
+- **Facilitator account and key:** created by the founder on the dashboard (a human signs; the facilitator's skill says agents must not mint keys).
+  - 500 free mainnet settlements, then gas + 0.3% of the amount from a prepaid USD balance. Gas only for assets without a USD feed (wARS, wMXN, wPEN, wCLP always; wBRL, wCOP and cNGN while their feed is stale).
+  - `X402_API_KEY` is in `.env` and on Vercel production (sensitive). The dashboard's account wallet doesn't matter for `payTo`.
+  - The skill and the pricing config are at `https://x402.celo.org/skill.md` and `/api/config`.
+- **Other agents' x402 endpoints (2026-11-03):**
+  - RemitRoute `/api/fx-route` (#9308): v2 402 in USDC with the price named `maxAmountRequired` (no `amount`). It refused every payment as "Unable to find matching payment requirements" (sent with its requirement as published, plus `amount`, and as canonical v2 fields; nothing settled).
+  - CeloFX `/api/premium-signals` (#10): US$ 0.10 USDC, its 402 carries both `amount` and `maxAmountRequired`.
+
+## 8004scan
+- API base `https://api.8004scan.io/api/v1` (OpenAPI at `https://api.8004scan.io/openapi.json`). Agent: `GET /agents/42220/9976`.
+- `POST /agents/verify-endpoint/42220/9976` (no auth, once an hour) checks the endpoint's `.well-known/agent-registration.json`: verified 2026-11-03.
+- `POST /agents/42220/9976/metadata-refresh` needs the owner's auth. Without it, `pnpm set:8004-uri --live` re-announces the same URI onchain (gas only): [tx `0x7e8b3e17…0aa1`](https://celoscan.io/tx/0x7e8b3e178115b3636437ff487439e6ec2b90710cd7a78dd1e2665afd14060aa1), 2026-11-03.
+- Identity Registry implementation has `setAgentURI(uint256,string)` (selector checked in the bytecode).
+
 ## buy (x402 marketplace)
 - **Arbolito's buy payer (2026-10-20):** `0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58` (`BUY_PAYER_PRIVATE_KEY`, `pnpm buy init`), funded with 1 USDT from ops (tx `0x7afc18bf8e423df545b17e8180c8a01f7ff12326833141328562af61f0538582`). Pays in USDT (`BUY_PAY_TOKEN=USDT`).
 - **x402 v1 exact, verified live:** EIP-3009 `TransferWithAuthorization` signed for exactly `maxAmountRequired` to `payTo`, sent base64 in `X-PAYMENT`; the answer carries `X-PAYMENT-RESPONSE` (base64 JSON with the settlement `transaction`). EIP-712 domains match onchain: USDT `{name: "Tether USD", version: "1"}` (the token has no `version()`; the 402's `extra` gives it), USDC `{name: "USDC", version: "2"}`, chainId 42220. First payment settled 2026-10-20: tx `0x0a76205db49c67b5849a818368760f46bf83d032f8a09eee1dfa4dc1f7c962c0`.

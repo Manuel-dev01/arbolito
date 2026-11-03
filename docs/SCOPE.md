@@ -10,7 +10,13 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 
 ---
 
-## Next up (in order)
+## Next up (in order, as of 2026-11-03: six days left)
+- 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
+- 👤 **A first autonomous run on mainnet:** sign a peso guardian (or a payday split) in MiniPay. /agent shows 0 automatic runs so far.
+- 👤 **An outside agent paying Arbolito's x402 API**, ideally in wFIAT (another team's agent). Then update the Loops entry (with `payTo`) and add the video.
+- Done 2026-11-03: x402 seller (settling), MCP/A2A/OASF, ERC-8004 reputation, peso guardian, /agent, README and ARCHITECTURE.md, internal docs untracked.
+
+### Earlier
 1. ✅ **Send to a contact** from the Mini App (2026-10-19): `POST /api/miniapp/send/prepare`. Same currency is one transfer. Cross currency pays the contact in the Uniswap swap, or forwards a Textile fill exactly. Receipts name the recipient.
 2. ✅ **Receipts list** (2026-10-19): `GET /api/miniapp/receipts`, merged into the app on launch, so receipts survive a new phone or a cleared app. Incoming transfers in the feed are still to do.
 3. ✅ **First real conversions through the Mini App** (2026-10-19) on the founder's phone: USDT→wARS, wARS→USDT, USDT→wBRL from the chat, and a send. Fixes from the test shipped; receipts now anchor live.
@@ -33,15 +39,16 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | Gas paid in stablecoins (MiniPay pays in USDT itself; our sender supports fee adapters) | ✅ |
 | | ERC-8004 identity registration (agentId 9976, URI served at `/.well-known/agent-registration.json`) | ✅ |
 | | Self agent ID: dropped (Self needs a passport; the founder has none). ERC-8004 covers agent identity | ➖ |
-| | x402 via Celo's facilitator: Arbolito charges other agents in wARS/wBRL/wCOP/wMXN or dollars (`/api/x402/*`; payloads verify; settling needs `X402_API_KEY`) | 🟡 👤 |
+| | x402 via Celo's facilitator: Arbolito charges other agents in wARS/wBRL/wCOP/wMXN or dollars (`/api/x402/*`); first settlement 2026-11-03 (the team's test, USDT). Left: a wFIAT-paid settlement, and outside payers | ✅ 👤 |
 | | Hireable by agents: MCP (`/api/mcp`), A2A (`/api/a2a`, agent card), OASF; all in the ERC-8004 file (`x402Support: true`) | ✅ |
 | | ERC-8004 reputation: users rate Arbolito from a verified receipt; Arbolito rates agents it pays | ✅ |
-| | Pays outside agents over x402 (RemitRoute #9308), each rated onchain; off until `AGENT_BUYS=live` | 🟡 👤 |
+| | Pays outside agents over x402, each rated onchain: built; RemitRoute's endpoint refuses standard v2 payments (nothing moved); CeloFX (#10, US$ 0.10) pending the founder's yes; `AGENT_BUYS` off | 🟡 👤 |
 | Agent autonomy and usefulness | Chat agent (DeepSeek) quotes and explains in es/pt/en, with voice notes | ✅ |
 | | Guardrails: per-action and daily caps, simulate before send, never retry a paid call | ✅ |
 | | "Let Arbolito act for you": ArbolitoGuard v2 live on mainnet (`0x411E…1d33`); onboarding txs from the Mini App | ✅ |
 | | Standing rules: payday split, monthly sends (signed in MiniPay; runner in the bot; Telegram notice per run) | ✅ |
-| | Peso guardian: keeps a dollar share of savings tilted by the desk's measured carry, rebalances both ways (fork-tested on the deployed guard) | ✅ |
+| | Peso guardian: keeps a dollar share of savings tilted by the desk's measured carry, rebalances both ways (fork-tested on the deployed guard). Left: a first mainnet run (the founder signs one in MiniPay) | ✅ 👤 |
+| | ERC-8004 file lists MCP/A2A/OASF/x402; endpoint verified on 8004scan; URI re-announced onchain (2026-11-03) | ✅ |
 | | `/agent`: what the agent charges, pays and settles, each with its tx | ✅ |
 | UX a real person can use | Landing page (design implemented, 3D coins, live calculator) | ✅ |
 | | Mini App home polish: agent status chip, today's dollar, icons, split bar (2026-10-20) | ✅ |

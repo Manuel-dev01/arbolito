@@ -64,6 +64,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 
 ## Log
 ### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
+- **ERC-8004, end of day:**
+  - 8004scan verified the endpoint (`verify-endpoint`).
+  - `setAgentURI(9976, same URI)` re-announced the file onchain (fork-rehearsed; [tx](https://celoscan.io/tx/0x7e8b3e178115b3636437ff487439e6ec2b90710cd7a78dd1e2665afd14060aa1), gas only, tagged; `pnpm set:8004-uri`). The indexer's re-parse is pending.
+- **T1 rubric walk (Loops evaluator prompt, applied to the code):**
+  - Strong: mainnet wFIAT, the Celo stack (x402 settling, ERC-8004 with reputation, stablecoin gas), UX.
+  - Gaps: real LatAm users (all 4 wallets are the team's), zero autonomous runs on mainnet, no wFIAT-paid x402 settlement yet. All three need people (testers, the founder's signature, another team's agent) more than code.
 - **Later the same day:**
   - Migration 0009 applied to Neon.
   - The founder created the facilitator key (500 free mainnet settlements) and put it in `.env`. It is now on Vercel production as a sensitive `X402_API_KEY`, with production redeployed; `/verify` still says isValid for the e2e wallet's USDT payload.
