@@ -160,14 +160,31 @@ const loadDb = unstable_cache(
   { revalidate: 30 },
 );
 
-async function loadFeed(): Promise<FeedState | null> {
+/** The desk feed's /state. `fresh` skips Next's data cache, which may serve a stale copy first. */
+async function loadFeed(fresh = false): Promise<FeedState | null> {
   try {
-    const res = await fetch(`${loadEnv().DESK_FEED_PUBLIC_URL.replace(/\/$/, "")}/state`, { signal: AbortSignal.timeout(4_000), next: { revalidate: 15 } });
+    const url = `${loadEnv().DESK_FEED_PUBLIC_URL.replace(/\/$/, "")}/state`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4_000), ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: 15 } }) });
     if (!res.ok) return null;
     return (await res.json()) as FeedState;
   } catch {
     return null;
   }
+}
+
+const FIAT_PAIRS = { "wars-usdt": "wARS", "wbrl-usdt": "wBRL", "wcop-usdt": "wCOP", "wmxn-usdt": "wMXN" } as const;
+
+/** Local currency per US$ from the desk's newest published price per corridor (null if the feed is down). */
+export async function loadFiatRates(): Promise<Partial<Record<(typeof FIAT_PAIRS)[keyof typeof FIAT_PAIRS], number>> | null> {
+  const feed = await loadFeed(true);
+  if (!feed) return null;
+  const out: Partial<Record<(typeof FIAT_PAIRS)[keyof typeof FIAT_PAIRS], number>> = {};
+  for (const c of feed.corridors) {
+    const sym = FIAT_PAIRS[c.pair as keyof typeof FIAT_PAIRS];
+    const rate = sym ? c.decisions.findLast((d) => d.action === "publish" && d.fiatPerUsd)?.fiatPerUsd : undefined;
+    if (sym && rate) out[sym] = rate;
+  }
+  return out;
 }
 
 /** Fills and snapshots only (no feed call), for pages that must not wait on the feed. */

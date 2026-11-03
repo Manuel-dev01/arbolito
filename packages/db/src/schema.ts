@@ -358,3 +358,51 @@ export const competitorRates = pgTable(
   },
   (t) => [index("competitor_rates_corridor_at_idx").on(t.corridor, t.at)],
 );
+
+// ── x402 (packages/x402): what Arbolito charges other agents, and what it pays them ────────
+
+/** One paid call to Arbolito's x402 API, settled by Celo's facilitator to our payTo. */
+export const x402Sales = pgTable(
+  "x402_sales",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** The paid path, e.g. /api/x402/rates */
+    resource: text().notNull(),
+    payer: text().notNull(),
+    /** Token symbol (wARS, wBRL, USDT…) and address; amount in that token's atomic units. */
+    asset: text().notNull(),
+    assetAddress: text().notNull(),
+    amount: atomic().notNull(),
+    /** The price in micro-USD we asked for, at the rate used when the 402 was issued. */
+    usdMicros: atomic().notNull(),
+    payTo: text().notNull(),
+    txHash: text().notNull(),
+    at: createdAt(),
+  },
+  (t) => [uniqueIndex("x402_sales_tx_idx").on(t.txHash), index("x402_sales_at_idx").on(t.at)],
+);
+
+/** One x402 call Arbolito paid to another agent, and the ERC-8004 feedback it left after. */
+export const agentPurchases = pgTable(
+  "agent_purchases",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Provider's name and ERC-8004 agentId on Celo (null if it has none). */
+    provider: text().notNull(),
+    providerAgentId: integer(),
+    url: text().notNull(),
+    asset: text().notNull(),
+    amount: atomic().notNull(),
+    usdMicros: atomic().notNull(),
+    /** sent | uncertain | failed */
+    status: text().notNull(),
+    paymentTx: text(),
+    /** What the purchase fed (e.g. "desk fair value wARS"), and whether it was used. */
+    usedFor: text().notNull(),
+    used: boolean().notNull().default(false),
+    feedbackTx: text(),
+    feedbackScore: integer(),
+    at: createdAt(),
+  },
+  (t) => [index("agent_purchases_at_idx").on(t.at)],
+);

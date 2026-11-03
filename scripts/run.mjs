@@ -28,6 +28,7 @@ const ENTRIES = {
   "desk-rebalance": "scripts/desk-rebalance.ts",
   "fund-gas": "scripts/fund-gas.ts",
   "buy": "scripts/buy.ts",
+  "x402-check": "scripts/x402-check.ts",
 };
 
 const name = process.argv[2];

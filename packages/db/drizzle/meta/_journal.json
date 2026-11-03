@@ -64,6 +64,13 @@
       "when": 1793008633556,
       "tag": "0008_autonomy_pauses",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793684474858,
+      "tag": "0009_x402",
+      "breakpoints": true
     }
   ]
 }
