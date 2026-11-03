@@ -218,6 +218,55 @@ function ReceiptBody({ r, when, tech, setTech, openPublic }: { r: Receipt; when:
           </button>
         </div>
       ) : null}
+      {status === "verified" ? <RateCard receiptId={r.receiptId} /> : null}
+    </div>
+  );
+}
+
+const ratedKey = (id: string) => `arbolito.rated.${id}`;
+function readRated(id: string): boolean {
+  try {
+    return localStorage.getItem(ratedKey(id)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** ERC-8004 feedback for Arbolito from this receipt's wallet: one tap per star, signed in MiniPay. */
+function RateCard({ receiptId }: { receiptId: string }) {
+  const { t, rateArbolito } = useApp();
+  const [rated, setRated] = useState(() => readRated(receiptId));
+  const [busy, setBusy] = useState(false);
+  if (rated)
+    return (
+      <div className="mp-soft" style={{ fontSize: 15 }} role="status">
+        {t.rateDone}
+      </div>
+    );
+  const rate = async (stars: number) => {
+    if (busy) return;
+    setBusy(true);
+    const ok = await rateArbolito(receiptId, stars);
+    setBusy(false);
+    if (!ok) return;
+    setRated(true);
+    try {
+      localStorage.setItem(ratedKey(receiptId), "1");
+    } catch {
+      // Private mode: the card just shows again next time.
+    }
+  };
+  return (
+    <div className="mp-card pad">
+      <span style={{ fontSize: 16, fontWeight: 700 }}>{t.rateTitle}</span>
+      <div className="mp-row" style={{ gap: 6 }} role="group" aria-label={t.rateTitle}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" className="mp-chip" style={{ flex: 1, minHeight: 48, padding: 0, fontSize: 17 }} disabled={busy} onClick={() => void rate(n)} aria-label={`${n} ★`}>
+            {n}★
+          </button>
+        ))}
+      </div>
+      <span className="mp-small">{t.rateBody}</span>
     </div>
   );
 }

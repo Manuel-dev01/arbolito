@@ -8,3 +8,4 @@ export * from "./sender";
 export * from "./smartAccount";
 export * from "./guard";
 export * from "./guardV2";
+export * from "./reputation";

@@ -353,6 +353,9 @@ export function createMockServer(scenario: MockScenario) {
       paused = false;
       return json(200, { calls: [{ to: "0x0000000000000000000000000000000000000004", data: "0x2e1a7d4d", value: "0", label: L.revoke }] });
     }
+    if (path === "/rate/prepare") {
+      return json(200, { calls: [{ to: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63", data: "0x3c036a7e", value: "0", label: "Rate Arbolito" }] });
+    }
     if (path === "/autonomy/pause") {
       paused = !!body.paused;
       return json(200, { paused });

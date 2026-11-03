@@ -141,6 +141,8 @@ export interface AppCtx {
 
   receiptId: string | null;
   openReceipt(id: string): void;
+  /** Rate Arbolito (ERC-8004 feedback, 1–5 stars) for one of the user's receipts; true when sent. */
+  rateArbolito(receiptId: string, stars: number): Promise<boolean>;
 
   chat: { msgs: ChatMsg[]; recording: boolean; busy: boolean };
   chatText(text: string): void;

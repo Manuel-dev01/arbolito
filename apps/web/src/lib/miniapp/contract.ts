@@ -175,6 +175,11 @@ export const AutonomyPlanRequest = z.object({
   operatorDays: z.number().int().min(1).max(365),
 });
 export const CallsResponse = z.object({ calls: z.array(Call) });
+/**
+ * POST /api/miniapp/rate/prepare { account, receiptId, stars } → one call: ERC-8004 giveFeedback
+ * for Arbolito, signed by the wallet that made the conversion (its receipt is the evidence).
+ */
+export const RatePrepareRequest = z.object({ account: Address, receiptId: z.string().uuid(), stars: z.number().int().min(1).max(5) });
 /** GET /api/miniapp/autonomy/status?account= */
 export const AutonomyStatus = z.object({
   account: Address,

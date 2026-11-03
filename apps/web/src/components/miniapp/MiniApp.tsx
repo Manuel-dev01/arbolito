@@ -581,6 +581,23 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     showError(res.code);
   }, [ready, autoDraft.busy, setAutoDraft, onStage, refreshAuto, toast, t, go, showError]);
 
+  const rateArbolito = useCallback(
+    async (receiptId: string, stars: number) => {
+      if (!ready) return false;
+      sheetAmount.current = "★".repeat(stars);
+      const res = await executeCalls({ api: ready.api, wallet: ready.wallet, onStage }, () => ready.api.ratePrepare({ account: ready.account, receiptId, stars }));
+      if (res.kind === "done") {
+        toast(t.rateThanks);
+        return true;
+      }
+      if (res.kind === "cancelled") toast(t.toastCancelled);
+      else if (res.kind === "failed") toast(res.reason === "unknown" ? t.unknownB : t.errGeneric);
+      else showError(res.code);
+      return false;
+    },
+    [ready, onStage, toast, t, showError],
+  );
+
   const setPaused = useCallback(
     async (paused: boolean) => {
       if (!ready) return;
@@ -994,6 +1011,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     setAutoDraft,
     activateAuto: () => void activateAuto(),
     revokeAuto: () => void revokeAuto(),
+    rateArbolito,
     setPaused: (p) => void setPaused(p),
     receiptId,
     openReceipt: (id) => {

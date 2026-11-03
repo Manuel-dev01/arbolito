@@ -210,6 +210,11 @@ There are no USA₮/USDC or USA₮/USDm pools. Other wFIAT/quote pairs were not 
   - Host the registration JSON (endpoints, `x402Support`), then `register(uri)` to mint the identity NFT.
   - Add the returned agentId to the JSON.
   - `giveFeedback` tags: `starred`, `uptime`, `successRate`, `responseTime`. Self-feedback reverts.
+- **Reputation Registry on Celo is v2.0.0** (`getVersion()`, read 2026-11-03; implementation `0x16e0fa7f7c56b9a767e34b192b51f921be31da34` behind the proxy). Verified against the bytecode and by `eth_call`:
+  - `giveFeedback(uint256 agentId, int128 value, uint8 valueDecimals, string tag1, string tag2, string endpoint, string feedbackURI, bytes32 feedbackHash)` (selector `0x3c036a7e`). No `feedbackAuth`: any wallet can rate any agent.
+  - The agent's owner is refused: `Self-feedback not allowed` (simulated from ops for 9976).
+  - Arbolito rating another agent (ops → CeloFX #10) estimates 197,714 gas.
+  - Reads: `getSummary(agentId, clients[], tag1, tag2)`, `readAllFeedback(...)`. ABI in `packages/chain/src/reputation.ts`.
 - Self Agent ID registry (mainnet) 0xaC3DF9ABf80d0F5c020C06B04Cced27763355944.
   - SDK `SelfAgent.fetch()` signs requests.
   - Services verify with `SelfAgentVerifier` (age, OFAC, sybil limit).

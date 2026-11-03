@@ -23,6 +23,7 @@ import {
   QuoteResponse,
   RatesResponse,
   ReceiptResponse,
+  RatePrepareRequest,
   RevokePlanRequest,
   RuleCancelRequest,
   RuleConfirmRequest,
@@ -89,6 +90,8 @@ export interface ApiClient {
   autonomyStatus(account: string, candidates?: string[]): Promise<AutoStatus>;
   linkStatus(account: string): Promise<z.infer<typeof LinkStatusResponse>>;
   revokePlan(req: z.input<typeof RevokePlanRequest>): Promise<Calls>;
+  /** POST /api/miniapp/rate/prepare: ERC-8004 feedback for Arbolito, from the wallet that converted. */
+  ratePrepare(req: z.input<typeof RatePrepareRequest>): Promise<Calls>;
   /** TODO(contract): pausing "al instante, sin confirmar en MiniPay" needs a server endpoint. */
   autonomyPause(req: { account: string; paused: boolean; at: string; signature: string }): Promise<{ paused: boolean }>;
   chat(req: z.input<typeof ChatRequest>): Promise<ChatReply>;
@@ -181,6 +184,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
       call(AutonomyStatus, `/autonomy/status${q(account)}${candidates.length ? `&candidates=${candidates.slice(0, 50).join(",")}` : ""}`),
     linkStatus: (account) => call(LinkStatusResponse, `/link/status${q(account)}`),
     revokePlan: async (r) => call(CallsResponse, "/autonomy/revoke-plan", { method: "POST", body: req(RevokePlanRequest, r) }),
+    ratePrepare: async (r) => call(CallsResponse, "/rate/prepare", { method: "POST", body: req(RatePrepareRequest, r) }),
     autonomyPause: (req) => call(PauseResponse, "/autonomy/pause", { method: "POST", body: req }),
     chat: async (r) => call(ChatResponse, "/chat", { method: "POST", body: req(ChatRequest, r) }),
     linkConfirm: async (r) => call(LinkConfirmResponse, "/link/confirm", { method: "POST", body: req(LinkConfirmRequest, r) }),
