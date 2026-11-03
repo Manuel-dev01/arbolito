@@ -213,7 +213,7 @@ export const ChatRequest = z.object({
 /** A rule as the app shows it. A draft is turned on by signing `message` in MiniPay (POST /rules/confirm). */
 export const RuleCard = z.object({
   ruleId: z.string().uuid(),
-  kind: z.enum(["send", "split"]),
+  kind: z.enum(["send", "split", "guardian"]),
   status: z.enum(["draft", "active", "stopped"]),
   /** One line in the user's language. */
   description: z.string(),
@@ -225,7 +225,7 @@ export const RuleCard = z.object({
 /** GET /api/miniapp/rules?account= */
 export const RulesListResponse = z.object({
   rules: z.array(RuleCard),
-  runs: z.array(z.object({ ruleId: z.string().uuid(), kind: z.enum(["send", "split"]), status: z.string(), at: z.string(), txHashes: z.array(z.string()), error: z.string().nullable() })),
+  runs: z.array(z.object({ ruleId: z.string().uuid(), kind: z.enum(["send", "split", "guardian"]), status: z.string(), at: z.string(), txHashes: z.array(z.string()), error: z.string().nullable() })),
 });
 /** POST /api/miniapp/rules/confirm: the account's personal_sign over the rule's message. */
 export const RuleConfirmRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });

@@ -31,12 +31,31 @@ import {
   type SpendLedger,
 } from "@arbolito/chain";
 import { UniswapV3Adapter, erc20Abi, receivedInTx } from "@arbolito/router";
-import { describeRule, nextMonthlyRun, parseRule, sendTrigger, splitTrigger, usd, type Lang, type RuleSpec, type RuleSym, type SendParams, type SplitParams } from "./index";
+import {
+  decideGuardian,
+  describeRule,
+  guardianTrigger,
+  nextMonthlyRun,
+  parseRule,
+  sendTrigger,
+  splitTrigger,
+  usd,
+  type GuardianParams,
+  type GuardianSignal,
+  type GuardianSym,
+  type Lang,
+  type RuleSpec,
+  type RuleSym,
+  type SendParams,
+  type SplitParams,
+} from "./index";
 
 /** The storage the runner needs (the database in production, memory in tests). */
 export interface RunnerStore {
   dueSendRules(now: Date): Promise<StoredRule[]>;
   activeSplitRules(): Promise<StoredRule[]>;
+  /** Active guardian rules. Optional: absent means the runner has none to evaluate. */
+  activeGuardianRules?(): Promise<StoredRule[]>;
   claimRun(ruleId: string, trigger: string, amountIn: bigint | null): Promise<{ id: string } | null>;
   finishRun(runId: string, r: { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void>;
   setNextRun(ruleId: string, at: Date): Promise<void>;
@@ -75,6 +94,10 @@ export interface RunnerOptions {
   confirmations?: bigint;
   /** Optional extra caps on the operator's transactions (tests). Default none: the account's guard limits are the limits. */
   operatorCaps?: Caps;
+  /** The desk's signal for a guardian currency (fair price, measured carry, breaker). Null when unavailable. */
+  guardianSignal?: (sym: GuardianSym) => Promise<GuardianSignal | null>;
+  /** How often each guardian rule is evaluated. Default hourly. */
+  guardianEveryMs?: number;
 }
 
 /**
@@ -96,6 +119,8 @@ interface Plan {
   total: bigint;
   chunk: bigint;
   limitedBy?: string;
+  /** Formats an amount of the token spent, for messages. */
+  fmt: (atomic: bigint) => string;
 }
 
 const isPlan = (x: Outcome | Plan): x is Plan => "chunk" in x;
@@ -104,6 +129,16 @@ const USDT = TOKENS.USDT.address as Address;
 const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
 /** forno answers getLogs over at most 5,000 blocks. */
 const LOG_SPAN = 4_900n;
+
+const isUsdt = (token: Address) => token.toLowerCase() === USDT.toLowerCase();
+const tokenInfo = (token: Address) => Object.values(TOKENS).find((x) => x.address.toLowerCase() === token.toLowerCase());
+
+/** "US$ 1.00" for USDT, "1652.40 wARS" for other tokens. */
+function amountText(token: Address, atomic: bigint): string {
+  if (isUsdt(token)) return usdtText(atomic);
+  const t = tokenInfo(token);
+  return `${(Number(atomic) / 10 ** (t?.decimals ?? 18)).toFixed(2)} ${t?.symbol ?? token}`;
+}
 
 /** The guard-pinned pool fee between USDT and `sym`. */
 function feeTo(sym: RuleSym): number {
@@ -132,7 +167,7 @@ function failed(sent: Extract<Sent, { ok: false }>, prior: Hex[] = []): Outcome 
  * done: all of it · limited: part of it, the rest stayed in the account (limits, balance, or a later
  * piece failed) · partial: changed but not sent · failed · skipped: nothing moved.
  */
-type Outcome = { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountIn?: bigint; amountOut?: bigint; txHashes: Hex[]; error?: string; stop?: string };
+type Outcome = { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountIn?: bigint; amountOut?: bigint; txHashes: Hex[]; error?: string; stop?: string; why?: string };
 
 const MSG: Record<Lang, { done: string; limited: string; partial: string; skipped: string; failed: string; stopped: string }> = {
   es: { done: "Arbolito hizo tu regla", limited: "Arbolito hizo parte de tu regla, hasta tus límites (el resto quedó en tu cuenta)", partial: "Arbolito cambió pero no pudo enviar (la plata quedó en tu cuenta)", skipped: "Arbolito no pudo hacer tu regla esta vez", failed: "Falló tu regla; no se movió plata", stopped: "Arbolito pausó tu regla" },
@@ -145,6 +180,8 @@ const usdtText = (micros: bigint) => `US$ ${(Number(micros) / 1e6).toFixed(2)}`;
 export class RulesRunner {
   private busy = false;
   private readonly uni: UniswapV3Adapter;
+  /** When each guardian rule was last evaluated (ms). */
+  private readonly guardianSeen = new Map<string, number>();
 
   constructor(private readonly o: RunnerOptions) {
     this.uni = new UniswapV3Adapter(o.publicClient);
@@ -164,6 +201,7 @@ export class RulesRunner {
     try {
       for (const r of await this.o.store.dueSendRules(this.now())) await this.safely(r, () => this.runSend(r));
       for (const r of await this.o.store.activeSplitRules()) await this.safely(r, () => this.scanSplit(r));
+      for (const r of (await this.o.store.activeGuardianRules?.()) ?? []) await this.safely(r, () => this.runGuardian(r));
     } catch (e) {
       this.log(`tick failed: ${(e as Error).message}`);
     } finally {
@@ -231,14 +269,14 @@ export class RulesRunner {
           amountIn: done,
           amountOut: out + (partial ? (r.amountOut ?? 0n) : 0n),
           txHashes: hashes,
-          error: `${usdtText(done)} of ${usdtText(plan.want)} done, then: ${r.error ?? r.status}`,
+          error: `${plan.fmt(done)} of ${plan.fmt(plan.want)} done, then: ${r.error ?? r.status}`,
           ...(r.stop ? { stop: r.stop } : {}),
         };
       }
       done += amount;
       out += r.amountOut ?? 0n;
     }
-    if (done < plan.want) return { status: "limited", amountIn: done, amountOut: out, txHashes: hashes, error: `${usdtText(done)} of ${usdtText(plan.want)}, capped by ${plan.limitedBy}` };
+    if (done < plan.want) return { status: "limited", amountIn: done, amountOut: out, txHashes: hashes, error: `${plan.fmt(done)} of ${plan.fmt(plan.want)}, capped by ${plan.limitedBy}` };
     return { status: "done", amountIn: done, amountOut: out, txHashes: hashes };
   }
 
@@ -273,21 +311,57 @@ export class RulesRunner {
     }
   }
 
+  // ── guardian ────────────────────────────────────────────────────────────
+  /**
+   * Evaluates a guardian rule (at most once per guardianEveryMs): reads the account's balances and
+   * the desk's signal, decides, and when a move is due claims it (once per direction per day) and
+   * swaps through the guard in pieces within the account's limits. A hold claims nothing.
+   */
+  private async runGuardian(r: StoredRule) {
+    const now = this.now();
+    const last = this.guardianSeen.get(r.id);
+    if (last !== undefined && now.getTime() - last < (this.o.guardianEveryMs ?? 3_600_000)) return;
+    this.guardianSeen.set(r.id, now.getTime());
+    const spec = parseRule(r.kind, r.params) as { kind: "guardian"; params: GuardianParams };
+    const p = spec.params;
+    const signal = await this.o.guardianSignal?.(p.sym);
+    if (!signal) return this.log(`rule ${r.id} (guardian): no signal from the desk; holding`);
+    const account = r.account as Address;
+    const token = TOKENS[p.sym].address as Address;
+    const c = this.o.publicClient;
+    const [wfiat, usdt] = await Promise.all([
+      c.readContract({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [account] }),
+      c.readContract({ address: USDT, abi: erc20Abi, functionName: "balanceOf", args: [account] }),
+    ]);
+    const d = decideGuardian(p, signal, { wfiat, usdt });
+    if (d.action === "hold") return this.log(`rule ${r.id} (guardian ${p.sym}): hold, ${d.reason}`);
+    const run = await this.o.store.claimRun(r.id, guardianTrigger(now, d.action), d.amountIn);
+    if (!run) return; // this direction already ran today
+    const [from, to] = d.action === "protect" ? [token, USDT] : [USDT, token];
+    const out = await this.preflight(account, d.amountIn, undefined, from)
+      .then((plan) => (isPlan(plan) ? this.inChunks(plan, (amount) => this.swapPair(account, from, to, amount, (d.usdMicros * amount) / d.amountIn)) : plan))
+      .catch(beforeAnyTx);
+    const verb = d.action === "protect" ? `moved ${p.sym} to dollars` : `moved dollars back to ${p.sym}`;
+    await this.finish(r, spec, run.id, { ...out, why: `${verb}: ${d.reason}` });
+  }
+
   // ── building blocks ─────────────────────────────────────────────────────
   /**
    * Checks the guard and the wallet before spending gas: a "skipped" outcome, or the plan for the
    * run. A rule bigger than the per-transaction limit runs in pieces; one bigger than what's left
    * today (or than the balance or allowance) runs as far as that and says why it stopped there.
    */
-  private async preflight(account: Address, want: bigint, contact?: Address): Promise<Outcome | Plan> {
+  private async preflight(account: Address, want: bigint, contact?: Address, token: Address = USDT): Promise<Outcome | Plan> {
     const { publicClient: c, guard, operator } = this.o;
     const [settings, op, budget, balance, allowance] = await Promise.all([
       readGuardV2Settings(c, guard, account),
       readGuardV2Operator(c, guard, account),
-      readGuardV2Budget(c, guard, account, USDT),
-      c.readContract({ address: USDT, abi: erc20Abi, functionName: "balanceOf", args: [account] }),
-      c.readContract({ address: USDT, abi: erc20Abi, functionName: "allowance", args: [account, guard] }),
+      readGuardV2Budget(c, guard, account, token),
+      c.readContract({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [account] }),
+      c.readContract({ address: token, abi: erc20Abi, functionName: "allowance", args: [account, guard] }),
     ]);
+    const fmt = (a: bigint) => amountText(token, a);
+    const sym = tokenInfo(token)?.symbol ?? token;
     const stop = (why: string): Outcome => ({ status: "skipped", txHashes: [], error: why, stop: why });
     if (!settings.configured) return stop("autonomy is not set up for this account");
     if (!op.active || op.operator.toLowerCase() !== operator.address.toLowerCase()) return stop("Arbolito's permission expired or was revoked");
@@ -307,32 +381,40 @@ export class RulesRunner {
         limitedBy = why;
       }
     };
-    cut(dayLeft, `your daily limit (${usdtText(budget.maxPerDay)} a day)`);
-    cut(balance, "the USDT in your account");
+    cut(dayLeft, `your daily limit (${fmt(budget.maxPerDay)} a day)`);
+    cut(balance, `the ${sym} in your account`);
     cut(allowance, "the guard's allowance (renew the permission)");
     cut(chunk * BigInt(MAX_CHUNKS_PER_RUN), `${MAX_CHUNKS_PER_RUN} transactions per run`);
     if (total <= 0n) {
       if (dayLeft === 0n) return skip("today's limit is used up");
-      if (balance === 0n) return skip("not enough USDT in the account");
+      if (balance === 0n) return skip(`not enough ${sym} in the account`);
       return skip("the guard's allowance ran out; renew the permission");
     }
-    return { want, total, chunk, limitedBy };
+    return { want, total, chunk, limitedBy, fmt };
   }
 
-  private async swap(account: Address, to: RuleSym, amountIn: bigint): Promise<Outcome> {
-    const token = TOKENS[to].address as Address;
-    const path = encodeV3Path([USDT, token], [feeTo(to)]);
+  private swap(account: Address, to: RuleSym, amountIn: bigint): Promise<Outcome> {
+    return this.swapPair(account, USDT, TOKENS[to].address as Address, amountIn, amountIn);
+  }
+
+  /** One guarded swap between USDT and a guard token, either direction. `usdMicros` is for the ledger. */
+  private async swapPair(account: Address, from: Address, to: Address, amountIn: bigint, usdMicros: bigint): Promise<Outcome> {
+    const other = isUsdt(from) ? to : from;
+    const sym = tokenInfo(other)?.symbol as RuleSym | undefined;
+    if (!sym) return { status: "skipped", txHashes: [], error: `no guard pool for ${other}` };
+    const path = encodeV3Path([from, to], [feeTo(sym)]);
     const [floor, quote] = await Promise.all([
       readGuardV2MinOutFloor(this.o.publicClient, this.o.guard, account, path, amountIn),
-      this.uni.quote({ tokenIn: USDT, tokenOut: token, amountIn, taker: account, blockNumber: await this.o.publicClient.getBlockNumber() }),
+      this.uni.quote({ tokenIn: from, tokenOut: to, amountIn, taker: account, blockNumber: await this.o.publicClient.getBlockNumber() }),
     ]);
     if (!quote) return { status: "skipped", txHashes: [], error: "no Uniswap quote" };
     const slip = BigInt(this.o.slippageBps ?? 50);
     const minOut = (quote.amountOut * (10_000n - slip)) / 10_000n > floor ? (quote.amountOut * (10_000n - slip)) / 10_000n : floor;
     if (minOut > quote.amountOut) return { status: "skipped", txHashes: [], error: "the market pays less than the guard's price floor right now" };
-    const sent = await this.send(encodeGuardV2SwapFor(account, path, amountIn, minOut), amountIn, `rule swap USDT→${to}`);
+    const label = `${isUsdt(from) ? "USDT" : sym}→${isUsdt(to) ? "USDT" : sym}`;
+    const sent = await this.send(encodeGuardV2SwapFor(account, path, amountIn, minOut), usdMicros, `rule swap ${label}`);
     if (!sent.ok) return failed(sent);
-    return { status: "done", amountOut: receivedInTx(sent.receipt!, token, account), txHashes: [sent.hash] };
+    return { status: "done", amountOut: receivedInTx(sent.receipt!, to, account), txHashes: [sent.hash] };
   }
 
   /** One guarded operator transaction. */
@@ -367,11 +449,12 @@ export class RulesRunner {
     await this.o.store.finishRun(runId, { status: out.status, amountOut: out.amountOut ?? null, txHashes: out.txHashes, error: out.error ?? null });
     if (out.stop) await this.o.store.stopRule(r.id, out.stop);
     const lang = (["es", "pt", "en"].includes(r.lang) ? r.lang : "es") as Lang;
-    this.log(`rule ${r.id} (${r.kind}) → ${out.status}${out.error ? `: ${out.error}` : ""}${out.txHashes.length ? ` ${out.txHashes.join(" ")}` : ""}`);
+    this.log(`rule ${r.id} (${r.kind}) → ${out.status}${out.why ? ` (${out.why})` : ""}${out.error ? `: ${out.error}` : ""}${out.txHashes.length ? ` ${out.txHashes.join(" ")}` : ""}`);
     if (!this.o.notify) return;
     const m = MSG[lang];
     const head = out.stop ? m.stopped : out.status === "done" ? m.done : out.status === "limited" ? m.limited : out.status === "partial" ? m.partial : out.status === "skipped" ? m.skipped : m.failed;
     const lines = [`${head}: ${describeRule(spec, lang)}`];
+    if (out.why) lines.push(out.why);
     if (incoming !== undefined) lines.push(`(${usd(incoming, lang)} ${lang === "en" ? "arrived" : lang === "pt" ? "chegaram" : "llegaron"})`);
     if (out.error) lines.push(out.error);
     for (const h of out.txHashes) lines.push(`https://celoscan.io/tx/${h}`);

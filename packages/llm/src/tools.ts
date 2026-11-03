@@ -110,6 +110,11 @@ export const toolSchemas = {
       .refine((x) => /[1-9]/.test(x), "must be greater than zero")
       .describe("Smallest incoming USDT payment that counts as pay (smaller ones are ignored)."),
   }),
+  prepare_peso_guardian: z.strictObject({
+    currency: z.enum(["wARS", "wBRL"]).describe("The savings currency to guard: wARS (Argentine pesos) or wBRL (Brazilian reais)."),
+    baseDollarPercent: z.number().int().min(0).max(100).describe("Share of those savings to keep in dollars when the currency is stable, in percent (default 50)."),
+    bandPoints: z.number().int().min(2).max(30).optional().describe("Rebalance only when the dollar share drifts more than this many points from its target (default 5)."),
+  }),
   list_rules: z.strictObject({}),
   connect_minipay: z.strictObject({}),
   get_limits: z.strictObject({}),
@@ -137,9 +142,11 @@ const descriptions: Record<ToolName, string> = {
     "Draft a monthly automatic payment to a saved contact (e.g. rent, sending money to family), optionally converted to pesos or reais. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on, with that contact allowed there; every run stays within the user's limits.",
   prepare_payday_split:
     "Draft a payday rule: when a USDT payment of at least minIncomingUsd arrives from someone else, change percent of it into another currency. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on.",
+  prepare_peso_guardian:
+    "Draft a peso guardian: Arbolito keeps about baseDollarPercent of the user's pesos/reais + dollars savings in dollars, more when the currency is losing value against the dollar and less when it is gaining (Arbolito Desk's measured one-week trend, up to 20 points either way), and rebalances when the share drifts past the band, at most once a day each way. Creates a rule card the user turns on by signing it in MiniPay; nothing runs until then. Needs \"Let Arbolito act for you\" on, with limits in that currency and in dollars.",
   connect_minipay:
     "Connect (or reconnect) the user's MiniPay wallet to this Telegram chat: sends them a message with a fresh 4-digit code and where to type it in MiniPay. Use it whenever the user asks to connect, link, reconnect or for a code. Don't invent or repeat codes yourself.",
-  list_rules: "List the user's automatic rules (monthly payments, payday splits), their status and the latest runs. Read-only.",
+  list_rules: "List the user's automatic rules (monthly payments, payday splits, peso guardians), their status and the latest runs. Read-only.",
   get_limits: "Read the limits that apply to the user: none from Arbolito on conversions they confirm themselves, and, for automatic rules, the per-operation and daily limits the user set onchain (and how much is used today). Read-only. Limits can't be changed here.",
   deposit_info: "Show how to deposit into the user's Arbolito wallet (address, network, supported tokens).",
   withdraw_guide: "Explain how to cash out to a local bank account (off-ramp guide).",

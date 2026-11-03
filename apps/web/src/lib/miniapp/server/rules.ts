@@ -60,11 +60,27 @@ async function checkSendFitsLimits(deps: MiniappDeps, account: Address, amountUs
   }
 }
 
+/**
+ * A guardian moves the currency both ways through the guard, so the account needs a limit for it
+ * (and for USDT): without one the guard would refuse every move.
+ */
+async function checkGuardianLimits(deps: MiniappDeps, account: Address, sym: "wARS" | "wBRL") {
+  if (!deps.guard) return;
+  const [fiat, usdt] = await Promise.all([
+    readGuardV2Budget(deps.chain, deps.guard.address, account, TOKENS[sym].address as Address),
+    readGuardV2Budget(deps.chain, deps.guard.address, account, TOKENS.USDT.address as Address),
+  ]);
+  if (fiat.maxPerTx === 0n || usdt.maxPerTx === 0n) {
+    throw badRequest(`The guardian moves ${sym} and dollars for you, so both need a limit. Turn on “Let Arbolito act for you” again with limits in ${sym === "wARS" ? "pesos" : "reais"} and dollars.`);
+  }
+}
+
 /** Creates a draft (nothing runs until the account signs it). */
 export async function draftRule(deps: MiniappDeps, account: Address, lang: string, spec: RuleSpec): Promise<z.infer<typeof RuleCard>> {
   const acct = account.toLowerCase() as Address;
   await checkAutonomy(deps, acct, spec.kind === "send" ? (spec.params.contact as Address) : undefined);
   if (spec.kind === "send") await checkSendFitsLimits(deps, acct, BigInt(spec.params.amountUsdt));
+  if (spec.kind === "guardian") await checkGuardianLimits(deps, acct, spec.params.sym);
   const store = deps.store();
   const live = (await store.listRules(acct)).filter((r) => r.status === "active");
   if (live.length >= MAX_ACTIVE_RULES) throw badRequest(`You already have ${MAX_ACTIVE_RULES} rules on. Cancel one first.`);
@@ -107,6 +123,6 @@ export async function listRulesRes(deps: MiniappDeps, account: Address): Promise
   const [rows, runs] = await Promise.all([store.listRules(account.toLowerCase()), store.ruleRuns(account.toLowerCase(), 20)]);
   return {
     rules: rows.map(toCard),
-    runs: runs.map((r) => ({ ruleId: r.ruleId, kind: r.kind as "send" | "split", status: r.status, at: r.createdAt.toISOString(), txHashes: (r.txHashes as string[]) ?? [], error: r.error })),
+    runs: runs.map((r) => ({ ruleId: r.ruleId, kind: r.kind as "send" | "split" | "guardian", status: r.status, at: r.createdAt.toISOString(), txHashes: (r.txHashes as string[]) ?? [], error: r.error })),
   };
 }

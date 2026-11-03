@@ -66,6 +66,10 @@ export async function activeSplitRules(db: Db): Promise<RuleRow[]> {
   return db.select().from(rules).where(and(eq(rules.status, "active"), eq(rules.kind, "split")));
 }
 
+export async function activeGuardianRules(db: Db): Promise<RuleRow[]> {
+  return db.select().from(rules).where(and(eq(rules.status, "active"), eq(rules.kind, "guardian")));
+}
+
 export async function setNextRun(db: Db, id: string, at: Date): Promise<void> {
   await db.update(rules).set({ nextRunAt: at }).where(and(eq(rules.id, id), eq(rules.status, "active")));
 }
@@ -92,6 +96,18 @@ export async function finishRun(db: Db, id: string, r: { status: "done" | "limit
     .update(ruleRuns)
     .set({ status: r.status, amountOut: r.amountOut?.toString() ?? null, txHashes: r.txHashes, error: r.error?.slice(0, 1000) ?? null })
     .where(eq(ruleRuns.id, id));
+}
+
+/** The latest runs that moved money (they have a transaction), across all accounts, newest first: the public record on /agent. */
+export async function recentRuleRunsWithTx(db: Db, limit = 50): Promise<(RuleRunRow & { kind: string; account: string })[]> {
+  return db
+    .select({ run: ruleRuns, kind: rules.kind, account: rules.account })
+    .from(ruleRuns)
+    .innerJoin(rules, eq(ruleRuns.ruleId, rules.id))
+    .where(sql`jsonb_array_length(${ruleRuns.txHashes}) > 0`)
+    .orderBy(desc(ruleRuns.createdAt))
+    .limit(limit)
+    .then((rows) => rows.map((r) => ({ ...r.run, kind: r.kind, account: r.account })));
 }
 
 /** The latest runs of one account's rules, newest first. */

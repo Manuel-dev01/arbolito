@@ -44,7 +44,7 @@ describe("rate prepare", () => {
     const [agentId, value, decimals, tag1, tag2, , uri, hash] = args;
     expect([agentId, value, decimals, tag1, tag2]).toEqual([9976n, 80n, 0, "conversion", "USDT-wBRL"]);
     expect(uri).toMatch(new RegExp(`/r/${ID}$`));
-    expect(hash).toBe(keccak256(toBytes(uri)));
+    expect(hash).toBe(keccak256(toBytes(uri as string)));
   });
 
   it("refuses a wallet that didn't make the conversion", async () => {

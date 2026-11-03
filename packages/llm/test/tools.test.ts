@@ -18,6 +18,7 @@ describe("tool definitions", () => {
         "list_rules",
         "prepare_convert",
         "prepare_payday_split",
+        "prepare_peso_guardian",
         "prepare_scheduled_send",
         "prepare_send",
         "withdraw_guide",

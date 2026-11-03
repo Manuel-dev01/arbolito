@@ -3,11 +3,14 @@
  * turn it on, and when it runs. Pure; shared by the Mini App backend (drafts, confirmation) and
  * the runner (apps/agent/src/rules-runner.ts), which executes rules through ArbolitoGuard v2.
  *
- * Two kinds, both spending USDT (what MiniPay users hold):
- * - send:  every month on `dayOfMonth`, pay a saved contact `amountUsdt` worth of `receive`
- *          (a swap first when `receive` isn't USDT; the contact gets exactly what the swap returned).
- * - split: when at least `minIncomingUsdt` arrives in one transfer sent by someone else, change
- *          `percent` of it into `to`.
+ * Three kinds:
+ * - send:     every month on `dayOfMonth`, pay a saved contact `amountUsdt` worth of `receive`
+ *             (a swap first when `receive` isn't USDT; the contact gets exactly what the swap returned).
+ * - split:    when at least `minIncomingUsdt` arrives in one transfer sent by someone else, change
+ *             `percent` of it into `to`.
+ * - guardian: keep about `baseDollarPct`% of the account's `sym` + USDT savings in dollars, more
+ *             when `sym` is losing value against the dollar and less when it is gaining (the
+ *             desk's measured carry), and rebalance when the share drifts past `bandPct` points.
  * The guard bounds every run: per-transaction and daily caps, allowlisted contacts, a TWAP floor.
  */
 import { getAddress, type Address } from "viem";
@@ -40,12 +43,26 @@ export const SplitParams = z.strictObject({
 });
 export type SplitParams = z.infer<typeof SplitParams>;
 
-export type RuleKind = "send" | "split";
-export type RuleSpec = { kind: "send"; params: SendParams } | { kind: "split"; params: SplitParams };
+/** Currencies the guardian manages: those with a guard-pinned Uniswap pool against USDT. */
+export const GUARDIAN_SYMS = ["wARS", "wBRL"] as const;
+export type GuardianSym = (typeof GUARDIAN_SYMS)[number];
+
+export const GuardianParams = z.strictObject({
+  sym: z.enum(GUARDIAN_SYMS),
+  /** Share of the savings to hold in dollars when the currency is flat against the dollar, percent. */
+  baseDollarPct: z.number().int().min(0).max(100),
+  /** Rebalance only when the dollar share is further than this from its target, percentage points. */
+  bandPct: z.number().int().min(2).max(30),
+});
+export type GuardianParams = z.infer<typeof GuardianParams>;
+
+export type RuleKind = "send" | "split" | "guardian";
+export type RuleSpec = { kind: "send"; params: SendParams } | { kind: "split"; params: SplitParams } | { kind: "guardian"; params: GuardianParams };
 
 export function parseRule(kind: string, params: unknown): RuleSpec {
   if (kind === "send") return { kind, params: SendParams.parse(params) };
   if (kind === "split") return { kind, params: SplitParams.parse(params) };
+  if (kind === "guardian") return { kind, params: GuardianParams.parse(params) };
   throw new Error(`unknown rule kind ${kind}`);
 }
 
@@ -64,6 +81,97 @@ export function nextMonthlyRun(dayOfMonth: number, after: Date): Date {
 export const sendTrigger = (runAt: Date) => `send:${runAt.toISOString().slice(0, 7)}`;
 /** The run key for a split: one run per incoming transfer (tx hash and log index). */
 export const splitTrigger = (txHash: string, logIndex: number) => `split:${txHash.toLowerCase()}:${logIndex}`;
+/** The run key for a guardian move: at most one per rule, direction and UTC day. */
+export const guardianTrigger = (at: Date, action: "protect" | "reenter") => `guardian:${action}:${at.toISOString().slice(0, 10)}`;
+
+// ── Guardian decisions (pure) ──────────────────────────────────────────────────
+
+/** Points of dollar share added per bps/day the currency loses against the dollar (about +2 points per 0.3% a month). */
+export const GUARDIAN_TILT_PP_PER_BPS_DAY = 2;
+/** The carry moves the target at most this far from the user's base, percentage points. */
+export const GUARDIAN_MAX_TILT_PP = 20;
+/** Savings below this (micro-USD) aren't managed; moves below this aren't made. */
+export const GUARDIAN_MIN_SAVINGS_MICROS = 2_000_000n;
+export const GUARDIAN_MIN_MOVE_MICROS = 500_000n;
+
+/** What the guardian reads from Arbolito Desk's feed for one currency. */
+export interface GuardianSignal {
+  /** Local currency per US$ (the desk's fair value). */
+  fiatPerUsd: number;
+  /** Depreciation against the dollar, bps per day (positive = losing value), measured over the last week. */
+  carryBpsPerDay: number;
+  carrySource: "measured" | "prior";
+  /** The desk's breaker is holding this currency: its price sources disagree. */
+  holding: boolean;
+}
+
+/** The dollar share to aim for, percent: the base tilted by the carry, clamped to 20 points either way and to 0–100. */
+export function guardianTargetPct(baseDollarPct: number, carryBpsPerDay: number): number {
+  const tilt = Math.max(-GUARDIAN_MAX_TILT_PP, Math.min(GUARDIAN_MAX_TILT_PP, carryBpsPerDay * GUARDIAN_TILT_PP_PER_BPS_DAY));
+  return Math.round(Math.max(0, Math.min(100, baseDollarPct + tilt)) * 10) / 10;
+}
+
+export type GuardianDecision =
+  | { action: "hold"; reason: string; targetPct?: number; actualPct?: number }
+  | {
+      /** protect sells `sym` for USDT; reenter sells USDT for `sym`. */
+      action: "protect" | "reenter";
+      /** Atomic units of the token sold. */
+      amountIn: bigint;
+      usdMicros: bigint;
+      targetPct: number;
+      actualPct: number;
+      reason: string;
+    };
+
+/** wFIAT (18 decimals) to micro-USD at `fiatPerUsd`. */
+export function wfiatToUsdMicros(amount: bigint, fiatPerUsd: number): bigint {
+  const rateMicro = BigInt(Math.round(fiatPerUsd * 1e6));
+  return rateMicro > 0n ? (amount * 1_000_000n) / rateMicro / 10n ** 12n : 0n;
+}
+
+/** micro-USD to wFIAT (18 decimals) at `fiatPerUsd`. */
+export function usdMicrosToWfiat(usdMicros: bigint, fiatPerUsd: number): bigint {
+  return usdMicros * BigInt(Math.round(fiatPerUsd * 1e6)) * 10n ** 6n;
+}
+
+const monthly = (bpsPerDay: number) => ((Math.abs(bpsPerDay) * 30) / 100).toFixed(1);
+
+/**
+ * Where the account's `sym` + USDT savings should be, and the move that gets them there. Holds when
+ * the desk's sources disagree, when the savings are too small, or when the share is inside the band.
+ */
+export function decideGuardian(p: GuardianParams, s: GuardianSignal, bal: { wfiat: bigint; usdt: bigint }): GuardianDecision {
+  if (s.holding) return { action: "hold", reason: "price sources disagree right now (the desk's breaker is on)" };
+  if (!(s.fiatPerUsd > 0)) return { action: "hold", reason: "no fair price" };
+  const total = wfiatToUsdMicros(bal.wfiat, s.fiatPerUsd) + bal.usdt;
+  if (total < GUARDIAN_MIN_SAVINGS_MICROS) return { action: "hold", reason: "savings too small to manage" };
+  const targetPct = guardianTargetPct(p.baseDollarPct, s.carryBpsPerDay);
+  const actualBps = (bal.usdt * 10_000n) / total;
+  const targetBps = BigInt(Math.round(targetPct * 100));
+  const actualPct = Number(actualBps) / 100;
+  const band = BigInt(p.bandPct * 100);
+  const trend =
+    s.carryBpsPerDay > 0
+      ? `${p.sym} is losing ${monthly(s.carryBpsPerDay)}% a month against the dollar`
+      : s.carryBpsPerDay < 0
+        ? `${p.sym} is gaining ${monthly(s.carryBpsPerDay)}% a month against the dollar`
+        : `${p.sym} is flat against the dollar`;
+  const basis = s.carrySource === "measured" ? "measured over the last week" : "assumed, not enough history yet";
+  const reason = `${trend} (${basis}), so the target is ${targetPct}% in dollars; you held ${actualPct}%.`;
+  const move = (diffBps: bigint) => (diffBps * total) / 10_000n;
+  if (actualBps + band < targetBps) {
+    const usdMicros = move(targetBps - actualBps);
+    if (usdMicros < GUARDIAN_MIN_MOVE_MICROS) return { action: "hold", reason: "move too small", targetPct, actualPct };
+    return { action: "protect", amountIn: usdMicrosToWfiat(usdMicros, s.fiatPerUsd), usdMicros, targetPct, actualPct, reason };
+  }
+  if (actualBps > targetBps + band) {
+    const usdMicros = move(actualBps - targetBps);
+    if (usdMicros < GUARDIAN_MIN_MOVE_MICROS) return { action: "hold", reason: "move too small", targetPct, actualPct };
+    return { action: "reenter", amountIn: usdMicros, usdMicros, targetPct, actualPct, reason };
+  }
+  return { action: "hold", reason: `inside the band (${actualPct}% in dollars, target ${targetPct}% within ${p.bandPct} points)`, targetPct, actualPct };
+}
 
 export type Lang = "es" | "pt" | "en";
 
@@ -84,6 +192,13 @@ export function usd(atomicUsdt: string | bigint, lang: Lang): string {
 
 /** One line describing the rule, in the user's language (shown on cards and in lists). */
 export function describeRule(r: RuleSpec, lang: Lang): string {
+  if (r.kind === "guardian") {
+    const p = r.params;
+    const cur = NAME[lang][p.sym];
+    if (lang === "es") return `Guardián de tus ${cur}: mantener cerca del ${p.baseDollarPct}% de tus ahorros en dólares (más si se devalúan, menos si se aprecian) y reequilibrar cuando se desvíe más de ${p.bandPct} puntos.`;
+    if (lang === "pt") return `Guardião dos seus ${cur}: manter perto de ${p.baseDollarPct}% das suas economias em dólares (mais se desvalorizarem, menos se valorizarem) e reequilibrar quando desviar mais de ${p.bandPct} pontos.`;
+    return `Guardian of your ${cur}: keep about ${p.baseDollarPct}% of your savings in dollars (more when they lose value, less when they gain) and rebalance when it drifts more than ${p.bandPct} points.`;
+  }
   if (r.kind === "send") {
     const p = r.params;
     const what = NAME[lang][p.receive];

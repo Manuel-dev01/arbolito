@@ -145,6 +145,15 @@ export function buildChatHandlers(
       }
     },
 
+    async prepare_peso_guardian(args) {
+      try {
+        const spec = parseRule("guardian", { sym: args.currency, baseDollarPct: args.baseDollarPercent, bandPct: args.bandPoints ?? 5 });
+        return ruleResult(await draftRule(deps, account, lang, spec));
+      } catch (err) {
+        return asToolError(err);
+      }
+    },
+
     async list_rules() {
       const { rules, runs } = await listRulesRes(deps, account);
       return { data: { rules: rules.map((r) => ({ id: r.ruleId, status: r.status, rule: r.description, nextRunAt: r.nextRunAt, stoppedReason: r.stoppedReason })), latestRuns: runs.slice(0, 5) } };

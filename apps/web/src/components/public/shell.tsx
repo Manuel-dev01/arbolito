@@ -59,6 +59,7 @@ export function Shell({ lang, path, children, size = "m" }: { lang: Lang; path: 
               ))}
             </div>
             <nav className="pie-links" aria-label={t.footer.links}>
+              <a href={withLang("/agent", lang)}>{t.nav.agent}</a>
               <a href={withLang("/metrics", lang)}>{t.nav.metrics}</a>
               <a href={anchor("recibo")}>{t.nav.receipts}</a>
               <a href={withLang("/desk", lang)}>{t.nav.desk}</a>
