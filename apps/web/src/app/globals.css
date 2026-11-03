@@ -1,6 +1,6 @@
 /*
- * Public site styles (landing, /r/:id, /metrics, /desk), per design/Arbolito Landing.dc.html and
- * design/Arbolito Design System.dc.html. Type, spacing and shape come from tokens.css;
+ * Public site styles (landing, /r/:id, /metrics, /desk), per the Landing design and
+ * the design system. Type, spacing and shape come from tokens.css;
  * colours are pinned to the light "mix" skin (see below). Everything except the element base is scoped under `.pub`
  * (the public Shell's root), so it never leaks into the Mini App under /app.
  *
@@ -2042,7 +2042,7 @@ body:has(.pub) {
 }
 
 /* ───────────────────────────────────────── 00 story: "Un día en la esquina"
-   design/Origin Story 2a Spec.dc.html. One variable, --p (0..1, story-scroll.tsx), drives every
+   the Origin Story 2a Spec design. One variable, --p (0..1, story-scroll.tsx), drives every
    ramp: r(a, b) = clamp(0, (p − a) / (b − a), 1); moves use the eased --me. The canvas is drawn at
    its breakpoint's design size (--W × --H) and scaled to fit (--s) below the sticky nav (--navh).
    Default (no JS, reduced motion, before hydration): the static layout. */

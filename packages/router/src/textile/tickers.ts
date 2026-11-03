@@ -3,7 +3,7 @@ import { loadEnv } from "@arbolito/config";
 
 /**
  * Textile public tickers (no auth), CoinGecko-exchange style: GET {TEXTILE_PUBLIC_BASE}/tickers.
- * Shape per PLAN.md notes (ticker_id, bid, ask). Parsed defensively: if the live shape
+ * Shape: ticker_id, bid, ask. Parsed defensively: if the live shape
  * differs, this returns null rather than guessing. Re-verify once the domain is reachable.
  */
 const num = z.union([z.number(), z.string()]).transform((v) => Number(v)).pipe(z.number().finite());

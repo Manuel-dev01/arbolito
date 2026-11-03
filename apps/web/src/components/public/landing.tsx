@@ -178,7 +178,7 @@ export function Hero({ lang, showcase, live, ticker, quote }: { lang: Lang; show
 }
 
 // ─────────────────────────────────────────────────────────────── 00 la historia
-// "Un día en la esquina" (design/Origin Story 2a Spec.dc.html): one day on Florida y Corrientes,
+// "Un día en la esquina" (the Origin Story 2a Spec design): one day on Florida y Corrientes,
 // morning to dawn. The haggle, the count, seven $100 notes folding into the tree, then the same
 // haggle as a chat with the digital arbolito. Every motion is a function of --p (see globals.css).
 

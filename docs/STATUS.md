@@ -37,12 +37,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **2026-10-09: LLM provider is DeepSeek, not Anthropic** (founder). `LLM_PROVIDER=deepseek`, OpenAI-compatible API at `https://api.deepseek.com`, models verified via `GET /models` on 2026-10-09: **`deepseek-flash`** (agent: fast, cheap) and **`deepseek-v4-pro`** (risk officer). The older names `deepseek-chat`/`deepseek-reasoner` are not served. This supersedes the Claude models in MASTER_PROMPT §2. Voice notes use Groq `whisper-large-v3-turbo` (key verified). Telegram bot: **@arbolitoo_bot** (token verified via getMe).
 
 ## Day 0 checklist
-- [ ] Textile email sent ([draft](06-outreach-drafts.md#1-textile-api-key-and-filler-onboarding)). **Less critical now:** taker paths are keyless and maker enrollment is self-serve (`/v2/maker/enroll`). Still ask how "quoted volume" is measured.
+- [ ] Textile email sent (draft kept internal). **Less critical now:** taker paths are keyless and maker enrollment is self-serve (`/v2/maker/enroll`). Still ask how "quoted volume" is measured.
 - [ ] x402.celo.org API key
 - [ ] `npx @celo/buy setup` done; ~$10 USA₮ funded; 1 browser session + 1 X search tested
 - [ ] Ops wallet funded; test swaps into wARS and wBRL done (record slippage below)
 - [ ] Telegram bot handle reserved; domain reserved
-- [ ] Kickoff questions asked ([draft](06-outreach-drafts.md#2-kickoff-questions-for-organizers))
+- [ ] Kickoff questions asked (draft kept internal)
 
 ## Phase 1 exit criteria
 - [x] `pnpm verify:addresses` green: **67/67** at block 79491985. It covers tokens, pools (+ `factory.getPool`), periphery `factory()`, fee adapters vs FeeCurrencyDirectory, and code presence.
@@ -459,7 +459,7 @@ Funded by the founder with 6.9 USDT + 2.73 CELO. `verify:addresses` 68/68 before
 
 ### 2026-10-09: Phase 1 build block (steps 1–9)
 **Shipped (commits `cda1065`…):**
-- **Scaffold:** pnpm monorepo (apps/agent, fx-api, mcp, desk, web; packages/config, chain, router, proof, buy-client, x402, db, llm), strict TS, Vitest unit and fork projects, Foundry + forge-std, zod env schema (a test keeps it in sync with `.env.example`). Added [07-keys-setup.md](07-keys-setup.md).
+- **Scaffold:** pnpm monorepo (apps/agent, fx-api, mcp, desk, web; packages/config, chain, router, proof, buy-client, x402, db, llm), strict TS, Vitest unit and fork projects, Foundry + forge-std, zod env schema (a test keeps it in sync with `.env.example`). Added 07-keys-setup.md.
 - **`packages/config` + `pnpm verify:addresses`:** 67/67 green. New verified facts recorded in 04-reference: QuoterV2 `0x8282…a8E8`, SwapRouter02 `0x5615…abc4`, fee adapters for USDT `0x0E2A…6f72` and USDC `0x2F25…602B` (from FeeCurrencyDirectory), cNGN 6 decimals, onchain symbols `USAT` and `USD₮`, Multicall3.
 - **`packages/chain`:** `sendGuarded` is the single send path.
   - **Mode checks:** fork mode talks only to anvil; live mode needs `--live`, chainId 42220 and a real `ATTRIBUTION_CODE`.
@@ -483,7 +483,7 @@ Funded by the founder with 6.9 USDT + 2.73 CELO. `verify:addresses` 68/68 before
   - deploy `0xac47…4a3a`
   - 10 wBRL ($1.98) → 3,173.9887 wARS, exactly as quoted
   - bundle `0x9880…a649` anchored, `verifyBundle: OK`, +513 bps vs official BRL/ARS
-- **Identity prep (not executed):** `identity/agent-registration.template.json` (ERC-8004 registration-v1: `services`, `x402Support: true`); `pnpm register:8004` (render, simulate, `--live`), with `register(string)` confirmed by eth_call simulation; [identity-steps.md](identity-steps.md) with the Self Agent ID CLI (`--network mainnet`; it defaults to testnet).
+- **Identity prep (not executed):** `identity/agent-registration.template.json` (ERC-8004 registration-v1: `services`, `x402Support: true`); `pnpm register:8004` (render, simulate, `--live`), with `register(string)` confirmed by eth_call simulation; identity-steps.md with the Self Agent ID CLI (`--network mainnet`; it defaults to testnet).
 
 **Fixed along the way:**
 - **Process exit:** the CLIs called `process.exit()`, which tripped a libuv assertion on Windows. They now exit via `exitCode` plus an unref'd timer.

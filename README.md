@@ -88,7 +88,7 @@ Arbolito Desk: price feed ─► Stitch (Textile filler) ◄─► Textile RFQ; 
 ```
 - **Monorepo:** pnpm, TypeScript (strict), viem, Next.js 16 on Vercel, Postgres (Neon), Foundry contracts, Vitest.
 - **Services:** the Telegram bot (which also runs the rules) and the desk run on Railway.
-- **Money safety** (rules in [CLAUDE.md](CLAUDE.md)):
+- **Money safety:**
   - Every transaction Arbolito sends is **simulated first**, **tagged**, and **capped** in code (≤ US$ 5 per action, ≤ US$ 25 a day while building).
   - Nothing that may have moved money is retried blindly.
   - Every mainnet send is rehearsed first on an **anvil fork of Celo mainnet**.
@@ -128,5 +128,5 @@ The other test sets need outside services: `pnpm test:db` needs `DATABASE_URL` (
 | [docs/STATUS.md](docs/STATUS.md) | The build log, newest first |
 | [docs/DESK-STRATEGY.md](docs/DESK-STRATEGY.md) | The desk's strategy, results and how to verify them |
 | [docs/04-reference.md](docs/04-reference.md) | Verified addresses, pools, endpoints and gotchas |
-| [docs/03-architecture.md](docs/03-architecture.md), [docs/02-product-spec.md](docs/02-product-spec.md) | Architecture and product spec |
-| [PLAN.md](PLAN.md), [CLAUDE.md](CLAUDE.md) | The original plan, and the standing rules for coding agents in this repo |
+| [docs/TEXTILE-WRITEUP.md](docs/TEXTILE-WRITEUP.md) | The desk write-up for Textile |
+| [docs/08-judging-criteria.md](docs/08-judging-criteria.md) | The official judging criteria we built against |

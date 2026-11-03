@@ -1,5 +1,5 @@
 /**
- * The landing's 3D coins (design/Arbolito Landing.dc.html, `arb-coins` preset "glass"): one big
+ * The landing's 3D coins (the Landing design, `arb-coins` preset "glass"): one big
  * coin plus two small ones around it, rendered with three.js into a fixed canvas behind the
  * content. Scroll drives everything, as in the design: the trio glides between per-section
  * waypoints (TRACK, copied from the design), turns over as the page goes by (landing on its

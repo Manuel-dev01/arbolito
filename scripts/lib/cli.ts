@@ -21,7 +21,7 @@ export function opsAccount(): PrivateKeyAccount {
   const key = loadEnv().OPS_PRIVATE_KEY;
   if (key) return privateKeyToAccount(key as Hex);
   if (forkUrl()) return privateKeyToAccount(ANVIL_DEV_KEY);
-  throw new Error("OPS_PRIVATE_KEY is not set in .env (see docs/07-keys-setup.md)");
+  throw new Error("OPS_PRIVATE_KEY is not set in .env (see .env.example)");
 }
 
 /** Interactive confirmation. `--yes` skips it, for runs the founder already approved. */

@@ -6,7 +6,7 @@ import type { ToolDefinition } from "./client";
  * The agent's tools: zod schemas are the single source of truth; the JSON Schema sent to the
  * model is generated from them, and the same schemas validate the model's arguments.
  *
- * Autonomy policy (docs/02-product-spec.md): there is deliberately NO tool that moves funds.
+ * Autonomy policy: there is deliberately NO tool that moves funds.
  * prepare_convert / prepare_send only create a quote card; money moves only when the user
  * confirms it in their own MiniPay wallet, outside the LLM. prepare_scheduled_send and
  * prepare_payday_split only draft a rule: it turns on when the user signs it in MiniPay, and its

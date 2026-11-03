@@ -1,4 +1,4 @@
-/** Every Mini App screen (design/Arbolito Mini App.dc.html), its header and its in-app ‹ parent. */
+/** Every Mini App screen (the Mini App design), its header and its in-app ‹ parent. */
 import type { MiniDict } from "../../i18n/miniapp";
 
 export const SCREENS = [

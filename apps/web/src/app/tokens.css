@@ -1,5 +1,5 @@
 /*
- * Arbolito design tokens: "Ink, glass and fluo" (design/Arbolito Design System.dc.html).
+ * Arbolito design tokens: "Ink, glass and fluo" (the design system).
  * One token set for the landing, the MiniPay mini app and the public pages.
  * Accent colours are signals, never decoration: pink = live/attention, lime = savings/verified,
  * blue = links/secondary data. Fonts come from next/font in layout.tsx (--font-serif/sans/mono).

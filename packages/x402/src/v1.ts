@@ -4,7 +4,7 @@
  * the exact amount to `payTo` and resends with the `X-PAYMENT` header; the gateway settles it
  * onchain and answers with `X-PAYMENT-RESPONSE` (the settlement transaction).
  *
- * Money rules (CLAUDE.md): the free 402 is the quote, shown before paying; a non-402 answer to
+ * Money rules: the free 402 is the quote, shown before paying; a non-402 answer to
  * an unpaid request is an error, never a success; a paid request that fails or times out is
  * never retried (the payment may have settled).
  */

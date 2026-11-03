@@ -15,7 +15,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
 }
 
 /**
- * Landing, per design/Arbolito Landing.dc.html: hero, cómo, calc, recibo, números, confianza,
+ * Landing, per the Landing design: hero, cómo, calc, recibo, números, confianza,
  * faq, pie. Server components throughout; the slow parts (live rates, the onchain anchor) stream
  * in behind Suspense so the hero paints first. Client JS: the calculator and the proof button.
  */

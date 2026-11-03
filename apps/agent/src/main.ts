@@ -15,7 +15,7 @@ import { startCompetitorsRunner } from "./competitors";
 import { startRulesRunner } from "./rules";
 
 const env = loadEnv();
-if (!env.TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set (see docs/07-keys-setup.md)");
+if (!env.TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set (see .env.example)");
 if (!env.PUBLIC_BASE_URL) log("[bot] PUBLIC_BASE_URL is not set: quotes will fail until it points at the web app");
 if (!env.MINI_APP_URL) log("[bot] MINI_APP_URL is not set: mini app links fall back to PUBLIC_BASE_URL");
 

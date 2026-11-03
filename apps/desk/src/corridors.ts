@@ -2,7 +2,7 @@
  * Arbolito Desk corridors: everything the strategy needs per pair, in one place.
  *
  * Stitch quotes RFQs off our feed's mid with fixed side spreads (buy/sellOffsetBps) and fixed
- * side caps. The feed carries the strategy (docs/10-desk-plan.md): a multi-source fair value,
+ * side caps. The feed carries the strategy (docs/DESK-STRATEGY.md): a multi-source fair value,
  * an inventory skew on the mid, and a circuit breaker. The skew moves the mid, so each direction
  * is capped by the spread on the side it moves toward fair, minus a floor: no quote crosses fair.
  *

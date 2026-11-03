@@ -1,5 +1,5 @@
 /**
- * Mini App copy (design/Arbolito Mini App.dc.html). Spanish (es-AR, "vos") is the source and the
+ * Mini App copy (the Mini App design). Spanish (es-AR, "vos") is the source and the
  * length budget; pt-BR and en mirror its keys. `{x}` placeholders are filled with `fill()`.
  */
 import type { Cur, Lang } from "../lib/miniapp/client/format";

@@ -1,4 +1,4 @@
-// Arbolito Desk: the pricing feed Stitch quotes from (docs/10-desk-plan.md).
+// Arbolito Desk: the pricing feed Stitch quotes from (docs/DESK-STRATEGY.md).
 export * from "./corridors";
 export * from "./dynamic";
 export * from "./fair";

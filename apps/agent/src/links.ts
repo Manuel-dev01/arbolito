@@ -2,7 +2,7 @@
  * Links from Telegram into the Arbolito Mini App (MINI_APP_URL, falling back to PUBLIC_BASE_URL).
  *
  * MiniPay deeplink: docs.minipay.xyz was unreachable when this was written, so no MiniPay URL
- * scheme is assumed (CLAUDE.md: never invent an endpoint). Plain HTTPS links open the mini app
+ * scheme is assumed (never invent an endpoint). Plain HTTPS links open the mini app
  * in the phone's browser. Once the docs confirm a "open this URL inside MiniPay" deeplink, set
  * MINIPAY_OPEN_TEMPLATE to it ({url} is replaced by the encoded mini app URL); every link
  * below goes through `wrap`, so that is the only change needed.

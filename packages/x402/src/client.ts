@@ -33,7 +33,7 @@ const init = (r: PaidRequest, headers: Record<string, string> = {}): RequestInit
   ...(r.body === undefined ? {} : { body: JSON.stringify(r.body) }),
 });
 
-/** The free 402 for exactly this request, in `asset`. A non-402 answer is an error (CLAUDE.md). */
+/** The free 402 for exactly this request, in `asset`. A non-402 answer is an error (money rule). */
 export async function quoteRequest(r: PaidRequest, asset: string, f: FetchLike = fetch): Promise<Quote> {
   const res = await f(r.url, { ...init(r), signal: AbortSignal.timeout(20_000) });
   if (res.status !== 402) throw new NotPaywalledError(`${r.url} answered ${res.status} without payment; expected 402`);

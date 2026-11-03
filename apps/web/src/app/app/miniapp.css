@@ -1,5 +1,5 @@
 /*
- * MiniPay Mini App styles (design/Arbolito Mini App.dc.html). Uses the tokens in ../tokens.css;
+ * MiniPay Mini App styles (the Mini App design). Uses the tokens in ../tokens.css;
  * the only new custom properties are the stand-in MiniPay sheet greys (demo mode) and the page wash.
  * Platform rules: 360×640 minimum, single column, no horizontal scroll, 44 px targets, 16 px body,
  * safe-area insets, light/dark via prefers-color-scheme, blur only on the bottom bar and sheets.

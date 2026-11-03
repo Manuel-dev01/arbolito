@@ -15,7 +15,7 @@ let db: Db | undefined;
  */
 export function getDb(url = loadEnv().DATABASE_URL): Db {
   if (db) return db;
-  if (!url) throw new Error("DATABASE_URL is not set (see docs/07-keys-setup.md)");
+  if (!url) throw new Error("DATABASE_URL is not set (see .env.example)");
   pool = new pg.Pool({ connectionString: url, max: 5, idleTimeoutMillis: 30_000 });
   // An idle client's connection can die (database restart, PgBouncer recycling). Without a listener
   // node-postgres re-emits it as an uncaught error and the whole process (bot, runners) exits.

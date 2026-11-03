@@ -4,7 +4,7 @@ import { medianBigint } from "./format";
 import { tokenRef, usdNotionalMicros, type TokenRef } from "./receipt-view";
 
 /**
- * /metrics v0, computed from receipts (see "Metric definitions" in docs/02-product-spec.md).
+ * /metrics v0, computed from receipts (definitions in docs/ARCHITECTURE.md).
  * Superseded receipts are listed for transparency but never counted.
  */
 

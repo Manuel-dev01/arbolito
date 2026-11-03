@@ -26,3 +26,23 @@ next-env.d.ts
 
 # Demo screenshots and frames (large; kept local)
 design/demo/shots/
+
+# Internal working files: kept locally, not published (founder, 2026-11-03)
+/MASTER_PROMPT.md
+/PLAN.md
+/AGENTS.md
+/CLAUDE.md
+/.claude/skills/
+/.agents/
+/skills-lock.json
+/design/
+/docs/01-research.md
+/docs/02-product-spec.md
+/docs/03-architecture.md
+/docs/05-demo-submission-adoption.md
+/docs/06-outreach-drafts.md
+/docs/07-keys-setup.md
+/docs/09-design-brief.md
+/docs/10-desk-plan.md
+/docs/TREASURY.md
+/docs/identity-steps.md

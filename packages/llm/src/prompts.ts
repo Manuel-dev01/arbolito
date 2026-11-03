@@ -1,7 +1,7 @@
 /**
  * System prompts for the Telegram agent (es-AR, pt-BR, en) and a cheap language detector.
  * The rules block is shared and written in English (models follow it most reliably); the style
- * block sets the reply language, register and number format. Tone per docs/02-product-spec.md.
+ * block sets the reply language, register and number format.
  */
 
 export type Language = "es" | "pt" | "en";

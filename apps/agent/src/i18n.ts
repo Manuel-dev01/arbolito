@@ -1,5 +1,5 @@
 /**
- * User-facing copy (design/Telegram Chat.dc.html). es-AR uses "vos", pt-BR uses "você". Keep
+ * User-facing copy (the Telegram Chat design). es-AR uses "vos", pt-BR uses "você". Keep
  * crypto jargon out. Emoji: only ⏱ (countdown), 🎙️ (voice) and ✓ (done).
  *
  * Strings here are Telegram HTML. Static strings contain no user data. Template functions take
