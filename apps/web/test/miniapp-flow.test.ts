@@ -14,10 +14,17 @@ import { createQuote } from "../src/lib/miniapp/server/quote";
 import { getMiniappReceipt } from "../src/lib/miniapp/server/receipt";
 import { rejectQuote } from "../src/lib/miniapp/server/reject";
 import { submitQuote } from "../src/lib/miniapp/server/submit";
-import { ACCOUNT, CLAIM, CODE, REACTOR, SWAP_DATA, T0, firmQuote, makeRig, mineCalls, usdtToWars, wallet, type TestRig } from "./miniapp-helpers";
+import { ACCOUNT, CLAIM, CODE, REACTOR, SWAP_DATA, T0, firmQuote, makeRig as makeBaseRig, mineCalls, usdtToWars, wallet, type TestRig } from "./miniapp-helpers";
 
 const { USDT, wARS, wBRL } = TOKENS;
 const E18 = 10n ** 18n;
+
+function makeRig(...args: Parameters<typeof makeBaseRig>) {
+  const rig = makeBaseRig(...args);
+  rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 1_000_000_000n);
+  return rig;
+}
+
 
 async function failure(p: Promise<unknown>): Promise<ApiFailure> {
   try {
@@ -75,9 +82,38 @@ describe("POST /quote", () => {
     expect([f.code, f.status]).toEqual(["no_route", 422]);
   });
 
+  it("distinguishes a preview timeout from a genuine missing market", async () => {
+    const rig = makeRig();
+    rig.textileVenue.quote = async () => { throw new Error("preview timed out"); };
+    expect((await failure(createQuote(rig.deps, { from: "USDT", to: "wCOP", amount: "4" }))).code).toBe("upstream");
+  });
+
+  it("refuses a dust pool price even if no staged preview is available", async () => {
+    const rig = makeRig();
+    rig.uni.pairs["USDT>wARS"] = () => 10n ** 18n;
+    expect((await failure(createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "4" }))).code).toBe("no_route");
+    rig.textileVenue.quote = async () => { throw new Error("preview timeout"); };
+    expect((await failure(createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "4" }))).code).toBe("upstream");
+  });
+
+  it("blocks a full-balance Textile trade before reserving a firm quote, but accepts the fee buffer", async () => {
+    const rig = makeRig();
+    rig.deps.textile = { ...rig.deps.textile, hasPartnerKey: true, request: rig.textile.request.bind(rig.textile), submit: rig.textile.submit.bind(rig.textile), status: rig.textile.status.bind(rig.textile), cancel: rig.textile.cancel.bind(rig.textile) };
+    rig.textileVenue.pairs["USDT>wCOP"] = (a) => a * 3200n * 10n ** 12n;
+    rig.chain.balances.set(`${USDT.address}:${ACCOUNT}`.toLowerCase(), 97_420_862n);
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wCOP", amount: "97.42", account: ACCOUNT });
+    const f = await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: ACCOUNT }));
+    expect(f.code).toBe("fee_reserve");
+    expect(rig.textile.requests).toHaveLength(0);
+    expect(rig.store.quotes[0]!.status).toBe("quoted");
+    const smaller = await createQuote(rig.deps, { from: "USDT", to: "wCOP", amount: "97.37", account: ACCOUNT });
+    rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, 311_584n * E18);
+    expect((await prepareQuote(rig.deps, { quoteId: smaller.quoteId, account: ACCOUNT })).calls).toHaveLength(2);
+  });
+
   it("keeps mixed Uniswap+Textile routes as alternatives only", async () => {
     const rig = makeRig();
-    rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1700n); // Textile beats Uniswap on the second hop
+    rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1608n); // slightly better, within 1% of the atomic route
     const q = await createQuote(rig.deps, { from: "wBRL", to: "wARS", amount: "50" });
     expect(q.venues).toEqual(["uniswap"]);
     expect(q.steps).toBe(2);
@@ -85,6 +121,15 @@ describe("POST /quote", () => {
     const mixed = q.alternatives.find((a) => a.venues.includes("textile"));
     expect(mixed).toBeTruthy();
     expect(mixed!.diffBps).toBeGreaterThan(0);
+  });
+
+  it("offers an explicit dollar step instead of a drained-pool fallback or a false no-market", async () => {
+    const rig = makeRig();
+    rig.uni.pairs["wBRL>USDT"] = () => 1n;
+    rig.textileVenue.pairs["wBRL>USDT"] = (a) => a / (5n * 10n ** 12n);
+    expect((await failure(createQuote(rig.deps, { from: "wBRL", to: "wARS", amount: "22" }))).code).toBe("via_dollars");
+    rig.textileVenue.pairs["USDT>wCOP"] = (a) => a * 3200n * 10n ** 12n;
+    expect((await failure(createQuote(rig.deps, { from: "wBRL", to: "wCOP", amount: "22" }))).code).toBe("via_dollars");
   });
 
   it("executes a Textile-only route when it is best, unless TEXTILE_RFQ_ENABLED is off", async () => {

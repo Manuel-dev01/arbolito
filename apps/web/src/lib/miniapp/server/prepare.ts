@@ -18,7 +18,8 @@ import type { PrepareRequest, PrepareResponse, TakerProof } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { ApiFailure, badRequest, belowMinimum, noRoute, notFound, notReady, priceChanged, quoteExpired, upstream } from "./errors";
 import { logError, logTextileError } from "./http";
-import { routeKind } from "./quote";
+import { checkFeeReserve } from "./fees";
+import { routeKind, symOf } from "./quote";
 import { decodePayload } from "./serde";
 import type { MiniappStore, QuoteRow } from "./store";
 
@@ -311,6 +312,7 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
   }
 
   const { route } = decodePayload(row.payload);
+  await checkFeeReserve(deps, account, symOf(route.tokenIn), route.amountIn);
   const kind = routeKind(route);
   let prepared: Prepared;
   try {

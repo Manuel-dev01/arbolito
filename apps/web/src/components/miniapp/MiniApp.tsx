@@ -345,7 +345,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     (code: ClientErrorCode) => {
       const m = mapApiError(code);
       const key = m.kind === "toast" ? m.message : "generic";
-      toast({ notReady: t.errNotReady, rateLimited: t.errRate, fundsReserved: t.errFundsReserved, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
+      toast({ notReady: t.errNotReady, rateLimited: t.errRate, fundsReserved: t.errFundsReserved, feeReserve: t.errFeeReserve, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
     },
     [t, toast],
   );
@@ -396,6 +396,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (m.kind === "expired") return go("quote-expired", { replace: true });
       if (m.kind === "no-market") {
         noMarketFlow.current = kind;
+        setCh({ viaDollars: res.code === "via_dollars" });
         return go("quote-nomarket", { replace: true });
       }
       if (m.kind === "price-changed" && q && kind === "change") {
@@ -421,7 +422,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     const amount = toApiAmount(ch.amount);
     if (!amount) return;
     flowDone.current = false;
-    setCh({ busy: true, prev: null });
+    setCh({ busy: true, prev: null, viaDollars: false });
     go("quote-loading", { replace: screen !== "change" });
     try {
       const q = await ready.api.quote({ from: ch.from, to: ch.to, amount, account: ready.account, lang });
@@ -433,6 +434,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const m = mapApiError(code);
       if (m.kind === "no-market") {
         noMarketFlow.current = "change";
+        setCh({ viaDollars: code === "via_dollars" });
         go("quote-nomarket", { replace: true });
       } else {
         showError(code);
@@ -497,8 +499,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       setSend({ busy: false });
       const code = (e as { code?: ClientErrorCode }).code ?? "network";
       if (mapApiError(code).kind === "no-market") {
-        setCh({ from: SYM_OF[send.pay], to: SYM_OF[sendContact.cur] });
         noMarketFlow.current = "send";
+        setCh({ from: SYM_OF[send.pay], to: SYM_OF[sendContact.cur], amount: send.amount, viaDollars: code === "via_dollars" });
         go("quote-nomarket");
       } else showError(code);
     }

@@ -11,9 +11,16 @@ import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { getBalances } from "../src/lib/miniapp/server/market";
 import { RateLimiter } from "../src/lib/miniapp/server/rate-limit";
-import { ACCOUNT, BLOCK, makeRig } from "./miniapp-helpers";
+import { ACCOUNT, BLOCK, makeRig as makeBaseRig } from "./miniapp-helpers";
 
 afterEach(() => setDeps(undefined));
+
+function makeRig(...args: Parameters<typeof makeBaseRig>) {
+  const rig = makeBaseRig(...args);
+  rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 1_000_000_000n);
+  return rig;
+}
+
 
 describe("GET /balances and /rates", () => {
   it("reads the 7 tokens at one block with USD values", async () => {

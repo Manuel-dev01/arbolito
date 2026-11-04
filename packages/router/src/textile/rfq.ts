@@ -13,8 +13,8 @@ export class TextileRfqAdapter implements VenueAdapter {
   constructor(
     private readonly client = new TextileClient(),
     private readonly chainId = CELO_MAINNET_ID,
-    /** Preview timeout. The default keeps app quotes inside their budget; one-off scripts can wait longer (a cold preview took 2.8 s). */
-    private readonly previewTimeoutMs = 1_500,
+    /** Bound slow/cold previews without mistaking responses taking 2–3 s for missing liquidity. */
+    private readonly previewTimeoutMs = 5_000,
   ) {}
 
   async quote(p: QuoteParams): Promise<Quote | null> {

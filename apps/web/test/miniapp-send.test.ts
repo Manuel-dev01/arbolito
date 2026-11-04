@@ -11,10 +11,17 @@ import { listReceipts } from "../src/lib/miniapp/server/receipts-list";
 import { prepareSend } from "../src/lib/miniapp/server/send";
 import { prepareQuote } from "../src/lib/miniapp/server/prepare";
 import { submitQuote } from "../src/lib/miniapp/server/submit";
-import { ACCOUNT, CLAIM, CODE, OTHER, REACTOR, firmQuote, makeRig, mineCalls, transferLog, usdtToWars, wallet } from "./miniapp-helpers";
+import { ACCOUNT, CLAIM, CODE, OTHER, REACTOR, firmQuote, makeRig as makeBaseRig, mineCalls, transferLog, usdtToWars, wallet } from "./miniapp-helpers";
 
 const { USDT, wARS } = TOKENS;
 const E18 = 10n ** 18n;
+
+function makeRig(...args: Parameters<typeof makeBaseRig>) {
+  const rig = makeBaseRig(...args);
+  rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 1_000_000_000n);
+  return rig;
+}
+
 const CONTACT = OTHER.toLowerCase() as Address;
 
 async function failure(p: Promise<unknown>): Promise<ApiFailure> {

@@ -3,6 +3,7 @@
  * worth in micro-USD, totals in the display currency, and per-token autonomy limits from USD presets.
  */
 import type { Sym } from "../contract";
+import { DOLLAR_FEE_RESERVE } from "../contract";
 import type { Balances, Rates } from "./api";
 import { CUR_OF, DECIMALS, type Cur } from "./format";
 
@@ -79,6 +80,13 @@ export function byCurrency(balances: Balances | null | undefined): Record<Cur, {
 export function balanceOf(balances: Balances | null | undefined, sym: Sym): bigint {
   const b = balances?.balances.find((x) => x.sym === sym);
   return b ? BigInt(b.amount) : 0n;
+}
+
+/** Dollar gas is debited before the swap; spending the displayed balance can make it revert. */
+export function spendableBalance(balances: Balances | null | undefined, sym: Sym): bigint {
+  const have = balanceOf(balances, sym);
+  if (CUR_OF[sym] !== "USD") return have;
+  return have > DOLLAR_FEE_RESERVE ? have - DOLLAR_FEE_RESERVE : 0n;
 }
 
 /**

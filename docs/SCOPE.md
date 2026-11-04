@@ -4,14 +4,15 @@ The one place to see what's done, what's next and what's left, mapped to how eac
 judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
 STATUS.md log.
 
-**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-03 (6 days left).
+**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-04 (5 days left).
 
 Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped · 👤 needs the founder (a decision, an approval, money or an account)
 
 ---
 
 ## Conversion fixes (2026-11-04)
-- 🟡 Local MiniPay fixes: readable small ARS rates, preserve sender context, recover exact mined calls after lost wallet responses, disable provider retries, distinguish reserved Textile funds. Deployment and phone verification pending; see STATUS.
+- ✅ First MiniPay fixes deployed: readable small ARS rates, preserve sender context, recover exact mined calls after lost wallet responses, disable provider retries, distinguish reserved Textile funds.
+- 🟡 Market hardening: dollar gas buffer, longer preview timeout, distinguish unavailable venues, and explicit separate conversions through dollars instead of drained-pool prices. Phone verification pending; buying MXN needs outside liquidity. See STATUS.
 
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.

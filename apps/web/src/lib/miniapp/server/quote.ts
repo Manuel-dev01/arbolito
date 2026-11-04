@@ -1,11 +1,11 @@
-import { formatUnits, zeroAddress, type Address } from "viem";
+import { formatUnits, parseUnits, zeroAddress, type Address } from "viem";
 import type { z } from "zod";
 import { TOKENS, tokenByAddress } from "@arbolito/config";
 import { savingsVsOfficial } from "@arbolito/proof";
 import { plan, toAtomic, type Quote, type Reference, type Route } from "@arbolito/router";
 import { SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
 import type { MiniappDeps } from "./deps";
-import { badRequest, belowMinimum, noRoute, notFound } from "./errors";
+import { ApiFailure, badRequest, belowMinimum, noRoute, notFound, upstream } from "./errors";
 import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
 import { vsWesternUnion } from "./competitors";
@@ -106,7 +106,40 @@ export async function planQuote(deps: MiniappDeps, from: Sym, to: Sym, amountIn:
   const executable = all.filter((r) => isMiniPayExecutable(r, deps.textileEnabled));
   const tooSmall = (r: Route) => routeKind(r) === "textile" && (usdSideMicros(r) ?? TEXTILE_MIN_USD_MICROS) < TEXTILE_MIN_USD_MICROS;
   const route = executable.find((r) => !tooSmall(r));
-  if (!route) throw executable.length ? belowMinimum() : noRoute();
+  const staged = deps.textileEnabled ? all.find((r) => r.legs.length === 2 && routeKind(r) === "mixed") : undefined;
+  // A drained pool can still quote dust. Never silently substitute that for a much better
+  // two-step market route: each leg needs a fresh quote and the user's separate approval.
+  if (staged && (!route || route.expectedOut * 10_000n < staged.expectedOut * 9_900n)) {
+    if (staged.legs[0]!.quote.amountOut < TEXTILE_MIN_USD_MICROS) throw belowMinimum();
+    throw new ApiFailure("via_dollars", "Change to dollars first, then request a new quote for the destination. The second rate is not locked.", 422);
+  }
+  if (!route) {
+    if (executable.length) throw belowMinimum();
+    if (planned.venueErrors.length) throw upstream("A market did not answer. Try again; no money moved.");
+    throw noRoute();
+  }
+  // Even when the better venue timed out, a drained pool's dust quote must not be offered.
+  // Use independent references (never the damaged pool's own mid); normal FX spreads remain valid.
+  const perUsd = (s: Sym): bigint | null => {
+    if (TOKENS[s].kind === "usd") return 10n ** 18n;
+    const currency = s.slice(1).toUpperCase();
+    for (const name of ["textile_mid", "crypto", "interbank", "official"] as const) {
+      const r = refs.references.find((x) => x.name === name && x.pair === `USD/${currency}`);
+      if (r) {
+        try { const n = parseUnits(r.rate, 18); if (n > 0n) return n; } catch { /* skip malformed reference */ }
+      }
+    }
+    return null;
+  };
+  const inputPerUsd = perUsd(from);
+  const outputPerUsd = perUsd(to);
+  if (inputPerUsd && outputPerUsd) {
+    const fairOut = (amountIn * outputPerUsd * 10n ** BigInt(TOKENS[to].decimals)) / (inputPerUsd * 10n ** BigInt(TOKENS[from].decimals));
+    if (route.expectedOut * 2n < fairOut) {
+      if (planned.venueErrors.length) throw upstream("A market did not answer and the remaining pool has insufficient liquidity.");
+      throw noRoute("There is not enough healthy liquidity for this amount right now.");
+    }
+  }
   return {
     route,
     alternatives: all.filter((r) => r !== route),

@@ -5,7 +5,7 @@ import { formatUnits } from "viem";
 import type { Sym } from "../../../lib/miniapp/contract";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { balanceOf, byCurrency, usdToCur } from "../../../lib/miniapp/client/derive";
+import { balanceOf, byCurrency, spendableBalance, usdToCur } from "../../../lib/miniapp/client/derive";
 import {
   atomicToTyped,
   CUR_OF,
@@ -103,7 +103,8 @@ export function ChangeScreen() {
   const from = CUR_OF[ch.from];
   const to = CUR_OF[ch.to];
   const have = balanceOf(bal.data, ch.from);
-  const over = bal.data !== null && isPositive(ch.amount) && parseHuman(ch.amount, DECIMALS[ch.from]) > have;
+  const spendable = spendableBalance(bal.data, ch.from);
+  const over = bal.data !== null && isPositive(ch.amount) && parseHuman(ch.amount, DECIMALS[ch.from]) > spendable;
   const est = estimate(ch.amount, from, to, prices);
   const rate = estimate("1", from, to, prices);
   const [picking, setPicking] = useState<"from" | "to" | null>(null);
@@ -133,9 +134,10 @@ export function ChangeScreen() {
             {fmtTyped(ch.amount, from, lang)}
             <span className="mp-caret" aria-hidden="true" />
           </div>
-          <button type="button" onClick={() => setCh({ amount: atomicToTyped(have, DECIMALS[ch.from]) })} style={{ alignSelf: "flex-start", textAlign: "left", minHeight: 44, border: 0, background: "transparent", padding: "6px 0", color: "var(--muted)", fontSize: 14 }}>
+          <button type="button" onClick={() => setCh({ amount: atomicToTyped(spendable, DECIMALS[ch.from]) })} style={{ alignSelf: "flex-start", textAlign: "left", minHeight: 44, border: 0, background: "transparent", padding: "6px 0", color: "var(--muted)", fontSize: 14 }}>
             {t.available} {fmtSym(have, ch.from, lang)} · <b className="mp-save">{t.all}</b>
           </button>
+          {from === "USD" ? <div className="mp-meta">{t.feeReserveNote}</div> : null}
         </div>
         <div style={{ display: "flex", justifyContent: "center", margin: "-22px 0", position: "relative", zIndex: 1 }}>
           <button type="button" className="mp-swap" aria-label="⇅" onClick={() => setCh({ from: ch.to, to: ch.from, quote: null })}>
@@ -328,17 +330,17 @@ export function QuoteScreen() {
 }
 
 export function NoMarket() {
-  const { t, ch, go, retryNoMarket } = useApp();
+  const { t, ch, setCh, go, retryNoMarket } = useApp();
   return (
-    <Frame primary={{ label: t.tryAgain, onClick: retryNoMarket }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
+    <Frame primary={ch.viaDollars ? { label: t.changeToDollars, onClick: () => { setCh({ to: "USDT", quote: null, viaDollars: false }); go("change"); } } : { label: t.tryAgain, onClick: retryNoMarket }} secondary={{ label: t.backHome, onClick: () => go("home") }}>
       <div className="mp-center" style={{ gap: 16 }}>
         <div className="mp-circle neutral" style={{ width: 56, height: 56, fontSize: 24 }}>
           —
         </div>
-        <h1 className="mp-h1 md">{fill(t.noMarket, { a: t.curLower[CUR_OF[ch.from]], b: t.curLower[CUR_OF[ch.to]] })}</h1>
-        <p className="mp-p">{t.noMarketB}</p>
+        <h1 className="mp-h1 md">{ch.viaDollars ? t.viaDollarsT : fill(t.noMarket, { a: t.curLower[CUR_OF[ch.from]], b: t.curLower[CUR_OF[ch.to]] })}</h1>
+        <p className="mp-p">{ch.viaDollars ? t.viaDollarsB : t.noMarketB}</p>
         <div className="mp-soft" style={{ fontSize: 15, lineHeight: 1.45 }}>
-          {t.noMarketTip}
+          {ch.viaDollars ? t.viaDollarsTip : t.noMarketTip}
         </div>
       </div>
     </Frame>

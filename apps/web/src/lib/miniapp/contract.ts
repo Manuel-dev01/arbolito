@@ -18,6 +18,9 @@
  */
 import { z } from "zod";
 
+/** Display/prepare buffer for MiniPay's dollar-denominated gas, including approval and swap. */
+export const DOLLAR_FEE_RESERVE = 50_000n;
+
 export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
 export type Sym = z.infer<typeof Sym>;
@@ -39,6 +42,8 @@ export const ApiErrorCode = z.enum([
   "not_ready", // feature needs config not yet deployed (e.g. guard address)
   "rate_limited",
   "funds_reserved", // an earlier Textile quote holds funds until its reservation expires
+  "fee_reserve", // leave dollars available for MiniPay's upfront gas debit
+  "via_dollars", // this market needs two independently confirmed conversions through USDT
   "upstream", // RPC / Textile / LLM failure; nothing moved
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;

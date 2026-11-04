@@ -17,11 +17,12 @@ export type UiErrorState =
   /** Sign the one-time taker proof in MiniPay, then call /prepare again. */
   | { kind: "needs-proof" }
   /** A toast; stay on the current screen. `retry` says whether trying again can help. */
-  | { kind: "toast"; message: "notReady" | "rateLimited" | "fundsReserved" | "upstream" | "offline" | "minimum" | "generic"; retry: boolean };
+  | { kind: "toast"; message: "notReady" | "rateLimited" | "fundsReserved" | "feeReserve" | "upstream" | "offline" | "minimum" | "generic"; retry: boolean };
 
 export function mapApiError(code: ClientErrorCode): UiErrorState {
   switch (code) {
     case "no_route":
+    case "via_dollars":
       return { kind: "no-market" };
     case "quote_expired":
       return { kind: "expired" };
@@ -37,6 +38,8 @@ export function mapApiError(code: ClientErrorCode): UiErrorState {
       return { kind: "toast", message: "rateLimited", retry: true };
     case "funds_reserved":
       return { kind: "toast", message: "fundsReserved", retry: true };
+    case "fee_reserve":
+      return { kind: "toast", message: "feeReserve", retry: false };
     case "upstream":
       return { kind: "toast", message: "upstream", retry: true };
     case "network":

@@ -22,6 +22,7 @@ export interface BalState {
 }
 
 export interface ChangeState {
+  viaDollars?: boolean;
   from: Sym;
   to: Sym;
   amount: string;

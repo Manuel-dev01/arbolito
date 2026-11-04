@@ -4,6 +4,7 @@ import { TOKENS } from "@arbolito/config";
 import type { SendPrepareRequest, SendPrepareResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest } from "./errors";
+import { checkFeeReserve } from "./fees";
 import { loadLiveQuote, prepareQuote, publicCalls, tagged } from "./prepare";
 import { parseAmount } from "./quote";
 
@@ -22,6 +23,7 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
   const amountIn = parseAmount(req.from, req.amount);
 
   if (req.from === req.to) {
+    await checkFeeReserve(deps, account, req.from, amountIn);
     const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [recipient, amountIn] });
     const call = tagged(deps, { to: TOKENS[req.from].address as Address, data, value: 0n, label: "send to contact" });
     return { calls: publicCalls([call]), expectedOut: amountIn.toString(), minOut: amountIn.toString() };

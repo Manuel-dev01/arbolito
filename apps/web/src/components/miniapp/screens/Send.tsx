@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { balanceOf, usdToCur } from "../../../lib/miniapp/client/derive";
+import { balanceOf, spendableBalance, usdToCur } from "../../../lib/miniapp/client/derive";
 import { CURS, DECIMALS, fmtMoney, fmtPct, fmtRateLine, fmtSym, fmtTyped, gainOf, maskPhone, parseHuman, SYM_OF, type Cur } from "../../../lib/miniapp/client/format";
 import { isPositive } from "../../../lib/miniapp/client/keypad";
 import { newId, type Contact } from "../../../lib/miniapp/client/store";
@@ -184,7 +184,7 @@ export function SendAmount() {
   if (!c) return <SendList />;
   const paySym = SYM_OF[send.pay];
   const have = balanceOf(bal.data, paySym);
-  const over = bal.data !== null && isPositive(send.amount) && parseHuman(send.amount, DECIMALS[paySym]) > have;
+  const over = bal.data !== null && isPositive(send.amount) && parseHuman(send.amount, DECIMALS[paySym]) > spendableBalance(bal.data, paySym);
   const pf = prices[send.pay];
   const est = send.pay === c.cur ? (isPositive(send.amount) ? parseHuman(send.amount, 18) : null) : pf && isPositive(send.amount) ? usdToCur((parseHuman(send.amount, 18) * pf) / 10n ** 18n, c.cur, prices) : null;
   const primary = !isPositive(send.amount) || over ? { label: over ? t.insufficient : t.reviewSend, kind: "off" as const } : send.busy ? { label: t.searching, kind: "busy" as const } : { label: t.reviewSend, onClick: requestSendQuote };
@@ -215,6 +215,7 @@ export function SendAmount() {
           </div>
           <div className="mp-meta">
             {t.available} {fmtSym(have, paySym, lang)}
+            {send.pay === "USD" ? <div>{t.feeReserveNote}</div> : null}
           </div>
         </div>
         <div className="mp-sunk">

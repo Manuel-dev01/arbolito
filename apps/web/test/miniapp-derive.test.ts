@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { MIN_PRICING_MICROS, pricesFrom } from "../src/lib/miniapp/client/derive";
+import { MIN_PRICING_MICROS, pricesFrom, spendableBalance } from "../src/lib/miniapp/client/derive";
 
 const ACCOUNT = "0x7769a27123aac03693065cd61a003c9dbb8ba734";
+
+it("leaves dollar gas for All, including wallets holding less than the buffer", () => {
+  const balances = { balances: [{ sym: "USDT", amount: "97420862" }, { sym: "wARS", amount: "1000000000000000000" }] } as never;
+  expect(spendableBalance(balances, "USDT")).toBe(97_370_862n);
+  expect(spendableBalance(balances, "wARS")).toBe(10n ** 18n);
+  expect(spendableBalance({ balances: [{ sym: "USDT", amount: "49999" }] } as never, "USDT")).toBe(0n);
+});
 const rates = {
   at: "2026-10-28T14:00:00Z",
   references: [

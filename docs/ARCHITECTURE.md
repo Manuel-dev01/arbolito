@@ -132,6 +132,9 @@ sequenceDiagram
 ```
 
 - Wallets: the user's (swap), the anchor wallet (anchor).
+- Dollar inputs leave US$ 0.05 in the wallet for upfront MiniPay gas; both the amount picker and prepare enforce this buffer.
+- Two-leg routes involving Textile require separate conversions through dollars. When such a route beats the atomic fallback by more than 1%, the UI offers the first conversion explicitly; the second needs a fresh quote and approval, and its rate is not locked. Quotes paying less than half the independent reference are refused as unhealthy liquidity, including when another venue times out.
+- Preview transport failures return an upstream error rather than claiming that no market exists.
 - Guarantees:
   - A firm quote past its deadline is refused before signing.
   - A firm Textile quote below the guaranteed minimum is cancelled before the user signs (`price_changed`).
