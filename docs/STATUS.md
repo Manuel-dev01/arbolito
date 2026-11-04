@@ -63,6 +63,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-04: updated demo and narration synchronized with the working MiniPay flow
+- Rebuilt the existing 22-scene demo at **4:06**, with November 4 public receipts for the founder’s ARS conversion and COP delivery, refreshed metrics/desk captures, the dollar fee prerequisite, and current unlisted MiniPay access instructions. Removed blanket MXN availability and stale desk fill-count claims; example autonomy screens are explicitly labelled.
+- Produced an English timed script and full-length synthetic guide audio, Spanish subtitles burned into the video, editable English/Spanish/Portuguese captions, and a music-only version for recording the final voice-over. Original video preserved. Artifacts remain local for the founder’s review/upload; no competition submission was changed.
+- **Deployment:** web and Telegram bot confirmed successful for `509bc6e`. Telegram cannot sign for an existing MiniPay wallet; direct mini-app opening still requires an approved Discover listing. Current testing uses the copy/load handoff and retains unsigned intents for 15 minutes while respecting price expiry.
+- No mainnet transactions sent for this work. Remaining submission gaps: independent LatAm users and the external listing/submission steps.
+
 ### 2026-11-04: Telegram approval handoff for the unlisted MiniPay app
 - Telegram quote cards now say **How to approve in MiniPay** and explain that the signature happens in MiniPay. The browser gate has a copyable app link and developer-mode instructions in English, Spanish and Portuguese. MiniPay’s documented mini-app deep link requires a Discover listing ID; unlisted access remains manual.
 - Opening a quote link only opens review. Unsigned intents can be recovered for 15 minutes when opening MiniPay or returning to its home screen; expired prices must be refreshed. Cancelled, prepared and completed intents are excluded, and an older action cannot resurface after the newest is prepared.

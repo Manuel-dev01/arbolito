@@ -18,6 +18,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 
 - ✅ Telegram testing handoff: honest approval label, copy/load instructions, review before signing, 15-minute unsigned-intent recovery with fresh prices required after expiry. Discover listing still needed for direct opening.
 
+- ✅ Demo synchronized with the working November 4 flow: 4:06 final cut, English timed script/guide audio, burned Spanish subtitles, Portuguese captions, and fresh mainnet receipt evidence. Local artifacts ready for founder review/upload.
+
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
 - ✅ **First autonomous run on mainnet** (2026-11-03): the founder's wBRL guardian re-entered 0.68 USDT → 3.696 wBRL through the guard.
