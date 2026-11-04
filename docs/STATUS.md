@@ -63,6 +63,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-04: fee top-up confirmed; ARS conversion now successful on mainnet
+- **Founder-approved fee top-up:** 0.10 USDT from ops to the founder's existing MiniPay wallet, fork-rehearsed and sent once through the guarded sender. [Top-up transaction](https://celoscan.io/tx/0x027211b767e76dc5bc079fdc46b0b9169510ba44e70310898ac2c38cf5865455), success at block 81883213; Transfer log confirms 100,000 atomic USDT received. Recorded in the local treasury ledger.
+- **Real conversion confirmed:** the founder's wallet subsequently sold **167,368.4422 wARS → 100.878700 USDT** through Uniswap ([transaction](https://celoscan.io/tx/0x31ba6ddf57e7febc3e8d778e2055b5121a3d0a11be2d0020660ab5b55fbc40f9)), success at block 81884250. Both token movements are verified in the receipt; the 0.001017 USDT gas refund is excluded from conversion output. The agent only sent the approved fee top-up; the swap was the user's MiniPay transaction.
+- **Next:** check remaining corridors from the phone and continue real-user testing. MXN buy-side liquidity remains external.
+
 ### 2026-11-04: MiniPay fee blocker reproduced; chat routing corrected
 - **Confirmed wallet blocker:** the founder holds 167,368.442234… wARS, 0.001664 USDT, no USDC/USDm/USA₮, and ~0.9478 CELO. MiniPay selects dollar stablecoins for network fees; the peso holding and native CELO did not prevent the wallet refusing the swap before broadcast. The earlier dollar-input buffer did not check fees on fiat sales.
 - **Exact-call fork reproduction:** the saved Uniswap call for 167,368.44 wARS executed successfully on an isolated Celo fork, delivering 100.878699 USDT (133,197 execution gas). The existing allowance and swap calldata work. No mainnet transaction was sent. A separate 0.10 USDT ops→founder funding rehearsal also passed on the fork, followed by the exact same successful swap.
