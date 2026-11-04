@@ -25,6 +25,7 @@ export const ApiErrorCode = z.enum([
   "needs_taker_proof",
   "not_ready",
   "rate_limited",
+  "funds_reserved", // an earlier Textile quote holds funds until its reservation expires
   "upstream",
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;

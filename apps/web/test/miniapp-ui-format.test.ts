@@ -46,6 +46,8 @@ describe("amount formatting per locale", () => {
     expect(fmtRateLine("317.74119", "wBRL", "wARS", "es")).toBe("1 R$ = ARS 317,74");
     // Below 1 the line is inverted so it stays readable.
     expect(fmtRateLine("0.19761", "wBRL", "USDT", "es")).toBe("1 US$ = R$ 5,06");
+    expect(fmtRateLine("0.00333", "wARS", "wBRL", "en")).toBe("1 R$ = ARS 300.30");
+    expect(fmtRateLine("0.000602", "wARS", "USDT", "en")).toBe("1 US$ = ARS 1,661.13");
   });
   it("shows typed amounts with the locale decimal key", () => {
     expect(fmtTyped("1240.5", "BRL", "es")).toBe("R$ 1.240,5");
@@ -146,6 +148,7 @@ describe("ApiError codes → UI states", () => {
     expect(mapApiError("needs_taker_proof")).toEqual({ kind: "needs-proof" });
     expect(mapApiError("not_ready")).toEqual({ kind: "toast", message: "notReady", retry: false });
     expect(mapApiError("rate_limited")).toEqual({ kind: "toast", message: "rateLimited", retry: true });
+    expect(mapApiError("funds_reserved")).toEqual({ kind: "toast", message: "fundsReserved", retry: true });
     expect(mapApiError("upstream")).toEqual({ kind: "toast", message: "upstream", retry: true });
     expect(mapApiError("bad_request")).toEqual({ kind: "toast", message: "generic", retry: false });
   });

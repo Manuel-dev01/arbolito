@@ -58,6 +58,7 @@ async function prepareWithProof(deps: ExecDeps, quoteId: string): Promise<Prepar
 export async function sendWithStages(deps: ExecDeps, calls: readonly Call[]): Promise<SendOutcome> {
   const total = calls.length;
   const sender = {
+    account: deps.wallet.account,
     send: (c: Call, i: number) => {
       deps.onStage?.({ stage: "confirming", index: i, total });
       return deps.wallet.sender.send(c, i);

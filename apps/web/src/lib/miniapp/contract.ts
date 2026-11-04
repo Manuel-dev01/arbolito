@@ -38,6 +38,7 @@ export const ApiErrorCode = z.enum([
   "needs_taker_proof", // Textile firm quote needs the user's one-time proof (see PrepareResponse)
   "not_ready", // feature needs config not yet deployed (e.g. guard address)
   "rate_limited",
+  "funds_reserved", // an earlier Textile quote holds funds until its reservation expires
   "upstream", // RPC / Textile / LLM failure; nothing moved
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;

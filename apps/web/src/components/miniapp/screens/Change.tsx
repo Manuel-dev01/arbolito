@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 import type { Sym } from "../../../lib/miniapp/contract";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
@@ -151,7 +152,7 @@ export function ChangeScreen() {
           </div>
           {rate !== null ? (
             <div className="mp-mono" style={{ fontSize: 13, color: "var(--muted)" }}>
-              ≈ 1 {PREFIX[from]} = {fmtMoney(rate, 18, to, lang)}
+              ≈ {fmtRateLine(formatUnits(rate, 18), ch.from, ch.to, lang)}
             </div>
           ) : null}
         </div>

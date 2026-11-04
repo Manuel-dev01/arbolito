@@ -63,6 +63,13 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-04: MiniPay conversion debugging
+- **Read-only wallet check:** the founder's wARS approval for exactly 167,368.44 wARS succeeded ([transaction](https://celoscan.io/tx/0xfe4b60806ec4ea646b7b60c1828f9f8557d24f4d3dceddd47a05e7e62f3b954f), Nov 3 22:14 UTC, spender Uniswap). The indexed history shows no later swap. An earlier USDT→wCOP Textile swap reverted with `TRANSFER_FROM_FAILED`; this alone does not identify which transfer failed.
+- **Local fixes (not deployed):** the Change estimate uses the quote card's inverse rate formatter, so small ARS rates no longer read zero. Progress callbacks preserve the wallet account for send-error checks. Lost wallet responses can recover an exact mined call (sender, nonce, destination, full calldata and value) from up to 24 recent blocks, then check its receipt; no transaction is resent. Provider transport retries are disabled explicitly.
+- **Copy:** Textile funds reservations have their own error code and translated message (wait about a minute); no-market copy no longer promises that a market will return in a few minutes.
+- **Validation:** 76 focused MiniPay tests and 10 Telegram contract-mirror tests pass; root and web typechecks and the production Next.js build pass. The broader unit sweep passed 56 files and exposed two contract-mirror failures, both fixed and rechecked. Tracked Markdown links: 62 checked, none broken.
+- **Next:** deploy after review and repeat the conversion on the founder's phone. Missing response recovery remains bounded; unmatched calls or RPC errors keep the uncertain result. No mainnet transactions or paid calls were made during this work.
+
 ### 2026-11-03: the agent at the center (charges, pays, settles in local stablecoins)
 - **Founder's calls (evening):**
   - **Loops entry updated** (`--confirm`, founder's yes): new tagline; charges/pays/settles with the x402 `payTo`; the guardian; MCP/A2A; an honest status (the first x402 payment was the team's test). Missing fields: none.

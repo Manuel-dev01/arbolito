@@ -90,6 +90,8 @@ export interface ReceiptWaiter {
   wait(hash: Hex): Promise<"success" | "reverted">;
   /** The account's nonce at the latest block: if it never moves, a send that errored went nowhere. */
   nonce?(account: Address): Promise<number>;
+  /** Recover only an exact mined call after the provider lost its response. Never broadcasts. */
+  findCall?(account: Address, nonce: number, call: Call): Promise<Hex | null>;
 }
 
 export type SendOutcome =
@@ -155,9 +157,16 @@ export async function sendCallsInOrder(
     } catch (e) {
       if (isUserRejection(e)) return { kind: "cancelled", hashes, atIndex: i };
       const error = e instanceof Error ? e.message : String(e);
-      // Some MiniPay dismissals don't arrive as 4001. If nothing left the wallet, say so.
-      if (account && before !== null && (await stayedUnsent(waiter, account, before, settle))) return { kind: "failed", hashes, atIndex: i, reason: "not-sent", error };
-      return { kind: "failed", hashes, atIndex: i, reason: "unknown", error };
+      const recovered = account && before !== null && waiter.findCall
+        ? await waiter.findCall(account, before, calls[i]!).catch(() => null)
+        : null;
+      if (recovered) {
+        hash = recovered;
+      } else {
+        // Some MiniPay dismissals don't arrive as 4001. If nothing left the wallet, say so.
+        if (account && before !== null && (await stayedUnsent(waiter, account, before, settle))) return { kind: "failed", hashes, atIndex: i, reason: "not-sent", error };
+        return { kind: "failed", hashes, atIndex: i, reason: "unknown", error };
+      }
     }
     hashes.push(hash);
     hooks.onSent?.(i, hash);
@@ -175,7 +184,7 @@ export async function sendCallsInOrder(
 
 /** A sender backed by a viem wallet client over the injected provider, on Celo. */
 export function createViemSender(provider: Eip1193Provider, account: Address, feeCurrency?: () => Address | undefined): TxSender {
-  const wallet = createWalletClient({ account, chain: celo, transport: custom(provider) });
+  const wallet = createWalletClient({ account, chain: celo, transport: custom(provider, { retryCount: 0 }) });
   return {
     account,
     async send(call) {
@@ -212,6 +221,18 @@ export function createFornoWaiter(timeoutMs = 90_000): ReceiptWaiter {
       }
     },
     nonce: (address) => client.getTransactionCount({ address, blockTag: "latest" }),
+    async findCall(account, nonce, call) {
+      // The provider normally returns after mining. Bound recovery to recent blocks; an older or
+      // unavailable match remains unknown. A different transaction using this nonce is never enough.
+      if ((await client.getTransactionCount({ address: account, blockTag: "latest" })) <= nonce) return null;
+      const latest = await client.getBlockNumber({ cacheTime: 0 });
+      for (let offset = 0n; offset < 24n && offset <= latest; offset++) {
+        const block = await client.getBlock({ blockNumber: latest - offset, includeTransactions: true });
+        const tx = block.transactions.find((t) => t.from.toLowerCase() === account.toLowerCase() && t.nonce === nonce);
+        if (tx) return tx.to?.toLowerCase() === call.to.toLowerCase() && tx.input.toLowerCase() === call.data.toLowerCase() && tx.value === BigInt(call.value) ? tx.hash : null;
+      }
+      return null;
+    },
   };
 }
 

@@ -345,7 +345,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     (code: ClientErrorCode) => {
       const m = mapApiError(code);
       const key = m.kind === "toast" ? m.message : "generic";
-      toast({ notReady: t.errNotReady, rateLimited: t.errRate, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
+      toast({ notReady: t.errNotReady, rateLimited: t.errRate, fundsReserved: t.errFundsReserved, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
     },
     [t, toast],
   );

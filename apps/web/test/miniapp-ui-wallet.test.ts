@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Hex } from "viem";
 import { TOKENS } from "@arbolito/config";
 import type { Call } from "../src/lib/miniapp/contract";
 import { createApiClient } from "../src/lib/miniapp/client/api";
-import { executeQuote } from "../src/lib/miniapp/client/execute";
+import { executeQuote, sendWithStages } from "../src/lib/miniapp/client/execute";
 import { createMockServer, createMockWallet, MOCK_ACCOUNT } from "../src/lib/miniapp/client/mock";
 import {
   createViemSender,
@@ -71,6 +71,44 @@ describe("detect MiniPay and auto-connect", () => {
 });
 
 describe("Call sequencer (viem wallet client over a fake provider)", () => {
+  it("keeps the account through progress callbacks so nonce checks run", async () => {
+    const wallet = createMockWallet({ lang: "en", confirm: async () => true });
+    const nonce = vi.fn().mockResolvedValueOnce(7).mockResolvedValueOnce(8);
+    wallet.waiter = { ...waiter(), nonce };
+    wallet.sender = { send: async () => { throw new Error("wallet disconnected"); } };
+    const result = await sendWithStages({ wallet, api: {} as ReturnType<typeof createApiClient> }, calls);
+    expect(nonce).toHaveBeenCalledWith(wallet.account);
+    expect(result).toMatchObject({ kind: "failed", reason: "unknown", atIndex: 0 });
+  });
+  it("never retries a transient provider error while sending", async () => {
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_chainId") return "0xa4ec";
+      throw Object.assign(new Error("temporarily unavailable"), { code: -32005 });
+    });
+    await expect(createViemSender({ request }, ACCOUNT).send(calls[0]!, 0)).rejects.toThrow();
+    expect(request.mock.calls.filter(([r]) => r.method === "eth_sendTransaction")).toHaveLength(1);
+  });
+  it("recovers a lost approval response and waits for it before asking for the swap", async () => {
+    const approvalHash = `0x${"a".repeat(64)}` as Hex;
+    const swapHash = `0x${"b".repeat(64)}` as Hex;
+    const send = vi.fn(async (_call: Call, index: number) => {
+      if (index === 0) throw new Error("response lost");
+      return swapHash;
+    });
+    const findCall = vi.fn(async () => approvalHash);
+    const w = { ...waiter(), nonce: async () => 92, findCall };
+    const out = await sendCallsInOrder(calls, { account: ACCOUNT, send }, w);
+    expect(out).toEqual({ kind: "sent", hashes: [approvalHash, swapHash] });
+    expect(findCall).toHaveBeenCalledWith(ACCOUNT, 92, calls[0]);
+    expect(w.waited).toEqual([approvalHash, swapHash]);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+  it("keeps an unrecoverable send unknown and never sends the swap", async () => {
+    const send = vi.fn(async () => { throw new Error("response lost"); });
+    const w = { ...waiter(), nonce: vi.fn().mockResolvedValueOnce(92).mockResolvedValue(93), findCall: async () => null };
+    expect(await sendCallsInOrder(calls, { account: ACCOUNT, send }, w)).toMatchObject({ kind: "failed", reason: "unknown", atIndex: 0 });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
   it("sends every call in order, waiting for each receipt, with the fee adapter", async () => {
     const { provider, sent } = fakeProvider();
     const w = waiter();

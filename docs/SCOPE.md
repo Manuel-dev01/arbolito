@@ -10,6 +10,9 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 
 ---
 
+## Conversion fixes (2026-11-04)
+- 🟡 Local MiniPay fixes: readable small ARS rates, preserve sender context, recover exact mined calls after lost wallet responses, disable provider retries, distinguish reserved Textile funds. Deployment and phone verification pending; see STATUS.
+
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
 - ✅ **First autonomous run on mainnet** (2026-11-03): the founder's wBRL guardian re-entered 0.68 USDT → 3.696 wBRL through the guard.
