@@ -99,7 +99,7 @@ export type QuoteResponse = z.infer<typeof QuoteResponse>;
 
 // ── GET /api/miniapp/quotes/open?account=0x… ───────────────────────────────
 /**
- * The user's most recent still-open quote (status quoted, unexpired), e.g. one created from
+ * The user's most recent unsigned conversion intent (retained for 15 minutes), e.g. one created from
  * Telegram. MiniPay's mini-app deeplink (link.minipay.xyz/miniapp?id=…) may drop our query
  * params, so on open the Mini App resumes this instead of relying on ?quote=.
  */

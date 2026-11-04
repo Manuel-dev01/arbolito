@@ -62,7 +62,23 @@ describe("GET /balances and /rates", () => {
 });
 
 describe("GET /quotes/open", () => {
-  it("resumes the account's newest open quote, and null once it is prepared or expired", async () => {
+  it("retains expired unsigned intents for 15 minutes without resuming cancelled or completed ones", async () => {
+    const rig = makeRig();
+    const { openQuote } = await import("../src/lib/miniapp/server/quote");
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "2", account: ACCOUNT });
+    rig.clock.now += 120_000;
+    const expired = (await openQuote(rig.deps, ACCOUNT)).quote;
+    expect(expired?.quoteId).toBe(q.quoteId);
+    expect(Date.parse(expired!.expiresAt)).toBeLessThan(rig.clock.now);
+    await rig.store.updateQuote(q.quoteId, { status: "expired", error: "cancelled_in_telegram" });
+    expect((await openQuote(rig.deps, ACCOUNT)).quote).toBeNull();
+    await rig.store.updateQuote(q.quoteId, { status: "expired", error: "expired" });
+    expect((await openQuote(rig.deps, ACCOUNT)).quote?.quoteId).toBe(q.quoteId);
+    rig.clock.now += 15 * 60_000;
+    expect((await openQuote(rig.deps, ACCOUNT)).quote).toBeNull();
+  });
+
+  it("resumes the account's newest open quote, and null once it is prepared", async () => {
     const rig = makeRig();
     setDeps(rig.deps);
     const get = async (account: string) => {
@@ -80,7 +96,7 @@ describe("GET /quotes/open", () => {
     expect(QuoteResponse.parse(open).amountIn).toBe("2000000");
 
     await prepareQuote(rig.deps, { quoteId: newer.quoteId, account: ACCOUNT });
-    expect((await get(ACCOUNT))!.amountIn).toBe("1000000");
+    expect(await get(ACCOUNT)).toBeNull(); // never resurrect an older action after the newest was prepared
     rig.clock.now += 60_000;
     expect(await get(ACCOUNT)).toBeNull();
     expect((await openRoute(new Request("https://arbolito.test/api/miniapp/quotes/open?account=nope"))).status).toBe(400);

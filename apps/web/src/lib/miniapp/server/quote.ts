@@ -176,8 +176,8 @@ export function toQuoteResponse(row: Pick<QuoteRow, "id" | "expiresAt">, q: Plan
 }
 
 /**
- * GET /quotes/open?account=: the account's newest quote still `quoted` and unexpired, so the Mini
- * App can resume a quote made from Telegram (MiniPay's deeplink may drop our query params).
+ * GET /quotes/open?account=: the newest unsigned intent retained for 15 minutes. Expired prices
+ * stay expired: the app asks for a fresh quote before the user can confirm.
  */
 export async function openQuote(deps: MiniappDeps, account: Address): Promise<{ quote: z.infer<typeof QuoteResponse> | null }> {
   const row = await deps.store().latestOpenQuote(account.toLowerCase(), new Date(deps.now()));

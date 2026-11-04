@@ -274,7 +274,7 @@ From the Ripio team via the hackathon channel, 2026-10-08.
   - `browse?url=` is deprecated: its whitelist isn't maintained for new mini-app domains.
   - `discover`, `receipt?tx=…[&celebrate]`, `qr`, `invite_friends`, `balance`
   - **Consequence:** until Arbolito is listed, links from Telegram open in the phone's browser (the app shows "Abrí Arbolito desde MiniPay"). Testing uses Developer Mode → "Load test page".
-  - Query params passed through `miniapp?id=` are undocumented, so the Telegram "Confirmar en MiniPay" link may need the mini app to resume the user's latest open quote by wallet.
+  - Query params passed through `miniapp?id=` are undocumented. The app recovers the newest unsigned conversion intent by wallet for 15 minutes; expired prices require a new quote before confirmation. Until listing, Telegram cards link to copy/load instructions and never initiate signing on open.
 - **Listing:** submit through MiniPay's submission form (name, URL, 512×512 icon). It's curated (review → test → feedback → approval). Requirements: auto-connect, HTTPS, mobile-optimised, clear errors.
 
 ## Self Agent ID SDK

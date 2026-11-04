@@ -1,11 +1,6 @@
 /**
- * Links from Telegram into the Arbolito Mini App (MINI_APP_URL, falling back to PUBLIC_BASE_URL).
- *
- * MiniPay deeplink: docs.minipay.xyz was unreachable when this was written, so no MiniPay URL
- * scheme is assumed (never invent an endpoint). Plain HTTPS links open the mini app
- * in the phone's browser. Once the docs confirm a "open this URL inside MiniPay" deeplink, set
- * MINIPAY_OPEN_TEMPLATE to it ({url} is replaced by the encoded mini app URL); every link
- * below goes through `wrap`, so that is the only change needed.
+ * Telegram links open a review page. Without a Discover listing the page explains developer-mode
+ * access; it cannot sign outside MiniPay. A future approved deep-link template can wrap the URL.
  */
 import type { Sym } from "./contract";
 
@@ -16,6 +11,8 @@ export function wrapForMiniPay(url: string, template: string | null = MINIPAY_OP
 }
 
 export interface Links {
+  /** No Discover ID: the target page explains the manual testing handoff. */
+  manualHandoff?: boolean;
   /** "Confirmar en MiniPay": the mini app at this exact quote. */
   quote(quoteId: string): string;
   /** The mini app's send flow, prefilled. */
@@ -47,6 +44,7 @@ export function makeLinks(baseUrl: string | undefined, template: string | null =
     return wrapForMiniPay(u.toString(), template);
   };
   return {
+    manualHandoff: template === null,
     quote: (quoteId) => app("/app", { quote: quoteId }),
     send: (p) => app("/app", { send: p.recipient, to: p.to, amount: p.amount, token: p.token, receive: p.receive, quote: p.quoteId }),
     link: (code) => app("/app/link", { code }),

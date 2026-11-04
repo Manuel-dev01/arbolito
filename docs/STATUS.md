@@ -63,6 +63,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-04: Telegram approval handoff for the unlisted MiniPay app
+- Telegram quote cards now say **How to approve in MiniPay** and explain that the signature happens in MiniPay. The browser gate has a copyable app link and developer-mode instructions in English, Spanish and Portuguese. MiniPay’s documented mini-app deep link requires a Discover listing ID; unlisted access remains manual.
+- Opening a quote link only opens review. Unsigned intents can be recovered for 15 minutes when opening MiniPay or returning to its home screen; expired prices must be refreshed. Cancelled, prepared and completed intents are excluded, and an older action cannot resurface after the newest is prepared.
+- All 58 unit files passed: 523 tests passed, one skipped. Targeted handoff/card/format checks: 56 passed. Root typecheck and production web build passed. No transactions sent for this change.
+- Next: finish the synchronized demo with English guide narration and Spanish subtitles; Discover approval remains an external distribution prerequisite.
+
 ### 2026-11-04: fee top-up confirmed; ARS conversion now successful on mainnet
 - **Founder-approved fee top-up:** 0.10 USDT from ops to the founder's existing MiniPay wallet, fork-rehearsed and sent once through the guarded sender. [Top-up transaction](https://celoscan.io/tx/0x027211b767e76dc5bc079fdc46b0b9169510ba44e70310898ac2c38cf5865455), success at block 81883213; Transfer log confirms 100,000 atomic USDT received. Recorded in the local treasury ledger.
 - **Real conversion confirmed:** the founder's wallet subsequently sold **167,368.4422 wARS → 100.878700 USDT** through Uniswap ([transaction](https://celoscan.io/tx/0x31ba6ddf57e7febc3e8d778e2055b5121a3d0a11be2d0020660ab5b55fbc40f9)), success at block 81884250. Both token movements are verified in the receipt; the 0.001017 USDT gas refund is excluded from conversion output. The agent only sent the approved fee top-up; the swap was the user's MiniPay transaction.

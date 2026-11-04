@@ -79,6 +79,7 @@ const STRINGS = {
     en: "I couldn't set up that send. Check the amount and the currency.",
   },
   // Buttons
+  btnApprovalHelp: { es: "Cómo aprobar en MiniPay ↗", pt: "Como aprovar no MiniPay ↗", en: "How to approve in MiniPay ↗" },
   btnConfirm: { es: "Confirmar en MiniPay ↗", pt: "Confirmar no MiniPay ↗", en: "Confirm in MiniPay ↗" },
   btnAlternatives: { es: "Ver alternativas", pt: "Ver alternativas", en: "See alternatives" },
   btnCancel: { es: "Cancelar", pt: "Cancelar", en: "Cancel" },
@@ -128,6 +129,12 @@ export const copy = {
       lang,
       wallet,
     ),
+
+  manualApproval: {
+    es: "Se firma en MiniPay, no en Telegram.\nTodavía no estamos en Discover: abrí las instrucciones.",
+    pt: "A assinatura é no MiniPay, não no Telegram.\nAinda não estamos no Discover: abra as instruções.",
+    en: "Sign in MiniPay, not in Telegram.\nNot in Discover yet: open the testing instructions.",
+  } satisfies Record<Lang, string>,
 
   // ── Linking ──
   linkCode: (lang: Lang, code: string) =>

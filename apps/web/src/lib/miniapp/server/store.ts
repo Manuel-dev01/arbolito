@@ -2,6 +2,9 @@ import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { activateRule, cancelRule, getRule, insertRuleDraft, isPaused, setPause, linkCodes, listRules, messages, miniappQuotes, receipts, runsForAccount, users, type Db, type RuleRow, type RuleRunRow } from "@arbolito/db";
 import type { ChatMessage } from "@arbolito/llm";
 
+/** Retain an unsigned conversion intent during a manual Telegram → MiniPay handoff. */
+export const HANDOFF_INTENT_MS = 15 * 60_000;
+
 /**
  * Persistence for the Mini App backend. Route logic talks to this interface only, so unit tests
  * run against an in-memory implementation (apps/web/test/miniapp-helpers.ts) and production
@@ -37,7 +40,7 @@ export interface MiniappStore {
 
   insertQuote(q: NewQuote): Promise<QuoteRow>;
   getQuote(id: string): Promise<QuoteRow | undefined>;
-  /** The account's newest quote still `quoted` and unexpired at `now` (e.g. one made from Telegram). */
+  /** Newest unsigned intent within 15 min; an expired price must be refreshed, never executed. */
   latestOpenQuote(account: string, now: Date): Promise<QuoteRow | undefined>;
   /** Applies the patch only while the status is one of `fromStatus` (atomic). True if a row changed. */
   updateQuote(id: string, patch: QuotePatch, fromStatus?: readonly string[]): Promise<boolean>;
@@ -129,10 +132,10 @@ export class DrizzleStore implements MiniappStore {
     const [row] = await this.db
       .select()
       .from(miniappQuotes)
-      .where(and(eq(miniappQuotes.account, account.toLowerCase()), eq(miniappQuotes.status, "quoted"), gt(miniappQuotes.expiresAt, now)))
+      .where(and(eq(miniappQuotes.account, account.toLowerCase()), gt(miniappQuotes.createdAt, new Date(now.getTime() - HANDOFF_INTENT_MS))))
       .orderBy(desc(miniappQuotes.createdAt))
       .limit(1);
-    return row;
+    return row && ["quoted", "expired"].includes(row.status) && !row.prepared && (!row.error || row.error === "expired") ? row : undefined;
   }
 
   async updateQuote(id: string, patch: QuotePatch, fromStatus?: readonly string[]) {

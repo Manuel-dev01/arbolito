@@ -15,7 +15,7 @@ import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Q
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
 import { mapApiError, type ClientErrorCode } from "../../lib/miniapp/client/errors";
 import { executeCalls, executeQuote, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
-import { atomicToTyped, DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, shortHex, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
+import { DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, shortHex, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
 import {
   createMockServer,
   createMockWallet,
@@ -71,7 +71,6 @@ type Env =
   | { phase: "ready"; mock: boolean; account: Address; api: ApiClient; wallet: Wallet; store: Store; persona: { name: string; phone: string } | null; scenario: MockScenario };
 
 /** A quote's input as a keypad amount ("10", "10.5"): 2 decimals, for the keypad only. */
-const amountOf = (q: Quote) => atomicToTyped(BigInt(q.amountIn), DECIMALS[q.from]);
 /** A quote's exact input, for re-quoting the same size (chat quotes can carry more than 2 decimals). */
 const exactAmountOf = (q: Quote) => formatUnits(BigInt(q.amountIn), DECIMALS[q.from]);
 
@@ -826,6 +825,25 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     [chat.msgs, setCh, go],
   );
 
+  // Resume an unsigned Telegram intent when switching back to an already-open MiniPay view.
+  const resumedIntents = useRef(new Set<string>());
+  useEffect(() => {
+    if (!ready || ready.mock) return;
+    let active = true;
+    const resume = async () => {
+      if (document.visibilityState !== "visible" || screen !== "home" || ch.busy || send.busy) return;
+      try {
+        const q = await ready.api.openQuote(ready.account);
+        if (!active || !q || resumedIntents.current.has(q.quoteId)) return;
+        resumedIntents.current.add(q.quoteId);
+        setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, amount: exactAmountOf(q), prev: null });
+        go(Date.parse(q.expiresAt) <= Date.now() + 3_000 ? "quote-expired" : "quote");
+      } catch { /* leave the current screen usable offline */ }
+    };
+    document.addEventListener("visibilitychange", resume);
+    return () => { active = false; document.removeEventListener("visibilitychange", resume); };
+  }, [ready, screen, ch.busy, send.busy, go, setCh]);
+
   // ── First screen (after ready) ──
   const firstScreenDone = useRef(false);
   useEffect(() => {
@@ -860,22 +878,21 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
           showError("bad_request");
           return;
         }
-        setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null, amount: amountOf(q) });
-        go("quote", { replace: true });
-        // Straight to prepare → MiniPay's sheet. The sheet is still the user's approval.
-        void runQuote(q, b.quoteId);
+        setCh({ quote: q, quoteAt: Date.now(), from: q.from, to: q.to, prev: null, amount: exactAmountOf(q) });
+        go(Date.parse(q.expiresAt) <= Date.now() + 3_000 ? "quote-expired" : "quote", { replace: true });
+        // A handoff opens a review card. Opening a link never prepares or sends transactions.
         return;
       }
       // MiniPay's mini-app deeplink may drop ?quote=, so resume the account's open quote (from Telegram).
       // It opens on the quote card; the user confirms with one tap and MiniPay's sheet.
       try {
         const open = await ready.api.openQuote(ready.account);
-        if (open && Date.parse(open.expiresAt) > Date.now() + 3_000) {
+        if (open) {
           ready.store.setOnboarded(ready.account);
-          setCh({ quote: open, quoteAt: Date.now(), from: open.from, to: open.to, prev: null, amount: amountOf(open) });
+          setCh({ quote: open, quoteAt: Date.now(), from: open.from, to: open.to, prev: null, amount: exactAmountOf(open) });
           window.history.replaceState({ mp: "home" }, "");
           setScreen("home");
-          go("quote");
+          go(Date.parse(open.expiresAt) <= Date.now() + 3_000 ? "quote-expired" : "quote");
           return;
         }
       } catch {

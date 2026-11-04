@@ -16,6 +16,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 - 🟡 Phone failure reproduced on 2026-11-04: the wallet holds only 0.001664 USDT for MiniPay fees. Exact ARS→USDT call passes on a Celo fork. Fiat-sale fee checks and corrected chat two-step routing deployed (`0468c9f`), live fee guard verified.
 - ✅ Founder-approved 0.10 USDT fee top-up confirmed; real MiniPay conversion confirmed: 167,368.4422 wARS → 100.878700 USDT. Buying MXN still needs outside liquidity. See STATUS.
 
+- ✅ Telegram testing handoff: honest approval label, copy/load instructions, review before signing, 15-minute unsigned-intent recovery with fresh prices required after expiry. Discover listing still needed for direct opening.
+
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
 - ✅ **First autonomous run on mainnet** (2026-11-03): the founder's wBRL guardian re-entered 0.68 USDT → 3.696 wBRL through the guard.

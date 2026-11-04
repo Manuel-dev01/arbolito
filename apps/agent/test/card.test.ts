@@ -23,7 +23,7 @@ import { makeLinks, wrapForMiniPay } from "../src/links";
 import type { CardStatus } from "../src/machine";
 import { CARD_ID, NOW, QUOTE_ID, convertPayload, model, quote } from "./fixtures";
 
-const links = makeLinks("https://arbolito.example/")!;
+const links = { ...makeLinks("https://arbolito.example/")!, manualHandoff: false };
 const texts = (k: InlineKeyboardMarkup) => k.inline_keyboard.map((row) => row.map((b) => b.text));
 const urls = (k: InlineKeyboardMarkup) => k.inline_keyboard.flat().flatMap((b) => ("url" in b && b.url ? [b.url] : []));
 const callbacks = (k: InlineKeyboardMarkup) => k.inline_keyboard.flat().flatMap((b) => ("callback_data" in b && b.callback_data ? [b.callback_data] : []));
@@ -49,6 +49,13 @@ describe("callback data", () => {
 });
 
 describe("live quote card (ledger, 4a)", () => {
+  it("explains manual approval until a Discover listing exists", () => {
+    const r = renderCard(CARD_ID, model(), convertPayload("en"), makeLinks("https://arbolito.example")!, NOW);
+    expect(r.text).toContain("Sign in MiniPay, not in Telegram");
+    expect(texts(r.keyboard)[0]).toEqual(["How to approve in MiniPay ↗"]);
+    expect(urls(r.keyboard)[0]).toContain("/app?quote=");
+  });
+
   it("renders the design's Spanish card exactly", () => {
     const r = renderCard(CARD_ID, model(), convertPayload("es"), links, NOW);
     expect(r.text).toBe(

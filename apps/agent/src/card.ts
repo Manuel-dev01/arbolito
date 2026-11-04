@@ -172,7 +172,7 @@ export function renderCard(id: string, model: CardModel, p: CardPayload, links: 
         cb(t("btnCancel", lang), cardData(id, "x")),
       ];
       const secondsLeft = Math.max(0, Math.ceil((model.expiresAt - now) / 1000));
-      return { text: liveText(p, secondsLeft), keyboard: kb(href ? [url(t("btnConfirm", lang), href)] : [], secondary) };
+      return { text: liveText(p, secondsLeft) + (links?.manualHandoff ? `\n\n${copy.manualApproval[lang]}` : ""), keyboard: kb(href ? [url(t(links?.manualHandoff ? "btnApprovalHelp" : "btnConfirm", lang), href)] : [], secondary) };
     }
     case "expired":
       return { text: `${struck}\n\n${model.prepared ? copy.expiredPrepared[lang] : copy.expired[lang]}`, keyboard: kb([cb(t("btnRequote", lang), cardData(id, "rq"))]) };

@@ -79,7 +79,7 @@ export interface ApiClient {
   quote(req: z.input<typeof QuoteRequest>): Promise<Quote>;
   /** GET /api/miniapp/quote/:id?account=: one of the account's quotes (what a Telegram link opens). */
   quoteById(id: string, account: string): Promise<Quote>;
-  /** GET /api/miniapp/quotes/open: the account's latest open (quoted, unexpired) quote, or null. */
+  /** GET /api/miniapp/quotes/open: the account's latest unsigned intent (including expired prices, for 15 minutes), or null. */
   openQuote(account: string): Promise<Quote | null>;
   listReceipts(account: string): Promise<z.infer<typeof ReceiptsListResponse>["receipts"]>;
   prepare(req: z.input<typeof PrepareRequest>): Promise<Prepared>;
