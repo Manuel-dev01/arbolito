@@ -21,6 +21,22 @@ async function failure(p: Promise<unknown>): Promise<ApiFailure> {
 afterEach(() => setDeps(undefined));
 
 describe("POST /chat (fake LLM, fake STT)", () => {
+  it("explains a staged route and prepares only its first dollar card", async () => {
+    const args = { from: "wARS", to: "wBRL", amount: "6600" };
+    const llm = new ScriptedLlm([
+      { toolCalls: [{ name: "get_quote", args }, { name: "prepare_convert", args }] },
+      { content: "First confirm the dollar card. The second conversion gets a fresh rate." },
+    ]);
+    const rig = makeRig({ llm: () => llm });
+    rig.textileVenue.pairs["USDT>wBRL"] = (a) => a * 6n * 10n ** 12n;
+    const res = await chatTurn(rig.deps, { account: ACCOUNT, lang: "en", text: "Change 6600 pesos to reais" }, "1.1.1.1");
+    const tools = llm.requests[1]!.messages.filter((m) => m.role === "tool").map((m) => JSON.parse(m.content as string));
+    expect(tools[0]).toMatchObject({ status: "two_steps_required", finalDestination: "wBRL" });
+    expect(tools[1]).toMatchObject({ status: "pending_first_step", finalDestination: "wBRL" });
+    expect(res.quotes).toHaveLength(1);
+    expect(res.quotes[0]).toMatchObject({ from: "wARS", to: "USDT" });
+    expect(rig.store.quotes).toHaveLength(1);
+  });
   it("runs a tool turn: prepare_convert stores a quote and returns it as a card", async () => {
     const llm = new ScriptedLlm([
       { toolCalls: [{ name: "prepare_convert", args: { from: "USDT", to: "wARS", amount: "10" } }] },

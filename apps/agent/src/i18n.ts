@@ -40,6 +40,11 @@ const STRINGS = {
     pt: "O mínimo para essa moeda é US$ 1. Tente um valor um pouco maior. <b>Nenhum dinheiro foi movido.</b>",
     en: "The minimum for that currency is US$ 1. Try a slightly larger amount. <b>No money moved.</b>",
   },
+  viaDollars: {
+    es: "Este par necesita dos cambios separados: primero a dólares y después a la moneda de destino. Confirmás cada uno en MiniPay; la segunda tasa no queda fijada.",
+    pt: "Este par precisa de duas conversões separadas: primeiro para dólares e depois para a moeda de destino. Você confirma cada uma no MiniPay; a segunda taxa não fica fixada.",
+    en: "This pair needs two separate conversions: first to dollars, then to the destination currency. Confirm each in MiniPay; the second rate is not locked.",
+  },
   quoteBad: {
     es: "No pude cotizar ese monto. Revisá el monto y las monedas. <b>No se movió plata.</b>",
     pt: "Não consegui cotar esse valor. Confira o valor e as moedas. <b>Nenhum dinheiro foi movido.</b>",

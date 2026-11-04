@@ -42,6 +42,7 @@ function summarize(q: QuoteResponse, lang: Lang) {
 
 /** A failed quote, as the model should see it. no_route also gets the "no market" card. */
 function quoteFailure(r: Extract<CreateResult, { ok: false }>, from: string, to: string, amount: string): ToolOutput {
+  if (r.error === "viaDollars") throw new ToolUserError("This pair needs two separate conversions through USDT, not a service outage. Prepare only the first conversion to USDT; after it confirms, refresh balances and quote the destination. The second rate is not locked.", "via_dollars");
   if (r.error === "noMarket") {
     return { data: { status: "no_route", note: "No market can quote this pair and size right now. A message saying so, with a retry button, is shown. Nothing moved." }, card: noMarketCard(from, to, amount) };
   }
@@ -80,6 +81,7 @@ export function buildHandlers(s: Services, flow: CardFlow, user: User): ToolHand
         const q = await s.miniapp.quote({ from: args.from, to: args.to, amount: args.amount, lang: ctx.language, ...(user.walletAddress ? { account: user.walletAddress } : {}) });
         return { data: summarize(q, ctx.language) };
       } catch (err) {
+        if (err instanceof MiniAppApiError && err.code === "via_dollars") throw new ToolUserError("This pair needs two separate conversions through USDT, not a service outage. First prepare a conversion to USDT, then refresh balances after confirmation and quote the destination. Do not promise both cards or a locked final rate.", "via_dollars");
         if (err instanceof MiniAppApiError && err.code === "no_route") throw new ToolUserError("No market can quote that pair and size right now.", "no_route");
         if (err instanceof MiniAppApiError && err.code === "rate_limited") throw new ToolUserError("Too many quotes in a short time; ask the user to wait a minute.", "rate_limited");
         throw err;
@@ -88,6 +90,11 @@ export function buildHandlers(s: Services, flow: CardFlow, user: User): ToolHand
 
     async prepare_convert(args, ctx) {
       const r = await flow.createConvert(user, ctx.language, { kind: "convert", from: args.from, to: args.to, amount: args.amount });
+      if (!r.ok && r.error === "viaDollars") {
+        const first = await flow.createConvert(user, ctx.language, { kind: "convert", from: args.from, to: "USDT", amount: args.amount });
+        if (!first.ok) return quoteFailure(first, args.from, "USDT", args.amount);
+        return { data: { status: "pending_first_step", finalDestination: args.to, note: "This card converts to USDT only. After it confirms, refresh balances and prepare the destination with a fresh rate. The second rate is not locked; do not prepare both cards now.", ...summarize(first.quote!, ctx.language) }, card: { kind: "convert", id: first.pendingId } };
+      }
       if (!r.ok) return quoteFailure(r, args.from, args.to, args.amount);
       return { data: { status: "pending_confirmation", note: CONFIRM_NOTE, ...summarize(r.quote!, ctx.language) }, card: { kind: "convert", id: r.pendingId } };
     },

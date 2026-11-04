@@ -43,6 +43,7 @@ export const ApiErrorCode = z.enum([
   "rate_limited",
   "funds_reserved", // an earlier Textile quote holds funds until its reservation expires
   "fee_reserve", // leave dollars available for MiniPay's upfront gas debit
+  "network_fee_required", // a fiat sale still needs dollars for MiniPay network fees
   "via_dollars", // this market needs two independently confirmed conversions through USDT
   "upstream", // RPC / Textile / LLM failure; nothing moved
 ]);
@@ -60,6 +61,8 @@ export const RatesResponse = z.object({ at: z.string(), references: z.array(Refe
 // ── GET /api/miniapp/balances?account=0x… ──────────────────────────────────
 export const BalancesResponse = z.object({
   account: Address,
+  /** Largest supported dollar fee balance in micro-USD, including USDm (18 decimals). */
+  networkFeeMicros: Atomic.optional(),
   balances: z.array(z.object({ sym: Sym, amount: Atomic, decimals: z.number().int() })),
   /** Approximate USD value of each balance (micro-USD), for totals in the display currency. */
   usdMicros: z.record(Sym, Atomic),

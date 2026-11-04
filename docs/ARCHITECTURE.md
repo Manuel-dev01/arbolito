@@ -132,6 +132,7 @@ sequenceDiagram
 ```
 
 - Wallets: the user's (swap), the anchor wallet (anchor).
+- Fiat inputs also require at least US$ 0.05 in a supported dollar fee currency; the balance check includes USDm and the UI opens MiniPay Add Cash when needed.
 - Dollar inputs leave US$ 0.05 in the wallet for upfront MiniPay gas; both the amount picker and prepare enforce this buffer.
 - Two-leg routes involving Textile require separate conversions through dollars. When such a route beats the atomic fallback by more than 1%, the UI offers the first conversion explicitly; the second needs a fresh quote and approval, and its rate is not locked. Quotes paying less than half the independent reference are refused as unhealthy liquidity, including when another venue times out.
 - Preview transport failures return an upstream error rather than claiming that no market exists.

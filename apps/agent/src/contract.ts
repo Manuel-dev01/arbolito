@@ -27,6 +27,7 @@ export const ApiErrorCode = z.enum([
   "rate_limited",
   "funds_reserved", // an earlier Textile quote holds funds until its reservation expires
   "fee_reserve", // leave dollars available for MiniPay's upfront gas debit
+  "network_fee_required", // a fiat sale still needs dollars for MiniPay network fees
   "via_dollars", // this market needs two independently confirmed conversions through USDT
   "upstream",
 ]);

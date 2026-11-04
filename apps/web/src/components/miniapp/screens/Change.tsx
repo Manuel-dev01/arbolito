@@ -5,7 +5,7 @@ import { formatUnits } from "viem";
 import type { Sym } from "../../../lib/miniapp/contract";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { balanceOf, byCurrency, spendableBalance, usdToCur } from "../../../lib/miniapp/client/derive";
+import { balanceOf, byCurrency, hasNetworkFees, spendableBalance, usdToCur } from "../../../lib/miniapp/client/derive";
 import {
   atomicToTyped,
   CUR_OF,
@@ -99,7 +99,7 @@ function estimate(amount: string, from: Cur, to: Cur, prices: Partial<Record<Cur
 }
 
 export function ChangeScreen() {
-  const { t, lang, ch, setCh, bal, prices, requestQuote } = useApp();
+  const { t, lang, ch, setCh, bal, prices, requestQuote, openLink } = useApp();
   const from = CUR_OF[ch.from];
   const to = CUR_OF[ch.to];
   const have = balanceOf(bal.data, ch.from);
@@ -138,6 +138,7 @@ export function ChangeScreen() {
             {t.available} {fmtSym(have, ch.from, lang)} · <b className="mp-save">{t.all}</b>
           </button>
           {from === "USD" ? <div className="mp-meta">{t.feeReserveNote}</div> : null}
+          {hasNetworkFees(bal.data) === false ? <div className="mp-banner col" role="status"><span>{t.networkFeeNote}</span><button type="button" className="mp-link" onClick={() => openLink("https://link.minipay.xyz/add_cash?tokens=USDT,USDC,USDM")}>{t.addNetworkFees}</button></div> : null}
         </div>
         <div style={{ display: "flex", justifyContent: "center", margin: "-22px 0", position: "relative", zIndex: 1 }}>
           <button type="button" className="mp-swap" aria-label="⇅" onClick={() => setCh({ from: ch.to, to: ch.from, quote: null })}>
@@ -285,7 +286,7 @@ export function QuoteCardA({ q, quoteAt, now, dim }: { q: Quote; quoteAt: number
 }
 
 export function QuoteScreen() {
-  const { t, lang, screen, ch, go, setSheet, confirmQuote, requestQuote } = useApp();
+  const { t, lang, screen, ch, go, setSheet, confirmQuote, requestQuote, bal, openLink } = useApp();
   const now = useNow();
   const q = ch.quote;
   const expired = screen === "quote-expired" || (q !== null && Date.parse(q.expiresAt) <= now);
@@ -298,6 +299,7 @@ export function QuoteScreen() {
   if (screen === "quote-expired") bar = { children: null, primary: { label: t.refresh, onClick: requestQuote }, secondary: { label: t.cancel, onClick: () => go("change") } };
   else if (changed) bar = { children: null, primary: ch.busy ? { label: t.openingMP, kind: "busy" } : { label: t.confirmNew, onClick: confirmQuote }, secondary: { label: t.cancel, onClick: () => go("change") } };
   else bar = { children: null, note: t.mpNext, primary: ch.busy ? { label: t.openingMP, kind: "busy" } : { label: t.confirmMP, onClick: confirmQuote }, secondary: { label: t.alts, onClick: () => go("alts") } };
+  if (hasNetworkFees(bal.data) === false) bar = { children: null, note: t.networkFeeNote, primary: { label: t.addNetworkFees, onClick: () => openLink("https://link.minipay.xyz/add_cash?tokens=USDT,USDC,USDM") }, secondary: { label: t.backHome, onClick: () => go("home") } };
   return (
     <Frame note={bar.note} primary={bar.primary} secondary={bar.secondary}>
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>

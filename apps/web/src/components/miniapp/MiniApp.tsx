@@ -345,7 +345,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     (code: ClientErrorCode) => {
       const m = mapApiError(code);
       const key = m.kind === "toast" ? m.message : "generic";
-      toast({ notReady: t.errNotReady, rateLimited: t.errRate, fundsReserved: t.errFundsReserved, feeReserve: t.errFeeReserve, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
+      toast({ notReady: t.errNotReady, rateLimited: t.errRate, fundsReserved: t.errFundsReserved, feeReserve: t.errFeeReserve, networkFee: t.networkFeeNote, upstream: t.errUpstream, offline: t.errOffline, minimum: t.errMin, generic: t.errGeneric }[key]);
     },
     [t, toast],
   );
@@ -386,6 +386,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if ((res.kind === "cancelled" || res.kind === "failed") && res.converted) flowDone.current = true;
       if (res.kind === "cancelled") return go("cancelled", { replace: true });
       if (res.kind === "failed") return go("failed", { replace: true });
+      if (res.code === "network_fee_required") {
+        if (q) setCh({ from: q.from, to: q.to, amount: exactAmountOf(q), quote: null });
+        showError(res.code);
+        return go("change", { replace: true });
+      }
       const m = mapApiError(res.code);
       // A send's quote is used up once refused (expired or price changed): fetch a new one.
       if (kind === "send" && (m.kind === "expired" || m.kind === "price-changed")) {

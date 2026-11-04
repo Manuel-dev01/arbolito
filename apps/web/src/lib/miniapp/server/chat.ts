@@ -8,6 +8,7 @@ import { effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/route
 import type { ChatRequest, ChatResponse, QuoteResponse, RuleCard } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { ApiFailure, badRequest, notReady, rateLimited, upstream } from "./errors";
+import { networkFeeBalance } from "./fees";
 import { logError } from "./http";
 import { readBalances } from "./market";
 import { createQuote, parseAmount, planQuote, type PlannedQuote } from "./quote";
@@ -48,6 +49,7 @@ function summarize(q: PlannedQuote) {
 }
 
 const asToolError = (err: unknown): never => {
+  if (err instanceof ApiFailure && ["via_dollars", "fee_reserve", "network_fee_required", "funds_reserved"].includes(err.code)) throw new ToolUserError(err.message, err.code);
   if (err instanceof ApiFailure && err.code === "no_route") throw new ToolUserError(NO_ROUTE, "no_route");
   if (err instanceof ApiFailure && err.code === "bad_request") throw new ToolUserError(err.message, "bad_request");
   if (err instanceof ApiFailure && err.code === "not_ready") throw new ToolUserError(err.message, "not_ready");
@@ -88,29 +90,38 @@ export function buildChatHandlers(
   return {
     async get_balances() {
       const { balances } = await readBalances(deps, account);
-      return { data: { wallet: account, balances: balances.map((b) => ({ token: b.sym, amount: fmtAmount(TOKENS[b.sym].address, b.amount) })) } };
+      const feeBalance = await networkFeeBalance(deps, account);
+      return { data: { wallet: account, balances: balances.map((b) => ({ token: b.sym, amount: fmtAmount(TOKENS[b.sym].address, b.amount) })), networkFees: { availableMicros: feeBalance.toString(), recommendedMinDollars: "0.05", ready: feeBalance >= 50_000n, note: "MiniPay needs a dollar stablecoin balance for network fees even when selling pesos. If ready is false, ask the user to add dollars in MiniPay before confirming." } } };
     },
 
     async get_quote(args) {
       try {
         return { data: summarize(await planQuote(deps, args.from, args.to, parseAmount(args.from, args.amount), account)) };
       } catch (err) {
+        if (err instanceof ApiFailure && err.code === "via_dollars") {
+          const first = await planQuote(deps, args.from, "USDT", parseAmount(args.from, args.amount), account);
+          return { data: { status: "two_steps_required", firstStep: summarize(first), finalDestination: args.to, note: "This is not an outage. First convert to USDT. Only after that confirms, refresh balances and prepare the destination conversion with a fresh rate. Do not promise both cards now or a locked final amount." } };
+        }
         return asToolError(err);
       }
     },
 
     async prepare_convert(args) {
       let q: z.infer<typeof QuoteResponse>;
+      let finalDestination: string | null = null;
       try {
         q = await createQuote(deps, { from: args.from, to: args.to, amount: args.amount, account, lang: lang as "es" | "pt" | "en" });
       } catch (err) {
-        return asToolError(err);
+        if (!(err instanceof ApiFailure) || err.code !== "via_dollars") return asToolError(err);
+        finalDestination = args.to;
+        q = await createQuote(deps, { from: args.from, to: "USDT", amount: args.amount, account, lang: lang as "es" | "pt" | "en" });
       }
       quotes.push(q);
       return {
         data: {
-          status: "pending_confirmation",
-          note: "A quote card with a Confirm button is shown in the app; confirming opens the MiniPay confirmation. Nothing has moved.",
+          status: finalDestination ? "pending_first_step" : "pending_confirmation",
+          finalDestination,
+          note: finalDestination ? "The card is ONLY the first conversion to USDT. After it confirms, refresh balances and prepare a fresh quote for the destination. Do not prepare the second card before that or promise a locked final amount. Nothing has moved." : "A quote card with a Confirm button is shown in the app; confirming opens the MiniPay confirmation. Nothing has moved.",
           youPay: fmtAmount(TOKENS[q.from].address, BigInt(q.amountIn)),
           youGet: fmtAmount(TOKENS[q.to].address, BigInt(q.expectedOut)),
           guaranteedMinimum: fmtAmount(TOKENS[q.to].address, BigInt(q.minOut)),

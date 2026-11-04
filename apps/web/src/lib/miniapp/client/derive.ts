@@ -89,6 +89,13 @@ export function spendableBalance(balances: Balances | null | undefined, sym: Sym
   return have > DOLLAR_FEE_RESERVE ? have - DOLLAR_FEE_RESERVE : 0n;
 }
 
+/** Null while balances are unknown; old cached balances can still price the three dollar tokens. */
+export function hasNetworkFees(balances: Balances | null | undefined): boolean | null {
+  if (!balances) return null;
+  if (balances.networkFeeMicros !== undefined) return BigInt(balances.networkFeeMicros) >= DOLLAR_FEE_RESERVE;
+  return (["USDT", "USDC", "USAT"] as const).some((s) => balanceOf(balances, s) >= DOLLAR_FEE_RESERVE);
+}
+
 /**
  * Autonomy limits for ArbolitoGuard v2 from a USD preset: the three dollars at face value, and
  * wARS/wBRL converted at the current price (omitted when no price is known).

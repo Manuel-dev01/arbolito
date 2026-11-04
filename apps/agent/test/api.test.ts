@@ -67,6 +67,7 @@ describe("Mini App quote client", () => {
   it("maps errors to user-facing copy (no_route gets the no-market card)", () => {
     const e = (code: ConstructorParameters<typeof MiniAppApiError>[0]) => new MiniAppApiError(code, 400, "");
     expect(quoteErrorCopy(e("no_route"))).toBe("noMarket");
+    expect(quoteErrorCopy(e("via_dollars"))).toBe("viaDollars");
     expect(quoteErrorCopy(e("rate_limited"))).toBe("rateLimited");
     expect(quoteErrorCopy(e("bad_request"))).toBe("quoteBad");
     for (const code of ["upstream", "not_ready", "quote_expired", "price_changed", "needs_taker_proof"] as const) expect(quoteErrorCopy(e(code))).toBe("error");

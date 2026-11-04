@@ -13,7 +13,8 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 ## Conversion fixes (2026-11-04)
 - ✅ First MiniPay fixes deployed: readable small ARS rates, preserve sender context, recover exact mined calls after lost wallet responses, disable provider retries, distinguish reserved Textile funds.
 - ✅ Market hardening deployed (`b7b9ae7`): dollar gas buffer, longer preview timeout, distinguish unavailable venues, and explicit separate conversions through dollars instead of drained-pool prices. Live quote API checked.
-- 👤 Phone verification pending; buying MXN needs outside liquidity. See STATUS.
+- 🟡 Phone failure reproduced on 2026-11-04: the wallet holds only 0.001664 USDT for MiniPay fees. Exact ARS→USDT call passes on a Celo fork. Added fiat-sale fee checks and corrected chat two-step routing.
+- 👤 Small dollar fee top-up and a real MiniPay confirmation remain; buying MXN needs outside liquidity. See STATUS.
 
 ## Next up (in order, as of 2026-11-03: six days left)
 - 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.

@@ -6,6 +6,7 @@ import { SYMBOLS, type BalancesResponse, type RatesResponse, type Sym } from "..
 import type { MiniappDeps } from "./deps";
 import { upstream } from "./errors";
 import { logError } from "./http";
+import { networkFeeBalance } from "./fees";
 
 /** GET /rates: reference rates (dolarapi, Uniswap mids, Textile tickers), cached ~30 s in deps. */
 export async function getRates(deps: MiniappDeps): Promise<z.infer<typeof RatesResponse>> {
@@ -57,6 +58,7 @@ export async function getBalances(deps: MiniappDeps, account: Address): Promise<
   const { blockNumber, balances } = await readBalances(deps, account);
   return {
     account,
+    networkFeeMicros: (await networkFeeBalance(deps, account)).toString(),
     balances: balances.map((b) => ({ sym: b.sym, amount: b.amount.toString(), decimals: TOKENS[b.sym].decimals })),
     usdMicros: Object.fromEntries(balances.map((b) => [b.sym, b.usdMicros.toString()])) as Record<Sym, string>,
     blockNumber: blockNumber.toString(),
