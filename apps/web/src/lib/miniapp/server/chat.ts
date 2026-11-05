@@ -1,14 +1,16 @@
-import type { Address } from "viem";
+import { randomUUID } from "node:crypto";
+import { formatUnits, type Address } from "viem";
 import type { z } from "zod";
 import { CELO_MAINNET_ID, TOKENS, tokenByAddress } from "@arbolito/config";
 import { formatUsd, readGuardV2Budget } from "@arbolito/chain";
 import { LlmConfigError, LlmError, TOKEN_SYMBOLS, ToolUserError, detectLanguage, runAgentTurn, type ToolHandlers } from "@arbolito/llm";
 import { parseRule } from "@arbolito/rules";
-import { effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
-import type { ChatRequest, ChatResponse, QuoteResponse, RuleCard } from "../contract";
+import { erc20Abi, effectiveRate, fiatOf, fmtAmount, referenceRate } from "@arbolito/router";
+import type { ChatRequest, ChatResponse, ChatSend, QuoteResponse, RuleCard, Sym } from "../contract";
+import { DOLLAR_FEE_RESERVE } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { ApiFailure, badRequest, notReady, rateLimited, upstream } from "./errors";
-import { networkFeeBalance } from "./fees";
+import { checkFeeReserve, networkFeeBalance } from "./fees";
 import { logError } from "./http";
 import { readBalances } from "./market";
 import { createQuote, parseAmount, planQuote, type PlannedQuote } from "./quote";
@@ -63,11 +65,14 @@ const asToolError = (err: unknown): never => {
  * /prepare and the user's own MiniPay confirmation.
  */
 /** Accent- and case-insensitive name match ("mama" finds "Mamá"). */
-const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().replace(/\s+/g, " ").toLowerCase();
 
 export interface ChatContext {
   /** The phone's contacts that have a wallet. */
-  contacts: { name: string; address: string }[];
+  contacts: { name: string; address: string | null; receive?: z.infer<typeof Sym> }[];
+  sends?: z.infer<typeof ChatSend>[];
+  /** Only addresses supplied by user messages, never tool/assistant output. */
+  userAddresses?: string[];
   /** Rule drafts made this turn (rendered as cards). */
   rules: z.infer<typeof RuleCard>[];
 }
@@ -91,7 +96,7 @@ export function buildChatHandlers(
     async get_balances() {
       const { balances } = await readBalances(deps, account);
       const feeBalance = await networkFeeBalance(deps, account);
-      return { data: { wallet: account, balances: balances.map((b) => ({ token: b.sym, amount: fmtAmount(TOKENS[b.sym].address, b.amount) })), networkFees: { availableMicros: feeBalance.toString(), recommendedMinDollars: "0.05", ready: feeBalance >= 50_000n, note: "MiniPay needs a dollar stablecoin balance for network fees even when selling pesos. If ready is false, ask the user to add dollars in MiniPay before confirming." } } };
+      return { data: { wallet: account, balances: balances.map((b) => ({ token: b.sym, amount: fmtAmount(TOKENS[b.sym].address, b.amount) })), maximumSend: Object.fromEntries(balances.map((b) => [b.sym, formatUnits(TOKENS[b.sym].kind === "usd" ? (b.amount > DOLLAR_FEE_RESERVE ? b.amount - DOLLAR_FEE_RESERVE : 0n) : b.amount, TOKENS[b.sym].decimals)])), networkFees: { availableMicros: feeBalance.toString(), recommendedMinDollars: "0.05", ready: feeBalance >= 50_000n, note: "MiniPay needs a dollar stablecoin balance for network fees even when selling pesos. If ready is false, ask the user to add dollars in MiniPay before confirming." } } };
     },
 
     async get_quote(args) {
@@ -133,9 +138,35 @@ export function buildChatHandlers(
       };
     },
 
+    async list_contacts() {
+      return { data: { contacts: ctx.contacts.map((c) => ({ name: c.name, address: c.address, hasWallet: !!c.address, receive: c.receive })), note: "These are the phone's saved contacts. Use the exact saved name for prepare_send; never guess between similar names." } };
+    },
+
+    async prepare_send(args) {
+      const matches = ctx.contacts.filter((c) => norm(c.name) === norm(args.recipient));
+      if (matches.length > 1) throw new ToolUserError("More than one saved contact has that name. Ask the user to select the recipient in Send.", "bad_request");
+      const contact = matches[0];
+      if (contact && !contact.address) throw new ToolUserError(`Saved contact "${contact.name}" needs a wallet attached. In Send, pick them from MiniPay contacts before preparing the payment.`, "bad_request");
+      const typed = /^0x[0-9a-fA-F]{40}$/.test(args.recipient) && ctx.userAddresses?.some((a) => a.toLowerCase() === args.recipient.toLowerCase());
+      if (!contact && !typed) throw new ToolUserError(`No saved contact named "${args.recipient}". Use list_contacts and ask which saved name they mean, or ask them to type their recipient's 0x address.`, "bad_request");
+      const recipient = (contact?.address ?? args.recipient).toLowerCase() as Address;
+      if (recipient === account.toLowerCase() || /^0x0{40}$/.test(recipient)) throw new ToolUserError("Choose a recipient other than your own wallet or the zero address.", "bad_request");
+      const to = args.destinationToken ?? contact?.receive ?? args.token;
+      const amountIn = parseAmount(args.token, args.amount);
+      try {
+        const have = await deps.chain.readContract({ address: TOKENS[args.token].address, abi: erc20Abi, functionName: "balanceOf", args: [account] });
+        if (amountIn > have) throw new ToolUserError("That amount exceeds the wallet balance. Read get_balances and use maximumSend for 'all', leaving the fee reserve.", "bad_request");
+        await checkFeeReserve(deps, account, args.token, amountIn);
+        const quote = args.token === to ? null : await createQuote(deps, { from: args.token, to, amount: args.amount, account, lang: lang as "es" | "pt" | "en" }, { recipient });
+        const send = { id: randomUUID(), recipient, recipientName: contact?.name ?? recipient, from: args.token, to, amount: args.amount, quote };
+        (ctx.sends ??= []).push(send);
+        return { data: { status: "pending_review", recipient: send.recipientName, amount: args.amount, token: args.token, receive: to, youPay: fmtAmount(TOKENS[args.token].address, amountIn), recipientGets: fmtAmount(TOKENS[to].address, quote ? BigInt(quote.expectedOut) : amountIn), note: "A send card is shown. The user taps Review send, checks the recipient and amount, then confirms in MiniPay. Nothing has moved. Never prepare a conversion card instead of this send." }, card: { kind: "send", id: send.id } };
+      } catch (err) { return asToolError(err); }
+    },
+
     async prepare_scheduled_send(args) {
       const c = ctx.contacts.find((x) => norm(x.name) === norm(args.contact));
-      if (!c) {
+      if (!c?.address) {
         const names = ctx.contacts.map((x) => x.name).join(", ");
         throw new ToolUserError(names ? `No saved contact called "${args.contact}" with a wallet. Saved: ${names}.` : "The user has no saved contacts with a wallet yet; they can add one in Send.", "bad_request");
       }
@@ -211,7 +242,7 @@ export function buildChatHandlers(
     async help() {
       return {
         data: {
-          can: ["check balances", "quote and convert pesos, reais and dollars", "deposit and cash-out links via Ripio", "show receipts after a conversion"],
+          can: ["check balances", "quote and convert pesos, reais and dollars", "deposit and cash-out links via Ripio", "show receipts after a conversion", "list saved contacts and prepare sends for review in MiniPay"],
           tokens: TOKEN_SYMBOLS,
         },
       };
@@ -249,7 +280,10 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
   const user = await store.walletUser(account, req.lang);
   const history = await store.loadHistory(user.id, HISTORY_LIMIT);
   const quotes: z.infer<typeof QuoteResponse>[] = [];
-  const ctx: ChatContext = { contacts: req.contacts ?? [], rules: [] };
+  const ctx: ChatContext = {
+    contacts: req.contacts ?? [], rules: [], sends: [],
+    userAddresses: [...history.filter((m) => m.role === "user").map((m) => typeof m.content === "string" ? m.content : ""), userText].flatMap((s) => s.match(/0x[0-9a-fA-F]{40}\b/g) ?? []),
+  };
   let result;
   try {
     result = await runAgentTurn({
@@ -270,5 +304,5 @@ export async function chatTurn(deps: MiniappDeps, req: z.infer<typeof ChatReques
     throw err;
   }
   await store.appendHistory(user.id, result.messages);
-  return { transcript, reply: result.text, quotes, rules: ctx.rules };
+  return { transcript, reply: result.text, quotes, rules: ctx.rules, sends: ctx.sends ?? [] };
 }

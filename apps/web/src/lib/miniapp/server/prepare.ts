@@ -311,7 +311,8 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
     throw quoteExpired();
   }
 
-  const { route } = decodePayload(row.payload);
+  const { route, sendRecipient } = decodePayload(row.payload);
+  if (sendRecipient && opts.recipient?.toLowerCase() !== sendRecipient.toLowerCase()) throw badRequest("This quote belongs to a send. Review it with its saved recipient in Send.");
   await checkFeeReserve(deps, account, symOf(route.tokenIn), route.amountIn);
   const kind = routeKind(route);
   let prepared: Prepared;

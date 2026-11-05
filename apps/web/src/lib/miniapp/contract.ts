@@ -136,7 +136,7 @@ export const NeedsTakerProof = z.object({
  * (from /quote, same pair and amount) is prepared with the contact as recipient; submit it with
  * /submit like a conversion, and its receipt names the recipient.
  */
-export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional() });
+export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional(), takerProof: TakerProof.optional() });
 export const SendPrepareResponse = z.object({ calls: z.array(Call), expectedOut: Atomic, minOut: Atomic, quoteId: z.string().uuid().optional() });
 
 // ── POST /api/miniapp/submit ───────────────────────────────────────────────
@@ -214,8 +214,8 @@ export const ChatRequest = z.object({
   text: z.string().max(1000).optional(),
   audioBase64: z.string().max(8_000_000).optional(),
   audioMime: z.string().optional(),
-  /** The phone's saved contacts that have a wallet (contacts live on the phone), so the chat can name them in rules. */
-  contacts: z.array(z.object({ name: z.string().max(40), address: Address })).max(200).optional(),
+  /** The phone's saved contacts (a null address means a wallet must be attached in Send), so the chat can resolve sends and name them in rules. */
+  contacts: z.array(z.object({ name: z.string().max(40), address: Address.nullable(), receive: Sym.optional() })).max(200).optional(),
 });
 
 // ── Standing rules ("Dejá que Arbolito actúe por vos": packages/rules) ─────
@@ -242,6 +242,17 @@ export const RuleConfirmRequest = z.object({ ruleId: z.string().uuid(), account:
 export const RuleCancelRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });
 export const RuleResponse = z.object({ rule: RuleCard });
 
+/** A send intent only: no wallet calls are prepared until the user reviews it in Send. */
+export const ChatSend = z.object({
+  id: z.string().uuid(),
+  recipient: Address,
+  recipientName: z.string().min(1).max(64),
+  from: Sym,
+  to: Sym,
+  amount: HumanAmount,
+  quote: QuoteResponse.nullable(),
+});
+
 export const ChatResponse = z.object({
   transcript: z.string().nullable(),
   reply: z.string(),
@@ -249,6 +260,7 @@ export const ChatResponse = z.object({
   quotes: z.array(QuoteResponse),
   /** Rule drafts to render under the reply; Confirm signs the rule in MiniPay (POST /rules/confirm). */
   rules: z.array(RuleCard).default([]),
+  sends: z.array(ChatSend).default([]),
 });
 
 // ── Telegram linking ("Conectá tu MiniPay": 4-digit code shown in both apps) ──

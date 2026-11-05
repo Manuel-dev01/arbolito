@@ -57,6 +57,7 @@ export const SendPrepareRequest = z.object({
   to: Sym,
   amount: z.string(),
   quoteId: z.string().uuid().optional(),
+  takerProof: PrepareRequest.shape.takerProof,
 });
 export type SendPrepareRequest = z.infer<typeof SendPrepareRequest>;
 

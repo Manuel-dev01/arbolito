@@ -135,7 +135,7 @@ export class DrizzleStore implements MiniappStore {
       .where(and(eq(miniappQuotes.account, account.toLowerCase()), gt(miniappQuotes.createdAt, new Date(now.getTime() - HANDOFF_INTENT_MS))))
       .orderBy(desc(miniappQuotes.createdAt))
       .limit(1);
-    return row && ["quoted", "expired"].includes(row.status) && !row.prepared && (!row.error || row.error === "expired") ? row : undefined;
+    return row && !(row.payload as { sendRecipient?: string }).sendRecipient && ["quoted", "expired"].includes(row.status) && !row.prepared && (!row.error || row.error === "expired") ? row : undefined;
   }
 
   async updateQuote(id: string, patch: QuotePatch, fromStatus?: readonly string[]) {

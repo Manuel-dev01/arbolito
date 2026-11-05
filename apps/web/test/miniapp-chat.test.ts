@@ -1,3 +1,8 @@
+import { decodeFunctionData } from "viem";
+import { erc20Abi } from "@arbolito/router";
+import { prepareQuote } from "../src/lib/miniapp/server/prepare";
+import { openQuote } from "../src/lib/miniapp/server/quote";
+import { prepareSend } from "../src/lib/miniapp/server/send";
 import { afterEach, describe, expect, it } from "vitest";
 import { TOKENS } from "@arbolito/config";
 import { LlmApiError } from "@arbolito/llm";
@@ -6,7 +11,7 @@ import { ChatResponse } from "../src/lib/miniapp/contract";
 import { chatTurn } from "../src/lib/miniapp/server/chat";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
-import { ACCOUNT, ScriptedLlm, makeRig } from "./miniapp-helpers";
+import { ACCOUNT, OTHER, ScriptedLlm, makeRig } from "./miniapp-helpers";
 
 async function failure(p: Promise<unknown>): Promise<ApiFailure> {
   try {
@@ -21,6 +26,61 @@ async function failure(p: Promise<unknown>): Promise<ApiFailure> {
 afterEach(() => setDeps(undefined));
 
 describe("POST /chat (fake LLM, fake STT)", () => {
+  it("looks up a saved number label and drafts all spendable dollars without sending", async () => {
+    const llm = new ScriptedLlm([
+      { toolCalls: [{ name: "list_contacts", args: {} }, { name: "get_balances", args: {} }] },
+      { toolCalls: [{ name: "prepare_send", args: { recipient: "1st MTN Number", token: "USDT", amount: "59.4187" } }] },
+      { content: "Review the send to 1st MTN Number, then confirm in MiniPay." },
+    ]);
+    const rig = makeRig({ llm: () => llm });
+    rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 59_468_700n);
+    const res = ChatResponse.parse(await chatTurn(rig.deps, { account: ACCOUNT, lang: "en", text: "Send all my dollars to my saved 1st MTN Number", contacts: [{ name: "1st MTN Number", address: OTHER, receive: "USDT" }] }, "1.1.1.1"));
+    const tools = llm.requests[1]!.messages.filter((m) => m.role === "tool").map((m) => JSON.parse(m.content as string));
+    expect(tools[0].contacts[0].name).toBe("1st MTN Number");
+    expect(tools[1].maximumSend.USDT).toBe("59.4187");
+    expect(res.quotes).toEqual([]); // a send never becomes a conversion to self
+    expect(res.sends).toHaveLength(1);
+    expect(res.sends[0]).toMatchObject({ recipient: OTHER, recipientName: "1st MTN Number", from: "USDT", to: "USDT", amount: "59.4187", quote: null });
+    expect(rig.chain.txs.size).toBe(0);
+    const draft = res.sends[0]!;
+    const prepared = await prepareSend(rig.deps, { account: ACCOUNT, recipient: draft.recipient, from: draft.from, to: draft.to, amount: draft.amount });
+    const decoded = decodeFunctionData({ abi: erc20Abi, data: prepared.calls[0]!.data as `0x${string}` });
+    expect(decoded).toMatchObject({ functionName: "transfer", args: [OTHER, 59_418_700n] });
+    expect(rig.chain.txs.size).toBe(0); // even preparation does not broadcast
+  });
+
+  it("keeps a cross-currency send bound to its saved recipient and exact token pair", async () => {
+    const llm = new ScriptedLlm([
+      { toolCalls: [{ name: "prepare_send", args: { recipient: "mama", token: "USDT", amount: "2" } }] },
+      { content: "Review the payment to Mamá." },
+    ]);
+    const rig = makeRig({ llm: () => llm });
+    rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 10_000_000n);
+    const res = await chatTurn(rig.deps, { account: ACCOUNT, lang: "en", text: "Send two dollars to mama", contacts: [{ name: "Mamá", address: OTHER, receive: "wARS" }] }, "1.1.1.1");
+    expect(res.quotes).toEqual([]);
+    expect(res.sends[0]).toMatchObject({ recipient: OTHER, from: "USDT", to: "wARS", quote: { from: "USDT", to: "wARS", amountIn: "2000000" } });
+    expect(rig.store.quotes[0]!.prepared).toBeNull();
+    expect((await openQuote(rig.deps, ACCOUNT)).quote).toBeNull(); // never resume this as a conversion to self
+    const quoteId = res.sends[0]!.quote!.quoteId;
+    expect((await failure(prepareQuote(rig.deps, { account: ACCOUNT, quoteId }))).code).toBe("bad_request");
+    expect(rig.store.quotes[0]!.prepared).toBeNull();
+    const prepared = await prepareSend(rig.deps, { account: ACCOUNT, recipient: OTHER, from: "USDT", to: "wARS", amount: "2", quoteId });
+    expect(prepared.quoteId).toBe(quoteId);
+  });
+
+  it.each(["unknown", "ambiguous", "untyped-address", "fee-reserve", "missing-wallet"])("does not draft unsafe sends: %s", async (scenario) => {
+    const recipient = scenario === "untyped-address" ? OTHER : scenario === "unknown" ? "Unknown" : "Emmanuel";
+    const llm = new ScriptedLlm([{ toolCalls: [{ name: "prepare_send", args: { recipient, token: "USDT", amount: "10" } }] }, { content: "Please check the recipient and amount." }]);
+    const rig = makeRig({ llm: () => llm });
+    rig.chain.balances.set(`${TOKENS.USDT.address}:${ACCOUNT}`.toLowerCase(), 10_000_000n);
+    const contacts = [{ name: "Emmanuel", address: scenario === "missing-wallet" ? null : OTHER }, ...(scenario === "ambiguous" ? [{ name: "Emmanuel", address: ACCOUNT }] : [])];
+    const res = await chatTurn(rig.deps, { account: ACCOUNT, lang: "en", text: "Send my dollars", contacts }, "1.1.1.1");
+    expect(res.sends).toEqual([]);
+    const error = JSON.parse(llm.requests[1]!.messages.find((m) => m.role === "tool")!.content as string);
+    expect(error.error).toBe(scenario === "fee-reserve" ? "fee_reserve" : "bad_request");
+    expect(rig.chain.txs.size).toBe(0);
+  });
+
   it("explains a staged route and prepares only its first dollar card", async () => {
     const args = { from: "wARS", to: "wBRL", amount: "6600" };
     const llm = new ScriptedLlm([
@@ -53,9 +113,9 @@ describe("POST /chat (fake LLM, fake STT)", () => {
     // Tool output fed back to the model: pending, nothing moved.
     const toolMsg = llm.requests[1]!.messages.find((m) => m.role === "tool")!;
     expect(JSON.parse(toolMsg.content as string)).toMatchObject({ status: "pending_confirmation", youPay: "10 USDT" });
-    // Only the Mini App tool set is offered (no send or contacts; rules draft cards the user signs).
+    // MiniPay chat offers contact lookup, recipient-bound sends and rule drafts.
     expect(llm.requests[0]!.tools!.map((t) => t.function.name).sort()).toEqual(
-      ["deposit_info", "get_balances", "get_limits", "get_quote", "help", "list_rules", "prepare_convert", "prepare_payday_split", "prepare_peso_guardian", "prepare_scheduled_send", "withdraw_guide"].sort(),
+      ["list_contacts", "prepare_send", "deposit_info", "get_balances", "get_limits", "get_quote", "help", "list_rules", "prepare_convert", "prepare_payday_split", "prepare_peso_guardian", "prepare_scheduled_send", "withdraw_guide"].sort(),
     );
 
     // History: a MiniPay-only user keyed by the wallet, and the turn stored.

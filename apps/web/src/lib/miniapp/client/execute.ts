@@ -9,7 +9,7 @@
  */
 import type { Hex } from "viem";
 import type { Call } from "../contract";
-import { ApiFailure, type ApiClient, type Prepared, type Submitted } from "./api";
+import { ApiFailure, type ApiClient, type SendPrepareRequest, type Prepared, type Submitted } from "./api";
 import type { ClientErrorCode } from "./errors";
 import { isUserRejection, sendCallsInOrder, signTakerProof, type SendOutcome, type Wallet } from "./wallet";
 
@@ -51,6 +51,19 @@ async function prepareWithProof(deps: ExecDeps, quoteId: string): Promise<Prepar
     const takerProof = await signTakerProof(wallet.signer, e.proof);
     onStage?.({ stage: "preparing" });
     return api.prepare({ quoteId, account: wallet.account, takerProof });
+  }
+}
+
+/** First-time Textile sends sign their proof without losing the recipient or calling /prepare. */
+export async function prepareSendWithProof(deps: ExecDeps, request: SendPrepareRequest) {
+  try {
+    return await deps.api.sendPrepare(request);
+  } catch (e) {
+    if (!(e instanceof ApiFailure) || e.code !== "needs_taker_proof" || !e.proof) throw e;
+    deps.onStage?.({ stage: "signing-proof" });
+    const takerProof = await signTakerProof(deps.wallet.signer, e.proof);
+    deps.onStage?.({ stage: "preparing" });
+    return deps.api.sendPrepare({ ...request, takerProof });
   }
 }
 
@@ -126,6 +139,7 @@ export async function executeCalls(deps: ExecDeps, getCalls: () => Promise<{ cal
   try {
     calls = (await getCalls()).calls;
   } catch (e) {
+    if (isUserRejection(e)) return { kind: "cancelled" };
     return { kind: "api-error", code: e instanceof ApiFailure ? e.code : "network" };
   }
   const outcome = await sendWithStages(deps, calls);

@@ -35,6 +35,6 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
   if (row.fromSym !== req.from || row.toSym !== req.to || BigInt(row.amountIn) !== amountIn) {
     throw badRequest("The quote doesn't match this send; ask for a new one.", 409);
   }
-  const p = await prepareQuote(deps, { quoteId: req.quoteId, account }, { recipient });
+  const p = await prepareQuote(deps, { quoteId: req.quoteId, account, takerProof: req.takerProof }, { recipient });
   return { calls: p.calls, expectedOut: p.expectedOut, minOut: p.minOut, quoteId: p.quoteId };
 }

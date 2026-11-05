@@ -33,6 +33,7 @@ export function routeFromJson(j: Json): Route {
 
 /** What a miniapp_quotes row stores in `payload`. */
 export interface QuotePayload {
+  sendRecipient?: string;
   v: 1;
   route: Json;
   alternatives: Json[];
@@ -43,6 +44,7 @@ export interface QuotePayload {
 }
 
 export interface DecodedPayload {
+  sendRecipient?: string;
   route: Route;
   alternatives: Route[];
   quotesConsidered: Quote[];
@@ -59,6 +61,7 @@ export function encodePayload(p: DecodedPayload & { lang?: string | null }): Quo
     references: p.references,
     blockNumber: p.blockNumber.toString(),
     lang: p.lang ?? null,
+    ...(p.sendRecipient ? { sendRecipient: p.sendRecipient } : {}),
   };
 }
 
@@ -71,5 +74,6 @@ export function decodePayload(raw: unknown): DecodedPayload {
     quotesConsidered: p.quotesConsidered.map(quoteFromJson),
     references: p.references,
     blockNumber: BigInt(p.blockNumber),
+    ...(p.sendRecipient ? { sendRecipient: p.sendRecipient } : {}),
   };
 }

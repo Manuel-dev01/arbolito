@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { Hex } from "viem";
 import { TOKENS } from "@arbolito/config";
 import type { Call } from "../src/lib/miniapp/contract";
-import { createApiClient } from "../src/lib/miniapp/client/api";
-import { executeQuote, sendWithStages } from "../src/lib/miniapp/client/execute";
+import { ApiFailure, createApiClient } from "../src/lib/miniapp/client/api";
+import { executeCalls, executeQuote, prepareSendWithProof, sendWithStages } from "../src/lib/miniapp/client/execute";
 import { createMockServer, createMockWallet, MOCK_ACCOUNT } from "../src/lib/miniapp/client/mock";
 import {
   createViemSender,
@@ -242,4 +242,39 @@ describe("execute flow against the mock server", () => {
     const nr = setup("no_route");
     await expect(nr.api.quote({ from: "wBRL", to: "wARS", amount: "10" })).rejects.toMatchObject({ code: "no_route" });
   }, 15_000);
+});
+
+
+describe("first-time Textile contact sends", () => {
+  it("signs the proof and repeats only recipient-bound preparation, then sends each call once", async () => {
+    const server = createMockServer({ lang: "en" });
+    const api = createApiClient({ fetch: server.fetch });
+    const proof = { error: { code: "needs_taker_proof" as const, message: "sign" }, typedData: {}, eip191Message: "one-time proof", nonce: "0xab" as Hex, issuedAt: 1 };
+    const sendPrepare = vi.spyOn(api, "sendPrepare").mockRejectedValueOnce(new ApiFailure("needs_taker_proof", 409, "sign", proof)).mockResolvedValue({ calls, expectedOut: "100", minOut: "99" });
+    const convertPrepare = vi.spyOn(api, "prepare");
+    const wallet = createMockWallet({ lang: "en", confirm: async () => true });
+    const signer = vi.spyOn(wallet.signer, "signTypedData");
+    const sender = vi.spyOn(wallet.sender, "send");
+    const request = { account: MOCK_ACCOUNT, recipient: ACCOUNT, from: "USDT" as const, to: "wCOP" as const, amount: "2", quoteId: crypto.randomUUID() };
+    const deps = { api, wallet };
+    const result = await executeCalls(deps, () => prepareSendWithProof(deps, request));
+    expect(result.kind).toBe("done");
+    expect(sendPrepare).toHaveBeenCalledTimes(2);
+    expect(sendPrepare.mock.calls[1]![0]).toMatchObject({ ...request, takerProof: { scheme: "eip712", nonce: "0xab" } });
+    expect(convertPrepare).not.toHaveBeenCalled();
+    expect(signer).toHaveBeenCalledTimes(1);
+    expect(sender).toHaveBeenCalledTimes(2); // one approval, one swap; no transaction retries
+  });
+
+  it("rejecting the proof cancels before any transaction is sent", async () => {
+    const api = createApiClient({ fetch: createMockServer({}).fetch });
+    vi.spyOn(api, "sendPrepare").mockRejectedValue(new ApiFailure("needs_taker_proof", 409, "sign", { error: { code: "needs_taker_proof", message: "sign" }, typedData: {}, eip191Message: "proof", nonce: "0xab", issuedAt: 1 }));
+    const wallet = createMockWallet({ lang: "en", confirm: async () => false });
+    const sender = vi.spyOn(wallet.sender, "send");
+    const deps = { api, wallet };
+    const result = await executeCalls(deps, () => prepareSendWithProof(deps, { account: MOCK_ACCOUNT, recipient: ACCOUNT, from: "USDT", to: "wCOP", amount: "2" }));
+    expect(result.kind).toBe("cancelled");
+    expect(sender).not.toHaveBeenCalled();
+    expect(api.sendPrepare).toHaveBeenCalledTimes(1);
+  });
 });

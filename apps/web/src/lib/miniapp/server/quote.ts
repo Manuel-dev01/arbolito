@@ -186,7 +186,7 @@ export async function openQuote(deps: MiniappDeps, account: Address): Promise<{ 
 }
 
 /** POST /quote: plan, store the quote (≈60 s) and map it to the contract. */
-export async function createQuote(deps: MiniappDeps, req: z.infer<typeof QuoteRequest>): Promise<z.infer<typeof QuoteResponse>> {
+export async function createQuote(deps: MiniappDeps, req: z.infer<typeof QuoteRequest>, intent?: { recipient: string }): Promise<z.infer<typeof QuoteResponse>> {
   const amountIn = parseAmount(req.from, req.amount);
   const account = req.account ? (req.account.toLowerCase() as Address) : undefined;
   const q = await planQuote(deps, req.from, req.to, amountIn, account);
@@ -195,7 +195,7 @@ export async function createQuote(deps: MiniappDeps, req: z.infer<typeof QuoteRe
     fromSym: req.from,
     toSym: req.to,
     amountIn: amountIn.toString(),
-    payload: encodePayload({ ...q, lang: req.lang ?? null }),
+    payload: encodePayload({ ...q, lang: req.lang ?? null, sendRecipient: intent?.recipient.toLowerCase() }),
     expiresAt: new Date(deps.now() + QUOTE_TTL_MS),
   });
   return toQuoteResponse(row, q);

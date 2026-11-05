@@ -4,11 +4,15 @@ The one place to see what's done, what's next and what's left, mapped to how eac
 judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
 STATUS.md log.
 
-**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-04 (5 days left).
+**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-05 (4 days left).
 
 Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped · 👤 needs the founder (a decision, an approval, money or an account)
 
 ---
+
+## MiniPay chat and demo fixes (2026-11-05)
+- ✅ Saved-contact lookup and recipient-bound send drafts in MiniPay chat, with an explicit review before confirmation. “All” leaves the dollar network-fee reserve. Exact tokens and contact labels persist through the send flow.
+- ✅ Demo scrollbars styled with a thin rounded thumb and stable content gutter; fixed navigation and action bars remain outside the scroll area.
 
 ## Conversion fixes (2026-11-04)
 - ✅ First MiniPay fixes deployed: readable small ARS rates, preserve sender context, recover exact mined calls after lost wallet responses, disable provider retries, distinguish reserved Textile funds.

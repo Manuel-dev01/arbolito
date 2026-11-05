@@ -14,8 +14,8 @@ import { cancelText, pauseText } from "@arbolito/rules";
 import { createApiClient, type ApiClient, type AutoStatus, type Balances, type Quote, type Rates, type Rule } from "../../lib/miniapp/client/api";
 import { pricesFrom, limitsFromUsd } from "../../lib/miniapp/client/derive";
 import { mapApiError, type ClientErrorCode } from "../../lib/miniapp/client/errors";
-import { executeCalls, executeQuote, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
-import { DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, shortHex, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
+import { executeCalls, executeQuote, prepareSendWithProof, submitWithRetry, type ExecResult, type ExecStage } from "../../lib/miniapp/client/execute";
+import { CUR_OF, DECIMALS, SYM_OF, fmtNumber, fmtPct, fmtSym, parseHuman, shortHex, toApiAmount, type Cur } from "../../lib/miniapp/client/format";
 import {
   createMockServer,
   createMockWallet,
@@ -118,7 +118,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [chat, setChat] = useState<{ msgs: ChatMsg[]; recording: boolean; busy: boolean }>({ msgs: [], recording: false, busy: false });
 
   const setCh = useCallback((p: Partial<ChangeState>) => setChState((s) => ({ ...s, ...p })), []);
-  const setSend = useCallback((p: Partial<SendState>) => setSendState((s) => ({ ...s, ...p })), []);
+  const setSend = useCallback((p: Partial<SendState>) => setSendState((s) => ({ ...s, ...(p.contactId !== undefined ? { recipient: undefined, draftId: undefined, from: undefined, to: undefined } : {}), ...p })), []);
   const setAutoDraft = useCallback((p: Partial<AutoDraft>) => setAutoDraftState((s) => ({ ...s, ...p })), []);
 
   const toast = useCallback((msg: string) => {
@@ -482,21 +482,21 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   }, [ch.quote, ch.busy, go, runQuote]);
 
   // ── Send flow ──
-  const sendContact = contacts.find((c) => c.id === send.contactId) ?? null;
+  const sendContact = send.recipient ?? contacts.find((c) => c.id === send.contactId) ?? null;
 
   const requestSendQuote = useCallback(async () => {
     if (!ready || !sendContact) return;
     const amount = toApiAmount(send.amount);
     if (!amount) return;
     flowDone.current = false;
-    if (send.pay === sendContact.cur) {
+    if ((send.from ?? SYM_OF[send.pay]) === (send.to ?? SYM_OF[sendContact.cur])) {
       setSend({ quote: null, quoteAt: Date.now() });
       if (screen !== "send-quote") go("send-quote");
       return;
     }
     setSend({ busy: true });
     try {
-      const q = await ready.api.quote({ from: SYM_OF[send.pay], to: SYM_OF[sendContact.cur], amount, account: ready.account, lang });
+      const q = await ready.api.quote({ from: send.from ?? SYM_OF[send.pay], to: send.to ?? SYM_OF[sendContact.cur], amount, account: ready.account, lang });
       setSend({ quote: q, quoteAt: Date.now(), busy: false });
       if (screen !== "send-quote") go("send-quote");
     } catch (e) {
@@ -504,11 +504,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const code = (e as { code?: ClientErrorCode }).code ?? "network";
       if (mapApiError(code).kind === "no-market") {
         noMarketFlow.current = "send";
-        setCh({ from: SYM_OF[send.pay], to: SYM_OF[sendContact.cur], amount: send.amount, viaDollars: code === "via_dollars" });
+        setCh({ from: send.from ?? SYM_OF[send.pay], to: send.to ?? SYM_OF[sendContact.cur], amount: send.amount, viaDollars: code === "via_dollars" });
         go("quote-nomarket");
       } else showError(code);
     }
-  }, [ready, sendContact, send.amount, send.pay, screen, lang, go, setSend, setCh, showError]);
+  }, [ready, sendContact, send.amount, send.pay, send.from, send.to, screen, lang, go, setSend, setCh, showError]);
   requestSendQuoteRef.current = requestSendQuote;
 
   const confirmSend = useCallback(async () => {
@@ -518,11 +518,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     if (!amount) return;
     const q = send.quote;
     if (q && Date.parse(q.expiresAt) <= Date.now()) return void requestSendQuote();
-    const from = SYM_OF[send.pay];
-    const to = SYM_OF[sendContact.cur];
+    const from = send.from ?? SYM_OF[send.pay];
+    const to = send.to ?? SYM_OF[sendContact.cur];
     setSend({ busy: true });
     const amountIn = q?.amountIn ?? parseHuman(amount, DECIMALS[from]).toString();
-    setExec({ ...EMPTY_EXEC, flow: "send", from, to, amountIn, expectedOut: q?.expectedOut ?? amountIn, contactName: sendContact.name.split(" ")[0] ?? sendContact.name });
+    setExec({ ...EMPTY_EXEC, flow: "send", from, to, amountIn, expectedOut: q?.expectedOut ?? amountIn, contactName: sendContact.name });
     sheetAmount.current = `${fmtNumber(BigInt(amountIn), DECIMALS[from], lang)} ${from}`;
     let moved = false;
     const deps = {
@@ -536,15 +536,18 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         }
       },
     };
-    const res = await executeCalls(deps, () => ready.api.sendPrepare({ account: ready.account, recipient: sendContact.address!, from, to, amount, quoteId: q?.quoteId }));
+    const res = await executeCalls(deps, () => prepareSendWithProof(deps, { account: ready.account, recipient: sendContact.address!, from, to, amount, quoteId: q?.quoteId }));
     setSend({ busy: false });
+    if (send.draftId && (res.kind === "done" || (res.kind === "failed" && (res.hashes.length > 0 || res.reason === "unknown")) || (res.kind === "cancelled" && !!res.converted))) {
+      setChat((c) => ({ ...c, msgs: c.msgs.map((m) => m.kind === "send" && m.id === send.draftId ? { ...m, used: true } : m) }));
+    }
     if (res.kind === "done") {
       const receipt = q ? await submitWithRetry(deps, q.quoteId, res.hashes) : null;
-      await settle({ ...res, receipt }, q, "send", sendContact.name.split(" ")[0] ?? sendContact.name);
+      await settle({ ...res, receipt }, q, "send", sendContact.name);
       return;
     }
     await settle(res, q, "send", null);
-  }, [ready, sendContact, send.busy, send.amount, send.quote, send.pay, t, toast, requestSendQuote, setSend, lang, onStage, go, settle]);
+  }, [ready, sendContact, send.busy, send.amount, send.quote, send.pay, send.from, send.to, send.draftId, t, toast, requestSendQuote, setSend, lang, onStage, go, settle]);
 
   // ── Autonomy ──
   const activateAuto = useCallback(async () => {
@@ -631,9 +634,9 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       if (!ready) return;
       setChat((c) => ({ ...c, busy: true, msgs: [...c.msgs, { id: newId(), kind: "typing" }] }));
       try {
-        // Rules can name the phone's contacts that have a wallet (contacts live on the phone).
-        const withWallet = contacts.filter((c) => c.address).map((c) => ({ name: c.name.slice(0, 40), address: c.address! }));
-        const r = await ready.api.chat({ account: ready.account, lang, contacts: withWallet, ...req });
+        // Sends and rules resolve the phone’s saved wallet contacts, including their receiving currency.
+        const savedContacts = contacts.map((c) => ({ name: c.name.slice(0, 40), address: c.address, receive: SYM_OF[c.cur] }));
+        const r = await ready.api.chat({ account: ready.account, lang, contacts: savedContacts, ...req });
         setChat((c) => ({
           ...c,
           busy: false,
@@ -641,6 +644,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
             ...c.msgs.filter((x) => x.kind !== "typing").map((m) => (m.id === voiceMsgId && m.kind === "voice" ? { ...m, text: r.transcript } : m)),
             { id: newId(), kind: "bot", text: r.reply },
             ...r.quotes.map((q): ChatMsg => ({ id: newId(), kind: "quote", quote: q, at: Date.now(), status: "live" })),
+            ...(r.sends ?? []).map((send): ChatMsg => ({ id: newId(), kind: "send", send })),
             ...(r.rules ?? []).map((rule): ChatMsg => ({ id: newId(), kind: "rule", rule, status: "draft" })),
           ],
         }));
@@ -788,6 +792,17 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     [ready, chat.msgs, lang, t, pushMsgs, addReceipt, refreshBalances, showError],
   );
 
+  const chatReviewSend = useCallback((msgId: string) => {
+    const m = chat.msgs.find((x) => x.id === msgId);
+    if (!m || m.kind !== "send" || m.used || send.busy) return;
+    const d = m.send;
+    const saved = contacts.find((c) => c.address?.toLowerCase() === d.recipient.toLowerCase() && c.name === d.recipientName);
+    const recipient: Contact = { ...(saved ?? { id: d.id, name: d.recipientName, phone: "", tag: "" }), address: d.recipient, cur: CUR_OF[d.to] };
+    flowDone.current = false;
+    setSend({ contactId: recipient.id, recipient, draftId: m.id, pay: CUR_OF[d.from], from: d.from, to: d.to, amount: d.amount, quote: d.quote, quoteAt: Date.now(), busy: false });
+    go("send-quote");
+  }, [chat.msgs, contacts, send.busy, setSend, go]);
+
   const chatCancel = useCallback(
     (msgId: string) => {
       setChatQuote(msgId, "cancelled");
@@ -929,7 +944,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
         if (c && (s === "send-quote" || s === "send-done")) {
           const q = c.cur === "USD" ? null : await api.quote({ from: "USDT", to: SYM_OF[c.cur], amount: "20", account: ready.account, lang: l });
           setSendState({ contactId: c.id, pay: "USD", amount: "20", quote: q, quoteAt: Date.now(), busy: false });
-          if (s === "send-done") setExec({ ...EMPTY_EXEC, flow: "send", from: "USDT", to: SYM_OF[c.cur], amountIn: q?.amountIn ?? "20000000", expectedOut: q?.expectedOut ?? "20000000", contactName: c.name.split(" ")[0] ?? c.name, receiptId: ready.store.receipts(ready.account)[1]?.receiptId ?? null });
+          if (s === "send-done") setExec({ ...EMPTY_EXEC, flow: "send", from: "USDT", to: SYM_OF[c.cur], amountIn: q?.amountIn ?? "20000000", expectedOut: q?.expectedOut ?? "20000000", contactName: c.name, receiptId: ready.store.receipts(ready.account)[1]?.receiptId ?? null });
         }
       }
       if (s === "auto-contacts" || s === "auto-consent" || s === "auto-on") setAutoDraftState({ preset: "mid", custom: [25, 100], contactIds: mockContacts.slice(0, 2).map((c) => c.id), busy: false });
@@ -1056,6 +1071,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     refreshRules,
     cancelRule: (id) => void cancelRule(id),
     chatAlts,
+    chatReviewSend,
     editAuto: (next) => {
       // Start from what the guard has now: its contacts on, and its own limits (a preset when they match one).
       const allowed = new Set((auto?.contacts ?? []).map((a) => a.toLowerCase()));
@@ -1070,7 +1086,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   };
 
   const head = HEADER[screen];
-  const title = head ? (head[0] === "sendTo" ? fill(t.hSendTo, { n: (sendContact?.name ?? "").split(" ")[0] ?? "" }) : t[head[0]]) : null;
+  const title = head ? (head[0] === "sendTo" ? fill(t.hSendTo, { n: sendContact?.name ?? "" }) : t[head[0]]) : null;
   const showTabs = mode === "app" && TAB_SCREENS.includes(screen);
 
   return (

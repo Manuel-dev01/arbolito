@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import type { Quote } from "../../../lib/miniapp/client/api";
 import { countdown } from "../../../lib/miniapp/client/countdown";
-import { fmtPct, fmtRateLine, fmtSaved, fmtSym, gainOf, receiptRef } from "../../../lib/miniapp/client/format";
+import { DECIMALS, parseHuman, fmtPct, fmtRateLine, fmtSaved, fmtSym, gainOf, receiptRef } from "../../../lib/miniapp/client/format";
 import { useApp, useNow, type ChatMsg } from "../context";
 import { CountdownBar, CountdownText, Spinner } from "../ui";
 import { routeText } from "./Change";
@@ -90,6 +90,21 @@ function ChatQuote({ m, now }: { m: Extract<ChatMsg, { kind: "quote" }>; now: nu
       )}
     </div>
   );
+}
+
+/** A recipient-bound draft. Review opens Send; this card never initiates wallet calls. */
+function ChatSendCard({ m }: { m: Extract<ChatMsg, { kind: "send" }> }) {
+  const { t, lang, chatReviewSend } = useApp();
+  const d = m.send;
+  return <div className="mp-chat-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+    <span className="mp-kicker">{t.send}</span>
+    <div className="mp-between"><span>{t.to}</span><strong>{d.recipientName}</strong></div>
+    <div className="mp-amount" style={{ fontSize: 34 }}>{fmtSym(d.quote?.amountIn ?? parseHuman(d.amount, DECIMALS[d.from]).toString(), d.from, lang)}</div>
+    <span className="mp-small">{fill(t.recvX, { n: d.recipientName })}: {d.quote ? "≈ " : ""}{fmtSym(d.quote?.expectedOut ?? parseHuman(d.amount, DECIMALS[d.to]).toString(), d.to, lang)}</span>
+    <span className="mp-small">{t.mpNext}</span>
+    <button type="button" className="mp-btn" disabled={m.used} onClick={() => chatReviewSend(m.id)}>{t.reviewSend}</button>
+    {m.used ? <span className="mp-small" role="status">{t.chatSendUsed}</span> : null}
+  </div>;
 }
 
 /** A drafted automatic rule: the user turns it on by signing its text in MiniPay. */
@@ -180,6 +195,8 @@ function Message({ m, now }: { m: ChatMsg; now: number }) {
           ) : null}
         </div>
       );
+    case "send":
+      return <ChatSendCard m={m} />;
     case "rule":
       return <ChatRule m={m} />;
     case "cancel":

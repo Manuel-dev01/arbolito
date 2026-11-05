@@ -12,7 +12,6 @@ import { Badge, CountdownBar, CountdownText } from "../ui";
 import { CurPicker, CurPill, Keypad, MiniPayReceiptLink, ReceiptChip } from "./Change";
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
-const first = (name: string) => name.split(" ")[0] ?? name;
 
 /** Contact picked from MiniPay's native picker, handed to the add form. */
 let picked: { name: string; address: string } | null = null;
@@ -180,9 +179,9 @@ export function SendAdd() {
 export function SendAmount() {
   const { t, lang, contacts, send, setSend, bal, prices, requestSendQuote } = useApp();
   const [picking, setPicking] = useState(false);
-  const c = contacts.find((x) => x.id === send.contactId);
+  const c = send.recipient ?? contacts.find((x) => x.id === send.contactId);
   if (!c) return <SendList />;
-  const paySym = SYM_OF[send.pay];
+  const paySym = send.from ?? SYM_OF[send.pay];
   const have = balanceOf(bal.data, paySym);
   const over = bal.data !== null && isPositive(send.amount) && parseHuman(send.amount, DECIMALS[paySym]) > spendableBalance(bal.data, paySym);
   const pf = prices[send.pay];
@@ -220,7 +219,7 @@ export function SendAmount() {
         </div>
         <div className="mp-sunk">
           <div className="mp-between">
-            <span className="mp-small">{fill(t.recvX, { n: first(c.name) })}</span>
+            <span className="mp-small">{fill(t.recvX, { n: c.name })}</span>
             <CurPill cur={c.cur} />
           </div>
           <div className="mp-amount mp-save" style={{ fontSize: 36 }}>
@@ -234,7 +233,7 @@ export function SendAmount() {
           title={t.sendLbl}
           value={send.pay}
           onPick={(cur) => {
-            setSend({ pay: cur, quote: null });
+            setSend({ pay: cur, from: undefined, quote: null });
             setPicking(false);
           }}
           onClose={() => setPicking(false)}
@@ -247,7 +246,7 @@ export function SendAmount() {
 export function SendQuote() {
   const { t, lang, contacts, send, setSheet, go, confirmSend, requestSendQuote, toast } = useApp();
   const now = useNow();
-  const c = contacts.find((x) => x.id === send.contactId);
+  const c = send.recipient ?? contacts.find((x) => x.id === send.contactId);
   const q = send.quote;
   const exp = q ? Date.parse(q.expiresAt) : 0;
   const cd = q ? countdown(exp, now, exp - send.quoteAt) : null;
@@ -281,7 +280,7 @@ export function SendQuote() {
               {pay}
             </div>
             <div className="mp-col" style={{ gap: 2, padding: "12px 14px", borderRadius: 14, background: "var(--save-bg)", color: "var(--save-text)" }}>
-              <span style={{ fontSize: 15, fontWeight: 600 }}>{fill(t.recvX, { n: first(c.name) })}</span>
+              <span style={{ fontSize: 15, fontWeight: 600 }}>{fill(t.recvX, { n: c.name })}</span>
               <span className="mp-amount" style={{ fontSize: 31 }}>
                 {get}
               </span>
@@ -325,10 +324,10 @@ export function SendQuote() {
 
 export function SendDone() {
   const { t, lang, exec, contacts, send, go, openReceipt, openLink, toast, mock } = useApp();
-  const c = contacts.find((x) => x.id === send.contactId);
+  const c = send.recipient ?? contacts.find((x) => x.id === send.contactId);
   const got = exec.to && exec.expectedOut ? fmtSym(exec.expectedOut, exec.to, lang) : "";
   const pay = exec.from && exec.amountIn ? fmtSym(exec.amountIn, exec.from, lang) : "";
-  const name = exec.contactName ?? (c ? first(c.name) : "");
+  const name = exec.contactName ?? (c ? c.name : "");
   const digits = (c?.phone ?? "").replace(/\D/g, "");
   const tellWhatsApp = () => {
     toast(t.toastWA);
