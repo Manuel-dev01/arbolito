@@ -43,6 +43,23 @@ export function CurSheet() {
   );
 }
 
+export function ThemeSheet() {
+  const { t, theme, setTheme, setSheet } = useApp();
+  return (
+    <Sheet label={t.setTheme} onClose={() => setSheet(null)}>
+      <div className="mp-sheet-title">{t.setTheme}</div>
+      {(["system", "light", "dark"] as const).map((v) => (
+        <button key={v} type="button" className="mp-lang-opt" aria-pressed={v === theme} onClick={() => setTheme(v)}>
+          <span>{t.themeName[v]}</span>
+          <span className="mp-save" style={{ fontWeight: 800 }}>
+            {v === theme ? "✓" : ""}
+          </span>
+        </button>
+      ))}
+    </Sheet>
+  );
+}
+
 /** "Ver detalles": fees, route and tolerance. Hex and token tickers live only here. */
 export function DetailsSheet() {
   const { t, ch, send, screen, setSheet, lang } = useApp();

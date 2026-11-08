@@ -35,6 +35,9 @@ export interface PendingSubmit {
 
 const PREFIX = "arbolito.mp.";
 
+/** "system" follows the phone; it is stored as no value. app/app/layout.tsx reads the same key before paint. */
+export type ThemePref = "system" | "light" | "dark";
+
 export interface KV {
   getItem(k: string): string | null;
   setItem(k: string, v: string): void;
@@ -74,6 +77,8 @@ export function createStore(kv: KV | null = defaultKV()) {
     /** The user's own pick; null = follow the language and phone region. */
     displayCur: () => read<Cur | null>("displayCur", null),
     setDisplayCur: (c: Cur) => write("displayCur", c),
+    theme: (): ThemePref => read<ThemePref | null>("theme", null) ?? "system",
+    setTheme: (t: ThemePref) => write("theme", t === "system" ? null : t),
     onboarded: (account: string) => read<boolean>(`onboarded.${acct(account)}`, false),
     setOnboarded: (account: string) => write(`onboarded.${acct(account)}`, true),
 

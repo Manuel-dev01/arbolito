@@ -8,7 +8,7 @@ import type { ApiClient, AutoStatus, Balances, Quote, Rates, Rule } from "../../
 import type { ExecResult, ExecStage } from "../../lib/miniapp/client/execute";
 import type { Cur, Lang } from "../../lib/miniapp/client/format";
 import type { Prices } from "../../lib/miniapp/client/derive";
-import type { Contact, ReceiptIndexEntry, Store } from "../../lib/miniapp/client/store";
+import type { Contact, ReceiptIndexEntry, Store, ThemePref } from "../../lib/miniapp/client/store";
 import type { Wallet } from "../../lib/miniapp/client/wallet";
 import type { MiniDict } from "../../i18n/miniapp";
 import type { ClientErrorCode } from "../../lib/miniapp/client/errors";
@@ -98,6 +98,8 @@ export interface AppCtx {
   lang: Lang;
   setLang(l: Lang): void;
   setDisplayCur(c: Cur): void;
+  theme: ThemePref;
+  setTheme(t: ThemePref): void;
   mock: boolean;
   account: Address;
   api: ApiClient;
@@ -111,7 +113,7 @@ export interface AppCtx {
   back(): void;
   toast(msg: string): void;
   showError(code: ClientErrorCode): void;
-  setSheet(s: "lang" | "cur" | "details" | null): void;
+  setSheet(s: "lang" | "cur" | "theme" | "details" | null): void;
   /** Opens a link in the same view (MiniPay rule: no new tabs). */
   openLink(url: string): void;
 

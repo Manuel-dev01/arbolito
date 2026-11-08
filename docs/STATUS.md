@@ -69,6 +69,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Won't recur silently:** anchors pay gas in USDT (fee adapter) when the wallet is under 0.02 CELO; a receipt still registering 15 s after it was saved retries its anchor when it is viewed (at most once a minute; duplicates are rejected onchain before gas). Test added; 533 unit tests pass.
 - **Desk:** 89 fills, US$ 594 volume, 160 RFQs won, all six pairs quoting. Users: 42 receipts from 9 wallets.
 - **Submission refresh:** Loops entry updated (founder's go-ahead): demo video https://youtu.be/lB6YraoRJ7g and current numbers (44 conversions from 10 wallets, US$ 333.51 routed; desk 89 fills from 19 wallets). docs/TEXTILE-WRITEUP.md: all 89 fills with hashes, P&L as of 2026-11-08 (−1.82 on 160, spread +0.10), points 10–11. README links the video.
+- **Theme choice in the Mini App:** Settings → Appearance (match phone / light / dark), saved on the device and applied before first paint. Before, the app only followed the phone, so a dark-mode phone could never see the light theme.
 
 ### 2026-11-05: saved-contact sends in MiniPay chat and demo scrolling
 - **Root cause:** MiniPay chat received local contacts but offered neither `list_contacts` nor `prepare_send`; the model could only apologize or misdescribe the missing tools as an outage. Connected both tools and added recipient-bound send cards that open the existing Send review before MiniPay confirmation.

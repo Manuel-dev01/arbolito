@@ -184,7 +184,7 @@ export function Revoke() {
 }
 
 export function Settings() {
-  const { t, persona, contacts, auto, telegram, displayCur, setSheet, go, mock, toast } = useApp();
+  const { t, persona, contacts, auto, telegram, displayCur, theme, setSheet, go, mock, toast } = useApp();
   const tag = auto === null ? "…" : auto.configured ? (auto.paused ? t.secTagPaused : t.secTagOn) : t.secTagOff;
   const tgLabel = mock ? "@lucia.dg" : telegram === null ? "…" : telegram.linked ? (telegram.telegramName ?? t.tgLinked) : t.setTgHow;
   const row = { minHeight: 56, justifyContent: "space-between", fontWeight: 600, padding: "0 16px" } as const;
@@ -215,6 +215,10 @@ export function Settings() {
             <span className="mp-row" style={{ gap: 8, fontWeight: 400, color: "var(--muted)" }}>
               <Badge cur={displayCur} size={24} /> {t.curName[displayCur]} ({displayCur}) ›
             </span>
+          </button>
+          <button type="button" className="mp-list-row" style={row} onClick={() => setSheet("theme")}>
+            <span>{t.setTheme}</span>
+            <span style={{ fontWeight: 400, color: "var(--muted)" }}>{t.themeName[theme]} ›</span>
           </button>
           <button type="button" className="mp-list-row" style={row} onClick={() => go("send")}>
             <span>{t.setContacts}</span>

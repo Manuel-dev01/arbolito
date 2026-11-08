@@ -2,7 +2,7 @@
  * MiniPay Mini App styles (the Mini App design). Uses the tokens in ../tokens.css;
  * the only new custom properties are the stand-in MiniPay sheet greys (demo mode) and the page wash.
  * Platform rules: 360×640 minimum, single column, no horizontal scroll, 44 px targets, 16 px body,
- * safe-area insets, light/dark via prefers-color-scheme, blur only on the bottom bar and sheets.
+ * safe-area insets, light/dark via prefers-color-scheme or the Settings choice (data-theme), blur only on the bottom bar and sheets.
  */
 .mp-root {
   --mp-sheet-bg: #ffffff;
@@ -24,7 +24,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 @media (prefers-color-scheme: dark) {
-  .mp-root {
+  :root:not([data-theme="light"]) .mp-root {
     --mp-sheet-bg: #202124;
     --mp-sheet-text: #e8eaed;
     --mp-sheet-muted: #9aa0a6;
@@ -32,6 +32,14 @@
     --mp-wash: radial-gradient(420px 300px at 110% -5%, oklch(0.4 0.12 350 / 0.35), transparent 70%),
       radial-gradient(380px 300px at -10% 105%, oklch(0.45 0.12 125 / 0.25), transparent 70%);
   }
+}
+:root[data-theme="dark"] .mp-root {
+  --mp-sheet-bg: #202124;
+  --mp-sheet-text: #e8eaed;
+  --mp-sheet-muted: #9aa0a6;
+  --mp-sheet-line: #3c4043;
+  --mp-wash: radial-gradient(420px 300px at 110% -5%, oklch(0.4 0.12 350 / 0.35), transparent 70%),
+    radial-gradient(380px 300px at -10% 105%, oklch(0.45 0.12 125 / 0.25), transparent 70%);
 }
 .mp-root *, .mp-root *::before, .mp-root *::after { box-sizing: border-box; }
 .mp-root button { font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }

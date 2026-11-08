@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={`${serif.variable} ${sans.variable} ${mono.variable} ${archivo.variable}`}>
+    <html lang="es" suppressHydrationWarning className={`${serif.variable} ${sans.variable} ${mono.variable} ${archivo.variable}`}>
       <body>
         {children}
         {/* Vercel Web Analytics: cookieless page views, same-origin script (/_vercel/insights). */}

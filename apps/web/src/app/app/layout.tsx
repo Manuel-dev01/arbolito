@@ -20,6 +20,14 @@ export const viewport: Viewport = {
   ],
 };
 
+// Applies the theme picked in Settings (store key "theme") before first paint, so it never flashes.
+const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem("arbolito.mp.theme"));if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
 export default function MiniAppLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      {children}
+    </>
+  );
 }

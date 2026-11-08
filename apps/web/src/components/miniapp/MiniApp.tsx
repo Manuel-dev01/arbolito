@@ -27,14 +27,14 @@ import {
   type MockScenario,
   type SheetRequest,
 } from "../../lib/miniapp/client/mock";
-import { createStore, newId, type Contact, type ReceiptIndexEntry, type Store } from "../../lib/miniapp/client/store";
+import { createStore, newId, type Contact, type ReceiptIndexEntry, type Store, type ThemePref } from "../../lib/miniapp/client/store";
 import { createMiniPayWallet, detectMiniPay, getAccount, isUserRejection, pickFeeCurrency, type Wallet } from "../../lib/miniapp/client/wallet";
 import { AppContext, PRESETS, draftLimits, type AppCtx, type AutoDraft, type BalState, type ChangeState, type ChatMsg, type ExecState, type SendState } from "./context";
 import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen } from "./screens";
 import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
 import { ScreenView } from "./screens/ScreenView";
-import { CurSheet, DetailsSheet, LangSheet, MiniPaySheet } from "./sheets";
+import { CurSheet, DetailsSheet, LangSheet, MiniPaySheet, ThemeSheet } from "./sheets";
 import { codeFromUrl, LinkScreen } from "./screens/Link";
 
 const MOCK_FAILS: MockFail[] = ["reject", "revert", "no_route", "price_changed", "proof", "expired", "not_ready", "upstream", "mismatch"];
@@ -85,6 +85,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const [locale, setLocale] = useState<string | null>(null);
   /** The display currency the user picked in Settings (null = from language and region). */
   const [curPick, setCurPick] = useState<Cur | null>(null);
+  const [theme, setThemeState] = useState<ThemePref>("system");
   const t = miniT(lang);
   const [env, setEnv] = useState<Env>({ phase: "boot" });
   const bootRef = useRef<Boot | null>(null);
@@ -92,7 +93,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
   const depth = useRef(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [sheet, setSheet] = useState<"lang" | "cur" | "details" | null>(null);
+  const [sheet, setSheet] = useState<"lang" | "cur" | "theme" | "details" | null>(null);
   const [mpReq, setMpReq] = useState<{ req: SheetRequest; resolve(ok: boolean): void } | null>(null);
   const sheetAmount = useRef<string>("");
 
@@ -183,6 +184,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     setLangState(l);
     setLocale(navLang);
     setCurPick(store0.displayCur());
+    setThemeState(store0.theme());
 
     if (b.mock) {
       const alias = b.state ? STATE_ALIASES[b.state] : undefined;
@@ -240,6 +242,19 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     },
     [ready],
   );
+
+  // A device setting, so it is saved to this phone even in the sample account (whose store is in memory).
+  const setTheme = useCallback((t: ThemePref) => {
+    setThemeState(t);
+    createStore().setTheme(t);
+    setSheet(null);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "system") delete root.dataset.theme;
+    else root.dataset.theme = theme;
+  }, [theme]);
 
   // ── Data ──
   const refreshBalances = useCallback(async () => {
@@ -1003,6 +1018,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     persona: env.persona,
     displayCur: curPick ?? displayCurFor(lang, locale),
     setDisplayCur,
+    theme,
+    setTheme,
     screen,
     go,
     back,
@@ -1117,6 +1134,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
           ) : null}
           {sheet === "lang" ? <LangSheet /> : null}
           {sheet === "cur" ? <CurSheet /> : null}
+          {sheet === "theme" ? <ThemeSheet /> : null}
           {sheet === "details" ? <DetailsSheet /> : null}
           {mpReq ? (
             <MiniPaySheet

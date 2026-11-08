@@ -72,8 +72,9 @@
   --btn-h: 54px;
 }
 
+/* Dark follows the phone unless the user picked a theme in Settings (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0b1220;
     --surface: rgba(255, 255, 255, 0.06);
     --surface-2: #1a2234;
@@ -96,6 +97,33 @@
     --glass: rgba(11, 18, 32, 0.55);
     --shadow-sheet: 0 -10px 30px rgba(0, 0, 0, 0.5);
   }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-2: #1a2234;
+  --text: #f2f3f7;
+  --muted: #a3abbf;
+  --card-border: rgba(242, 243, 247, 0.28);
+  --hairline: rgba(242, 243, 247, 0.12);
+  --a1: oklch(0.72 0.2 350);
+  --a2: oklch(0.7 0.16 265);
+  --a3: oklch(0.89 0.2 125);
+  --save-text: oklch(0.89 0.2 125);
+  --save-bg: oklch(0.32 0.07 125);
+  --attention-bg: oklch(0.3 0.08 350);
+  --attention-text: oklch(0.85 0.1 350);
+  --danger: oklch(0.75 0.15 25);
+  --danger-bg: oklch(0.3 0.08 25);
+  /* In dark, lime is the primary button, with ink text on it. */
+  --primary-bg: oklch(0.89 0.2 125);
+  --primary-text: #0b1220;
+  --glass: rgba(11, 18, 32, 0.55);
+  --shadow-sheet: 0 -10px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* Amounts use tabular figures everywhere. */
