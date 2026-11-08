@@ -20,7 +20,7 @@ const STABLES = ["USDT", "USDC", "USAT"] as const;
 
 runMain(async () => {
   const [dest, sym, human] = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !/^https?:/.test(a) && all[i - 1] !== "--from");
-  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|reserve|0xAddress --gift> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
+  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|reserve|operator|0xAddress --gift> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
   if (!(STABLES as readonly string[]).includes(sym)) throw new Error(`only dollar stablecoins (${STABLES.join(", ")}): ${sym}`);
   const token = TOKENS[sym as (typeof STABLES)[number]];
   const amount = parseUnits(human, token.decimals);
@@ -31,6 +31,8 @@ runMain(async () => {
     desk: { key: env.DESK_PRIVATE_KEY, name: "DESK_PRIVATE_KEY", label: "desk wallet" },
     buy: { key: env.BUY_PAYER_PRIVATE_KEY, name: "BUY_PAYER_PRIVATE_KEY", label: "buy payer" },
     reserve: { key: env.RESERVE_PRIVATE_KEY, name: "RESERVE_PRIVATE_KEY", label: "reserve" },
+    // The rules operator pays gas in USDT once its CELO runs low (packages/rules gasFallback).
+    operator: { key: env.ARBOLITO_OPERATOR_PRIVATE_KEY, name: "ARBOLITO_OPERATOR_PRIVATE_KEY", label: "rules operator" },
   } as const;
   let to: Address;
   let label: string;
@@ -43,7 +45,7 @@ runMain(async () => {
     to = getAddress(dest);
     label = "welcome credit";
   } else {
-    throw new Error("destination must be desk, buy, reserve, or an address with --gift");
+    throw new Error("destination must be desk, buy, reserve, operator, or an address with --gift");
   }
 
   const fork = forkUrl();
