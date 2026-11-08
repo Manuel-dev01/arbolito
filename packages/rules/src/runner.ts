@@ -98,6 +98,12 @@ export interface RunnerOptions {
   guardianSignal?: (sym: GuardianSym) => Promise<GuardianSignal | null>;
   /** How often each guardian rule is evaluated. Default hourly. */
   guardianEveryMs?: number;
+  /**
+   * Below minCelo, the operator pays gas in this token (live only: anvil can't simulate fee-currency
+   * txs). A swap needs ~0.07 CELO up front at 200 gwei; on 2026-11-08 the operator was down to 0.046
+   * and every rule failed with "total cost ... exceeds the balance".
+   */
+  gasFallback?: { minCelo: bigint; feeCurrency: string };
 }
 
 /**
@@ -420,6 +426,9 @@ export class RulesRunner {
   /** One guarded operator transaction. */
   private async send(data: Hex, usdMicros: bigint, purpose: string): Promise<Sent> {
     try {
+      const fb = this.o.mode === "live" ? this.o.gasFallback : undefined;
+      const celo = fb ? await this.o.publicClient.getBalance({ address: this.o.operator.address }).catch(() => 0n) : 0n;
+      const feeCurrency = fb && celo < fb.minCelo ? fb.feeCurrency : undefined;
       const block = await this.o.publicClient.getBlock();
       const tip = await this.o.publicClient.estimateMaxPriorityFeePerGas();
       const base = block.baseFeePerGas ?? (await this.o.publicClient.getGasPrice());
@@ -434,14 +443,20 @@ export class RulesRunner {
         purpose,
         ledger: this.o.ledger,
         caps: this.o.operatorCaps ?? NO_OPERATOR_CAP,
-        // A 1.25x base-fee cap keeps the operator's small CELO float enough for each send.
-        fees: { maxFeePerGas: (base * 5n) / 4n + tip, maxPriorityFeePerGas: tip },
+        // A 1.25x base-fee cap keeps the operator's small CELO float enough for each send. Fees in
+        // another token are priced in that token, so viem estimates those.
+        ...(feeCurrency ? { feeCurrency } : { fees: { maxFeePerGas: (base * 5n) / 4n + tip, maxPriorityFeePerGas: tip } }),
       });
       return { ok: true, hash: res.hash, receipt: res.receipt };
     } catch (e) {
       const err = e as Error & { shortMessage?: string };
       if (e instanceof BroadcastError) return { ok: false, hash: e.hash, outcome: e.outcome, error: err.message };
-      return { ok: false, outcome: "not-sent", error: err.shortMessage ?? err.message };
+      const msg = err.shortMessage ?? err.message;
+      if (/exceeds the balance|insufficient funds/i.test(msg)) {
+        this.log(`[rules] operator ${this.o.operator.address} is out of gas: ${msg}`);
+        return { ok: false, outcome: "not-sent", error: "Arbolito's network-fee wallet ran low, so nothing was sent and nothing left your account." };
+      }
+      return { ok: false, outcome: "not-sent", error: msg };
     }
   }
 

@@ -79,6 +79,7 @@ export function startRulesRunner(db: Db, api: Api, env: Env): (() => void) | nul
     ledger: new DbLedger(db, operator.address),
     log,
     guardianSignal: deskSignal(env.DESK_FEED_PUBLIC_URL),
+    gasFallback: { minCelo: 100_000_000_000_000_000n, feeCurrency: "USDT" },
     async notify(account, text) {
       const [u] = await db.select({ telegramId: users.telegramId }).from(users).where(eq(users.walletAddress, account.toLowerCase())).limit(1);
       if (u?.telegramId) await api.sendMessage(Number(u.telegramId), text, { link_preview_options: { is_disabled: true } });
