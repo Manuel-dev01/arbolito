@@ -63,6 +63,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-08: receipts stuck registering (anchor wallet out of gas); fixed for good
+- **Cause:** the receipt-anchoring wallet `0x89dC…7CA4` ran out of CELO on 2026-11-07 12:36 UTC (0.0048 left; an anchor costs ~0.0098 at 200 gwei). 12 receipts sat "registering"; the conversions themselves were fine.
+- **Fixed (founder's yes, each fork-rehearsed):** [0.2 CELO](https://celoscan.io/tx/0xd3302bf317f0120ddadbfeda2fb3322164b5db6543f35add19b1190751b203ff) and [3 USDT](https://celoscan.io/tx/0xbbd296eec09717ff1cb35b737b17d8f5a6ad7dfe6c401556c0b0d0bee294a4f6) from ops to the anchor wallet; `pnpm anchor:wallet pending --live` anchored all 12. Desk approvals topped up: [wARS 160,000](https://celoscan.io/tx/0x556cdc66d6ffaf96f87aec10ac8fbb9637077f2866942b9bacd045c148974ac8), [USA₮ 1,000](https://celoscan.io/tx/0x72839ad15dffaea3e77a205745367114aafc5f2daacba124c2812404d519d14c).
+- **Won't recur silently:** anchors pay gas in USDT (fee adapter) when the wallet is under 0.02 CELO; a receipt still registering 15 s after it was saved retries its anchor when it is viewed (at most once a minute; duplicates are rejected onchain before gas). Test added; 533 unit tests pass.
+- **Desk:** 89 fills, US$ 594 volume, 160 RFQs won, all six pairs quoting. Users: 42 receipts from 9 wallets.
+
 ### 2026-11-05: saved-contact sends in MiniPay chat and demo scrolling
 - **Root cause:** MiniPay chat received local contacts but offered neither `list_contacts` nor `prepare_send`; the model could only apologize or misdescribe the missing tools as an outage. Connected both tools and added recipient-bound send cards that open the existing Send review before MiniPay confirmation.
 - **Amounts and recipients:** balances expose exact spendable amounts after the dollar fee reserve for “send all”. Saved contact labels containing “number” work as names; missing wallets and duplicate names receive actionable errors. Explicit source/destination tokens and full saved labels survive review (including non-USDT dollar tokens). Cross-currency chat quotes are bound to their recipient and cannot resume or prepare as conversions to self. Submitted/uncertain drafts cannot be reused.

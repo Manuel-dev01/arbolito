@@ -61,6 +61,9 @@ export interface MiniappDeps {
 
 const REFS_TTL_MS = 30_000;
 
+/** Below this (0.02 CELO, about two anchors), receipts pay their anchoring gas in USDT. */
+const ANCHOR_MIN_CELO = 20_000_000_000_000_000n;
+
 export function buildDeps(): MiniappDeps {
   const env = loadEnv();
   const chain = makePublicClient();
@@ -72,6 +75,9 @@ export function buildDeps(): MiniappDeps {
       ? async (bundle: ProofBundle): Promise<AnchorOutcome> => {
           const account = privateKeyToAccount(env.ANCHOR_PRIVATE_KEY as Hex);
           const db = webDb();
+          // Gas in CELO while there is enough, else in USDT through its fee adapter: the wallet ran
+          // out of CELO on 2026-11-07 and 12 receipts sat "registering" until it was refilled.
+          const celo = await chain.getBalance({ address: account.address }).catch(() => 0n);
           const r = await anchorBundle({
             bundle,
             receipts: CONTRACTS.arbolitoReceipts!,
@@ -81,6 +87,7 @@ export function buildDeps(): MiniappDeps {
             walletClient: makeWalletClient(account),
             // Serverless: no writable disk for the default file ledger; anchors are $0 value anyway.
             ledger: db ? new DbLedger(db, account.address) : new MemoryLedger(),
+            feeCurrency: celo < ANCHOR_MIN_CELO ? "USDT" : undefined,
           });
           return { txHash: r.txHash, blockNumber: r.blockNumber };
         }

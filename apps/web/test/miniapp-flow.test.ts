@@ -300,6 +300,31 @@ describe("Uniswap: quote → prepare → submit", () => {
     rig.deps.verify = async () => ({ ok: false, errors: ["amount mismatch"] });
     expect((await getMiniappReceipt(rig.deps, s.receiptId)).status).toBe("mismatch");
   });
+
+  it("heals a receipt whose anchor failed: looking at it retries the anchor (out of gas, 2026-11-07)", async () => {
+    let gas = false;
+    const anchored: string[] = [];
+    const rig = makeRig({
+      anchor: async (b) => {
+        if (!gas) throw new Error("insufficient funds for gas");
+        anchored.push(b.routeId);
+        return { txHash: `0x${"bb".repeat(32)}`, blockNumber: 80_000_020n };
+      },
+    });
+    const q = await quoted(rig);
+    const p = await prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address });
+    const hashes = mineCalls(rig, p.calls, { delivered: { token: wARS.address, amount: 16_000n * E18 } });
+    const s = await submitQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, txHashes: hashes });
+    expect(s.status).toBe("registering");
+    gas = true; // the wallet is refilled
+    // Too fresh: the submit's own anchor may still be landing, so no retry yet.
+    expect((await getMiniappReceipt(rig.deps, s.receiptId)).status).toBe("registering");
+    rig.clock.now += 20_000;
+    const r = await getMiniappReceipt(rig.deps, s.receiptId);
+    expect(r.status).toBe("verified");
+    expect(r.anchorTx).toBe(`0x${"bb".repeat(32)}`);
+    expect(anchored).toEqual([s.receiptId]);
+  });
 });
 
 describe("Textile: 409 proof → firm quote → submit", () => {
