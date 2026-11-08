@@ -24,10 +24,11 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 
 - ✅ Demo synchronized with the working November 4 flow: 4:06 final cut, English timed script/guide audio, burned Spanish subtitles, Portuguese captions, and fresh mainnet receipt evidence. Local artifacts ready for founder review/upload.
 
-## Next up (in order, as of 2026-11-03: six days left)
-- 👤 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). Today's 4 wallets are the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
+## Next up (in order, as of 2026-11-08: deadline 2026-11-09 09:00 UTC)
+- 🟡 **Real LatAm users** (T1 Impact, and the 1st-place line "with real users in Latin America"). 2026-11-08: 44 conversions from 10 wallets (/metrics); the first were the team's. Testers in AR/BR/CO convert at least once, and their receipts land on /metrics.
 - ✅ **First autonomous run on mainnet** (2026-11-03): the founder's wBRL guardian re-entered 0.68 USDT → 3.696 wBRL through the guard.
-- 👤 **An outside agent paying Arbolito's x402 API**, ideally in wFIAT (another team's agent). Then update the Loops entry (with `payTo`) and add the video.
+- 👤 **An outside agent paying Arbolito's x402 API**, ideally in wFIAT (another team's agent).
+- ✅ **Loops entry** updated 2026-11-08 with the demo video (https://youtu.be/lB6YraoRJ7g) and current numbers.
 - Done 2026-11-03: x402 seller (settling), MCP/A2A/OASF, ERC-8004 reputation, peso guardian, /agent, README and ARCHITECTURE.md, internal docs untracked.
 
 ### Earlier
@@ -39,7 +40,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 6. ✅ **Desk v1:** rebalancer (2026-10-19), risk-officer fixes, buy side sized to the room under each cap, quoting uptime and RFQs won on /desk, P&L against the real 120 USDT capital, and [docs/DESK-STRATEGY.md](DESK-STRATEGY.md) (2026-10-20). A true win rate isn't measurable: Stitch logs only the RFQs we win.
 7. 🟡 **T3 Build with buy** (chosen 2026-10-20; T2b dropped: it needs an outside counterparty paying us). "vs Western Union" on quotes and receipts, read in browsers bought through buy: built and deployed to Vercel; readings flowing since 2026-10-21 (US$ → R$: +4.35% vs Western Union). Left: real users driving the calls.
 8. ✅ **QA pass** (2026-10-26): six audits double-checked by skeptics, browser sweep at 1440/390, ~55 fixes in one batch (instant signed pause, receipt verification, double-send on back, honest copy, small phones). Left: the desk's wBRL Permit2 top-up (needs the founder's go-ahead).
-9. 👤 **Submission package** by ~Nov 5: public repo, README for judges, demo video, the Loops entry.
+9. ✅ **Submission package:** public repo, README for judges, demo video (YouTube), the Loops entry (2026-11-08).
 
 ---
 
@@ -85,7 +86,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | LLM risk officer (pause-only, every 15 min) | ✅ |
 | | Rebalancer: sells inventory above the cap back to USDT (≤ $5 slices, price floor vs fair, no self-trading, gas in USDT) | ✅ |
 | Volume quoted and filled (30%) | Six corridors quoting: wARS, wBRL, USDC, USA₮, wCOP, wMXN (bid-only) | ✅ |
-| | Fills ledger plus the `/desk` page (4 fills so far, all at positive edge) | ✅ |
+| | Fills ledger plus the `/desk` page (89 fills, US$ 594, 160 RFQs won as of 2026-11-08) | ✅ |
 | | App conversions routed through Textile, so they become RFQs the desk can win | ✅ |
 | | Quoting uptime per corridor (24 h / 7 d) and RFQs won on `/desk` (win rate not observable: Stitch logs only wins) | ✅ |
 | | Optional: cNGN or IDRX corridors (listed in the track) | ⬜ |

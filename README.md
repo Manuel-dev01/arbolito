@@ -12,6 +12,7 @@ Built for **Celo · Agents on Open Rails** (deadline Nov 9, 2026). Everything be
 
 | | Link |
 |---|---|
+| Demo video | [4-minute walkthrough on YouTube](https://youtu.be/lB6YraoRJ7g) |
 | Website | [arbolito-livid.vercel.app](https://arbolito-livid.vercel.app) |
 | Mini App | Built for MiniPay (Discover listing pending). Open `https://arbolito-livid.vercel.app/app` in MiniPay, or try the demo at [`/app?mock=1`](https://arbolito-livid.vercel.app/app?mock=1) |
 | Telegram | [@arbolitoo_bot](https://t.me/arbolitoo_bot) (open to everyone) |
