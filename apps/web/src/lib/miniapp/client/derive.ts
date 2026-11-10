@@ -12,10 +12,19 @@ export type Prices = Partial<Record<Cur, bigint>>;
 
 const MICRO = 1_000_000n;
 
+/**
+ * Market prices first: the rate Arbolito trades at, not Argentina's official rate. Taking the first
+ * USD/ARS reference picked "official", which dolarapi had not updated since 2026-11-05, so "today's
+ * dollar" sat at ARS 1,570 and R$ 5.58 for days while the market was ~1,651 and ~5.32.
+ */
+const MARKET_FIRST = ["uniswap_mid", "textile_mid", "crypto", "mep", "interbank"];
+
 function refRate(rates: Rates | null | undefined, pair: string): number | null {
-  const r = rates?.references.find((x) => x.pair.toUpperCase() === pair);
-  const n = r ? Number(r.rate) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const rank = (name: string) => (MARKET_FIRST.includes(name) ? MARKET_FIRST.indexOf(name) : MARKET_FIRST.length);
+  const r = (rates?.references ?? [])
+    .filter((x) => x.pair.toUpperCase() === pair && Number.isFinite(Number(x.rate)) && Number(x.rate) > 0)
+    .sort((a, b) => rank(a.name) - rank(b.name))[0];
+  return r ? Number(r.rate) : null;
 }
 
 /**
@@ -36,6 +45,8 @@ export function pricesFrom(balances: Balances | null | undefined, rates?: Rates 
   }
   const usdArs = refRate(rates, "USD/ARS");
   if (!p.ARS && usdArs) p.ARS = BigInt(Math.round(1e6 / usdArs));
+  const usdBrl = refRate(rates, "USD/BRL");
+  if (!p.BRL && usdBrl) p.BRL = BigInt(Math.round(1e6 / usdBrl));
   const brlArs = refRate(rates, "BRL/ARS");
   if (!p.BRL && brlArs && p.ARS) p.BRL = BigInt(Math.round(Number(p.ARS) * brlArs));
   for (const cur of ["COP", "MXN"] as const) {

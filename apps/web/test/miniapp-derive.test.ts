@@ -62,4 +62,20 @@ describe("pricesFrom", () => {
     expect(dollarsPer(p.COP)).toBeCloseTo(3190, -1);
     expect(dollarsPer(p.MXN)).toBeCloseTo(18.77, 0);
   });
+
+  it("prices from the market, not the official rate (2026-11-10: a stale official showed ARS 1,570 and R$ 5.58 for days)", () => {
+    const at = "2026-11-10T15:00:00Z";
+    const p = pricesFrom({ account: ACCOUNT, balances: [], usdMicros: {}, blockNumber: "1" } as never, {
+      at,
+      references: [
+        { name: "official", pair: "USD/ARS", rate: "1570", source: "x", at },
+        { name: "crypto", pair: "USD/ARS", rate: "1656.55", source: "x", at },
+        { name: "official", pair: "BRL/ARS", rate: "281.4609", source: "x", at },
+        { name: "uniswap_mid", pair: "USD/ARS", rate: "1651.08", source: "x", at },
+        { name: "uniswap_mid", pair: "USD/BRL", rate: "5.3197", source: "x", at },
+      ],
+    } as never);
+    expect(dollarsPer(p.ARS)).toBeCloseTo(1651, -1);
+    expect(dollarsPer(p.BRL)).toBeCloseTo(5.32, 1);
+  });
 });
