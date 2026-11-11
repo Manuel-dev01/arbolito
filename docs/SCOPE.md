@@ -86,7 +86,7 @@ Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped 
 | | LLM risk officer (pause-only, every 15 min) | ✅ |
 | | Rebalancer: sells inventory above the cap back to USDT (≤ $5 slices, price floor vs fair, no self-trading, gas in USDT) | ✅ |
 | Volume quoted and filled (30%) | Six corridors quoting: wARS, wBRL, USDC, USA₮, wCOP, wMXN (bid-only) | ✅ |
-| | Fills ledger plus the `/desk` page (89 fills, US$ 594, 160 RFQs won as of 2026-11-08) | ✅ |
+| | Fills ledger plus the `/desk` page (119 fills, US$ 827, 227 RFQs won as of 2026-11-11) | ✅ |
 | | App conversions routed through Textile, so they become RFQs the desk can win | ✅ |
 | | Quoting uptime per corridor (24 h / 7 d) and RFQs won on `/desk` (win rate not observable: Stitch logs only wins) | ✅ |
 | | Optional: cNGN or IDRX corridors (listed in the track) | ⬜ |

@@ -27,8 +27,8 @@ On 2026-10-28 it caught adverse selection: a small wARS sale filled 9 bps worse 
 
 Both are regression-tested. A model can call for a pause, but code limits how long it lasts.
 
-## Fills (all 89 as of 2026-11-08)
-89 fills from 2026-10-15 to 2026-11-08: US$ 594.27 of volume, 66 on wARS, 19 on wBRL, 3 on USA₮ and 1 on USDC, with 19 counterparty wallets. Every one is listed here with its transaction, and live at [/desk](https://arbolito-livid.vercel.app/desk). The desk won 160 RFQs over the same period (Stitch's log since 2026-10-20).
+## Fills (all 119 as of 2026-11-11)
+119 fills from 2026-10-15 to 2026-11-10: US$ 826.64 of volume, 91 on wARS, 20 on wBRL, 6 on USA₮ and 2 on USDC, with 21 counterparty wallets. Every one is listed here with its transaction, and live at [/desk](https://arbolito-livid.vercel.app/desk). The desk won 227 RFQs over the same period (Stitch's log since 2026-10-20).
 
 | Date (UTC) | Pair | Desk | USDT | Edge vs fair (bps) | Tx |
 |---|---|---|---|---|---|
@@ -121,18 +121,48 @@ Both are regression-tested. A model can call for a pause, but code limits how lo
 | 11-07 12:42 | wBRL | bought | 2.00 | +3.0 | [0x167c…5882](https://celoscan.io/tx/0x167cf8b849e5c7cf6787ba5831c2a03bd1896d0e64073146326d16a2da455882) |
 | 11-07 19:16 | wBRL | bought | 13.62 | +5.6 | [0x4a58…e756](https://celoscan.io/tx/0x4a5827b57fae5e2b9c8ce678cf83635ed46731a6abdd7754ca84e0e96c77e756) |
 | 11-08 01:51 | USA₮ | sold | 9.98 | +3.3 | [0x78b2…2769](https://celoscan.io/tx/0x78b2deaef43581dc5392c090df5ea85c135b78db0faf0ad9a897fdbc13162769) |
+| 11-08 12:37 | wARS | sold | 8.24 | +2.0 | [0xe14a…8c49](https://celoscan.io/tx/0xe14aeb9fc98669efe9952fc1d19ff9043f72caa78750af868c3f575a24ed8c49) |
+| 11-08 22:27 | wARS | bought | 10.00 | −2.3 | [0xa5eb…2775](https://celoscan.io/tx/0xa5ebb49f5d26ce97ee1eeb242e44ada36e3ba0d6c6fea25ded26160acc492775) |
+| 11-08 22:28 | wARS | sold | 9.65 | +2.4 | [0xf24b…2c72](https://celoscan.io/tx/0xf24b919130614684f08296a8cac6c1e4b5c198bae8269202350e2e1ac22e2c72) |
+| 11-09 01:52 | USA₮ | bought | 1.00 | +1.0 | [0x5965…8acb](https://celoscan.io/tx/0x596537ac9494bd87a9d51494cb9a3ab2d00f0de50361fd7c6896531b59f78acb) |
+| 11-09 07:10 | wARS | bought | 10.00 | −8.6 | [0x2a0e…29a2](https://celoscan.io/tx/0x2a0e0196de80fccc2b120b5b9ee0f2654074cd24e76fe0cd7753bda30e0d29a2) |
+| 11-09 12:14 | wARS | sold | 1.00 | +2.0 | [0xbe03…281b](https://celoscan.io/tx/0xbe032e3070203bc985c35729c595c2dd9dfaa905c4fb797c198f5e26c9c7281b) |
+| 11-09 12:43 | wARS | sold | 9.31 | +2.6 | [0x6589…6f71](https://celoscan.io/tx/0x6589fb519e0248fc59a5afa2467a92fec6e9ea9eb565334127664cfd32a56f71) |
+| 11-09 13:36 | wARS | bought | 10.00 | +4.0 | [0x309d…f50c](https://celoscan.io/tx/0x309d5595da9892e36589bf754415d2fbfe4c6e07d8d705cd256cf873a777f50c) |
+| 11-09 13:36 | wARS | sold | 9.61 | −8.8 | [0x3029…1f6d](https://celoscan.io/tx/0x30293f3407fe7e77676900f88ea0a6745006ef302315a1a15e0cb6cd5fab1f6d) |
+| 11-09 15:53 | wARS | sold | 0.40 | +11.7 | [0xa550…da58](https://celoscan.io/tx/0xa5507a379031785c14195b656914a757f3a355229e9ce06fb928ba3f6597da58) |
+| 11-09 17:41 | wARS | bought | 10.00 | −1.2 | [0x7666…cde9](https://celoscan.io/tx/0x7666d7aceac273d4cfa1a9f412cfef0a707e20c6601a7bdd0b79522b2a37cde9) |
+| 11-09 18:23 | wARS | bought | 5.00 | −0.6 | [0x6c37…e704](https://celoscan.io/tx/0x6c37011872dcde166c7851908cf5b8796baf750d92e0a3b66168b1c9af57e704) |
+| 11-09 18:52 | wARS | sold | 9.65 | +1.8 | [0x8aa8…57af](https://celoscan.io/tx/0x8aa8290d91b23a238356730de89a48405755c5a67cbff27633ee919b029c57af) |
+| 11-09 18:57 | wARS | bought | 10.00 | +0.2 | [0x3520…a98b](https://celoscan.io/tx/0x3520cabd9e3e2877a6cd83a0951b5eb7afea7b1a93e7629131b5e7cf0f57a98b) |
+| 11-09 19:07 | wARS | sold | 9.65 | +0.8 | [0xbd3a…c24d](https://celoscan.io/tx/0xbd3a3003f9ae430a799984facf7974ba69d730ea2058778c7de256f76671c24d) |
+| 11-09 19:12 | wARS | bought | <0.01 | +8.1 | [0x1958…5c49](https://celoscan.io/tx/0x1958dbf317a15e2299c8f903eee529a8b29d353fdccbc1d2cd757a4bc82e5c49) |
+| 11-09 19:22 | wARS | bought | 10.00 | −6.8 | [0x9d5b…c0cc](https://celoscan.io/tx/0x9d5b4fb46d287ecf3dbb8c52a4711344d15cad2320d1a83abab7469c90c0c0cc) |
+| 11-09 20:58 | wARS | sold | 9.63 | +0.2 | [0x17ab…5861](https://celoscan.io/tx/0x17abe375644e92465fe685c8d1b0bb3a060b244ad9ada4ad742c9aa63d4e5861) |
+| 11-09 22:01 | wARS | bought | 10.00 | +1.8 | [0x1b0c…3bf7](https://celoscan.io/tx/0x1b0c75c813f58f69a59014839ab24834e655cdf8a362579e53e860653fec3bf7) |
+| 11-09 23:23 | wARS | sold | 9.64 | +2.0 | [0x41df…7548](https://celoscan.io/tx/0x41dfb06bd585684d29e4ae15ee1e02be32624185cff1df1c776a640d928d7548) |
+| 11-10 00:57 | wARS | bought | 10.00 | −0.2 | [0x4bc2…d109](https://celoscan.io/tx/0x4bc2e4d01ef211fbf3a02f007ae378b604970e6d2785209cfe84f3dc09e5d109) |
+| 11-10 01:45 | wARS | sold | 9.65 | +1.9 | [0x98ab…60ea](https://celoscan.io/tx/0x98ab87ef11fc3cf502ec0289b1d62def41d2f5131ceeb64adea7278db5bf60ea) |
+| 11-10 05:19 | USA₮ | sold | 1.00 | −12.5 | [0xf529…b9bb](https://celoscan.io/tx/0xf52966a644976bf02c3cd1ecfc1264cc9cf3324ccb29835467b9911e68a2b9bb) |
+| 11-10 09:32 | wARS | bought | 10.00 | +6.9 | [0x037f…7e2b](https://celoscan.io/tx/0x037f18ebad2d42989753257790a3b645cafa112777918b1cb31d66e1477a7e2b) |
+| 11-10 09:52 | wARS | sold | 9.65 | +9.9 | [0x1038…8a2a](https://celoscan.io/tx/0x103861e5ab44d65d4b9267f2bcbd67910c253c81454f67854cf4db7412e88a2a) |
+| 11-10 10:44 | wARS | bought | 10.00 | +4.0 | [0xa1a8…c8fd](https://celoscan.io/tx/0xa1a8ec0ac39462ad4b308c6a7e69093ca5505508d52c596c847f2bc5aab5c8fd) |
+| 11-10 11:08 | USA₮ | bought | 10.00 | +1.0 | [0x837c…ef1a](https://celoscan.io/tx/0x837c14bcfa1549eddba7c0c7683ce2c9758ad87c5c276e42aed5f1f8364eef1a) |
+| 11-10 13:13 | wARS | sold | 0.38 | −1.1 | [0x7670…c5eb](https://celoscan.io/tx/0x76704c0e268d00b2a15cf9cf560c33839f3c8e7dcf381a11aa21c19518a9c5eb) |
+| 11-10 15:07 | wBRL | sold | 8.93 | +7.3 | [0x2494…2c19](https://celoscan.io/tx/0x24941eb765fad933a0e0132fb2baa792249d8a95c311197d5c108033c3482c19) |
+| 11-10 16:21 | USDC | sold | 10.01 | +2.8 | [0xe442…d836](https://celoscan.io/tx/0xe442115c9b2919290c98bad4f89ac2ffa83452e29c6eeefecf1ef749af43d836) |
 
 Edge is measured against the feed's fair price when the fill landed; a negative value means fair moved between the quote and the fill.
 
-## P&L (2026-11-08)
+## P&L (2026-11-11)
 | | US$ |
 |---|---|
 | Capital in (four 40 USDT deposits) | 160.00 |
-| Value now (inventory at fair) | 158.18 |
-| **Result** | **−1.82 (−1.14%)** |
-| of which: spread earned on fills | **+0.10** (≈ +1.7 bps on US$ 594) |
-| of which: inventory marked to fair, and the first inventory bought on Uniswap above fair | ≈ −1.92 |
+| Value now (inventory at fair) | 157.67 |
+| **Result** | **−2.33 (−1.46%)** |
+| of which: spread earned on fills | **+0.12** (≈ +1.4 bps on US$ 827) |
+| of which: inventory marked to fair, and the first inventory bought on Uniswap above fair | ≈ −2.45 |
 
-The trading itself is slightly positive (+1.7 bps across 89 fills). In late October a few fills gave back part of the spread, which is the adverse selection the risk officer flagged. The loss comes from holding inventory: mostly the wBRL the desk bought around 5.03–5.08 BRL/USDT, marked near 5.45 on 2026-11-08 (the real fell about 7% against the dollar), plus the first inventory, which was bought on a thin Uniswap pool. Gas is paid by a separate ops wallet and isn't in these numbers.
+The trading itself is slightly positive (+1.4 bps across 119 fills). In late October a few fills gave back part of the spread, which is the adverse selection the risk officer flagged. The loss comes from holding inventory: mostly the wBRL the desk bought around 5.03–5.08 BRL/USDT, marked near 5.45 on 2026-11-08 (the real fell about 7% against the dollar), plus the first inventory, which was bought on a thin Uniswap pool. Gas is paid by a separate ops wallet and isn't in these numbers.
 
 Points 8 and 9 above came straight from this P&L: the loss was inventory held in a currency that was devaluing, bought while the price sources were already drifting apart.
