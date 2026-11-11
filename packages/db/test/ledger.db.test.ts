@@ -31,6 +31,24 @@ describe("DbLedger", () => {
     expect(await ledger.spent("2026-10-10")).toBe(0n);
   });
 
+  it("lists a purpose's attempts since a time, newest first, without released ones", async () => {
+    const purpose = "buy browser test";
+    const since = new Date(Date.now() - 60_000);
+    const a = randomUUID();
+    const b = randomUUID();
+    await ledger.reserve("2026-11-11", { id: a, at: "", purpose, usdMicros: "4212" });
+    await ledger.reserve("2026-11-11", { id: b, at: "", purpose, usdMicros: "4212" });
+    await ledger.reserve("2026-11-11", { id: randomUUID(), at: "", purpose: "something else", usdMicros: "1" });
+    await ledger.update("2026-11-11", a, { status: "sent", txHash: "0xabc" });
+    expect((await ledger.attempts(purpose, since)).map((x) => [x.id, x.status])).toEqual([
+      [b, "reserved"],
+      [a, "sent"],
+    ]);
+    await ledger.update("2026-11-11", b, { status: "released" });
+    expect((await ledger.attempts(purpose, since)).map((x) => x.id)).toEqual([a]);
+    expect(await ledger.attempts(purpose, new Date(Date.now() + 60_000))).toEqual([]);
+  });
+
   it("keeps caps per wallet: another scope's spend does not count", async () => {
     const other = new DbLedger(db, `${scope}ff`);
     expect(await other.spent("2026-10-09")).toBe(0n);

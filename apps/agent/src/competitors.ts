@@ -24,6 +24,15 @@ const CHECK_MS = 3_600_000;
 /** A 2-minute browser costs US$ 0.0042; refuse anything above a cent. */
 const MAX_CALL = 10_000n;
 const MINUTES = 2;
+const PURPOSE = `buy browser.sessions.create ${MINUTES}m (Western Union rates)`;
+/** An unresolved payment this recent keeps the runner stopped until someone checks it onchain. */
+const UNRESOLVED_LOOKBACK_MS = 7 * 24 * 3_600_000;
+/**
+ * Wait before the first paid read. A deploy overlaps the old bot, the new one dies on Telegram's 409
+ * ("only one bot instance") and restarts; on 2026-11-08 and 11-10 each of those short-lived starts
+ * paid buy at once, 3 payments in 10 seconds, none of which got an answer.
+ */
+const STARTUP_DELAY_MS = 3 * 60_000;
 
 /** Our own reference for a sanity check: crypto/official pesos, the market real. */
 function referenceFor(c: Corridor, refs: Reference[]): number | null {
@@ -54,15 +63,24 @@ export async function refreshWesternUnion(db: Db, env: Env, o: { force?: boolean
     if (CORRIDORS.every((c) => fresh.some((r) => r.corridor === c))) return { skipped: true, paymentTx: null, stored: [], errors: [] };
   }
   const payer = privateKeyToAccount(env.BUY_PAYER_PRIVATE_KEY as Hex);
+  const ledger = new DbLedger(db, payer.address);
+  // Decided from the ledger, not from memory, so a restart or a second instance can't pay again.
+  const now = Date.now();
+  const past = await ledger.attempts(PURPOSE, new Date(now - UNRESOLVED_LOOKBACK_MS));
+  const open = past.find((a) => a.status === "reserved");
+  if (open) {
+    throw new PaymentUncertainError(`payment ${open.id} (${open.createdAt.toISOString()}) has no recorded outcome; check the payer's transfers and mark it in spend_ledger before paying again`);
+  }
+  if (!o.force && past.some((a) => a.createdAt.getTime() > now - REFRESH_MS)) return { skipped: true, paymentTx: null, stored: [], errors: [] };
   const request = { url: `${env.BUY_GATEWAY_URL.replace(/\/$/, "")}/v1/browser/sessions`, method: "POST" as const, body: { durationMinutes: MINUTES } };
   const quote = await quoteRequest(request, TOKENS[env.BUY_PAY_TOKEN].address);
   const paid = await payRequest(request, {
     account: payer,
     quote,
     maxAmount: MAX_CALL,
-    ledger: new DbLedger(db, payer.address),
+    ledger,
     caps: capsFromEnv(),
-    purpose: `buy browser.sessions.create ${MINUTES}m (Western Union rates)`,
+    purpose: PURPOSE,
   });
   const paymentTx = paid.settlement?.transaction ?? null;
   log(`[competitors] paid ${Number(paid.amount) / 1e6} ${env.BUY_PAY_TOKEN} for a browser${paymentTx ? ` (tx ${paymentTx})` : ""}`);
@@ -129,7 +147,10 @@ export function startCompetitorsRunner(db: Db, env: Env): (() => void) | null {
   }
 
   log(`[competitors] runner on: payer ${privateKeyToAccount(env.BUY_PAYER_PRIVATE_KEY as Hex).address}, Western Union every ${REFRESH_MS / 3_600_000} h`);
-  void tick();
+  const first = setTimeout(() => void tick(), STARTUP_DELAY_MS);
   const timer = setInterval(() => void tick(), CHECK_MS);
-  return () => clearInterval(timer);
+  return () => {
+    clearTimeout(first);
+    clearInterval(timer);
+  };
 }

@@ -1,4 +1,4 @@
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
 import type { LedgerEntry, SpendLedger } from "@arbolito/chain";
 import type { Db } from "./client";
 import { spendLedger } from "./schema";
@@ -33,6 +33,19 @@ export class DbLedger implements SpendLedger {
       usdMicros: entry.usdMicros,
       status: "reserved",
     });
+  }
+
+  /**
+   * Payments for one purpose since a time, newest first, released ones left out. A "reserved" row
+   * is a payment whose outcome nobody recorded: it may have settled. Lets a recurring paid job see
+   * its own past attempts across restarts and parallel instances.
+   */
+  async attempts(purpose: string, since: Date): Promise<{ id: string; status: string; createdAt: Date }[]> {
+    return this.db
+      .select({ id: spendLedger.id, status: spendLedger.status, createdAt: spendLedger.createdAt })
+      .from(spendLedger)
+      .where(and(eq(spendLedger.scope, this.scope), eq(spendLedger.purpose, purpose), ne(spendLedger.status, "released"), gte(spendLedger.createdAt, since)))
+      .orderBy(desc(spendLedger.createdAt));
   }
 
   async update(_day: string, id: string, patch: Partial<LedgerEntry>): Promise<void> {
