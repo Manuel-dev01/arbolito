@@ -5,8 +5,9 @@
  *   pnpm ops:send desk USDT 40 --live [--yes]   Celo mainnet
  *   pnpm ops:send 0xAbc… USDT 5 --gift --live   a welcome credit to an address the founder approved
  *   pnpm ops:send 0xAbc… USDT 50 --gift --from reserve --live   the same from the reserve (gas paid in USDT)
- * Destinations are the desk, buy payer and reserve wallets (derived from their keys) or, only with --gift,
- * an explicit address. Every send goes through sendGuarded (caps, simulation, ERC-8021 suffix), is
+ *   pnpm ops:send 0xAbc… USDT 30 --withdraw --live   money back to the founder's own wallet
+ * Destinations are the desk, buy payer, reserve and operator wallets (derived from their keys) or, only
+ * with --gift or --withdraw, an explicit address. Every send goes through sendGuarded (caps, simulation, ERC-8021 suffix), is
  * never retried, and a live one is appended to docs/TREASURY.md so every dollar stays accounted for.
  */
 import { appendFileSync } from "node:fs";
@@ -20,7 +21,7 @@ const STABLES = ["USDT", "USDC", "USAT"] as const;
 
 runMain(async () => {
   const [dest, sym, human] = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !/^https?:/.test(a) && all[i - 1] !== "--from");
-  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|reserve|operator|0xAddress --gift> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
+  if (!dest || !sym || !human) throw new Error("usage: pnpm ops:send <desk|buy|reserve|operator|0xAddress --gift|--withdraw> <USDT|USDC|USAT> <amount> [--fork <rpc> | --live [--yes]]");
   if (!(STABLES as readonly string[]).includes(sym)) throw new Error(`only dollar stablecoins (${STABLES.join(", ")}): ${sym}`);
   const token = TOKENS[sym as (typeof STABLES)[number]];
   const amount = parseUnits(human, token.decimals);
@@ -41,11 +42,11 @@ runMain(async () => {
     if (!role.key) throw new Error(`${role.name} is not set`);
     to = privateKeyToAccount(role.key as Hex).address;
     label = role.label;
-  } else if (isAddress(dest) && hasFlag("gift")) {
+  } else if (isAddress(dest) && hasFlag("gift") !== hasFlag("withdraw")) {
     to = getAddress(dest);
-    label = "welcome credit";
+    label = hasFlag("gift") ? "welcome credit" : "founder withdrawal";
   } else {
-    throw new Error("destination must be desk, buy, reserve, operator, or an address with --gift");
+    throw new Error("destination must be desk, buy, reserve, operator, or an address with --gift or --withdraw (one of them)");
   }
 
   const fork = forkUrl();
