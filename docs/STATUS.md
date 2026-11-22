@@ -63,6 +63,25 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-23: edition 2 build starts (Stablecoin Corridors)
+- **Tagging:** `ATTRIBUTION_CODE` takes a comma-separated list, current edition first.
+  - Every prepared call and every tx we send carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`.
+  - "Is this ours" checks match the first code. The x402 builder code carries one code, the first.
+  - `.env` is updated. **Vercel and arbolito-bot still carry only the old code** until the founder approves the change.
+  - desk-feed keeps only edition 1's code on purpose: maker activity doesn't count in edition 2.
+- **cNGN for users:** the Mini App, bot and chat hold, convert and send naira (Textile only, 6 decimals, ₦).
+  - References: Textile's USDT_NGN mid and ER-API's USD/NGN (labelled interbank).
+  - Free previews on 2026-11-23: 1 USDT → ₦1,443.07, fee ≈ 0.02%, about 43.8k USDT of depth.
+  - The CBN's official rate was ₦1,389.23 on 20 Nov. Its API is an 8 MB, 15–30 s download, so receipts can cite it only after a daily cache is built.
+- **Textile facts (docs read 2026-11-23):**
+  - There is no recipient field: a quote is bound to the taker, so payouts forward the exact fill.
+  - A maker can't be excluded. The only options are `preferredLiquidityWallets` and `restrictedLiquidityWallets`.
+- **Self-trade guard:** a team wallet (packages/config/src/team.ts + `TEAM_WALLETS`) never takes a firm quote our desk would fill. The quote is released before anything is signed.
+  - Independent users keep the best price.
+  - Own-desk fills are logged and left out of the edition-2 counts.
+- **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov that have a Textile taker leg. It shows independent payers and payees per corridor, and lists every exclusion with its reason.
+- 549 unit tests pass. Commits: 470c09a, ec521c3, 50319bd, 81cf3c6.
+
 ### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up
 - **Cause:** the Neon free plan ran past its 100 CU-hour monthly quota (error 53000). The desk ticks every 10 s and the bot every 60 s, so the database never suspended.
 - **Effect:**

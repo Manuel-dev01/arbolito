@@ -4,11 +4,27 @@ The one place to see what's done, what's next and what's left, mapped to how eac
 judged (docs/08-judging-criteria.md). Updated at the end of every work block, alongside the
 STATUS.md log.
 
-**Deadline:** Nov 9, 2026, 09:00 UTC. **Last updated:** 2026-11-05 (4 days left).
+**Edition 1 deadline:** Nov 9, 2026, 09:00 UTC (won 1st, Textile FX). **Edition 2** (Agents Open for Business, Stablecoin Corridors) closes **Dec 7, 2026, 09:00 GMT**. **Last updated:** 2026-11-23.
 
 Legend: ✅ done and live · 🟡 partly done · ⬜ not started · ➖ dropped · 👤 needs the founder (a decision, an approval, money or an account)
 
 ---
+
+## Edition 2: Stablecoin Corridors (Textile FX), from 2026-11-20
+Track rules: a tagged Textile FX taker conversion in the product flow; local-stablecoin payments reaching recipients outside the team; ERC-8004 identity; maker, self-trading and arbitrage don't count.
+
+| Item | State |
+|---|---|
+| Every tx tagged with the edition-2 code `celo_0acfe36b6ea3` and edition 1's (`ATTRIBUTION_CODE` is a list) | ✅ code · 👤 production env |
+| Nigerian naira (cNGN) for users: hold, convert and send; Textile only; ₦ references | ✅ |
+| Payouts to a payee in cNGN, wARS or wBRL: Textile firm fill, then the exact amount forwarded; the receipt names the payee | ✅ (send to a contact) |
+| Self-trade guard: a team wallet never takes a fill from our own desk; own-desk fills are left out of the counts | ✅ |
+| /metrics edition-2 view: tagged Textile taker conversions by independent wallets, payees, corridors, exclusions with reasons | ✅ |
+| CBN official USD/NGN on receipts ("₦ more than the official rate") | ⬜ (needs a daily cache: the CBN file is 8 MB) |
+| Batch payouts (many payees, one review) and a payout statement for the payer | ⬜ |
+| Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes | ⬜ |
+| Named users: one in Nigeria, one in LatAm, with consent | 👤 |
+| Loops project for edition 2, then AskBots review (24 Nov, 4 Dec) | 👤 |
 
 ## MiniPay chat and demo fixes (2026-11-05)
 - ✅ Saved-contact lookup and recipient-bound send drafts in MiniPay chat, with an explicit review before confirmation. “All” leaves the dollar network-fee reserve. Exact tokens and contact labels persist through the send flow.
