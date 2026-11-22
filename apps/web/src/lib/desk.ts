@@ -18,7 +18,7 @@ export const DESK_CAPITAL_MICROS = 160_000_000n;
 
 const DAY = 86_400_000;
 
-/** Share of snapshots (every ~5 min) in which each corridor was quoting, over the last day and week. */
+/** Share of snapshots (every ~15 min since 2026-11-22, ~5 min before) in which each corridor was quoting, over the last day and week. */
 export type Uptime = Record<string, { day: number | null; week: number | null }>;
 
 /** Pure: uptime per pair from snapshots' `quoting` maps (rows without one are skipped). */
