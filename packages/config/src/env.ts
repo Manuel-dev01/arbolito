@@ -41,6 +41,8 @@ export const envSchema = z.object({
   TEXTILE_API_KEY: opt(z.string()),
   TEXTILE_WEBHOOK_SECRET: opt(z.string()),
   TEXTILE_RFQ_ENABLED: bool.default(false),
+  /** Extra team wallets (comma-separated) beyond packages/config/src/team.ts: never counted as users, never filled by our desk. */
+  TEAM_WALLETS: opt(z.string().regex(/^0x[0-9a-fA-F]{40}(,0x[0-9a-fA-F]{40})*$/, "comma-separated 0x addresses")),
 
   // Reference rates
   DOLAR_API_URL: z.string().url().default("https://dolarapi.com/v1"),

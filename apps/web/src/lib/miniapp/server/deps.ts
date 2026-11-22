@@ -1,6 +1,6 @@
 import type { Address, Hex, PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { CELO_MAINNET_ID, CONTRACTS, loadEnv } from "@arbolito/config";
+import { CELO_MAINNET_ID, CONTRACTS, loadEnv, teamWallets } from "@arbolito/config";
 import { MemoryLedger, makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { DbLedger } from "@arbolito/db";
 import { createLlmClient, transcribe, type LlmClient } from "@arbolito/llm";
@@ -46,6 +46,8 @@ export interface MiniappDeps {
   textileEnabled: boolean;
   /** ERC-8021 code every prepared call carries (ATTRIBUTION_CODE). */
   attributionCode: string | undefined;
+  /** The team's wallets, lowercased (packages/config/src/team.ts + TEAM_WALLETS): never filled by our own desk. */
+  teamWallets: ReadonlySet<string>;
   /** PUBLIC_BASE_URL without a trailing slash ("" = relative links). */
   baseUrl: string;
   guard: { address: Address; operator: Address } | undefined;
@@ -121,6 +123,7 @@ export function buildDeps(): MiniappDeps {
     textile: new TextileClient(),
     textileEnabled: textileFirmEnabled(),
     attributionCode: env.ATTRIBUTION_CODE,
+    teamWallets: teamWallets(env.TEAM_WALLETS),
     baseUrl: (env.PUBLIC_BASE_URL ?? "").replace(/\/$/, ""),
     guard: env.GUARD_ADDRESS && env.ARBOLITO_OPERATOR_ADDRESS ? { address: env.GUARD_ADDRESS as Address, operator: env.ARBOLITO_OPERATOR_ADDRESS as Address } : undefined,
     anchor,

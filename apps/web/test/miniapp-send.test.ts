@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decodeFunctionData, type Address, type Hex } from "viem";
-import { CONTRACTS, TOKENS } from "@arbolito/config";
+import { CONTRACTS, TEAM_WALLETS, TOKENS, teamWallets } from "@arbolito/config";
 import { attributionCodes } from "@arbolito/chain";
 import { erc20Abi, swapRouter02Abi } from "@arbolito/router";
 import { ReceiptsListResponse, SendPrepareResponse } from "../src/lib/miniapp/contract";
@@ -144,6 +144,45 @@ describe("naira payouts (cNGN, Textile only)", () => {
     const bundle = row.bundle as { request: { recipient?: string; tokenOut: string }; execution: { deliveryTxHash?: string } };
     expect(bundle.request).toMatchObject({ recipient: CONTACT, tokenOut: TOKENS.cNGN.address });
     expect(bundle.execution.deliveryTxHash).toBe(hashes[2]);
+  });
+});
+
+describe("self-trade guard", () => {
+  const DESK = TEAM_WALLETS.desk.toLowerCase() as Address;
+  const withMaker = (taker: Address, sell: bigint, out: bigint, maker: Address) => {
+    const f = firmQuote(taker, sell, out);
+    f.quote!.orders = [{ encodedOrder: "0x", signature: "0x", sellAmount: sell.toString(), buyAmount: out.toString(), feeAmount: "0", maker }];
+    return f;
+  };
+
+  it("a team wallet never takes a quote our own desk fills: the firm quote is released, nothing to sign", async () => {
+    const rig = makeRig({ teamWallets: teamWallets(ACCOUNT) });
+    rig.textile.hasPartnerKey = true;
+    rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1700n);
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10", account: wallet.address });
+    rig.textile.firm = (p) => withMaker(p.taker, p.sellAmount, 17_000n * E18, DESK);
+    const f = await failure(prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "wARS", amount: "10", quoteId: q.quoteId }));
+    expect(f.code).toBe("no_route");
+    expect(rig.textile.cancels).toEqual(["rfq-1"]);
+  });
+
+  it("an independent wallet keeps the best price even when our desk fills it", async () => {
+    const rig = makeRig();
+    rig.textile.hasPartnerKey = true;
+    rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1700n);
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10", account: wallet.address });
+    rig.textile.firm = (p) => withMaker(p.taker, p.sellAmount, 17_000n * E18, DESK);
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const r = await prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "wARS", amount: "10", quoteId: q.quoteId });
+    expect(r.calls).toHaveLength(3);
+    expect(rig.textile.cancels).toEqual([]);
+  });
+
+  it("knows every team wallet and accepts extras from TEAM_WALLETS", () => {
+    const team = teamWallets("0x00000000000000000000000000000000000000Ab,not-an-address");
+    expect(team.has(TEAM_WALLETS.founderMiniPay.toLowerCase())).toBe(true);
+    expect(team.has("0x00000000000000000000000000000000000000ab")).toBe(true);
+    expect(team.size).toBe(Object.keys(TEAM_WALLETS).length + 1);
   });
 });
 

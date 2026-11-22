@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { encodeAbiParameters, encodeEventTopics, pad, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { CONTRACTS, TOKENS } from "@arbolito/config";
+import { CONTRACTS, TOKENS, teamWallets } from "@arbolito/config";
 import type { ChatMessage, ChatRequest as LlmChatRequest, ChatResult, LlmClient } from "@arbolito/llm";
 import { erc20Abi, type Quote, type QuoteParams, type TextileFirm, type VenueAdapter } from "@arbolito/router";
 import type { MiniappDeps, TextileTaker } from "../src/lib/miniapp/server/deps";
@@ -425,6 +425,7 @@ export function makeRig(over: Partial<MiniappDeps> = {}): TestRig {
     textile,
     textileEnabled: true,
     attributionCode: CODE,
+    teamWallets: teamWallets(),
     baseUrl: "https://arbolito.test",
     guard: undefined,
     anchor: undefined,

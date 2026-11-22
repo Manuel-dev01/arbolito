@@ -1,6 +1,6 @@
 import { encodeFunctionData, recoverMessageAddress, recoverTypedDataAddress, type Address, type Hex } from "viem";
 import type { z } from "zod";
-import { CONTRACTS } from "@arbolito/config";
+import { CONTRACTS, isOwnMaker } from "@arbolito/config";
 import { withAttribution } from "@arbolito/chain";
 import {
   TextileApiError,
@@ -248,6 +248,14 @@ async function prepareTextile(
   if (!eq(q.spender, reactor) || !eq(swapTx.to, reactor)) await cancel(upstream("Textile returned an unexpected contract."), "textile_bad_quote");
   if (swapTx.chainId !== deps.chainId || BigInt(swapTx.value) !== 0n) await cancel(upstream("Textile returned an unexpected transaction."), "textile_bad_quote");
   if (buyAmount < route.minOut) await cancel(priceChanged(), "price_changed");
+  // Self-trade guard: a team wallet never takes a quote our own desk (a Textile maker) would fill.
+  // Independent users keep the best price whoever fills it; the receipt's firm quote names the maker,
+  // and edition-2 metrics leave own-desk fills out.
+  const ownFill = q.orders.some((o) => isOwnMaker(o.maker));
+  if (ownFill && deps.teamWallets.has(account.toLowerCase())) {
+    await cancel(noRoute("Only Arbolito's own desk can fill this right now, and team wallets never trade with it. Try again shortly."), "self_trade_refused");
+  }
+  if (ownFill) console.info(`[prepare] rfq ${firm.rfqId}: filled by Arbolito's own desk for an independent taker (left out of edition-2 metrics)`);
   // The firm quote is fresh (taken now, its own ~60 s), and its price was checked against the card's
   // guaranteed minimum above, so its expiry is the deadline. Clamping it to the card's countdown made
   // a Confirm tapped late on the card fail as "about to expire" (founder's first try, 2026-11-02).
