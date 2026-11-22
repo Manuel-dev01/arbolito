@@ -37,7 +37,7 @@ const CALL_LABEL: Record<Lang, { approve: string; change: string; send: string; 
 export const MOCK_ACCOUNT: Address = "0x5a1c1a000000000000000000000000000000a4b0";
 
 /** ARS per one unit of each currency. */
-const R: Record<Cur, number> = { ARS: 1, BRL: 317.74119, COP: 1608 / 3190, MXN: 1608 / 18.77, USD: 1608 };
+const R: Record<Cur, number> = { ARS: 1, BRL: 317.74119, COP: 1608 / 3190, MXN: 1608 / 18.77, NGN: 1608 / 1443, USD: 1608 };
 /** % better than the official rate, by the non-peso side. */
 const OFF: Partial<Record<Cur, number>> = { BRL: 5.24, USD: 4.08 };
 
@@ -72,7 +72,7 @@ const randHex = (bytes: number): Hex => {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** The persona's balances (es: Lucía) in whole units. */
-const PERSONA_BAL: Record<Cur, number> = { ARS: 182450, BRL: 1240, COP: 0, MXN: 0, USD: 860 };
+const PERSONA_BAL: Record<Cur, number> = { ARS: 182450, BRL: 1240, COP: 0, MXN: 0, NGN: 0, USD: 860 };
 
 export function mockQuote(from: Sym, to: Sym, amount: string, id = uuid(), validMs = 48_000) {
   const amountIn = parseHuman(amount, DECIMALS[from]);
@@ -216,13 +216,14 @@ export function createMockServer(scenario: MockScenario) {
           // Same scale as R above, so a total shown in COP or MXN matches the persona's balances.
           { name: "interbank", pair: "USD/COP", rate: "3190", source: "ER-API", at: now },
           { name: "interbank", pair: "USD/MXN", rate: "18.77", source: "ECB", at: now },
+          { name: "interbank", pair: "USD/NGN", rate: "1443", source: "ER-API", at: now },
         ],
       });
     }
     if (path === "/balances") {
       if (scenario.offline) throw new TypeError("Failed to fetch");
       if (scenario.slowBalances) await sleep(1500);
-      const units = scenario.emptyBalances ? { ARS: 0, BRL: 0, COP: 0, MXN: 0, USD: 0 } : PERSONA_BAL;
+      const units = scenario.emptyBalances ? { ARS: 0, BRL: 0, COP: 0, MXN: 0, NGN: 0, USD: 0 } : PERSONA_BAL;
       return json(200, {
         account: u.searchParams.get("account"),
         balances: [
@@ -230,7 +231,7 @@ export function createMockServer(scenario: MockScenario) {
           { sym: "wBRL", amount: parseHuman(String(units.BRL), 18).toString(), decimals: 18 },
           { sym: "USDT", amount: parseHuman(String(units.USD), 6).toString(), decimals: 6 },
         ],
-        usdMicros: { wARS: usd("ARS", units.ARS).toString(), wBRL: usd("BRL", units.BRL).toString(), wCOP: "0", wMXN: "0", USDT: usd("USD", units.USD).toString(), USAT: "0", USDC: "0" },
+        usdMicros: { wARS: usd("ARS", units.ARS).toString(), wBRL: usd("BRL", units.BRL).toString(), wCOP: "0", wMXN: "0", cNGN: "0", USDT: usd("USD", units.USD).toString(), USAT: "0", USDC: "0" },
         blockNumber: "79491985",
       });
     }
@@ -369,7 +370,7 @@ export function createMockServer(scenario: MockScenario) {
       const amt = /(\d+(?:[.,]\d+)?)/.exec(said)?.[1]?.replace(",", ".") ?? (lang === "pt" ? "200" : "100");
       const from: Sym = /real|reai|brl|r\$/.test(said) ? "wBRL" : /peso|ars/.test(said) && !/a pesos|to pesos|por pesos/.test(said) ? "wARS" : "USDT";
       // Which pesos: colombianos and mexicanos are named; plain "pesos" means Argentine ones.
-      const to: Sym = from === "wARS" ? "USDT" : /colombian|\bcop\b/.test(said) ? "wCOP" : /mexican|\bmxn\b/.test(said) ? "wMXN" : "wARS";
+      const to: Sym = from === "wARS" ? "USDT" : /colombian|\bcop\b/.test(said) ? "wCOP" : /mexican|\bmxn\b/.test(said) ? "wMXN" : /naira|\bngn\b/.test(said) ? "cNGN" : "wARS";
       if (fail === "no_route") return json(200, { transcript, reply: lang === "en" ? "No market right now for that pair." : "Ahora no hay mercado para ese cambio.", quotes: [] });
       const q = mockQuote(from, to, amt);
       quotes.set(q.quoteId, q);

@@ -49,7 +49,7 @@ export function pricesFrom(balances: Balances | null | undefined, rates?: Rates 
   if (!p.BRL && usdBrl) p.BRL = BigInt(Math.round(1e6 / usdBrl));
   const brlArs = refRate(rates, "BRL/ARS");
   if (!p.BRL && brlArs && p.ARS) p.BRL = BigInt(Math.round(Number(p.ARS) * brlArs));
-  for (const cur of ["COP", "MXN"] as const) {
+  for (const cur of ["COP", "MXN", "NGN"] as const) {
     const usdX = refRate(rates, `USD/${cur}`);
     if (!p[cur] && usdX) p[cur] = BigInt(Math.round(1e6 / usdX));
   }
@@ -77,6 +77,7 @@ export function byCurrency(balances: Balances | null | undefined): Record<Cur, {
     BRL: { amount18: 0n, usdMicros: 0n },
     COP: { amount18: 0n, usdMicros: 0n },
     MXN: { amount18: 0n, usdMicros: 0n },
+    NGN: { amount18: 0n, usdMicros: 0n },
     USD: { amount18: 0n, usdMicros: 0n },
   };
   for (const b of balances?.balances ?? []) {

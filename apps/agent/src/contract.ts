@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 
-export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
+export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "cNGN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
 export type Sym = z.infer<typeof Sym>;
 

@@ -105,6 +105,7 @@ describe("rates", () => {
 describe("misc", () => {
   it("maps token symbols to fiat", () => {
     expect(fiatOfSymbol("wARS")).toBe("ARS");
+    expect(fiatOfSymbol("cNGN")).toBe("NGN");
     expect(fiatOfSymbol("USDT")).toBe("USD");
     expect(fiatOfSymbol("USAT")).toBe("USD");
     expect(fiatOfSymbol("BRLm")).toBe("BRL");

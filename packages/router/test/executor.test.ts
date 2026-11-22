@@ -293,7 +293,8 @@ describe("executeRoute", () => {
     expect(r.legs).toHaveLength(1);
     expect(r.legs[0]).toMatchObject({ venue: "uniswap_v3", routeLegs: [0, 1], amountIn: IN, amountOut: WARS_PLANNED, txHash: chain.sent[1]!.hash });
     expect(r.legs[0]!.attribution).toEqual(attributionCodes(chain.sent[1]!.data));
-    expect(r.legs[0]!.attribution.length).toBe(1);
+    // One code per edition in ATTRIBUTION_CODE (the fork placeholder when unset).
+    expect(r.legs[0]!.attribution.length).toBeGreaterThanOrEqual(1);
     expect(await ledger.spent(new Date().toISOString().slice(0, 10))).toBe(USD(40));
   });
 

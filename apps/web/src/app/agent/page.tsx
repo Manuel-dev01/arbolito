@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 const BASE = "https://arbolito-livid.vercel.app";
-const DECIMALS: Record<string, number> = { wARS: 18, wBRL: 18, wCOP: 18, wMXN: 18, USDT: 6, USDC: 6, USAT: 6 };
+const DECIMALS: Record<string, number> = { wARS: 18, wBRL: 18, wCOP: 18, wMXN: 18, cNGN: 6, USDT: 6, USDC: 6, USAT: 6 };
 const when = (iso: string, locale: Locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" }).format(new Date(iso));
 
 function Tx({ hash }: { hash: string | null }) {

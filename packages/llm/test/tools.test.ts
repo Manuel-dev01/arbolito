@@ -41,17 +41,17 @@ describe("tool definitions", () => {
   it("exposes token enums and string amounts", () => {
     const [quote] = toolDefinitions(["get_quote"]);
     const props = quote!.function.parameters.properties as Record<string, any>;
-    expect(props.from.enum).toEqual(["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"]);
+    expect(props.from.enum).toEqual(["wARS", "wBRL", "wCOP", "wMXN", "cNGN", "USDT", "USAT", "USDC"]);
     expect(props.amount.type).toBe("string");
     expect(quote!.function.parameters.required).toEqual(["from", "to", "amount"]);
   });
 
-  it("keeps wCOP and wMXN out of automatic rules (no Uniswap pool for the guard to route)", () => {
+  it("keeps wCOP, wMXN and cNGN out of automatic rules (no Uniswap pool for the guard to route)", () => {
     const [send] = toolDefinitions(["prepare_scheduled_send"]);
     const [split] = toolDefinitions(["prepare_payday_split"]);
     const receive = (send!.function.parameters.properties as Record<string, any>).receive.enum as string[];
     const to = (split!.function.parameters.properties as Record<string, any>).to.enum as string[];
-    for (const sym of ["wCOP", "wMXN"]) {
+    for (const sym of ["wCOP", "wMXN", "cNGN"]) {
       expect(receive).not.toContain(sym);
       expect(to).not.toContain(sym);
     }

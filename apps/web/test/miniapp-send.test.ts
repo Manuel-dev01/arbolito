@@ -113,6 +113,40 @@ describe("POST /send/prepare: send to a contact", () => {
   });
 });
 
+describe("naira payouts (cNGN, Textile only)", () => {
+  it("pays a contact in naira: Textile fill to the payer, exact forward of the 6-decimal amount, receipt in NGN", async () => {
+    const rig = makeRig();
+    rig.textile.hasPartnerKey = true;
+    // 1 USDT → ₦1,443.07 (Textile preview, 2026-11-23); cNGN has 6 decimals like USDT.
+    rig.textileVenue.pairs["USDT>cNGN"] = (a) => (a * 1_443_068_285n) / 1_000_000n;
+    const q = await createQuote(rig.deps, { from: "USDT", to: "cNGN", amount: "52", account: wallet.address, lang: "en" });
+    expect([q.venues, q.usesTextile, q.to]).toEqual([["textile"], true, "cNGN"]);
+    expect(q.expectedOut).toBe("75039550820"); // ₦75,039.55
+
+    const firmOut = 75_000_000_000n; // ₦75,000 exactly
+    rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, firmOut);
+    const r = SendPrepareResponse.parse(await prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "cNGN", amount: "52", quoteId: q.quoteId }));
+    expect(r.calls.map((c) => c.to)).toEqual([USDT.address, REACTOR, TOKENS.cNGN.address]);
+    expect(decodeFunctionData({ abi: erc20Abi, data: r.calls[2]!.data as Hex }).args).toEqual([CONTACT, firmOut]);
+    for (const c of r.calls) expect(attributionCodes(c.data as Hex)).toContain(CODE);
+
+    const hashes = mineCalls(rig, r.calls, {
+      tamper: (i, tx) =>
+        i === 1
+          ? { ...tx, logs: [transferLog(TOKENS.cNGN.address, REACTOR, ACCOUNT, firmOut)] }
+          : i === 2
+            ? { ...tx, logs: [transferLog(TOKENS.cNGN.address, ACCOUNT, CONTACT, firmOut)] }
+            : tx,
+    });
+    const s = await submitQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, txHashes: hashes });
+    const row = rig.store.receipts.find((x) => x.id === s.receiptId)!;
+    expect(row).toMatchObject({ amountOut: firmOut.toString(), executionTx: hashes[1] });
+    const bundle = row.bundle as { request: { recipient?: string; tokenOut: string }; execution: { deliveryTxHash?: string } };
+    expect(bundle.request).toMatchObject({ recipient: CONTACT, tokenOut: TOKENS.cNGN.address });
+    expect(bundle.execution.deliveryTxHash).toBe(hashes[2]);
+  });
+});
+
 describe("GET /receipts", () => {
   it("lists the wallet's conversions and sends, newest first, with the send's recipient", async () => {
     const rig = makeRig();

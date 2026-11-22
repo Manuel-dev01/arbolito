@@ -29,7 +29,8 @@ export const TOKENS = {
   USDm: { symbol: "USDm", onchainSymbol: "USDm", address: "0x765DE816845861e75A25fCA122bb6898B8B1282a", decimals: 18, feeCurrency: true, kind: "mento" },
   BRLm: { symbol: "BRLm", onchainSymbol: "BRLm", address: "0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787", decimals: 18, feeCurrency: true, kind: "mento" },
   COPm: { symbol: "COPm", onchainSymbol: "COPm", address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA", decimals: 18, feeCurrency: true, kind: "mento" },
-  cNGN: { symbol: "cNGN", onchainSymbol: "cNGN", address: "0xF6829D7393dAe24509eb1E52eE8e572e2E271a4f", decimals: 6, feeCurrency: false, kind: "other" },
+  // A local-currency stablecoin like the w-tokens (kind "wfiat"), but 6 decimals and no Uniswap pool: Textile only.
+  cNGN: { symbol: "cNGN", onchainSymbol: "cNGN", address: "0xF6829D7393dAe24509eb1E52eE8e572e2E271a4f", decimals: 6, feeCurrency: false, kind: "wfiat" },
   CELO: { symbol: "CELO", onchainSymbol: "CELO", address: "0x471EcE3750Da237f93B8E339c536989b8978a438", decimals: 18, feeCurrency: false, kind: "native" },
 } as const satisfies Record<string, TokenInfo>;
 

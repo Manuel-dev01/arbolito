@@ -21,7 +21,7 @@ import { z } from "zod";
 /** Display/prepare buffer for MiniPay's dollar-denominated gas, including approval and swap. */
 export const DOLLAR_FEE_RESERVE = 50_000n;
 
-export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
+export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "cNGN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
 export type Sym = z.infer<typeof Sym>;
 

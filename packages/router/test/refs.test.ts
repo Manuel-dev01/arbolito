@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fmtRate, interbankRefs } from "../src/refs";
+import { fiatOf, fmtRate, interbankRefs } from "../src/refs";
 
 describe("fmtRate", () => {
   it("keeps 8 significant digits as a plain decimal", () => {
@@ -32,6 +32,17 @@ describe("interbankRefs", () => {
     expect(refs.every((r) => r.name !== "official")).toBe(true);
   });
 
+  it("reads USD/NGN from ER-API too", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => (url.includes("er-api") ? Response.json({ result: "success", time_last_update_utc: "Sun, 22 Nov 2026 00:02:32 +0000", rates: { COP: 3700, NGN: 1376.736792 } }) : new Response("down", { status: 503 }))),
+    );
+    expect((await interbankRefs()).map((r) => [r.name, r.pair, r.rate])).toEqual([
+      ["interbank", "USD/COP", "3700"],
+      ["interbank", "USD/NGN", "1376.7368"],
+    ]);
+  });
+
   it("keeps the source that answered and fails only when none does", async () => {
     vi.stubGlobal(
       "fetch",
@@ -40,5 +51,13 @@ describe("interbankRefs", () => {
     expect((await interbankRefs()).map((r) => r.pair)).toEqual(["USD/MXN"]);
     vi.stubGlobal("fetch", vi.fn(async () => new Response("down", { status: 503 })));
     await expect(interbankRefs()).rejects.toThrow(/no interbank source/);
+  });
+});
+
+describe("fiatOf", () => {
+  it("maps dollar tokens to USD and local stablecoins to their ISO code", () => {
+    expect(["USDT", "USDC", "USAT"].map(fiatOf)).toEqual(["USD", "USD", "USD"]);
+    expect(["wARS", "wBRL", "wCOP", "wMXN", "cNGN"].map(fiatOf)).toEqual(["ARS", "BRL", "COP", "MXN", "NGN"]);
+    expect(fiatOf("CELO")).toBe("CELO");
   });
 });

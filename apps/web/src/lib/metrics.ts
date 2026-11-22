@@ -39,7 +39,8 @@ export interface Metrics {
   savingsArs: { medianBps?: number; totalDelta: bigint; decimals: number; receiptIds: string[] };
 }
 
-const isWfiat = (t: TokenRef) => /^w[A-Z]{3}$/.test(t.symbol);
+/** Local-currency stablecoins: the w-tokens and cNGN. */
+const isWfiat = (t: TokenRef) => /^[wc][A-Z]{3}$/.test(t.symbol);
 
 export function toMetricsReceipt(rec: ReceiptRecord, anchorTx: string | null = rec.anchorTx): MetricsReceipt {
   const b = rec.bundle;

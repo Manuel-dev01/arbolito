@@ -13,8 +13,8 @@ import type { ToolDefinition } from "./client";
  * runs are bounded onchain by ArbolitoGuard (caps and contacts the user set).
  */
 
-export const TOKEN_SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "USDT", "USAT", "USDC"] as const;
-/** Automatic rules run through ArbolitoGuard and Uniswap, which has no wCOP or wMXN pool: they stay out of rules. */
+export const TOKEN_SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "cNGN", "USDT", "USAT", "USDC"] as const;
+/** Automatic rules run through ArbolitoGuard and Uniswap, which has no wCOP, wMXN or cNGN pool: they stay out of rules. */
 const RULE_TOKENS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
 export type TokenSymbol = (typeof TOKEN_SYMBOLS)[number];
 

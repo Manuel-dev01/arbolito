@@ -38,9 +38,9 @@ describe("token config", () => {
     expect(() => tokenBySymbol("DOGE")).toThrow(/Unknown token/);
   });
 
-  it("uses 18 decimals for wFIAT and 6 for USD stables", () => {
+  it("uses 18 decimals for wFIAT (cNGN: 6) and 6 for USD stables", () => {
     for (const t of Object.values(TOKENS)) {
-      if (t.kind === "wfiat") expect(t.decimals).toBe(18);
+      if (t.kind === "wfiat") expect(t.decimals).toBe(t.symbol === "cNGN" ? 6 : 18);
       if (t.kind === "usd") {
         expect(t.decimals).toBe(6);
         expect(t.feeCurrencyAdapter).toBeDefined();

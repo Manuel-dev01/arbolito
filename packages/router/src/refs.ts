@@ -95,13 +95,16 @@ export async function uniswapRefs(client: PublicClient, blockNumber: bigint): Pr
   return out;
 }
 
-/** Textile ticker mids for the Celo LatAm corridors, as USD/ARS, USD/BRL, USD/COP and USD/MXN. */
+/** Textile ticker targets for the corridors users trade, by ISO code (NGN's ticker has no "W"). */
+const TEXTILE_TARGETS: Record<string, string> = { WARS: "ARS", WBRL: "BRL", WCOP: "COP", WMXN: "MXN", NGN: "NGN" };
+
+/** Textile ticker mids for the Celo corridors, as USD/ARS, USD/BRL, USD/COP, USD/MXN and USD/NGN. */
 export async function textileRefs(timeoutMs = 1500): Promise<Reference[]> {
   const t = await fetchTextileTickers(timeoutMs);
   if (!t) return [];
   return t.tickers
-    .filter((x) => x.base === "USDT" && ["WARS", "WBRL", "WCOP", "WMXN"].includes(x.target))
-    .map((x) => ({ name: "textile_mid", pair: `USD/${x.target.slice(1)}`, rate: fmtRate(x.mid), source: `${t.source}#${x.tickerId}`, at: t.at }));
+    .filter((x) => x.base === "USDT" && x.target in TEXTILE_TARGETS)
+    .map((x) => ({ name: "textile_mid", pair: `USD/${TEXTILE_TARGETS[x.target]}`, rate: fmtRate(x.mid), source: `${t.source}#${x.tickerId}`, at: t.at }));
 }
 
 const erApiSchema = z.object({ result: z.literal("success"), time_last_update_utc: z.string(), rates: z.record(z.string(), z.number()) });
@@ -111,7 +114,8 @@ const frankfurterSchema = z.object({ date: z.string(), rates: z.record(z.string(
  * Interbank (mid-market) references for the peso corridors without an Argentine-style official
  * rate here: USD/COP from ExchangeRate-API's open feed (daily; it asks for attribution where shown,
  * which the receipt's source link gives) and USD/MXN from the ECB via Frankfurter. Colombia's TRM
- * (datos.gov.co) refuses server requests, so nothing is labelled "official" for COP.
+ * (datos.gov.co) refuses server requests, so nothing is labelled "official" for COP. USD/NGN also
+ * comes from ER-API (the CBN's official rate is an 8 MB, 15–30 s download: too slow per quote).
  */
 export async function interbankRefs(timeoutMs = 1500): Promise<Reference[]> {
   const erUrl = "https://open.er-api.com/v6/latest/USD";
@@ -119,8 +123,9 @@ export async function interbankRefs(timeoutMs = 1500): Promise<Reference[]> {
   const [er, ecb] = await Promise.allSettled([getJson(erUrl, timeoutMs), getJson(ecbUrl, timeoutMs)]);
   const out: Reference[] = [];
   const erParsed = er.status === "fulfilled" ? erApiSchema.safeParse(er.value) : null;
-  if (erParsed?.success && erParsed.data.rates.COP) {
-    out.push({ name: "interbank", pair: "USD/COP", rate: fmtRate(erParsed.data.rates.COP), source: `${erUrl}#COP`, at: new Date(erParsed.data.time_last_update_utc).toISOString() });
+  for (const cur of ["COP", "NGN"] as const) {
+    const rate = erParsed?.success ? erParsed.data.rates[cur] : undefined;
+    if (erParsed?.success && rate) out.push({ name: "interbank", pair: `USD/${cur}`, rate: fmtRate(rate), source: `${erUrl}#${cur}`, at: new Date(erParsed.data.time_last_update_utc).toISOString() });
   }
   const ecbParsed = ecb.status === "fulfilled" ? frankfurterSchema.safeParse(ecb.value) : null;
   if (ecbParsed?.success && ecbParsed.data.rates.MXN) {
@@ -130,10 +135,10 @@ export async function interbankRefs(timeoutMs = 1500): Promise<Reference[]> {
   return out;
 }
 
-/** Fiat code for a token: USD stables → "USD", wFIAT → the ISO code ("wBRL" → "BRL"). */
+/** Fiat code for a token: USD stables → "USD", local stablecoins → the ISO code ("wBRL" → "BRL", "cNGN" → "NGN"). */
 export function fiatOf(symbol: string): string {
   if (["USAT", "USDT", "USDC", "USDm"].includes(symbol)) return "USD";
-  return symbol.replace(/^w/, "");
+  return symbol.replace(/^[wc](?=[A-Z]{3}$)/, "");
 }
 
 /**

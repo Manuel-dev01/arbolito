@@ -69,7 +69,7 @@ export function formatFixed(amount: bigint, decimals: number, locale: Locale, o:
 /** Fiat behind a token symbol: USD stables → USD, wARS → ARS, BRLm → BRL. */
 export function fiatOfSymbol(symbol: string): string {
   if (["USAT", "USDT", "USDC", "USDm", "USD₮", "USA₮"].includes(symbol)) return "USD";
-  if (/^w[A-Z]{3}$/.test(symbol)) return symbol.slice(1);
+  if (/^[wc][A-Z]{3}$/.test(symbol)) return symbol.slice(1); // wARS → ARS, cNGN → NGN
   if (/^[A-Z]{3}m$/.test(symbol)) return symbol.slice(0, 3);
   return symbol;
 }

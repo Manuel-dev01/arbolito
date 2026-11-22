@@ -10,8 +10,8 @@ export const MINIAPP_LANGS: Lang[] = ["es", "pt", "en"];
 const es = {
   back: "Atrás", close: "Cerrar", langName: "Español", langPick: "Idioma",
   langLabels: { es: "Español (Argentina)", pt: "Português (Brasil)", en: "English" } as Record<Lang, string>,
-  curName: { ARS: "Pesos ARS", BRL: "Reales", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dólares" } as Record<Cur, string>,
-  curLower: { ARS: "pesos argentinos", BRL: "reales", COP: "pesos colombianos", MXN: "pesos mexicanos", USD: "dólares" } as Record<Cur, string>,
+  curName: { ARS: "Pesos ARS", BRL: "Reales", COP: "Pesos COP", MXN: "Pesos MXN", NGN: "Nairas", USD: "Dólares" } as Record<Cur, string>,
+  curLower: { ARS: "pesos argentinos", BRL: "reales", COP: "pesos colombianos", MXN: "pesos mexicanos", NGN: "nairas", USD: "dólares" } as Record<Cur, string>,
 
   appLink: "Enlace de Arbolito", copyAppLink: "Copiar enlace para MiniPay", appLinkCopied: "Enlace copiado", handoffNote: "Telegram y este navegador no pueden firmar por tu MiniPay. Copiá el enlace, abrí MiniPay y cargalo desde Configuración de desarrollador. Tu cambio pendiente se guarda 15 minutos; si el precio vence, pedí uno nuevo antes de confirmar.", noMpTitle: "Abrí Arbolito desde MiniPay", noMpBody: "Arbolito funciona dentro de MiniPay, la billetera de Opera. Mientras llega a Descubrir, abrilo así (o mirá la demo):", noMp1: "En MiniPay: Ajustes → Acerca de → tocá el número de versión hasta que se active el modo desarrollador.", noMp2: "Volvé a Ajustes → Ajustes de desarrollador → Cargar página de prueba.", noMp3: "Pegá arbolito-livid.vercel.app/app y tocá Cargar.", openMP: "Abrir MiniPay", tryDemo: "Ver la demo",
   connTitle: "No pudimos conectar con tu MiniPay", connBody: "Puede ser la conexión a internet. Probá de nuevo en unos segundos.", noMoneyMoved: "No se movió plata.", retry: "Probar de nuevo",
@@ -87,8 +87,8 @@ export type MiniDict = typeof es;
 const pt: MiniDict = {
   back: "Voltar", close: "Fechar", langName: "Português", langPick: "Idioma",
   langLabels: es.langLabels,
-  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dólares" },
-  curLower: { ARS: "pesos argentinos", BRL: "reais", COP: "pesos colombianos", MXN: "pesos mexicanos", USD: "dólares" },
+  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", NGN: "Nairas", USD: "Dólares" },
+  curLower: { ARS: "pesos argentinos", BRL: "reais", COP: "pesos colombianos", MXN: "pesos mexicanos", NGN: "nairas", USD: "dólares" },
   appLink: "Link do Arbolito", copyAppLink: "Copiar link para o MiniPay", appLinkCopied: "Link copiado", handoffNote: "O Telegram e este navegador não podem assinar pelo seu MiniPay. Copie o link, abra o MiniPay e carregue em Configurações de desenvolvedor. Sua conversão fica salva por 15 minutos; se a taxa expirar, peça outra antes de confirmar.", noMpTitle: "Abra o Arbolito pelo MiniPay", noMpBody: "O Arbolito funciona dentro do MiniPay, a carteira da Opera. Enquanto não chega ao Descobrir, abra assim (ou veja a demo):", noMp1: "No MiniPay: Configurações → Sobre → toque no número da versão até ativar o modo desenvolvedor.", noMp2: "Volte a Configurações → Configurações de desenvolvedor → Carregar página de teste.", noMp3: "Cole arbolito-livid.vercel.app/app e toque em Carregar.", openMP: "Abrir MiniPay", tryDemo: "Ver a demo",
   connTitle: "Não conseguimos conectar com seu MiniPay", connBody: "Pode ser a conexão. Tente de novo em alguns segundos.", noMoneyMoved: "Nenhum dinheiro foi movido.", retry: "Tentar de novo",
   welTitle: "Troque e envie pesos, reais e dólares.", welBody: "Pelo melhor preço do momento, no seu idioma, com um comprovante que prova.", welS1: "Você escreve ou manda um áudio: \"manda 200 reais pra Lucía\".", welS2: "O Arbolito busca o melhor preço e te mostra.", welS3: "Você confirma no MiniPay e recebe o comprovante.", welLangNote: "Escolhemos português pelo seu celular. Mude acima.", start: "Começar",
@@ -161,8 +161,8 @@ const pt: MiniDict = {
 const en: MiniDict = {
   back: "Back", close: "Close", langName: "English", langPick: "Language",
   langLabels: es.langLabels,
-  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", USD: "Dollars" },
-  curLower: { ARS: "Argentine pesos", BRL: "reais", COP: "Colombian pesos", MXN: "Mexican pesos", USD: "dollars" },
+  curName: { ARS: "Pesos ARS", BRL: "Reais", COP: "Pesos COP", MXN: "Pesos MXN", NGN: "Naira", USD: "Dollars" },
+  curLower: { ARS: "Argentine pesos", BRL: "reais", COP: "Colombian pesos", MXN: "Mexican pesos", NGN: "naira", USD: "dollars" },
   appLink: "Arbolito link", copyAppLink: "Copy link for MiniPay", appLinkCopied: "Link copied", handoffNote: "Telegram and this browser cannot sign for your MiniPay wallet. Copy the link, open MiniPay and load it in Developer settings. Your pending conversion stays available for 15 minutes; if the price expires, request a fresh one before confirming.", noMpTitle: "Open Arbolito from MiniPay", noMpBody: "Arbolito runs inside MiniPay, the Opera wallet. Until it reaches Discover, open it like this (or see the demo):", noMp1: "In MiniPay: Settings → About → tap the version number until developer mode turns on.", noMp2: "Back in Settings → Developer Settings → Load test page.", noMp3: "Paste arbolito-livid.vercel.app/app and tap Load.", openMP: "Open MiniPay", tryDemo: "See the demo",
   connTitle: "We couldn't connect to your MiniPay", connBody: "It may be your connection. Try again in a few seconds.", noMoneyMoved: "No money moved.", retry: "Try again",
   welTitle: "Change and send pesos, reais and dollars.", welBody: "At the best rate right now, in your language, with a receipt that proves it.", welS1: "Type or send a voice note: \"change 100 dollars to pesos\".", welS2: "Arbolito finds the best rate and shows it to you.", welS3: "You confirm in MiniPay and get your receipt.", welLangNote: "We picked English from your phone. Change it above.", start: "Get started",
@@ -255,9 +255,9 @@ export function pickLang(param: string | null | undefined, navigatorLang?: strin
 /** The display currency per language (design: es → pesos, pt → reais, en → dollars). */
 export const DISPLAY_CUR: Record<Lang, Cur> = { es: "ARS", pt: "BRL", en: "USD" };
 
-const REGION_CUR: Record<string, Cur> = { AR: "ARS", BR: "BRL", CO: "COP", MX: "MXN" };
+const REGION_CUR: Record<string, Cur> = { AR: "ARS", BR: "BRL", CO: "COP", MX: "MXN", NG: "NGN" };
 
-/** The phone region decides which pesos ("es-CO" → COP, "es-MX" → MXN); otherwise the language default. */
+/** The phone region decides the local currency ("es-CO" → COP, "en-NG" → NGN); otherwise the language default. */
 export function displayCurFor(lang: Lang, navigatorLang: string | null): Cur {
   const region = (navigatorLang ?? "").split(/[-_]/)[1]?.toUpperCase();
   return (region && REGION_CUR[region]) || DISPLAY_CUR[lang];
