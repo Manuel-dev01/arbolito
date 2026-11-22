@@ -8,7 +8,10 @@ import {
   LiveGuardError,
   MemoryLedger,
   USD,
+  attributionCodeList,
   attributionCodes,
+  hasAttribution,
+  primaryAttributionCode,
   checkCaps,
   feeCurrencyFor,
   sendGuarded,
@@ -47,6 +50,19 @@ describe("checkCaps", () => {
 });
 
 describe("attribution", () => {
+  it("tags with every listed code, primary first, and matches on the primary", () => {
+    const both = "celo_0acfe36b6ea3, celo_e054d92430a5";
+    expect(attributionCodeList(both)).toEqual(["celo_0acfe36b6ea3", "celo_e054d92430a5"]);
+    expect(primaryAttributionCode(both)).toBe("celo_0acfe36b6ea3");
+    const data = withAttribution("0xa9059cbb", both);
+    expect(data.startsWith("0xa9059cbb")).toBe(true);
+    expect(attributionCodes(data)).toEqual(["celo_0acfe36b6ea3", "celo_e054d92430a5"]);
+    expect(hasAttribution(data, both)).toBe(true);
+    expect(hasAttribution(withAttribution("0xa9059cbb", "celo_e054d92430a5"), both)).toBe(false);
+    // A single code still encodes exactly as before.
+    expect(withAttribution("0x", "celo_e054d92430a5")).toBe(withAttribution("0x", ["celo_e054d92430a5"]));
+  });
+
   it("appends a decodable ERC-8021 suffix to calldata", () => {
     const data = withAttribution("0xa9059cbb", "arbolito_fork");
     expect(data.startsWith("0xa9059cbb")).toBe(true);

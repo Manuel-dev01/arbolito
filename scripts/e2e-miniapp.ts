@@ -11,7 +11,7 @@
 import { formatUnits, parseEther, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { TOKENS, loadEnv, txUrl } from "@arbolito/config";
-import { attributionCodes, feeCurrencyFor, makePublicClient, makeWalletClient } from "@arbolito/chain";
+import { attributionCodes, feeCurrencyFor, hasAttribution, makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { receivedInTx } from "@arbolito/router";
 import { SYMBOLS, type Sym } from "../apps/web/src/lib/miniapp/contract";
 import { buildDeps } from "../apps/web/src/lib/miniapp/server/deps";
@@ -51,7 +51,7 @@ runMain(async () => {
   console.log(`prepared ${prepared.calls.length} call(s), firm until ${prepared.expiresAt}: ${prepared.calls.map((c) => c.label).join(" → ")}`);
   for (const c of prepared.calls) {
     const codes = attributionCodes(c.data as Hex);
-    if (!codes.includes(env.ATTRIBUTION_CODE ?? "")) throw new Error(`call "${c.label}" lacks the attribution tag (found ${codes.join(",") || "none"})`);
+    if (!env.ATTRIBUTION_CODE || !hasAttribution(c.data as Hex, env.ATTRIBUTION_CODE)) throw new Error(`call "${c.label}" lacks the attribution tag (found ${codes.join(",") || "none"})`);
   }
 
   const release = async (why: string) => {

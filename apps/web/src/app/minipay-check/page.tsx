@@ -11,7 +11,7 @@ import { MiniPayCheck } from "./check";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "MiniPay check", robots: { index: false, follow: false } };
 
-const CODE_RE = /^[a-z0-9_]{1,32}$/;
+const CODE_RE = /^[a-z0-9_]{1,32}(,[a-z0-9_]{1,32})*$/;
 
 export default function Page() {
   // The attribution code is public by design (it is in every tagged tx's calldata).

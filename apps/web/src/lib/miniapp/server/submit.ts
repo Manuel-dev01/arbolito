@@ -1,6 +1,6 @@
 import type { Address, Hex, Transaction, TransactionReceipt } from "viem";
 import type { z } from "zod";
-import { attributionCodes } from "@arbolito/chain";
+import { attributionCodes, hasAttribution } from "@arbolito/chain";
 import { buildBundle, bundleHash, type ProofBundle } from "@arbolito/proof";
 import { receivedInTx, usdMicros, type Quote, type Route } from "@arbolito/router";
 import type { SubmitRequest, SubmitResponse } from "../contract";
@@ -36,7 +36,7 @@ async function checkTx(deps: MiniappDeps, hash: Hex, call: StoredCall, account: 
   if (!eq(tx.to, call.to)) throw badRequest(`Transaction ${i + 1} went to a different contract than prepared.`);
   if (tx.value !== BigInt(call.value)) throw badRequest(`Transaction ${i + 1} sent a different value than prepared.`);
   if (!tx.input.toLowerCase().startsWith(call.core.toLowerCase())) throw badRequest(`Transaction ${i + 1} does not carry the prepared data.`);
-  if (!deps.attributionCode || !attributionCodes(tx.input).includes(deps.attributionCode)) {
+  if (!deps.attributionCode || !hasAttribution(tx.input, deps.attributionCode)) {
     throw badRequest(`Transaction ${i + 1} is missing the Arbolito attribution tag.`);
   }
   return { hash, tx, receipt };

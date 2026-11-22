@@ -25,6 +25,8 @@ describe("env schema", () => {
 
   it("rejects malformed attribution codes and keys", () => {
     expect(() => envSchema.parse({ ATTRIBUTION_CODE: "Celo XYZ" })).toThrow();
+    expect(() => envSchema.parse({ ATTRIBUTION_CODE: "celo_a,,celo_b" })).toThrow();
+    expect(envSchema.parse({ ATTRIBUTION_CODE: "celo_0acfe36b6ea3,celo_e054d92430a5" }).ATTRIBUTION_CODE).toBe("celo_0acfe36b6ea3,celo_e054d92430a5");
     expect(() => envSchema.parse({ OPS_PRIVATE_KEY: "0x1234" })).toThrow();
   });
 });

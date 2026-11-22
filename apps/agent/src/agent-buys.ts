@@ -13,7 +13,7 @@
 import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { TOKENS, type Env } from "@arbolito/config";
-import { REPUTATION_REGISTRY, capsFromEnv, encodeGiveFeedback, log, makePublicClient, makeWalletClient, sendGuarded } from "@arbolito/chain";
+import { REPUTATION_REGISTRY, capsFromEnv, encodeGiveFeedback, log, makePublicClient, makeWalletClient, primaryAttributionCode, sendGuarded } from "@arbolito/chain";
 import { DbLedger, agentPurchases, insertAgentPurchase, recentAgentPurchases, type Db } from "@arbolito/db";
 import { PaymentUncertainError, payV2, quoteV2 } from "@arbolito/x402";
 import { eq } from "drizzle-orm";
@@ -105,7 +105,7 @@ export async function buyFromProvider(db: Db, env: Env, p: Provider): Promise<Bu
       ledger: new DbLedger(db, payer.address),
       caps: capsFromEnv(),
       purpose: `x402 ${p.name} (agent #${p.agentId})`,
-      builderCode: env.ATTRIBUTION_CODE,
+      builderCode: env.ATTRIBUTION_CODE ? primaryAttributionCode(env.ATTRIBUTION_CODE) : undefined,
       legacyEnvelope: p.legacyEnvelope,
     });
     const settled = paid.settlement?.transaction ?? null;

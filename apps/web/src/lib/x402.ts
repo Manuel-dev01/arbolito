@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { withX402 } from "@x402/next";
+import { primaryAttributionCode } from "@arbolito/chain";
 import { insertX402Sale } from "@arbolito/db";
 import { createSeller, priceOptions, sellerExtensions, sellSymbol, v1Refusal, type FiatRates } from "@arbolito/x402/seller";
 import { AGENT_WALLET } from "./agent-registration";
@@ -24,7 +25,8 @@ export interface PaidRoute {
 }
 
 const payTo = () => process.env.X402_PAY_TO || AGENT_WALLET;
-const BUILDER_CODE = process.env.ATTRIBUTION_CODE || "celo_e054d92430a5";
+/** The x402 builder-code extension carries one code: the current edition's (first in ATTRIBUTION_CODE). */
+const BUILDER_CODE = primaryAttributionCode(process.env.ATTRIBUTION_CODE || "celo_0acfe36b6ea3");
 
 let seller: ReturnType<typeof createSeller> | undefined;
 function getSeller() {

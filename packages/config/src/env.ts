@@ -17,7 +17,8 @@ export const envSchema = z.object({
   CELO_RPC_URL: z.string().url().default("https://forno.celo.org"),
   CELO_RPC_URL_FALLBACK: opt(z.string().url()),
   CHAIN_ID: z.coerce.number().int().default(42220),
-  ATTRIBUTION_CODE: opt(z.string().regex(/^[a-z0-9_]{1,32}$/, "ERC-8021 codes match /^[a-z0-9_]{1,32}$/")),
+  /** One ERC-8021 code, or several comma-separated with the current edition's first. */
+  ATTRIBUTION_CODE: opt(z.string().regex(/^[a-z0-9_]{1,32}(,[a-z0-9_]{1,32})*$/, "ERC-8021 codes match /^[a-z0-9_]{1,32}$/, comma-separated")),
 
   // Wallets
   OPS_PRIVATE_KEY: opt(privateKey),
