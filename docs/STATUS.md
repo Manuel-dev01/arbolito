@@ -63,6 +63,25 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 | x402 permit2 assets seller config | open | Builder-code extension: see 04-reference | Phase 3 |
 
 ## Log
+### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up
+- **Cause:** the Neon free plan ran past its 100 CU-hour monthly quota (error 53000). The desk ticks every 10 s and the bot every 60 s, so the database never suspended.
+- **Effect:**
+  - /metrics fell back to the 2 receipts in the repo.
+  - The bot's rules ticks failed.
+  - The desk's ledger and rebalancer failed. The rebalancer latched "stopped" before signing, so nothing was sent.
+- **Fixed:**
+  - The founder upgraded Neon to a paid plan.
+  - /metrics is back on the database: 13 wallets, 60 conversions and anchored receipts, US$476.71 routed.
+  - The bot's rules run again.
+  - desk-feed restarted (founder-approved). The rebalancer is live, buying is on for every pair, and Stitch shows restart #3.
+- **Desk Permit2 top-ups (founder-approved, fork-rehearsed):** wARS was at 0.12 and USDC at 5.01.
+  - [wARS 160,000](https://celoscan.io/tx/0xbc1c15082670b05b82d2fa1e682dbf9f465d91052079b97c58afc544c1767400)
+  - [USDC 1,000](https://celoscan.io/tx/0xe769f8547851dad2cdee4d8d08ca07e0e2e000ce915fcf49ea3b57de1d739f6f)
+- **Still open:**
+  - wCOP stays paused (a single price source).
+  - The Stitch restart churn (1,046 before the restart) comes from config changes as caps moved. Quantize the caps.
+  - Cut the database writes: keep desk state in memory and write only on change.
+
 ### 2026-11-08: receipts stuck registering (anchor wallet out of gas); fixed for good
 - **Cause:** the receipt-anchoring wallet `0x89dC…7CA4` ran out of CELO on 2026-11-07 12:36 UTC (0.0048 left; an anchor costs ~0.0098 at 200 gwei). 12 receipts sat "registering"; the conversions themselves were fine.
 - **Fixed (founder's yes, each fork-rehearsed):** [0.2 CELO](https://celoscan.io/tx/0xd3302bf317f0120ddadbfeda2fb3322164b5db6543f35add19b1190751b203ff) and [3 USDT](https://celoscan.io/tx/0xbbd296eec09717ff1cb35b737b17d8f5a6ad7dfe6c401556c0b0d0bee294a4f6) from ops to the anchor wallet; `pnpm anchor:wallet pending --live` anchored all 12. Desk approvals topped up: [wARS 160,000](https://celoscan.io/tx/0x556cdc66d6ffaf96f87aec10ac8fbb9637077f2866942b9bacd045c148974ac8), [USA₮ 1,000](https://celoscan.io/tx/0x72839ad15dffaea3e77a205745367114aafc5f2daacba124c2812404d519d14c).
