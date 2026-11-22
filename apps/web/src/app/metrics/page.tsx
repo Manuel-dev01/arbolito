@@ -6,6 +6,8 @@ import { getLang, LOCALE, messages, withLang } from "../../i18n/messages";
 import { anchorFor, listReceiptsCached } from "../../lib/cached";
 import { formatBps, formatFixed, formatMoney, formatToken, shortHex } from "../../lib/format";
 import { RECEIPTS_ADDRESS } from "../../lib/chain";
+import { teamWallets } from "@arbolito/config";
+import { computeEdition2 } from "../../lib/edition2";
 import { computeMetrics } from "../../lib/metrics";
 import { addressUrl, txUrl } from "../../lib/receipts-abi";
 import { BUY_PAYER, BUY_PAYER_BEFORE, loadBuyPurchases } from "../../lib/buy-public";
@@ -35,6 +37,8 @@ export default async function MetricsPage({ searchParams }: Props) {
     ),
   );
   const m = computeMetrics(records, anchors);
+  const e2 = computeEdition2(records, teamWallets(process.env.TEAM_WALLETS));
+  const te = t.e2;
   const usd = (micros: bigint) => formatMoney(micros, 6, "USD", locale);
   const fromDb = records.some((r) => r.source === "db");
   const updated = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(fetchedAt));
@@ -77,6 +81,115 @@ export default async function MetricsPage({ searchParams }: Props) {
           {t.updated(`${updated} UTC`)} · {fromDb ? t.sourceDb : t.sourceFile}
         </p>
       </header>
+
+      <section className="card stack-16" id="edition-2" aria-label={te.title}>
+        <div className="card-head">
+          <span className="kicker">{te.kicker}</span>
+          <h2 className="h2">{te.title}</h2>
+          <p className="lead">{te.lead}</p>
+        </div>
+        <div className="big-numbers">
+          {[
+            { k: te.conversions, v: String(e2.conversions.length), href: "#e2-list" },
+            { k: te.payers, v: String(e2.payers.length), href: "#e2-list" },
+            { k: te.recipients, v: String(e2.recipients.length), href: "#e2-list" },
+            { k: te.repeat, v: String(e2.repeatPayers), href: "#e2-list" },
+            { k: te.volume, v: usd(e2.totalUsdMicros), href: "#e2-corridors" },
+          ].map((b) => (
+            <a key={b.k} className="big" href={b.href}>
+              <span className="big-k">{b.k}</span>
+              <span className="big-v">{b.v}</span>
+            </a>
+          ))}
+        </div>
+        <div className="table-wrap" id="e2-corridors">
+          <table>
+            <thead>
+              <tr>
+                <th>{te.col.corridor}</th>
+                <th className="num">{te.col.count}</th>
+                <th className="num">{te.col.local}</th>
+                <th className="num">{te.col.usd}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {e2.byCorridor.map((c) => (
+                <tr key={c.corridor}>
+                  <td>USD → {c.corridor}</td>
+                  <td className="num">{c.count}</td>
+                  <td className="num">{c.local ? formatMoney(c.local.amount, c.local.token.decimals, c.local.token.fiat, locale) : "—"}</td>
+                  <td className="num">{usd(c.usdMicros)}</td>
+                </tr>
+              ))}
+              {e2.byCorridor.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="muted">
+                    {te.empty}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {e2.conversions.length > 0 && (
+          <div className="table-wrap" id="e2-list">
+            <h3 className="kicker">{te.listTitle}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>{te.col.date}</th>
+                  <th>{te.col.payment}</th>
+                  <th>{te.col.payer}</th>
+                  <th>{te.col.payee}</th>
+                  <th>{te.col.tx}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {e2.conversions.map((c) => (
+                  <tr key={c.id}>
+                    <td className="small">{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(c.createdAt))}</td>
+                    <td>
+                      <a href={rHref(c.id)}>
+                        {formatMoney(c.amountIn, c.tokenIn.decimals, c.tokenIn.fiat, locale)} → {formatMoney(c.amountOut, c.tokenOut.decimals, c.tokenOut.fiat, locale)}
+                      </a>
+                    </td>
+                    <td className="mono small">
+                      <ExtLink href={addressUrl(c.taker)}>{shortHex(c.taker)}</ExtLink>
+                    </td>
+                    <td className="mono small">{c.recipient && c.recipient !== c.taker ? <ExtLink href={addressUrl(c.recipient)}>{shortHex(c.recipient)}</ExtLink> : <span className="muted">{te.self}</span>}</td>
+                    <td className="mono small">
+                      <ExtLink href={txUrl(c.executionTx)}>{shortHex(c.executionTx)}</ExtLink>
+                      {c.deliveryTx && (
+                        <>
+                          {" + "}
+                          <ExtLink href={txUrl(c.deliveryTx)}>{shortHex(c.deliveryTx)}</ExtLink>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {e2.excluded.length > 0 && (
+          <details>
+            <summary className="small">
+              {te.excludedTitle} ({e2.excluded.length})
+            </summary>
+            <ul className="small">
+              {e2.excluded.map((x) => (
+                <li key={x.id}>
+                  <a href={rHref(x.id)} className="mono">
+                    {x.id.slice(0, 8)}
+                  </a>{" "}
+                  · {te.reasons[x.reason]} · <ExtLink href={txUrl(x.executionTx)}>{shortHex(x.executionTx)}</ExtLink>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
 
       <section className="big-numbers" aria-label={t.title}>
         {big.map((b) => (
