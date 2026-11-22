@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORRIDORS, DESK_MAKER, RESUME_RATIO, buySidesOff, buySizes, stitchToml, type Balances } from "../src";
+import { CORRIDORS, DESK_MAKER, LoosenGate, RESUME_RATIO, buySidesOff, buySizes, stitchToml, type Balances } from "../src";
 
 const zero: Balances = { USDT: 0n, wARS: 0n, wBRL: 0n, USDC: 0n, USAT: 0n, wCOP: 0n, wMXN: 0n };
 const fair = { "wars-usdt": 1 / 1600, "wbrl-usdt": 0.2, "usdc-usdt": 1, "usat-usdt": 1, "wcop-usdt": 1 / 3170, "wmxn-usdt": 1 / 18.5 };
@@ -68,5 +68,59 @@ describe("buy-side size under the cap", () => {
     expect(pool(five)).toContain('buy_total_liquidity_debt = "5000000"');
     const none = stitchToml(CORRIDORS, { feedBaseUrl: "http://127.0.0.1:8790", buySize: new Map([["wbrl-usdt", 0n]]) });
     expect(pool(none)).not.toContain("buy_total_liquidity_debt");
+  });
+});
+
+describe("LoosenGate (tighten at once, loosen slowly)", () => {
+  const HOLD = 15 * 60_000;
+  const S = (n: number) => BigInt(n) * 1_000_000n;
+  const sizes = (v: number) => new Map([["wbrl-usdt", S(v)]]);
+  const none = new Set<string>();
+
+  it("starts from the first proposal", () => {
+    const g = new LoosenGate(HOLD);
+    const r = g.apply(new Set(["wars-usdt"]), sizes(10), 0);
+    expect(r.buyOff).toEqual(new Set(["wars-usdt"]));
+    expect(r.buySize.get("wbrl-usdt")).toBe(S(10));
+  });
+
+  it("shrinks a size on the tick it is proposed, grows it only after the hold", () => {
+    const g = new LoosenGate(HOLD);
+    g.apply(none, sizes(20), 0);
+    expect(g.apply(none, sizes(15), 10_000).buySize.get("wbrl-usdt")).toBe(S(15));
+    expect(g.apply(none, sizes(20), 20_000).buySize.get("wbrl-usdt")).toBe(S(15));
+    expect(g.apply(none, sizes(20), 20_000 + HOLD - 1).buySize.get("wbrl-usdt")).toBe(S(15));
+    expect(g.apply(none, sizes(20), 20_000 + HOLD).buySize.get("wbrl-usdt")).toBe(S(20));
+  });
+
+  it("restarts the wait when a tick proposes less (no flapping across a step)", () => {
+    const g = new LoosenGate(HOLD);
+    g.apply(none, sizes(15), 0);
+    g.apply(none, sizes(20), 1_000); // wait starts
+    g.apply(none, sizes(15), HOLD / 2); // back down: wait cancelled, size unchanged
+    expect(g.apply(none, sizes(20), HOLD + 2_000).buySize.get("wbrl-usdt")).toBe(S(15));
+    expect(g.pending()).toHaveProperty("size:wbrl-usdt");
+    expect(g.apply(none, sizes(20), 2 * HOLD + 2_000).buySize.get("wbrl-usdt")).toBe(S(20));
+    expect(g.pending()).toEqual({});
+  });
+
+  it("switches a buy side off at once and back on only after the hold", () => {
+    const g = new LoosenGate(HOLD);
+    g.apply(none, sizes(10), 0);
+    expect(g.apply(new Set(["wbrl-usdt"]), sizes(10), 1_000).buyOff.has("wbrl-usdt")).toBe(true);
+    expect(g.apply(none, sizes(10), 2_000).buyOff.has("wbrl-usdt")).toBe(true);
+    expect(g.apply(none, sizes(10), 2_000 + HOLD).buyOff.has("wbrl-usdt")).toBe(false);
+  });
+
+  it("caps restarts: 60 ticks of a size wobbling across a step change it at most twice", () => {
+    const g = new LoosenGate(HOLD);
+    let prev = g.apply(none, sizes(20), 0).buySize.get("wbrl-usdt");
+    let changes = 0;
+    for (let i = 1; i <= 60; i++) {
+      const v = g.apply(none, sizes(i % 2 ? 15 : 20), i * 10_000).buySize.get("wbrl-usdt");
+      if (v !== prev) changes++;
+      prev = v;
+    }
+    expect(changes).toBeLessThanOrEqual(2);
   });
 });

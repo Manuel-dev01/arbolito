@@ -65,3 +65,62 @@ export function buySizes(b: Balances, corridors: readonly Corridor[], usdtPerSof
   }
   return out;
 }
+
+/** How long a looser buy setting (a bigger size, a side back on) must hold before Stitch gets it. */
+export const LOOSEN_HOLD_MS = 15 * 60_000;
+
+/**
+ * Tighten at once, loosen slowly. Every change to Stitch's config restarts it, and the inputs
+ * (fair price, the dispersion-scaled cap) wobble across step boundaries: in the week to
+ * 2026-11-22 Stitch restarted ~40 times a day, up to once a minute, mostly for buy sizes that
+ * shrank and grew back. A smaller size or a side switched off is safety, so it applies on the
+ * tick it is proposed. A larger size or a side switched back on applies only after it has been
+ * proposed continuously for holdMs; any tick that proposes less starts the wait over.
+ */
+export class LoosenGate {
+  private off = new Set<string>();
+  private sizes = new Map<string, bigint>();
+  private since = new Map<string, number>();
+  private started = false;
+
+  constructor(private holdMs = LOOSEN_HOLD_MS) {}
+
+  apply(proposedOff: ReadonlySet<string>, proposedSizes: ReadonlyMap<string, bigint>, now: number): { buyOff: Set<string>; buySize: Map<string, bigint> } {
+    // First call: nothing is applied yet, so the proposal is the starting point.
+    if (!this.started) {
+      this.started = true;
+      this.off = new Set(proposedOff);
+      this.sizes = new Map(proposedSizes);
+      return this.current();
+    }
+    const waited = (key: string, looser: boolean) => {
+      if (!looser) {
+        this.since.delete(key);
+        return false;
+      }
+      const t = this.since.get(key) ?? this.since.set(key, now).get(key)!;
+      if (now - t < this.holdMs) return false;
+      this.since.delete(key);
+      return true;
+    };
+    for (const p of new Set([...this.off, ...proposedOff])) {
+      if (proposedOff.has(p)) this.off.add(p);
+      if (waited(`off:${p}`, this.off.has(p) && !proposedOff.has(p))) this.off.delete(p);
+    }
+    for (const [p, v] of proposedSizes) {
+      const applied = this.sizes.get(p);
+      if (applied === undefined || v < applied) this.sizes.set(p, v);
+      if (waited(`size:${p}`, applied !== undefined && v > applied)) this.sizes.set(p, v);
+    }
+    return this.current();
+  }
+
+  /** Loosenings waiting out their hold: key → ms epoch the wait started. */
+  pending(): Record<string, string> {
+    return Object.fromEntries([...this.since].map(([k, t]) => [k, new Date(t).toISOString()]));
+  }
+
+  private current() {
+    return { buyOff: new Set(this.off), buySize: new Map(this.sizes) };
+  }
+}

@@ -2,6 +2,12 @@
  * The desk's ledger in Postgres: fills (indexed from chain) and inventory snapshots. Runs inside
  * the feed service's tick, so a fill is recorded with the fair price of the moment it was seen.
  * Reads the chain and writes our own database only; never sends a transaction.
+ *
+ * Database traffic is batched so the database can suspend between visits (Neon bills compute
+ * while it is awake, and a query every 10 s kept it awake around the clock: the free quota ran out
+ * on 2026-11-22). The scan cursor lives in memory and is saved with the snapshot and the buffered
+ * RFQ results once every PERSIST_EVERY_MS. Fills are written the moment they are seen. A restart
+ * rescans at most PERSIST_EVERY_MS of blocks, which is harmless: fill inserts are idempotent.
  */
 import { desc, eq, gte } from "drizzle-orm";
 import { parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
@@ -19,7 +25,8 @@ const MAX_RANGE = 2_000n;
 const CONFIRMATIONS = 2n;
 /** A fill seen within this long of its block gets the current fair price; older ones are backfill. */
 const FRESH_MS = 5 * 60_000;
-const SNAPSHOT_EVERY_MS = 5 * 60_000;
+/** Snapshots, the saved cursor and RFQ results all go to the database together, this often. */
+export const PERSIST_EVERY_MS = 15 * 60_000;
 
 const transfer = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
 
@@ -32,6 +39,13 @@ export class DeskLedger {
   private lastSnapshot = 0;
   /** Fills seen by this process, for the risk officer's window. */
   private recent: { pair: string; at: number; edgeBps?: number }[] = [];
+  /** Last block scanned (read from the database once, then kept here). */
+  private scanned?: bigint;
+  /** The block last saved to the database, and when. */
+  private saved?: bigint;
+  private savedAt = 0;
+  /** RFQ results from Stitch's log, waiting for the next save. */
+  private rfqs: { rfqId: string; result: string; at: Date }[] = [];
 
   constructor(
     private db: Db,
@@ -42,8 +56,12 @@ export class DeskLedger {
   ) {}
 
   private async cursor(): Promise<bigint> {
-    const [row] = await this.db.select().from(deskState).where(eq(deskState.key, CURSOR));
-    return row ? BigInt((row.value as { block: string }).block) : DESK_START_BLOCK - 1n;
+    if (this.scanned === undefined) {
+      const [row] = await this.db.select().from(deskState).where(eq(deskState.key, CURSOR));
+      this.scanned = row ? BigInt((row.value as { block: string }).block) : DESK_START_BLOCK - 1n;
+      this.saved = this.scanned;
+    }
+    return this.scanned;
   }
 
   private async setCursor(block: bigint): Promise<void> {
@@ -51,6 +69,28 @@ export class DeskLedger {
       .insert(deskState)
       .values({ key: CURSOR, value: { block: block.toString() } })
       .onConflictDoUpdate({ target: deskState.key, set: { value: { block: block.toString() } } });
+    this.saved = block;
+  }
+
+  /**
+   * Save the cursor and the buffered RFQ results when due (or when forced: after new fills, and on
+   * shutdown). A failed write keeps them for the next try.
+   */
+  async persist(now = Date.now(), force = false): Promise<void> {
+    if (!force && now - this.savedAt < PERSIST_EVERY_MS) return;
+    // A forced save keeps the schedule, so routine saves stay on the same tick as the snapshot.
+    if (!force) this.savedAt = now;
+    if (this.scanned !== undefined && this.scanned !== this.saved) await this.setCursor(this.scanned);
+    if (this.rfqs.length) {
+      const batch = this.rfqs;
+      this.rfqs = [];
+      try {
+        await this.db.insert(deskRfqs).values(batch).onConflictDoNothing({ target: deskRfqs.rfqId });
+      } catch (e) {
+        this.rfqs = [...batch, ...this.rfqs].slice(-2_000);
+        throw e;
+      }
+    }
   }
 
   /** Scan the next block range for desk transfers; record any fills. Returns how many were new. */
@@ -109,14 +149,16 @@ export class DeskLedger {
         this.log(`fill ${f.pair} ${f.side} ${f.softAmount} soft for ${f.usdtAmount} USDT @ ${f.price}${fairPx ? ` (fair ${fairPx})` : ""} ${f.txHash}`);
       }
     }
-    await this.setCursor(to);
+    this.scanned = to;
+    // New fills are rare and worth keeping across a restart: save the cursor with them.
+    await this.persist(now, added > 0);
     return added;
   }
 
-  /** Record inventory + NAV at most every few minutes. */
+  /** Record inventory + NAV every PERSIST_EVERY_MS. */
   /** `quoting`: per pair, whether the corridor was live this tick (for the uptime on /desk). */
   async snapshot(b: Balances, fair: FairNow, now = Date.now(), quoting?: Record<string, boolean>): Promise<void> {
-    if (now - this.lastSnapshot < SNAPSHOT_EVERY_MS) return;
+    if (now - this.lastSnapshot < PERSIST_EVERY_MS) return;
     const [blockNumber, celo] = await Promise.all([this.client.getBlockNumber(), this.client.getBalance({ address: this.desk })]);
     const nav = navMicros(b, this.corridors, fair);
     await this.db.insert(deskSnapshots).values({
@@ -138,9 +180,10 @@ export class DeskLedger {
     this.lastSnapshot = now;
   }
 
-  /** An RFQ outcome from Stitch's log (once per RFQ id). */
-  async recordRfqResult(rfqId: string, result: string, at = Date.now()): Promise<void> {
-    await this.db.insert(deskRfqs).values({ rfqId, result, at: new Date(at) }).onConflictDoNothing({ target: deskRfqs.rfqId });
+  /** An RFQ outcome from Stitch's log (once per RFQ id), saved with the next persist. */
+  recordRfqResult(rfqId: string, result: string, at = Date.now()): void {
+    if (this.rfqs.some((r) => r.rfqId === rfqId)) return;
+    this.rfqs.push({ rfqId, result, at: new Date(at) });
   }
 
   /** Fills seen in the last windowMs, by pair. */

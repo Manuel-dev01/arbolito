@@ -18,7 +18,7 @@ import { makePublicClient, makeWalletClient } from "@arbolito/chain";
 import { DbLedger, getDb } from "@arbolito/db";
 import { erc20Abi, textileFirmEnabled } from "@arbolito/router";
 import { createLlmClient } from "@arbolito/llm";
-import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, Rebalancer, StitchSupervisor, allowanceShortfalls, buySidesOff, buySizes, parseRfqResult, stitchToml } from "@arbolito/desk";
+import { CORRIDORS, DESK_MAKER, DeskLedger, FeedService, LoosenGate, Rebalancer, StitchSupervisor, allowanceShortfalls, buySidesOff, buySizes, parseRfqResult, stitchToml } from "@arbolito/desk";
 import { hasFlag, runMain } from "./lib/cli";
 
 function deskAddress(): Address | undefined {
@@ -54,10 +54,10 @@ if (hasFlag("once")) {
           privateKey: env.DESK_PRIVATE_KEY,
           rfqApiKey: env.DESK_RFQ_API_KEY,
           log,
-          // RFQs our quote won, into the ledger (best effort; never blocks Stitch).
+          // RFQs our quote won, into the ledger (buffered, saved with the next persist; never blocks Stitch).
           onLine: (line) => {
             const r = parseRfqResult(line);
-            if (r && ledger) void ledger.recordRfqResult(r.rfqId, r.result).catch((e: Error) => log(`rfq record failed: ${e.message}`));
+            if (r && ledger) ledger.recordRfqResult(r.rfqId, r.result);
           },
         })
       : undefined;
@@ -78,6 +78,8 @@ if (hasFlag("once")) {
       : undefined;
   let buyOff = new Set<string>();
   let buySize = new Map<string, bigint>();
+  // Tighter settings reach Stitch at once, looser ones after holding 15 min (each change restarts it).
+  const gate = new LoosenGate();
   let ready = false;
   // Permit2 allowances, read every minute: Stitch won't start when one is under what it trades.
   let allowance: Map<string, bigint> | undefined;
@@ -110,12 +112,13 @@ if (hasFlag("once")) {
       // The buy side uses caps scaled down by source dispersion (dynamic.ts); the rebalancer keeps
       // the static caps, so an uncertain hour stops buying but never forces a sale.
       const buyCaps = CORRIDORS.map((c) => ({ ...c, maxSoftUsd: c.maxSoftUsd * (capScale[c.pair] ?? 1) }));
-      const next = buySidesOff(balances, buyCaps, usdtPerSoft, buyOff);
+      // Size each buy side to the room left under its cap, so one fill can't overshoot it.
+      const proposed = gate.apply(buySidesOff(balances, buyCaps, usdtPerSoft, buyOff), buySizes(balances, buyCaps, usdtPerSoft, buySize), Date.now());
+      const next = proposed.buyOff;
       const changed = next.size !== buyOff.size || [...next].some((p) => !buyOff.has(p));
       if (changed) log(`inventory caps: buy side off for [${[...next].join(", ") || "none"}]`);
       buyOff = next;
-      // Size each buy side to the room left under its cap, so one fill can't overshoot it.
-      const sizes = buySizes(balances, buyCaps, usdtPerSoft, buySize);
+      const sizes = proposed.buySize;
       if ([...sizes].some(([p, v]) => buySize.get(p) !== v)) log(`buy sizes: ${[...sizes].map(([p, v]) => `${p}=${Number(v) / 1e6}`).join(", ")}`);
       buySize = sizes;
       const nextShort = allowanceShortfalls(CORRIDORS, { buyOff, buySize, allowance });
@@ -130,7 +133,7 @@ if (hasFlag("once")) {
       }
     },
     extraState: () => ({
-      ...(supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff], allowanceLow: short } } : {}),
+      ...(supervisor ? { stitch: { ...supervisor.status(), buySidesOff: [...buyOff], allowanceLow: short, loosening: gate.pending() } } : {}),
       ...(rebalancer ? { rebalancer: rebalancer.status() } : {}),
     }),
   });
@@ -146,7 +149,9 @@ if (hasFlag("once")) {
       process.exitCode = 1;
     },
   );
-  const stop = () => void Promise.all([svc.stop(), supervisor?.stop()]).then(() => process.exit(0));
+  // Save the cursor and buffered RFQ results before exiting (a redeploy would otherwise drop up to 15 min of them).
+  const flush = () => ledger?.persist(Date.now(), true).catch((e: Error) => log(`final ledger save failed: ${e.message}`));
+  const stop = () => void Promise.all([svc.stop(), supervisor?.stop(), flush()]).then(() => process.exit(0));
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 }
