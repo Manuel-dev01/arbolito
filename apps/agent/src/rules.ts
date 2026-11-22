@@ -13,7 +13,12 @@ import { DbLedger, activeGuardianRules, activeSplitRules, claimRun, dueSendRules
 import type { GuardianSignal, GuardianSym } from "@arbolito/rules";
 import { RulesRunner, type RunnerStore } from "@arbolito/rules/runner";
 
-const TICK_MS = 60_000;
+/**
+ * Every 15 minutes. Nothing here needs faster: sends are monthly, a payday split reacts to an
+ * incoming payment, the guardian acts at most once a day each way. A tick reads the database,
+ * and ticking every minute kept it awake around the clock (Neon's free quota ran out on 2026-11-22).
+ */
+const TICK_MS = 15 * 60_000;
 
 function dbStore(db: Db): RunnerStore {
   return {

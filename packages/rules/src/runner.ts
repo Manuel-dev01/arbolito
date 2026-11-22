@@ -1,6 +1,6 @@
 /**
  * The rules runner: executes active rules through ArbolitoGuard v2 with Arbolito's operator key.
- * Runs inside the long-lived bot service (apps/agent), every minute.
+ * Runs inside the long-lived bot service (apps/agent), every 15 minutes.
  *
  * Money safety:
  * - The guard is the hard boundary: it only pays the account itself (swaps) or contacts the
