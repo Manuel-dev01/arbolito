@@ -83,10 +83,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov whose Textile taker leg is in a listed corridor (USD₮ with cNGN, IDRX, wARS, wBRL, wMXN or wCOP, either way, labelled in the direction traded).
   - Payers and payees are outside the team and not funded directly by it: `FUNDED_WALLETS`, every address our public wallets sent tokens to (`pnpm funded:wallets`; one hop, private).
   - Every exclusion is counted by reason. Receipts are linked except where the reason would name a private wallet.
-- **Checks:** 553 unit tests (1 skipped), 105 contract tests (3 skipped), both typechecks and the production build pass. /metrics checked against the real database at 1280 and 360 px in three languages; edition-1 numbers are unchanged.
+- **Checks:** 556 unit tests (1 skipped), 105 contract tests (3 skipped), both typechecks and the production build pass. /metrics checked against the real database at 1280 and 360 px in three languages; edition-1 numbers are unchanged.
   - Fork tests: the guardian and rules-runner tests pass. The proof and router ones time out on this machine (about 1 s per RPC call), on 470c09a too. The chain ones did not finish.
-  - cNGN has not run on a fork or on mainnet yet.
+  - cNGN payout rehearsed on a fork: 1 USDT → 1,449.346142 cNGN through a real Textile firm quote, forwarded in full to the payee; all three calls carry both codes. Not on mainnet yet.
   - Next.js upgraded 16.4.0 → 16.4.5 (critical and high advisories).
+
+- **/metrics showing 1 wallet (2026-11-23, 06:54–06:59 UTC):** a Vercel instance failed its receipt queries four times while the database was up, and the fallback (the 2 receipts in the repo) was cached as the answer. Now a failed read is retried once, its real cause is logged, and a failure is never cached: the last good numbers stay, or the page says the database can't be reached. Why those queries failed isn't known: the old log had only the SQL.
 
 ### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up
 - **Cause:** the Neon free plan ran past its 100 CU-hour monthly quota (error 53000). The desk ticks every 10 s and the bot every 60 s, so the database never suspended.

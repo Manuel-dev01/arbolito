@@ -16,7 +16,7 @@ Track rules: a tagged Textile FX taker conversion in the product flow; local-sta
 | Item | State |
 |---|---|
 | User and agent txs tagged with the edition-2 code `celo_0acfe36b6ea3` and edition 1's (`ATTRIBUTION_CODE` is a list). x402 carries the first code only; the desk keeps edition 1's | ✅ code · 👤 production env |
-| Nigerian naira (cNGN) for users: hold, convert and send; Textile only; ₦ references | 🟡 tested with fakes; fork and mainnet runs to do |
+| Nigerian naira (cNGN) for users: hold, convert and send; Textile only; ₦ references | 🟡 fork-rehearsed; first mainnet run to do |
 | Payouts to a payee in cNGN, wARS or wBRL: Textile firm fill, then the exact amount forwarded; the receipt names the payee | ✅ (send to a contact) |
 | Self-trade guard: a team wallet never takes a fill from our own desk; own-desk fills are left out of the counts | ✅ |
 | /metrics edition-2 view: tagged Textile taker conversions in the listed corridors, by wallets outside the team and not funded directly by it; payees; exclusions counted by reason | ✅ code · 👤 `TEAM_WALLETS` and `FUNDED_WALLETS` on Vercel |
