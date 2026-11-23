@@ -17,21 +17,22 @@ function greeting(t: ReturnType<typeof useApp>["t"]): string {
   return h < 5 ? t.greetEvening : h < 12 ? t.greetMorning : h < 19 ? t.greetAfternoon : t.greetEvening;
 }
 
-/** Today's dollar in pesos and reais, from the same prices the totals use; the official peso for contrast. */
+/** Today's dollar in pesos, reais and naira, from the same prices the totals use; the official peso for contrast. */
 function RatesStrip() {
   const { t, lang, prices, rates } = useApp();
   const per = (c: Cur) => (prices[c] ? 1e6 / Number(prices[c]) : null);
   const ars = per("ARS");
   const brl = per("BRL");
+  const ngn = per("NGN");
   const officialRef = rates?.references.find((r) => r.name === "official" && r.pair.toUpperCase() === "USD/ARS");
   const official = officialRef ? Number(officialRef.rate) : null;
-  if (ars === null && brl === null) return null;
+  if (ars === null && brl === null && ngn === null) return null;
   const n = (v: number, dp: number) => v.toLocaleString(LOC[lang], { minimumFractionDigits: dp, maximumFractionDigits: dp });
   const gap = ars !== null && official ? ((ars / official - 1) * 100).toFixed(1) : null;
   return (
     <div className="mp-card" style={{ padding: "14px 16px", gap: 10, display: "flex", flexDirection: "column" }}>
       <div className="mp-kicker">{t.todayDollar}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, auto)", justifyContent: "space-between", gap: 12 }}>
         {ars !== null ? (
           <div className="mp-col" style={{ gap: 4 }}>
             <span className="mp-row" style={{ gap: 8 }}>
@@ -41,11 +42,6 @@ function RatesStrip() {
             <span className="mp-tab" style={{ fontSize: 20, fontWeight: 800 }}>
               ARS {n(ars, 0)}
             </span>
-            {official && gap ? (
-              <span className="mp-meta">
-                {t.rateOfficial} {n(official, 0)} · <b className="mp-save">{Number(gap) >= 0 ? "+" : ""}{n(Number(gap), 1)}%</b>
-              </span>
-            ) : null}
           </div>
         ) : null}
         {brl !== null ? (
@@ -59,7 +55,23 @@ function RatesStrip() {
             </span>
           </div>
         ) : null}
+        {ngn !== null ? (
+          <div className="mp-col" style={{ gap: 4 }}>
+            <span className="mp-row" style={{ gap: 8 }}>
+              <Badge cur="NGN" size={22} />
+              <span className="mp-meta">{t.curName.NGN}</span>
+            </span>
+            <span className="mp-tab" style={{ fontSize: 20, fontWeight: 800 }}>
+              ₦ {n(ngn, 0)}
+            </span>
+          </div>
+        ) : null}
       </div>
+      {official && gap ? (
+        <span className="mp-meta">
+          {t.curName.ARS} · {t.rateOfficial} {n(official, 0)} · <b className="mp-save">{Number(gap) >= 0 ? "+" : ""}{n(Number(gap), 1)}%</b>
+        </span>
+      ) : null}
     </div>
   );
 }

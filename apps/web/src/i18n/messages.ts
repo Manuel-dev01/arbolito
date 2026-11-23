@@ -25,7 +25,7 @@ export function withLang(href: string, lang: Lang): string {
 const es = {
   meta: {
     title: "Arbolito: el cambista que vive en tu chat",
-    description: "Cambiá y mandá pesos, reales y dólares desde MiniPay o Telegram, al mejor precio del momento y con un comprobante que cualquiera puede verificar.",
+    description: "Cambiá y mandá nairas, pesos, reales y dólares desde MiniPay o Telegram, al mejor precio del momento y con un comprobante que cualquiera puede verificar.",
   },
   nav: {
     home: "Inicio",
@@ -48,13 +48,13 @@ const es = {
   },
   landing: {
     hero: {
-      currencies: "ARS · BRL · USD",
+      currencies: "NGN · ARS · BRL · USD",
       live: "En vivo",
       updated: (time: string) => `actualizado ${time}`,
       titleA: "El cambista ",
       titleB: "que vive",
       titleC: " en tu chat.",
-      lead: "Pedile por texto o audio que cambie o mande pesos, reales y dólares. Busca el mejor precio del momento y te da un comprobante que lo prueba.",
+      lead: "Pedile por texto o audio que cambie o mande nairas, pesos, reales y dólares. Busca el mejor precio del momento y te da un comprobante que lo prueba.",
       ctaMiniPay: "Abrir en MiniPay",
       ctaTelegram: "Abrir en Telegram",
       telegramHint: "o escribile a @arbolitoo_bot",
@@ -218,11 +218,11 @@ const es = {
         },
         {
           q: "¿En qué países funciona?",
-          a: "Donde funciona MiniPay: Argentina, Brasil, Chile, Colombia, Perú, Uruguay y México. Hoy cambiamos entre pesos argentinos, reales y dólares.",
+          a: "Donde funciona MiniPay: Nigeria, Argentina, Brasil, Chile, Colombia, Perú, Uruguay y México, entre otros. Hoy cambiamos entre nairas, pesos argentinos, reales y dólares.",
         },
         {
           q: "¿Necesito saber de cripto?",
-          a: "No. Hablás en pesos, reales y dólares, y confirmás en tu billetera como cualquier pago. Los detalles técnicos están en “Ver detalles”, si te interesan.",
+          a: "No. Hablás en nairas, pesos, reales y dólares, y confirmás en tu billetera como cualquier pago. Los detalles técnicos están en “Ver detalles”, si te interesan.",
         },
         {
           q: "¿Y si el precio cambia mientras confirmo?",
@@ -236,7 +236,7 @@ const es = {
     saved: "Ahorraste",
     savedVs: (pair: string) => `frente al oficial ${pair}`,
     lessVs: (x: string, pair: string) => `${x} menos que al oficial ${pair}`,
-    noOfficialShort: "Sin tipo oficial publicado para este par",
+    noOfficialShort: "Este comprobante no tiene tipo oficial para comparar",
     got: "Recibiste",
     delivered: "Le llegó",
     paid: "Pagaste",
@@ -328,7 +328,7 @@ const es = {
     rateLine: (inFiat: string, rate: string, outFiat: string) => `1 ${inFiat} = ${rate} ${outFiat}`,
     savingsMore: (amount: string, pct: string, pair: string) => `Recibiste ${amount} más (${pct}) que al tipo oficial ${pair}.`,
     savingsLess: (amount: string, pct: string, pair: string) => `Recibiste ${amount} menos (${pct}) que al tipo oficial ${pair}.`,
-    noOfficial: "No hay un tipo oficial publicado para este par; abajo lo comparamos con el precio de mercado.",
+    noOfficial: "Al momento del cambio no teníamos un tipo oficial para este par; lo comparamos con los demás precios.",
     compareTitle: "Comparado con otras cotizaciones",
     compareLead: "Lo que habrías recibido por el mismo monto a cada cotización de referencia, en el momento de la operación.",
     col: { reference: "Referencia", rate: "Cotización", wouldGet: "Habrías recibido", diff: "Diferencia" },
@@ -347,7 +347,7 @@ const es = {
     refShort: { official: "oficial", mep: "MEP", ccl: "CCL", crypto: "cripto", blue: "blue", uniswap_mid: "Uniswap", textile_mid: "Textile", western_union: "Western Union", interbank: "interbancaria" },
     source: "Fuente",
     routeTitle: "La ruta elegida",
-    routeLead: (n: number) => `Arbolito pidió ${n} cotizaciones a distintos mercados y ejecutó la mejor ruta disponible.`,
+    routeLead: (n: number) => n === 1 ? "Arbolito consultó una ruta y la ejecutó." : `Arbolito comparó ${n} rutas y ejecutó la mejor disponible.`,
     venue: { uniswap_v3: "Uniswap", textile_rfq: "Textile FX", textile_limit: "Textile (orden límite)" },
     poolFee: (pct: string) => `comisión del pool ${pct}`,
     indicative: "cotización indicativa",
@@ -506,7 +506,7 @@ export type Messages = typeof es;
 const pt: Messages = {
   meta: {
     title: "Arbolito: o cambista que mora no seu chat",
-    description: "Troque e envie pesos, reais e dólares pelo MiniPay ou Telegram, com o melhor preço do momento e um comprovante que qualquer pessoa pode verificar.",
+    description: "Troque e envie nairas, pesos, reais e dólares pelo MiniPay ou Telegram, com o melhor preço do momento e um comprovante que qualquer pessoa pode verificar.",
   },
   nav: {
     home: "Início",
@@ -529,13 +529,13 @@ const pt: Messages = {
   },
   landing: {
     hero: {
-      currencies: "ARS · BRL · USD",
+      currencies: "NGN · ARS · BRL · USD",
       live: "Ao vivo",
       updated: (time) => `atualizado ${time}`,
       titleA: "O cambista ",
       titleB: "que mora",
       titleC: " no seu chat.",
-      lead: "Peça por texto ou áudio para trocar ou enviar pesos, reais e dólares. Ele busca o melhor preço do momento e te dá um comprovante que prova isso.",
+      lead: "Peça por texto ou áudio para trocar ou enviar nairas, pesos, reais e dólares. Ele busca o melhor preço do momento e te dá um comprovante que prova isso.",
       ctaMiniPay: "Abrir no MiniPay",
       ctaTelegram: "Abrir no Telegram",
       telegramHint: "ou escreva para @arbolitoo_bot",
@@ -699,11 +699,11 @@ const pt: Messages = {
         },
         {
           q: "Em quais países funciona?",
-          a: "Onde o MiniPay funciona: Argentina, Brasil, Chile, Colômbia, Peru, Uruguai e México. Hoje trocamos entre pesos argentinos, reais e dólares.",
+          a: "Onde o MiniPay funciona: Nigéria, Argentina, Brasil, Chile, Colômbia, Peru, Uruguai e México, entre outros. Hoje trocamos entre nairas, pesos argentinos, reais e dólares.",
         },
         {
           q: "Preciso entender de cripto?",
-          a: "Não. Você fala em pesos, reais e dólares, e confirma na sua carteira como qualquer pagamento. Os detalhes técnicos ficam em “Ver detalhes”, se tiver interesse.",
+          a: "Não. Você fala em nairas, pesos, reais e dólares, e confirma na sua carteira como qualquer pagamento. Os detalhes técnicos ficam em “Ver detalhes”, se tiver interesse.",
         },
         {
           q: "E se o preço mudar enquanto confirmo?",
@@ -717,7 +717,7 @@ const pt: Messages = {
     saved: "Você economizou",
     savedVs: (pair) => `frente ao oficial ${pair}`,
     lessVs: (x, pair) => `${x} a menos que no oficial ${pair}`,
-    noOfficialShort: "Sem câmbio oficial publicado para este par",
+    noOfficialShort: "Este comprovante não tem câmbio oficial para comparar",
     got: "Você recebeu",
     delivered: "Chegou",
     paid: "Você pagou",
@@ -809,7 +809,7 @@ const pt: Messages = {
     rateLine: (inFiat, rate, outFiat) => `1 ${inFiat} = ${rate} ${outFiat}`,
     savingsMore: (amount, pct, pair) => `Você recebeu ${amount} a mais (${pct}) do que no câmbio oficial ${pair}.`,
     savingsLess: (amount, pct, pair) => `Você recebeu ${amount} a menos (${pct}) do que no câmbio oficial ${pair}.`,
-    noOfficial: "Não há câmbio oficial publicado para este par; abaixo comparamos com o preço de mercado.",
+    noOfficial: "No momento da troca não tínhamos um câmbio oficial para este par; comparamos com os outros preços.",
     compareTitle: "Comparado com outras cotações",
     compareLead: "Quanto você teria recebido pelo mesmo valor em cada cotação de referência, no momento da operação.",
     col: { reference: "Referência", rate: "Cotação", wouldGet: "Teria recebido", diff: "Diferença" },
@@ -828,7 +828,7 @@ const pt: Messages = {
     refShort: { official: "oficial", mep: "MEP", ccl: "CCL", crypto: "cripto", blue: "blue", uniswap_mid: "Uniswap", textile_mid: "Textile", western_union: "Western Union", interbank: "interbancária" },
     source: "Fonte",
     routeTitle: "A rota escolhida",
-    routeLead: (n) => `O Arbolito pediu ${n} cotações a mercados diferentes e executou a melhor rota disponível.`,
+    routeLead: (n) => n === 1 ? "O Arbolito consultou uma rota e a executou." : `O Arbolito comparou ${n} rotas e executou a melhor disponível.`,
     venue: { uniswap_v3: "Uniswap", textile_rfq: "Textile FX", textile_limit: "Textile (ordem limitada)" },
     poolFee: (pct) => `taxa do pool ${pct}`,
     indicative: "cotação indicativa",
@@ -985,7 +985,7 @@ const pt: Messages = {
 const en: Messages = {
   meta: {
     title: "Arbolito: the money-changer that lives in your chat",
-    description: "Change and send pesos, reais and dollars from MiniPay or Telegram, at the best rate of the moment, with a receipt anyone can verify.",
+    description: "Change and send naira, pesos, reais and dollars from MiniPay or Telegram, at the best rate of the moment, with a receipt anyone can verify.",
   },
   nav: {
     home: "Home",
@@ -1008,13 +1008,13 @@ const en: Messages = {
   },
   landing: {
     hero: {
-      currencies: "ARS · BRL · USD",
+      currencies: "NGN · ARS · BRL · USD",
       live: "Live",
       updated: (time) => `updated ${time}`,
       titleA: "The money-changer ",
       titleB: "that lives",
       titleC: " in your chat.",
-      lead: "Ask by text or voice to change or send pesos, reais and dollars. It finds the best rate of the moment and hands you a receipt that proves it.",
+      lead: "Ask by text or voice to change or send naira, pesos, reais and dollars. It finds the best rate of the moment and hands you a receipt that proves it.",
       ctaMiniPay: "Open in MiniPay",
       ctaTelegram: "Open in Telegram",
       telegramHint: "or message @arbolitoo_bot",
@@ -1178,11 +1178,11 @@ const en: Messages = {
         },
         {
           q: "Which countries does it work in?",
-          a: "Wherever MiniPay works: Argentina, Brazil, Chile, Colombia, Peru, Uruguay and Mexico. Today we change between Argentine pesos, reais and dollars.",
+          a: "Wherever MiniPay works: Nigeria, Argentina, Brazil, Chile, Colombia, Peru, Uruguay and Mexico, among others. Today we change between naira, Argentine pesos, reais and dollars.",
         },
         {
           q: "Do I need to know about crypto?",
-          a: "No. You talk in pesos, reais and dollars, and confirm in your wallet like any payment. The technical details are under “See details”, if you're curious.",
+          a: "No. You talk in naira, pesos, reais and dollars, and confirm in your wallet like any payment. The technical details are under “See details”, if you're curious.",
         },
         {
           q: "What if the price changes while I confirm?",
@@ -1196,7 +1196,7 @@ const en: Messages = {
     saved: "You saved",
     savedVs: (pair) => `against the official ${pair} rate`,
     lessVs: (x, pair) => `${x} less than the official ${pair} rate`,
-    noOfficialShort: "No published official rate for this pair",
+    noOfficialShort: "This receipt has no official rate to compare with",
     got: "You got",
     delivered: "Delivered",
     paid: "You paid",
@@ -1288,7 +1288,7 @@ const en: Messages = {
     rateLine: (inFiat, rate, outFiat) => `1 ${inFiat} = ${rate} ${outFiat}`,
     savingsMore: (amount, pct, pair) => `You received ${amount} more (${pct}) than at the official ${pair} rate.`,
     savingsLess: (amount, pct, pair) => `You received ${amount} less (${pct}) than at the official ${pair} rate.`,
-    noOfficial: "There is no published official rate for this pair; below we compare it with the market price.",
+    noOfficial: "We had no official rate for this pair at the time, so we compare it with the other prices.",
     compareTitle: "Compared with other rates",
     compareLead: "What the same amount would have bought at each reference rate, at the time of the trade.",
     col: { reference: "Reference", rate: "Rate", wouldGet: "Would have received", diff: "Difference" },
@@ -1307,7 +1307,7 @@ const en: Messages = {
     refShort: { official: "official", mep: "MEP", ccl: "CCL", crypto: "crypto", blue: "blue", uniswap_mid: "Uniswap", textile_mid: "Textile", western_union: "Western Union", interbank: "interbank" },
     source: "Source",
     routeTitle: "The chosen route",
-    routeLead: (n) => `Arbolito asked ${n} quotes from different markets and executed the best available route.`,
+    routeLead: (n) => n === 1 ? "Arbolito got one quote and executed it." : `Arbolito compared ${n} quotes and executed the best available route.`,
     venue: { uniswap_v3: "Uniswap", textile_rfq: "Textile FX", textile_limit: "Textile (limit order)" },
     poolFee: (pct) => `pool fee ${pct}`,
     indicative: "indicative quote",

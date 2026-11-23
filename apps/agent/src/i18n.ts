@@ -107,9 +107,9 @@ export const copy = {
   welcome: (lang: Lang, name: string | null) =>
     pick<[string]>(
       {
-        es: (n) => `Hola${n}. Soy <b>Arbolito</b>, tu cambista: cambio y mando pesos, reales y dólares al mejor precio del momento, y cada operación tiene su comprobante.`,
-        pt: (n) => `Oi${n}. Eu sou o <b>Arbolito</b>, seu cambista: troco e envio reais, pesos e dólares pelo melhor preço do momento, e cada operação tem seu comprovante.`,
-        en: (n) => `Hi${n}. I'm <b>Arbolito</b>, your money-changer: I convert and send pesos, reais and dollars at the best rate right now, and every trade comes with a receipt.`,
+        es: (n) => `Hola${n}. Soy <b>Arbolito</b>, tu cambista: cambio y mando nairas, pesos, reales y dólares al mejor precio del momento, y cada operación tiene su comprobante.`,
+        pt: (n) => `Oi${n}. Eu sou o <b>Arbolito</b>, seu cambista: troco e envio nairas, reais, pesos e dólares pelo melhor preço do momento, e cada operação tem seu comprovante.`,
+        en: (n) => `Hi${n}. I'm <b>Arbolito</b>, your money-changer: I convert and send naira, pesos, reais and dollars at the best rate right now, and every trade comes with a receipt.`,
       },
       lang,
       name ? `, ${name}` : "",

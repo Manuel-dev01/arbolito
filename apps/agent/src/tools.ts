@@ -190,7 +190,7 @@ export function buildHandlers(s: Services, flow: CardFlow, user: User): ToolHand
     async help() {
       return {
         data: {
-          can: ["check balances of the linked MiniPay wallet", "quote and convert pesos, reais and dollars (confirmed in MiniPay)", "send to saved contacts, converting if needed (confirmed in MiniPay)", "show receipts", "deposit and cash-out links via Ripio", "voice notes"],
+          can: ["check balances of the linked MiniPay wallet", "quote and convert naira, pesos, reais and dollars (confirmed in MiniPay)", "send to saved contacts, converting if needed (confirmed in MiniPay)", "show receipts", "deposit and cash-out links via Ripio", "voice notes"],
           tokens: TOKEN_SYMBOLS,
           linked: !!user.walletAddress,
         },
