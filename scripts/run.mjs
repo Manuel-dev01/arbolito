@@ -27,6 +27,7 @@ const ENTRIES = {
   "deploy-guard": "scripts/deploy-guard.ts",
   "desk-rebalance": "scripts/desk-rebalance.ts",
   "fund-gas": "scripts/fund-gas.ts",
+  "funded-wallets": "scripts/funded-wallets.ts",
   "buy": "scripts/buy.ts",
   "x402-check": "scripts/x402-check.ts",
   "agent-buy": "scripts/agent-buy.ts",

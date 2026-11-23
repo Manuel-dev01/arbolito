@@ -39,6 +39,7 @@
     "desk:rebalance": "node scripts/run.mjs desk-rebalance",
     "anchor:wallet": "node scripts/run.mjs anchor-wallet",
     "fund:gas": "node scripts/run.mjs fund-gas",
+    "funded:wallets": "node scripts/run.mjs funded-wallets",
     "buy": "node scripts/run.mjs buy",
     "desk:stitch": "node scripts/run.mjs desk-stitch"
   },

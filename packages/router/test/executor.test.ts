@@ -16,8 +16,8 @@ import {
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { CONTRACTS, TOKENS } from "@arbolito/config";
-import { BroadcastError, MemoryLedger, USD, attributionCodes } from "@arbolito/chain";
+import { CONTRACTS, TOKENS, loadEnv } from "@arbolito/config";
+import { BroadcastError, FORK_ATTRIBUTION_CODE, MemoryLedger, USD, attributionCodeList, attributionCodes } from "@arbolito/chain";
 import {
   erc20Abi,
   executableRoutes,
@@ -294,7 +294,7 @@ describe("executeRoute", () => {
     expect(r.legs[0]).toMatchObject({ venue: "uniswap_v3", routeLegs: [0, 1], amountIn: IN, amountOut: WARS_PLANNED, txHash: chain.sent[1]!.hash });
     expect(r.legs[0]!.attribution).toEqual(attributionCodes(chain.sent[1]!.data));
     // One code per edition in ATTRIBUTION_CODE (the fork placeholder when unset).
-    expect(r.legs[0]!.attribution.length).toBeGreaterThanOrEqual(1);
+    expect(r.legs[0]!.attribution).toEqual(attributionCodeList(loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE));
     expect(await ledger.spent(new Date().toISOString().slice(0, 10))).toBe(USD(40));
   });
 

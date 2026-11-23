@@ -44,6 +44,9 @@ export const envSchema = z.object({
   /** Extra team wallets (comma-separated) beyond packages/config/src/team.ts: never counted as users, never filled by our desk. */
   TEAM_WALLETS: opt(z.string().regex(/^0x[0-9a-fA-F]{40}(,0x[0-9a-fA-F]{40})*$/, "comma-separated 0x addresses")),
 
+  /** Wallets the team ever sent tokens to (pnpm funded:wallets --write): never counted as independent users. Private, like TEAM_WALLETS. */
+  FUNDED_WALLETS: opt(z.string().regex(/^0x[0-9a-fA-F]{40}(,0x[0-9a-fA-F]{40})*$/, "comma-separated 0x addresses")),
+
   // Reference rates
   DOLAR_API_URL: z.string().url().default("https://dolarapi.com/v1"),
 

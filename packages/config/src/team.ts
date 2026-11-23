@@ -1,5 +1,5 @@
 /**
- * The team's wallets that are already documented in this repo (docs/04-reference.md). Hackathon traction counts
+ * The team's wallets that are already public in this repo's docs. Hackathon traction counts
  * only wallets outside the team that we never funded, and a Textile fill between our taker and our
  * own maker is self-trading. So:
  * - a team wallet is never counted as a user, and
@@ -21,6 +21,8 @@ export const TEAM_WALLETS = {
   buyPayer: "0xD07b5BD9C86eFB042af3343a9e4dae646f1f3e58",
   /** The founder's MiniPay wallet. */
   founderMiniPay: "0x7769A27123AaC03693065CD61A003C9DBb8BA734",
+  /** The founder's second MiniPay wallet (runs the peso guardian; docs/STATUS.md, 2026-11-03). */
+  founderMiniPay2: "0xDeE58b439A29d68d5c2cAc3c65C2504Beb7EeE9A",
 } as const;
 
 /** Makers that are ours: a fill by one of these for a team taker would be self-trading. */
@@ -28,11 +30,17 @@ export const OWN_MAKERS: readonly string[] = [TEAM_WALLETS.desk];
 
 const lower = (a: string) => a.trim().toLowerCase();
 
+/** The addresses in a comma-separated list, lowercased; anything else in it is ignored. */
+export function addressSet(list?: string): Set<string> {
+  return new Set((list ?? "").split(",").map(lower).filter((a) => /^0x[0-9a-f]{40}$/.test(a)));
+}
+
 /** Every team wallet, lowercased, plus any listed in `extra` (TEAM_WALLETS, comma-separated). */
 export function teamWallets(extra?: string): Set<string> {
-  const out = new Set(Object.values(TEAM_WALLETS).map(lower));
-  for (const a of (extra ?? "").split(",")) if (/^0x[0-9a-fA-F]{40}$/.test(a.trim())) out.add(lower(a));
-  return out;
+  return new Set([...Object.values(TEAM_WALLETS).map(lower), ...addressSet(extra)]);
 }
+
+/** The team wallets listed above: the only ones a public page may name as ours. */
+export const isPublicTeamWallet = (a: string): boolean => Object.values(TEAM_WALLETS).some((w) => lower(w) === lower(a));
 
 export const isOwnMaker = (maker: string): boolean => OWN_MAKERS.some((m) => lower(m) === lower(maker));

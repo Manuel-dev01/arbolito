@@ -25,4 +25,9 @@ describe("vs Western Union", () => {
     expect(vsWesternUnion("wBRL", "wARS", 1n, 1n, refs)).toBeNull();
     expect(vsWesternUnion("USDT", "wBRL", 100_000_000n, 506n * E18, [])).toBeNull();
   });
+
+  it("never compares cNGN, even with a naira reading: it has 6 decimals and this math assumes 18", () => {
+    const ngn = [...refs, { name: "western_union", pair: "USD/NGN", rate: "1400", at: "2026-11-23T10:00:00.000Z" }];
+    expect(vsWesternUnion("USDT", "cNGN", 1_000_000n, 1_443_000_000n, ngn)).toBeNull();
+  });
 });

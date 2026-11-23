@@ -6,8 +6,8 @@ import { getLang, LOCALE, messages, withLang } from "../../i18n/messages";
 import { anchorFor, listReceiptsCached } from "../../lib/cached";
 import { formatBps, formatFixed, formatMoney, formatToken, shortHex } from "../../lib/format";
 import { RECEIPTS_ADDRESS } from "../../lib/chain";
-import { teamWallets } from "@arbolito/config";
-import { computeEdition2 } from "../../lib/edition2";
+import { addressSet, teamWallets } from "@arbolito/config";
+import { EXCLUSIONS, computeEdition2 } from "../../lib/edition2";
 import { computeMetrics } from "../../lib/metrics";
 import { addressUrl, txUrl } from "../../lib/receipts-abi";
 import { BUY_PAYER, BUY_PAYER_BEFORE, loadBuyPurchases } from "../../lib/buy-public";
@@ -37,7 +37,9 @@ export default async function MetricsPage({ searchParams }: Props) {
     ),
   );
   const m = computeMetrics(records, anchors);
-  const e2 = computeEdition2(records, teamWallets(process.env.TEAM_WALLETS));
+  const e2 = computeEdition2(records, { team: teamWallets(process.env.TEAM_WALLETS), funded: addressSet(process.env.FUNDED_WALLETS) });
+  const left = EXCLUSIONS.filter((x) => e2.excludedCounts[x]);
+  const symbol = (s: string) => (s === "USDT" ? "USD₮" : s);
   const te = t.e2;
   const usd = (micros: bigint) => formatMoney(micros, 6, "USD", locale);
   const fromDb = records.some((r) => r.source === "db");
@@ -115,9 +117,11 @@ export default async function MetricsPage({ searchParams }: Props) {
             <tbody>
               {e2.byCorridor.map((c) => (
                 <tr key={c.corridor}>
-                  <td>USD → {c.corridor}</td>
+                  <td>
+                    {symbol(c.from.symbol)} → {symbol(c.to.symbol)}
+                  </td>
                   <td className="num">{c.count}</td>
-                  <td className="num">{c.local ? formatMoney(c.local.amount, c.local.token.decimals, c.local.token.fiat, locale) : "—"}</td>
+                  <td className="num">{formatMoney(c.local.amount, c.local.token.decimals, c.local.token.fiat, locale)}</td>
                   <td className="num">{usd(c.usdMicros)}</td>
                 </tr>
               ))}
@@ -172,11 +176,12 @@ export default async function MetricsPage({ searchParams }: Props) {
             </table>
           </div>
         )}
-        {e2.excluded.length > 0 && (
+        {left.length > 0 && (
           <details>
             <summary className="small">
-              {te.excludedTitle} ({e2.excluded.length})
+              {te.excludedTitle} ({left.reduce((n, x) => n + e2.excludedCounts[x]!, 0)})
             </summary>
+            <p className="small">{left.map((x) => `${te.reasons[x]}: ${e2.excludedCounts[x]}`).join(" · ")}</p>
             <ul className="small">
               {e2.excluded.map((x) => (
                 <li key={x.id}>
