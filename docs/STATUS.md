@@ -103,6 +103,11 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - No names leave the phone, and GET /rules shows only how many people a schedule pays.
   - No database migration: `rules` kind `payroll`, runs `ready` or `held`.
   - Checked: 24 new unit tests, a database test, create / tamper / repeat / cancel against the real API and database (rows deleted), a payday priced with live free quotes (one ready, one held at −4.87%), and the demo in a browser in three languages. Not yet run on a real payday.
+- **Walkthrough fixes (built, not deployed):**
+  - The demo's contacts include naira payees, and its chat reads "change 20 dollars to naira" correctly ("dollars" contains "ars", so it was read as pesos).
+  - The batch review names the market that priced each payment.
+  - Naira is on the home rate card and wherever the app, the site and the bot say what they change.
+  - A receipt without an official rate says it has none, instead of saying none is published.
 - **Security:** zod 4.6.7, x402 2.32.0 and @hono/node-server 2.1.11; `pnpm audit --prod` reports none. The 402 offer is identical to before. The free wBRL and wARS `/verify` checks answer `unexpected_error` with a throwaway key, with the old packages too.
 - **CBN official USD/NGN (live; the first read from Railway worked):** the bot reads the CBN every 6 h and stores its newest US dollar rate under its own date (no payment). Quotes and receipts use it as "official" only on that date and the next day, so Monday's price is never compared with Friday's rate. A receipt shows a reference's date when it isn't the day of the trade.
 - **Agent wallet:** first transaction with the edition-2 tag, a 0.10 USDT gas top-up to the rules wallet ([tx](https://celoscan.io/tx/0x4fd71bb3770597f7503ca26f5a2496fa9b4b897ff4fc3e780e84382a56ef4a88)).
