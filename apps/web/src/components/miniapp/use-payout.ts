@@ -123,11 +123,19 @@ export function usePayout(
       // Three at a time: each is a live quote across venues.
       for (let i = 0; i < picked.length; i += 3) {
         const part = picked.slice(i, i + 3);
-        const quotes: Quote[] = await Promise.all(part.map((c) => ready.api.quote({ from: PAY_SYM, to: SYM_OF[c.cur], amount: payoutAmount(amounts[c.id])!, account: ready.account, lang: latest.current.lang })));
+        const quotes: Quote[] = await Promise.all(
+          part.map((c) => {
+            const ask = () => ready.api.quote({ from: PAY_SYM, to: SYM_OF[c.cur], amount: payoutAmount(amounts[c.id])!, account: ready.account, lang: latest.current.lang });
+            // A quote is free and moves nothing: one slow market shouldn't cost the whole review.
+            return ask().catch((e: { code?: ClientErrorCode }) => (e.code === "upstream" || e.code === "network" ? ask() : Promise.reject(e)));
+          }),
+        );
         part.forEach((c, n) =>
           items.push({ contactId: c.id, name: c.name, address: c.address!, from: PAY_SYM, to: SYM_OF[c.cur], amount: payoutAmount(amounts[c.id])!, reviewedOut: quotes[n]!.expectedOut, state: "todo" }),
         );
       }
+      // Same currency together, so one approval serves them all.
+      items.sort((a, b) => a.to.localeCompare(b.to));
       setReview(items);
       latest.current.go("payout-review");
     } catch (e) {

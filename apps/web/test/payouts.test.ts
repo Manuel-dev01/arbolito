@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import type { Hex } from "viem";
 import { TOKENS } from "@arbolito/config";
-import { ApiFailure } from "../src/lib/miniapp/client/api";
+import { ApiFailure, createApiClient } from "../src/lib/miniapp/client/api";
 import type { Wallet } from "../src/lib/miniapp/client/wallet";
 import { restoreRun, runPayout, settleReceipts, type PayoutDeps, type PayoutItem, type PayoutRun } from "../src/lib/miniapp/client/payout";
 import { readFileRecord, type ReceiptRecord } from "../src/lib/data";
@@ -31,6 +31,7 @@ function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => big
   let call = 0;
   let hash = 0;
   const paidTo: string[] = [];
+  const approvals: (string | undefined)[] = [];
   const saves: PayoutRun[] = [];
   const reject = vi.fn(async () => ({ quoteId: "", status: "failed" }));
   const submit = vi.fn(async ({ quoteId }: { quoteId: string }) => {
@@ -44,8 +45,9 @@ function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => big
       if (e) throw e;
       return { quoteId: `q${current}`, expectedOut: (o.quoteOut?.(current) ?? 14_430_000_000n).toString() };
     },
-    sendPrepare: async (r: { recipient: string }) => {
+    sendPrepare: async (r: { recipient: string; approveUpTo?: string }) => {
       call = 0;
+      approvals.push(r.approveUpTo);
       paidTo.push(r.recipient);
       const c = (data: string) => ({ to: "0x0000000000000000000000000000000000000001", data, value: "0", label: "" });
       return { calls: [c("0x095ea7b3"), c("0x0d335884"), c("0xa9059cbb")], expectedOut: (o.firmOut?.(current) ?? 14_430_000_000n).toString(), minOut: "1" };
@@ -72,7 +74,7 @@ function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => big
     },
   } as unknown as Wallet;
   const deps = { api, wallet, lang: "en", retryDelayMs: 0, save: (r: PayoutRun) => saves.push(r) } as unknown as PayoutDeps;
-  return { deps, paidTo, saves, reject, submit, sends: () => hash };
+  return { deps, paidTo, approvals, saves, reject, submit, sends: () => hash };
 }
 
 const rejected = () => Object.assign(new Error("User rejected the request."), { code: 4001 });
@@ -85,6 +87,22 @@ describe("batch payouts", () => {
     expect(out.items.map((i) => i.receiptId)).toEqual(["receipt-q1", "receipt-q2", "receipt-q3"]);
     expect(r.paidTo).toEqual([item(1).address, item(2).address, item(3).address]);
     expect(r.sends()).toBe(9);
+  });
+
+  it("asks to approve only what's left in each currency", async () => {
+    const r = rig();
+    await runPayout(r.deps, run(item(1), item(2, { amount: "2.5" }), item(3, { to: "wARS" }), item(4, { state: "paid" }), item(5, { state: "held" })));
+    expect(r.approvals).toEqual(["12500000", "2500000", "10000000"]);
+  });
+
+  it("the app's client sends the batch approval to the server", async () => {
+    let body: Record<string, unknown> = {};
+    const api = createApiClient({ fetch: async (_url: string, init?: RequestInit) => {
+      body = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ calls: [], expectedOut: "1", minOut: "1" }), { status: 200, headers: { "content-type": "application/json" } });
+    } });
+    await api.sendPrepare({ account: PAYER, recipient: item(1).address, from: "USDT", to: "cNGN", amount: "10", approveUpTo: "35000000" });
+    expect(body.approveUpTo).toBe("35000000");
   });
 
   it("saves a payment as sending before its first confirmation opens", async () => {

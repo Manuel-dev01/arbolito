@@ -136,7 +136,9 @@ export const NeedsTakerProof = z.object({
  * (from /quote, same pair and amount) is prepared with the contact as recipient; submit it with
  * /submit like a conversion, and its receipt names the recipient.
  */
-export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional(), takerProof: TakerProof.optional() });
+export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional(), takerProof: TakerProof.optional(),
+  /** In a batch payout: what's left to pay in this currency (atomic `from`), so one approval covers it. Capped by the balance. */
+  approveUpTo: Atomic.optional() });
 export const SendPrepareResponse = z.object({ calls: z.array(Call), expectedOut: Atomic, minOut: Atomic, quoteId: z.string().uuid().optional() });
 
 // ── POST /api/miniapp/submit ───────────────────────────────────────────────

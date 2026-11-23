@@ -35,6 +35,12 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
   if (row.fromSym !== req.from || row.toSym !== req.to || BigInt(row.amountIn) !== amountIn) {
     throw badRequest("The quote doesn't match this send; ask for a new one.", 409);
   }
-  const p = await prepareQuote(deps, { quoteId: req.quoteId, account, takerProof: req.takerProof }, { recipient });
+  let approveUpTo: bigint | undefined;
+  if (req.approveUpTo !== undefined) {
+    const held = await deps.chain.readContract({ address: TOKENS[req.from].address as Address, abi: erc20Abi, functionName: "balanceOf", args: [account] });
+    const asked = BigInt(req.approveUpTo);
+    approveUpTo = asked < held ? asked : held;
+  }
+  const p = await prepareQuote(deps, { quoteId: req.quoteId, account, takerProof: req.takerProof }, { recipient, approveUpTo });
   return { calls: p.calls, expectedOut: p.expectedOut, minOut: p.minOut, quoteId: p.quoteId };
 }

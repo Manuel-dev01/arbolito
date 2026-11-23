@@ -58,6 +58,8 @@ export const SendPrepareRequest = z.object({
   amount: z.string(),
   quoteId: z.string().uuid().optional(),
   takerProof: PrepareRequest.shape.takerProof,
+  /** Batch payouts: what is left to pay in this currency (contract.ts). */
+  approveUpTo: z.string().regex(/^\d+$/).optional(),
 });
 export type SendPrepareRequest = z.infer<typeof SendPrepareRequest>;
 

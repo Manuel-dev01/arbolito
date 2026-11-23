@@ -169,7 +169,7 @@ function textileCode(err: TextileApiError): string {
   return /proof_of_control_required/.test(err.body) ? "proof_of_control_required" : /corridor_unavailable/.test(err.body) ? "corridor_unavailable" : `http_${err.status}`;
 }
 
-async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address, row: QuoteRow, recipient?: Address): Promise<PreparedUniswap> {
+async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address, row: QuoteRow, recipient?: Address, approveUpTo = 0n): Promise<PreparedUniswap> {
   const fresh = await requoteUniswap(deps, route);
   if (fresh === null || fresh < route.minOut) throw final(priceChanged(), "price_changed");
   // On a send, the swap pays the contact directly (the router's recipient), in the same transaction.
@@ -178,7 +178,10 @@ async function prepareUniswap(deps: MiniappDeps, route: Route, account: Address,
     { to: Address; data: Hex; value: bigint; label: string },
   ];
   const calls: StoredCall[] = [];
-  if ((await allowance(deps, route.tokenIn, account, swap.to)) < route.amountIn) calls.push(tagged(deps, approve));
+  if ((await allowance(deps, route.tokenIn, account, swap.to)) < route.amountIn) {
+    const data = approveUpTo > route.amountIn ? encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [swap.to, approveUpTo] }) : approve.data;
+    calls.push(tagged(deps, { ...approve, data }));
+  }
   calls.push(tagged(deps, swap));
   return {
     kind: "uniswap",
@@ -197,6 +200,7 @@ async function prepareTextile(
   account: Address,
   proof: z.infer<typeof TakerProof> | undefined,
   recipient?: Address,
+  approveUpTo = 0n,
 ): Promise<PreparedTextile> {
   const leg = route.legs[0]!;
   if (!deps.textile.hasPartnerKey) {
@@ -268,8 +272,9 @@ async function prepareTextile(
     throw e;
   });
   if (have < takerPays) {
-    // Our own exact approve (takerPays to the verified reactor), not the API's approval calldata.
-    const data = encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [q.spender as Address, takerPays] });
+    // Our own approve to the verified reactor, not the API's approval calldata: exactly takerPays, or
+    // what's left of a batch payout the payer reviewed (never more than they hold; send.ts).
+    const data = encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [q.spender as Address, approveUpTo > takerPays ? approveUpTo : takerPays] });
     calls.push(tagged(deps, { to: leg.quote.tokenIn, data, value: 0n, label: "approve to Textile reactor" }));
   }
   calls.push(tagged(deps, { to: swapTx.to as Address, data: swapTx.data as Hex, value: 0n, label: "Textile reactor executeBatch" }));
@@ -307,7 +312,7 @@ function toResponse(quoteId: string, p: Prepared): z.infer<typeof PrepareRespons
 }
 
 /** POST /prepare: unsigned, attribution-tagged calls for the user's wallet. */
-export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof PrepareRequest>, opts: { recipient?: Address } = {}): Promise<z.infer<typeof PrepareResponse>> {
+export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof PrepareRequest>, opts: { recipient?: Address; approveUpTo?: bigint } = {}): Promise<z.infer<typeof PrepareResponse>> {
   const account = req.account.toLowerCase() as Address;
   const store = deps.store();
   const row = await loadLiveQuote(deps, store, req.quoteId, account);
@@ -325,10 +330,10 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
   const kind = routeKind(route);
   let prepared: Prepared;
   try {
-    if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row, opts.recipient);
+    if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row, opts.recipient, opts.approveUpTo);
     else if (kind === "textile") {
       if (!deps.textileEnabled) throw final(notReady("Textile execution is not enabled yet."), "textile_disabled");
-      prepared = await prepareTextile(deps, route, account, req.takerProof, opts.recipient);
+      prepared = await prepareTextile(deps, route, account, req.takerProof, opts.recipient, opts.approveUpTo);
     } else throw final(noRoute("This route can't be executed from a wallet in one go."), "no_route");
   } catch (err) {
     const error = err instanceof ApiFailure ? quoteError.get(err) : undefined;

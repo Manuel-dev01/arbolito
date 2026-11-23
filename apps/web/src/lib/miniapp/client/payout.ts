@@ -13,6 +13,7 @@ import type { Sym } from "../contract";
 import { ApiFailure } from "./api";
 import { executeCalls, prepareSendWithProof, submitWithRetry, type ExecDeps, type ExecStage } from "./execute";
 import type { ClientErrorCode } from "./errors";
+import { DECIMALS, parseHuman } from "./format";
 
 /** What the payer accepts between the review and each payment: 0.5%. */
 export const PAYOUT_TOLERANCE_BPS = 50n;
@@ -79,6 +80,10 @@ export function restoreRun(run: PayoutRun): PayoutRun {
   return { ...run, items: run.items.map((i) => (i.state === "sending" ? { ...i, state: "unknown" } : i)) };
 }
 
+/** What's left to pay from payment `i` on in its currency: one approval covers it (the venue, and so the spender, goes with the currency). */
+export const leftInCurrency = (items: readonly PayoutItem[], i: number): bigint =>
+  items.slice(i).reduce((n, x) => (open(x.state) && x.from === items[i]!.from && x.to === items[i]!.to ? n + parseHuman(x.amount, DECIMALS[x.from]) : n), 0n);
+
 export const runFinished = (run: PayoutRun) => run.items.every((i) => i.state === "paid");
 export const canContinue = (run: PayoutRun) => run.items.some((i) => open(i.state));
 
@@ -111,6 +116,7 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
     }
 
     let held: string | null = null;
+    const approveUpTo = leftInCurrency(run.items, i).toString();
     let total = 0;
     let out = "0";
     const sent: Hex[] = [];
@@ -127,7 +133,7 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
       },
     };
     const res = await executeCalls(exec, async () => {
-      const p = await prepareSendWithProof(exec, { account, recipient: item.address as Hex, from: item.from, to: item.to, amount: item.amount, quoteId });
+      const p = await prepareSendWithProof(exec, { account, recipient: item.address as Hex, from: item.from, to: item.to, amount: item.amount, quoteId, approveUpTo });
       if (isUnderTolerance(reviewed, BigInt(p.expectedOut))) {
         held = p.expectedOut;
         throw new Error("held");

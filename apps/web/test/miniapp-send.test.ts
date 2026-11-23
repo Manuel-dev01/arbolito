@@ -147,6 +147,34 @@ describe("naira payouts (cNGN, Textile only)", () => {
   });
 });
 
+describe("batch payout approvals", () => {
+  async function approved(approveUpTo: string | undefined, held: bigint, textile: boolean): Promise<bigint> {
+    const rig = makeRig();
+    rig.chain.balances.set(`${USDT.address}:${ACCOUNT}`.toLowerCase(), held);
+    if (textile) {
+      rig.textile.hasPartnerKey = true;
+      rig.textileVenue.pairs["USDT>wARS"] = usdtToWars(1700n);
+      rig.textile.firm = (p) => firmQuote(p.taker, p.sellAmount, 17_000n * E18);
+    }
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10", account: wallet.address });
+    expect(q.usesTextile).toBe(textile);
+    const r = await prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "wARS", amount: "10", quoteId: q.quoteId, approveUpTo });
+    const d = decodeFunctionData({ abi: erc20Abi, data: r.calls[0]!.data as Hex });
+    expect([d.functionName, (d.args as [string])[0].toLowerCase()]).toEqual(["approve", (textile ? REACTOR : CONTRACTS.uniswap.swapRouter02).toLowerCase()]);
+    return (d.args as [string, bigint])[1];
+  }
+
+  it.each([true, false])("approves what's left of the batch, never more than the payer holds (textile: %s)", async (textile) => {
+    expect(await approved("35000000", 100_000_000n, textile)).toBe(35_000_000n);
+    expect(await approved("999000000", 40_000_000n, textile)).toBe(40_000_000n);
+  });
+
+  it.each([true, false])("approves exactly the payment on its own, or when the batch says less (textile: %s)", async (textile) => {
+    expect(await approved(undefined, 100_000_000n, textile)).toBe(10_000_000n);
+    expect(await approved("1", 100_000_000n, textile)).toBe(10_000_000n);
+  });
+});
+
 describe("self-trade guard", () => {
   const DESK = TEAM_WALLETS.desk.toLowerCase() as Address;
   const withMaker = (taker: Address, sell: bigint, out: bigint, maker: Address) => {
