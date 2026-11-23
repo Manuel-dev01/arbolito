@@ -276,7 +276,7 @@ export const rules = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     /** The MiniPay wallet (lowercase) the rule acts for, through ArbolitoGuard. */
     account: text().notNull(),
-    /** send | split */
+    /** send | split | guardian | payroll */
     kind: text().notNull(),
     /** Validated by @arbolito/rules (SendParams | SplitParams). */
     params: jsonb().notNull(),
@@ -287,7 +287,7 @@ export const rules = pgTable(
     message: text().notNull(),
     signature: text(),
     confirmedAt: timestamp({ withTimezone: true }),
-    /** send: when it runs next. */
+    /** send, payroll: when it runs next. */
     nextRunAt: timestamp({ withTimezone: true }),
     /** split: last block scanned for incoming transfers. */
     cursorBlock: bigint({ mode: "bigint" }),
@@ -308,7 +308,7 @@ export const ruleRuns = pgTable(
       .references(() => rules.id, { onDelete: "cascade" }),
     /** sendTrigger / splitTrigger from @arbolito/rules. */
     trigger: text().notNull(),
-    /** running → done | partial (swap done, send failed: the funds stayed in the account) | failed | skipped */
+    /** payroll: ready | held (priced, nothing sent). Others: running → done | partial (swap done, send failed: the funds stayed in the account) | failed | skipped */
     status: text().notNull(),
     amountIn: atomic(),
     amountOut: atomic(),

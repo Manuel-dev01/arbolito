@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull } from "drizzle-orm";
 import type { Db } from "./client";
 import { receipts } from "./schema";
 
@@ -19,6 +19,16 @@ export async function getSupersededRow(db: Db, replacementId: string): Promise<R
 /** Newest first. Superseded rows are included; callers decide whether to count them. */
 export async function listReceiptRows(db: Db, limit = 1000): Promise<ReceiptRow[]> {
   return db.select().from(receipts).orderBy(desc(receipts.createdAt)).limit(limit);
+}
+
+/** What `taker` has paid or changed since `since`, newest first. */
+export async function receiptRowsByTaker(db: Db, taker: string, since: Date, limit = 100): Promise<ReceiptRow[]> {
+  return db
+    .select()
+    .from(receipts)
+    .where(and(eq(receipts.taker, taker.toLowerCase()), gte(receipts.createdAt, since)))
+    .orderBy(desc(receipts.createdAt))
+    .limit(limit);
 }
 
 /** Receipts still registering (no anchor tx) and not superseded, oldest first. */

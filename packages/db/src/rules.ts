@@ -62,6 +62,15 @@ export async function dueSendRules(db: Db, now: Date): Promise<RuleRow[]> {
     .orderBy(asc(rules.nextRunAt));
 }
 
+/** Active payroll schedules whose payday has come. */
+export async function duePayrolls(db: Db, now: Date): Promise<RuleRow[]> {
+  return db
+    .select()
+    .from(rules)
+    .where(and(eq(rules.status, "active"), eq(rules.kind, "payroll"), lte(rules.nextRunAt, now)))
+    .orderBy(asc(rules.nextRunAt));
+}
+
 export async function activeSplitRules(db: Db): Promise<RuleRow[]> {
   return db.select().from(rules).where(and(eq(rules.status, "active"), eq(rules.kind, "split")));
 }
@@ -91,7 +100,7 @@ export async function claimRun(db: Db, ruleId: string, trigger: string, amountIn
   return rows[0] ?? null;
 }
 
-export async function finishRun(db: Db, id: string, r: { status: "done" | "limited" | "partial" | "failed" | "skipped"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void> {
+export async function finishRun(db: Db, id: string, r: { status: "done" | "limited" | "partial" | "failed" | "skipped" | "ready" | "held"; amountOut?: bigint | null; txHashes: string[]; error?: string | null }): Promise<void> {
   await db
     .update(ruleRuns)
     .set({ status: r.status, amountOut: r.amountOut?.toString() ?? null, txHashes: r.txHashes, error: r.error?.slice(0, 1000) ?? null })

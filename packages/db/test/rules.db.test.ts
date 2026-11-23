@@ -5,7 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { activateRule, cancelRule, claimRun, closeDb, dueSendRules, finishRun, getDb, getRule, insertRuleDraft, listRules, rules, runsForAccount } from "../src";
+import { activateRule, cancelRule, claimRun, closeDb, duePayrolls, dueSendRules, finishRun, getDb, getRule, insertRuleDraft, listRules, rules, runsForAccount } from "../src";
 
 const account = `0xtest${randomUUID().replace(/-/g, "").slice(0, 34)}`;
 const db = getDb();
@@ -32,6 +32,22 @@ describe("rules store", () => {
     expect(await cancelRule(db, c.id)).toBe(true);
     expect(await activateRule(db, c.id, { signature: "0x", nextRunAt: next, cursorBlock: null, now })).toBe(false);
     expect((await listRules(db, account)).map((x) => x.id)).toEqual([r.id]); // cancelled rules aren't listed
+  });
+
+  it("finds a payroll only when it falls due, and never as a send", async () => {
+    const r = await draft("payroll");
+    // Far in the future: the live bot must never pick this row up.
+    const next = new Date("2099-01-02T08:00:00Z");
+    await activateRule(db, r.id, { signature: "0xsig", nextRunAt: next, cursorBlock: null, now: new Date() });
+    const has = (rows: { id: string }[]) => rows.some((x) => x.id === r.id);
+    expect(has(await duePayrolls(db, new Date("2099-01-02T07:59:59Z")))).toBe(false);
+    expect(has(await duePayrolls(db, next))).toBe(true);
+    expect(has(await dueSendRules(db, next))).toBe(false);
+    const run = await claimRun(db, r.id, "payroll:2099-01-02", null);
+    await finishRun(db, run!.id, { status: "held", txHashes: [], error: "NGN -4.10%" });
+    expect((await runsForAccount(db, account)).find((x) => x.id === run!.id)).toMatchObject({ kind: "payroll", status: "held", error: "NGN -4.10%" });
+    await cancelRule(db, r.id);
+    expect(has(await duePayrolls(db, next))).toBe(false);
   });
 
   it("claims each (rule, trigger) at most once, so a run can never repeat", async () => {

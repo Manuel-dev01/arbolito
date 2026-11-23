@@ -3,7 +3,7 @@
  * turn it on, and when it runs. Pure; shared by the Mini App backend (drafts, confirmation) and
  * the runner (apps/agent/src/rules-runner.ts), which executes rules through ArbolitoGuard v2.
  *
- * Three kinds:
+ * Kinds:
  * - send:     every month on `dayOfMonth`, pay a saved contact `amountUsdt` worth of `receive`
  *             (a swap first when `receive` isn't USDT; the contact gets exactly what the swap returned).
  * - split:    when at least `minIncomingUsdt` arrives in one transfer sent by someone else, change
@@ -11,10 +11,15 @@
  * - guardian: keep about `baseDollarPct`% of the account's `sym` + USDT savings in dollars, more
  *             when `sym` is losing value against the dollar and less when it is gaining (the
  *             desk's measured carry), and rebalance when the share drifts past `bandPct` points.
- * The guard bounds every run: per-transaction and daily caps, allowlisted contacts, a TWAP floor.
+ * - payroll:  on each payday, price a list of payments and tell the payer (payroll.ts). It sends nothing
+ *             and needs no guard; the bot's payroll runner does it, not the guard runner.
+ * The guard bounds every run of the first three: per-transaction and daily caps, allowlisted contacts, a TWAP floor.
  */
 import { getAddress, type Address } from "viem";
 import { z } from "zod";
+import { PayrollParams, describePayroll, payrollText } from "./payroll";
+
+export * from "./payroll";
 
 export const RULE_SYMS = ["wARS", "wBRL", "USDT", "USAT", "USDC"] as const;
 export type RuleSym = (typeof RULE_SYMS)[number];
@@ -56,13 +61,14 @@ export const GuardianParams = z.strictObject({
 });
 export type GuardianParams = z.infer<typeof GuardianParams>;
 
-export type RuleKind = "send" | "split" | "guardian";
-export type RuleSpec = { kind: "send"; params: SendParams } | { kind: "split"; params: SplitParams } | { kind: "guardian"; params: GuardianParams };
+export type RuleKind = "send" | "split" | "guardian" | "payroll";
+export type RuleSpec = { kind: "send"; params: SendParams } | { kind: "split"; params: SplitParams } | { kind: "guardian"; params: GuardianParams } | { kind: "payroll"; params: PayrollParams };
 
 export function parseRule(kind: string, params: unknown): RuleSpec {
   if (kind === "send") return { kind, params: SendParams.parse(params) };
   if (kind === "split") return { kind, params: SplitParams.parse(params) };
   if (kind === "guardian") return { kind, params: GuardianParams.parse(params) };
+  if (kind === "payroll") return { kind, params: PayrollParams.parse(params) };
   throw new Error(`unknown rule kind ${kind}`);
 }
 
@@ -192,6 +198,7 @@ export function usd(atomicUsdt: string | bigint, lang: Lang): string {
 
 /** One line describing the rule, in the user's language (shown on cards and in lists). */
 export function describeRule(r: RuleSpec, lang: Lang): string {
+  if (r.kind === "payroll") return describePayroll(r.params, lang);
   if (r.kind === "guardian") {
     const p = r.params;
     const cur = NAME[lang][p.sym];
@@ -224,6 +231,7 @@ const HEAD: Record<Lang, { title: string; account: string; to: string; bounds: s
  * full contact address and the rule id, so a signature can't be replayed onto another rule.
  */
 export function ruleText(r: RuleSpec, ruleId: string, account: Address, lang: Lang): string {
+  if (r.kind === "payroll") return payrollText(r.params, ruleId, account, lang);
   const h = HEAD[lang];
   const lines = [h.title, `${h.account}: ${getAddress(account)}`, describeRule(r, lang)];
   if (r.kind === "send") lines.push(`${h.to}: ${getAddress(r.params.contact as Address)}`);
