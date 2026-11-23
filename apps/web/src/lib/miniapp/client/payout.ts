@@ -45,6 +45,8 @@ export interface PayoutItem {
   exact?: string;
   /** What the payee gets at the reviewed price (atomic). */
   reviewedOut: string;
+  /** The markets that priced it, at the review and then at the payment. */
+  venues?: ("textile" | "uniswap")[];
   /** On a held payment, what they would get now (or, when exact, what it would cost now). */
   heldOut?: string;
   /** What an exact payment cost. */
@@ -126,6 +128,7 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
       deps.onStage?.(i, { stage: "preparing" });
       const q = await deps.api.quote({ from: item.from, to: item.to, ...size, account, recipient: item.address as Hex, lang: deps.lang as never });
       quoteId = q.quoteId;
+      if (q.venues) patch(i, { venues: q.venues });
       const off = tooFar(q);
       if (off !== null) {
         patch(i, { state: "held", heldOut: off, error: undefined });

@@ -175,6 +175,7 @@ export function usePayout(
             to: c.to,
             ...(c.exact !== undefined ? { exact: c.exact, amount: formatUnits(BigInt(quotes[n]!.amountIn), DECIMALS[PAY_SYM]) } : { amount: c.amount }),
             reviewedOut: quotes[n]!.expectedOut,
+            venues: quotes[n]!.venues,
             state: "todo",
           }),
         );

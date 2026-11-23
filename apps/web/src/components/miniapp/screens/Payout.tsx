@@ -11,6 +11,8 @@ import { Frame, useApp } from "../context";
 import { Badge, Spinner } from "../ui";
 import { PAY_SYM, canExact, exactAmount, payable, payoutAmount } from "../use-payout";
 
+const via = (v: PayoutItem["venues"]) => (v ?? []).map((x) => (x === "textile" ? "Textile" : "Uniswap")).join(" + ");
+
 const usd = (items: { amount: string }[]) => items.reduce((n, i) => n + parseHuman(i.amount, 6), 0n);
 
 /** Who gets paid and how much: one amount per saved payee. */
@@ -115,6 +117,7 @@ export function PayoutReview() {
                   {i.exact !== undefined ? "≈ " : ""}
                   {fmtMoney(parseHuman(i.amount, 6), 6, "USD", lang)}
                 </span>
+                {i.venues?.length ? <span className="mp-meta">{fill(t.poVia, { v: via(i.venues) })}</span> : null}
               </span>
               <span className="mp-save" style={{ fontSize: 17, fontWeight: 800 }}>
                 {i.exact !== undefined ? "" : "≈ "}
