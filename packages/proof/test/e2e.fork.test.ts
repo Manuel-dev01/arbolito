@@ -23,6 +23,7 @@ import {
   FORK_ATTRIBUTION_CODE,
   MemoryLedger,
   USD,
+  attributionCodeList,
   attributionCodes,
   celoMainnet,
   makePublicClient,
@@ -51,7 +52,7 @@ const WBRL_POOL = POOLS.find((p) => p.name.startsWith("wBRL/USDT"))!.address;
 const AMOUNT_IN = toAtomic(TOKENS.wBRL.address, "200");
 // The fork test moves ~$40, above the $5 build cap; it runs with an explicit fork-only cap.
 // Fork sends carry the real code when one is configured (a truer rehearsal), else the placeholder.
-const EXPECTED_CODE = loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE;
+const EXPECTED_CODES = attributionCodeList(loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE);
 const FORK_CAPS = { maxActionMicros: USD(100), maxDailyMicros: USD(500) };
 
 describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
@@ -103,7 +104,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     });
     expect(receipt.contractAddress).toBeTruthy();
     receipts = receipt.contractAddress!;
-    expect(attributionCodes(data)).toContain(EXPECTED_CODE);
+    expect(attributionCodes(data)).toEqual(EXPECTED_CODES);
     expect(await publicClient.readContract({ address: receipts, abi: receiptsAbi, functionName: "owner" })).toBe(TAKER.address);
   });
 
@@ -160,7 +161,7 @@ describe("fork e2e: wBRL → wARS with an anchored, verified receipt", () => {
     expect(received).toBe(route.expectedOut);
 
     const tx = await publicClient.getTransaction({ hash: swapTx });
-    expect(attributionCodes(tx.input)).toEqual([EXPECTED_CODE]);
+    expect(attributionCodes(tx.input)).toEqual(EXPECTED_CODES);
   });
 
   it("builds a ProofBundle, anchors it and verifies it end to end", async () => {

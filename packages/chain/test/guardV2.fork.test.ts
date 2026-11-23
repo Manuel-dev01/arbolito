@@ -35,6 +35,7 @@ import {
   FORK_ATTRIBUTION_CODE,
   MemoryLedger,
   arbolitoGuardAbi,
+  attributionCodeList,
   attributionCodes,
   celoMainnet,
   encodeGuardV2Configure,
@@ -118,7 +119,7 @@ describe("ArbolitoGuard v2: MiniPay EOA + operator", () => {
     expect(res.receipt.status).toBe("success");
     const tx = await publicClient.getTransaction({ hash: res.hash });
     // Fork sends carry the real code when one is configured, else the placeholder.
-    expect(attributionCodes(tx.input)).toContain(loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE);
+    expect(attributionCodes(tx.input)).toEqual(attributionCodeList(loadEnv().ATTRIBUTION_CODE ?? FORK_ATTRIBUTION_CODE));
     gasReport.push(`${purpose}: gasUsed ${res.receipt.gasUsed}`);
     return res;
   }

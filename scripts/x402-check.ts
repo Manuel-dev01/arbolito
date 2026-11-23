@@ -15,7 +15,7 @@ import { createPublicClient, http } from "viem";
 import { celo } from "viem/chains";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { loadEnv, tokenBySymbol } from "@arbolito/config";
-import { MemoryLedger, capsFromEnv } from "@arbolito/chain";
+import { MemoryLedger, capsFromEnv, primaryAttributionCode } from "@arbolito/chain";
 import { payV2, quoteV2, signV2, verifyV2 } from "@arbolito/x402";
 import type { Hex } from "viem";
 import { confirm, flagValue, hasFlag, positional } from "./lib/cli";
@@ -36,7 +36,7 @@ const e2eKey = env.E2E_PRIVATE_KEY;
 if (hasFlag("e2e") && !e2eKey) throw new Error("E2E_PRIVATE_KEY is not set");
 const account = privateKeyToAccount(hasFlag("e2e") ? (e2eKey as Hex) : generatePrivateKey());
 const publicClient = createPublicClient({ chain: celo, transport: http(env.CELO_RPC_URL) });
-const payload = await signV2({ account, publicClient: publicClient as never, quote, builderCode: env.ATTRIBUTION_CODE });
+const payload = await signV2({ account, publicClient: publicClient as never, quote, builderCode: env.ATTRIBUTION_CODE ? primaryAttributionCode(env.ATTRIBUTION_CODE) : undefined });
 console.log(`signed by ${hasFlag("e2e") ? "e2e wallet" : "throwaway"} ${account.address}; payload extensions: ${Object.keys(payload.extensions ?? {}).join(", ") || "none"}`);
 const result = await verifyV2(env.X402_FACILITATOR_URL, payload, quote.requirement);
 console.log(`facilitator /verify: ${JSON.stringify(result)}`);
@@ -46,7 +46,7 @@ if (hasFlag("pay")) {
   if (!result.isValid) throw new Error("the facilitator wouldn't accept this payment; nothing paid");
   const usdMicros = token.decimals === 6 ? quote.amount : 0n;
   if (!(await confirm(`Pay ${quote.amount} (${token.decimals} dp) ${token.symbol} from the e2e wallet to ${quote.requirement.payTo} for ${url}?`, "pay"))) process.exit(1);
-  const paid = await payV2(url, { account, publicClient: publicClient as never, quote, maxAmount: quote.amount, usdMicros, ledger: new MemoryLedger(), caps: capsFromEnv(), purpose: `x402 settle test ${url}`, builderCode: env.ATTRIBUTION_CODE });
+  const paid = await payV2(url, { account, publicClient: publicClient as never, quote, maxAmount: quote.amount, usdMicros, ledger: new MemoryLedger(), caps: capsFromEnv(), purpose: `x402 settle test ${url}`, builderCode: env.ATTRIBUTION_CODE ? primaryAttributionCode(env.ATTRIBUTION_CODE) : undefined });
   console.log(`status ${paid.status}; settlement ${JSON.stringify(paid.settlement)}`);
   console.log(`answer: ${JSON.stringify(paid.body).slice(0, 300)}`);
 }
