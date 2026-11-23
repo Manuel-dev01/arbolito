@@ -92,10 +92,17 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - Progress is saved on the phone before each confirmation. A payment found mid-flight becomes "unknown" and is never retried on its own.
   - `/payouts/<id>`: the id is the list of receipts, so nothing is stored and every row comes from an anchored receipt. Names travel only in the link's fragment.
   - 15 tests; the demo run, a rejection and the statement (with sample receipts) checked in a browser. MiniPay asks for up to 3 confirmations for the first payee in a currency, then 2: the first approval covers what's left to pay in that currency, capped by the balance (fork-rehearsed: approve 2, pay 1, 1 left).
-- **Exact payments (built, not deployed):** in a batch, type what must arrive (cNGN and wCOP, whose one market is Textile).
+- **Exact payments (live, `a5c5603`):** in a batch, type what must arrive (cNGN and wCOP, whose one market is Textile).
   - Textile is asked for the output (`buyAmount`); the firm quote must match it exactly, and may cost at most 0.5% over the preview. The receipt records the real cost.
-  - Fork-rehearsed: exactly ₦1,500 arrived for 1.036215 USDT, as previewed.
-- **Payout quotes bound to their payee (fix, not deployed):** an unsigned payout quote could be offered again on Home as a plain change, which would have converted the money to the payer. Quotes now carry the payee: they can't be resumed or prepared for anyone else.
+  - Fork-rehearsed: exactly ₦1,500 arrived for 1.036215 USDT, as previewed. Production answers exact quotes (₦5,000 for 3.457896 USDT, free, 2026-11-23).
+- **Payout quotes bound to their payee (fix, live):** an unsigned payout quote could be offered again on Home as a plain change, which would have converted the money to the payer. Quotes now carry the payee: they can't be resumed or prepared for anyone else.
+- **Scheduled payroll (built, not deployed):** "every Friday, pay these people", from a payout's review or its result ("Repeat this payout on a schedule").
+  - The payer signs the exact text (each full address and amount, the dates, the tolerance, today's prices). It moves no money and needs no guard.
+  - On the payday the bot claims the run, gets a fresh quote per payee (bound to that payee), and compares each currency with the last payday's price. Past the payer's tolerance (1, 3 or 5%), or with no price, it is held and says why. Then it messages the payer on Telegram, with the total and what is missing. The app's home shows the payday for three days either way.
+  - The payer reviews fresh prices and confirms each payment, as in any batch. A payment that went out is never offered again: this phone's runs and the wallet's receipts on the server are both checked.
+  - No names leave the phone, and GET /rules shows only how many people a schedule pays.
+  - No database migration: `rules` kind `payroll`, runs `ready` or `held`.
+  - Checked: 24 new unit tests, a database test, create / tamper / repeat / cancel against the real API and database (rows deleted), a payday priced with live free quotes (one ready, one held at −4.87%), and the demo in a browser in three languages. Not yet run on a real payday.
 - **Security:** zod 4.6.7, x402 2.32.0 and @hono/node-server 2.1.11; `pnpm audit --prod` reports none. The 402 offer is identical to before. The free wBRL and wARS `/verify` checks answer `unexpected_error` with a throwaway key, with the old packages too.
 - **CBN official USD/NGN (live; the first read from Railway worked):** the bot reads the CBN every 6 h and stores its newest US dollar rate under its own date (no payment). Quotes and receipts use it as "official" only on that date and the next day, so Monday's price is never compared with Friday's rate. A receipt shows a reference's date when it isn't the day of the trade.
 - **Agent wallet:** first transaction with the edition-2 tag, a 0.10 USDT gas top-up to the rules wallet ([tx](https://celoscan.io/tx/0x4fd71bb3770597f7503ca26f5a2496fa9b4b897ff4fc3e780e84382a56ef4a88)).

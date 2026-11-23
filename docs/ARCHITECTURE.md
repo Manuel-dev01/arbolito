@@ -80,11 +80,11 @@ The **user's own wallet** (MiniPay) signs every conversion and send. The only th
 | Component | Path | Runs on | What it does |
 |---|---|---|---|
 | Web app | `apps/web` | Vercel (Next.js 16) | Landing; the MiniPay Mini App and its API (`/api/miniapp/*`: quote, prepare, submit, receipts, send, autonomy, rules, chat, rate); public receipts `/r/<id>` (verified in the browser); `/metrics`, `/desk`, `/agent`; the x402 API (`/api/x402/quote`, `/api/x402/rates`); MCP (`/api/mcp`), A2A (`/api/a2a`, card at `/.well-known/agent-card.json`), OASF and the ERC-8004 file (`/.well-known/*`) |
-| Bot | `apps/agent` | Railway `arbolito-bot` (`Dockerfile.bot`) | Telegram (grammY) with the same chat agent; links a Telegram chat to a MiniPay wallet; runs the **rules runner** (every 60 s), the **Western Union runner** (every 6 h, through buy) and **agent purchases** (every 12 h) |
+| Bot | `apps/agent` | Railway `arbolito-bot` (`Dockerfile.bot`) | Telegram (grammY) with the same chat agent; links a Telegram chat to a MiniPay wallet; runs the **rules runner** and the **payroll runner** (every 15 min), the **Western Union runner** (every 6 h, through buy) and **agent purchases** (every 12 h) |
 | Desk | `apps/desk` | Railway `desk-feed` (`Dockerfile.desk-feed`) | The Textile FX maker: multi-source fair value, inventory skew, carry-aware targets, breaker, risk officer (LLM, pause-only), rebalancer; supervises Textile's own filler (Stitch), which signs quotes from this feed; ledger and public `/state` |
 | Router | `packages/router` | (library) | Uniswap v3 and Textile RFQ adapters, the route planner (best of all venues and two-leg routes), executor, reference rates (official/MEP/CCL/crypto ARS, BRL, COP, MXN, venue mids) |
 | Proof | `packages/proof` | (library) | ProofBundle schema, canonical JSON, keccak256, anchoring, verification |
-| Rules | `packages/rules` | (library) | Rule kinds (`send`, `split`, `guardian`), the text a user signs, schedules, the guardian's decision logic, the runner |
+| Rules | `packages/rules` | (library) | Rule kinds (`send`, `split`, `guardian`, `payroll`), the text a user signs, schedules, the guardian's decision logic, the runner |
 | Chain | `packages/chain` | (library) | Clients, the **guarded sender** (simulate, tag, cap, never retry), ArbolitoGuard v2 encoders and reads, ERC-8004 Reputation encoder |
 | x402 | `packages/x402` | (library) | v1 client (pays buy), v2 client (pays other agents), **seller** (Arbolito's paid API) on the official `@x402/*` SDK |
 | Competitors | `packages/competitors` | (library) | Drives a browser rented through buy to read Western Union's converter |
@@ -194,6 +194,12 @@ sequenceDiagram
 - A failure before broadcast skips the run.
 - Nothing is retried.
 - "Pause Arbolito" is a single signature, with no transaction, and the runner honours it right away.
+
+**Scheduled payroll** (`apps/agent/src/payroll.ts`, `packages/rules/src/payroll.ts`) is a rule that sends nothing, so it needs no guard and no key:
+
+- The payer signs the list (wallets, amounts, dates, tolerance) once; the server stores it only with that signature and never gives the list back. Names stay on the phone.
+- On a payday the runner claims the run, gets a fresh quote for every payee and compares each currency with the last payday's price. It is **ready**, or **held** with the reason, and the payer is told on Telegram and on the app's home.
+- The payer confirms each payment in their own wallet, as in any batch payout. Anything that may already have gone out is left out of the list.
 
 ### 4.4 Another agent pays Arbolito (x402)
 

@@ -20,10 +20,10 @@ Track rules: a tagged Textile FX taker conversion in the product flow; local-sta
 | Payouts to a payee in cNGN, wARS or wBRL: Textile firm fill, then the exact amount forwarded; the receipt names the payee | ✅ (send to a contact) |
 | Self-trade guard: a team wallet never takes a fill from our own desk; own-desk fills are left out of the counts | ✅ |
 | /metrics edition-2 view: tagged Textile taker conversions in the listed corridors, by wallets outside the team and not funded directly by it; payees | ✅ live |
-| Pay an exact local amount ("₦75,000"), cNGN and wCOP | 🟡 built, fork-rehearsed; not deployed |
+| Pay an exact local amount ("₦75,000"), cNGN and wCOP | 🟡 live, fork-rehearsed; no real payout yet |
 | CBN official USD/NGN on receipts, under its own date | ✅ live |
 | Batch payouts (many payees, one review, a receipt each) and a payout statement at `/payouts/<id>` (link and PDF) | 🟡 live; no real payout yet |
-| Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes | ⬜ |
+| Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes, held past a tolerance | 🟡 built; not deployed |
 | Named users: one in Nigeria, one in LatAm, with consent | 👤 |
 | Loops project for edition 2, then AskBots review (24 Nov, 4 Dec) | 👤 |
 
