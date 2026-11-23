@@ -34,6 +34,7 @@ import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen }
 import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
 import { ScreenView } from "./screens/ScreenView";
+import { usePaydays } from "./use-paydays";
 import { usePayout } from "./use-payout";
 import { CurSheet, DetailsSheet, LangSheet, MiniPaySheet, ThemeSheet } from "./sheets";
 import { codeFromUrl, LinkScreen } from "./screens/Link";
@@ -194,6 +195,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
       const api = createApiClient({ fetch: server.fetch });
       const store = createStore(memoryKV());
       if (!scenario.noContacts) for (const c of MOCK_CONTACTS[l]) store.saveContact(MOCK_ACCOUNT, { ...c, id: newId() });
+      for (const s of server.schedules()) store.saveSchedule(MOCK_ACCOUNT, s);
       for (const r of [...server.receiptIndex()].reverse()) store.addReceipt(MOCK_ACCOUNT, r);
       store.setOnboarded(MOCK_ACCOUNT);
       const wallet = createMockWallet({ lang: l, fail: b.fail, confirm: (req) => new Promise<boolean>((resolve) => setMpReq({ req, resolve })) });
@@ -305,6 +307,11 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     void refreshAuto();
     refreshTelegram();
   }, [screen, refreshAuto, refreshTelegram]);
+
+  // A new schedule says whether the agent can message this payer.
+  useEffect(() => {
+    if (screen === "payday-new") refreshTelegram();
+  }, [screen, refreshTelegram]);
 
   useEffect(() => {
     if (!ready) return;
@@ -567,6 +574,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
 
   const payout = usePayout(ready, { contacts, lang, go, showError, refreshBalances: () => void refreshBalances(), addReceipt, sheetAmount: (s) => (sheetAmount.current = s) });
 
+  const paydays = usePaydays(ready, { lang, payout, go, showError, toast, text: { allPaid: t.pdAllPaid, created: t.pdCreated, cancelled: t.pdCancelled, twice: t.pdTwice } });
+
   // ── Autonomy ──
   const activateAuto = useCallback(async () => {
     if (!ready || autoDraft.busy) return;
@@ -679,7 +688,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     if (!ready || ready.mock) return setRules([]);
     setRulesError(false);
     ready.api.listRules(ready.account).then(
-      (r) => setRules(r.rules.filter((x) => x.status !== "draft")),
+      (r) => setRules(r.rules.filter((x) => x.status !== "draft" && x.kind !== "payroll")),
       () => setRulesError(true),
     );
   }, [ready]);
@@ -1067,6 +1076,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     requestSendQuote: () => void requestSendQuote(),
     confirmSend: () => void confirmSend(),
     payout,
+    paydays,
     autoDraft,
     setAutoDraft,
     activateAuto: () => void activateAuto(),

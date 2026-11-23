@@ -3,6 +3,7 @@
  * Every read/write is guarded: storage may be unavailable, and the app must still render.
  */
 import type { Cur, Lang } from "./format";
+import type { Schedule } from "./payday";
 import type { PayoutRun } from "./payout";
 
 export interface Contact {
@@ -111,6 +112,19 @@ export function createStore(kv: KV | null = defaultKV()) {
     /** The payout in progress, or the last one until it is closed. */
     payoutRun: (account: string) => read<PayoutRun | null>(`payout.${acct(account)}`, null),
     setPayoutRun: (account: string, r: PayoutRun | null) => write(`payout.${acct(account)}`, r),
+
+    /** This phone's copy of the payroll schedules: names and amounts, which the server never gives back. */
+    schedules: (account: string) => read<Schedule[]>(`schedules.${acct(account)}`, []),
+    saveSchedule(account: string, s: Schedule) {
+      const list = read<Schedule[]>(`schedules.${acct(account)}`, []).filter((x) => x.ruleId !== s.ruleId);
+      write(`schedules.${acct(account)}`, [...list, s]);
+    },
+    patchSchedule(account: string, ruleId: string, p: Partial<Schedule>) {
+      write(`schedules.${acct(account)}`, read<Schedule[]>(`schedules.${acct(account)}`, []).map((x) => (x.ruleId === ruleId ? { ...x, ...p } : x)));
+    },
+    removeSchedule(account: string, ruleId: string) {
+      write(`schedules.${acct(account)}`, read<Schedule[]>(`schedules.${acct(account)}`, []).filter((x) => x.ruleId !== ruleId));
+    },
 
     /** Set when the user leaves for Ripio, so returning lands on "Esperando tu envío". */
     pendingRipio: (account: string) => read<{ at: number; sym: string; before: string } | null>(`ripio.${acct(account)}`, null),

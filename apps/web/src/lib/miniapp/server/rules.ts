@@ -3,8 +3,8 @@ import { formatUnits, type Address, type Hex } from "viem";
 import type { z } from "zod";
 import { TOKENS } from "@arbolito/config";
 import { readGuardV2Budget, readGuardV2IsContact, readGuardV2Operator, readGuardV2Settings } from "@arbolito/chain";
-import { cancelText, describeRule, nextMonthlyRun, parseRule, ruleText, type Lang, type RuleSpec } from "@arbolito/rules";
-import type { RuleCancelRequest, RuleCard, RuleConfirmRequest, RulesListResponse } from "../contract";
+import { cancelText, describeRule, nextMonthlyRun, nextPayday, parseRule, payrollText, ruleText, type Lang, type RuleSpec } from "@arbolito/rules";
+import type { PayrollCreateRequest, RuleCancelRequest, RuleCard, RuleConfirmRequest, RulesListResponse } from "../contract";
 import type { MiniappDeps } from "./deps";
 import { badRequest, notReady } from "./errors";
 import { signedBy } from "./signature";
@@ -20,6 +20,7 @@ import type { RuleRow } from "./store";
 const LANGS = ["es", "pt", "en"] as const;
 const asLang = (l: string): Lang => ((LANGS as readonly string[]).includes(l) ? (l as Lang) : "es");
 const MAX_ACTIVE_RULES = 10;
+const MAX_PAYROLLS = 5;
 
 export function toCard(r: RuleRow): z.infer<typeof RuleCard> {
   const spec = parseRule(r.kind, r.params);
@@ -28,7 +29,8 @@ export function toCard(r: RuleRow): z.infer<typeof RuleCard> {
     kind: spec.kind,
     status: r.status as "draft" | "active" | "stopped",
     description: describeRule(spec, asLang(r.lang)),
-    message: r.message,
+    // GET /rules is open to anyone who knows the account: who a payroll pays, and how much, isn't in it.
+    message: spec.kind === "payroll" ? "" : r.message,
     nextRunAt: r.nextRunAt?.toISOString() ?? null,
     stoppedReason: r.stoppedReason,
   };
@@ -82,7 +84,7 @@ export async function draftRule(deps: MiniappDeps, account: Address, lang: strin
   if (spec.kind === "send") await checkSendFitsLimits(deps, acct, BigInt(spec.params.amountUsdt));
   if (spec.kind === "guardian") await checkGuardianLimits(deps, acct, spec.params.sym);
   const store = deps.store();
-  const live = (await store.listRules(acct)).filter((r) => r.status === "active");
+  const live = (await store.listRules(acct)).filter((r) => r.status === "active" && r.kind !== "payroll");
   if (live.length >= MAX_ACTIVE_RULES) throw badRequest(`You already have ${MAX_ACTIVE_RULES} rules on. Cancel one first.`);
   const id = randomUUID();
   const l = asLang(lang);
@@ -106,6 +108,23 @@ export async function confirmRule(deps: MiniappDeps, req: z.infer<typeof RuleCon
   return { rule: toCard((await store.getRule(row.id))!) };
 }
 
+/** POST /payroll: a schedule, stored only with the account's signature over its exact text. Its id is single-use. */
+export async function createPayroll(deps: MiniappDeps, req: z.infer<typeof PayrollCreateRequest>): Promise<{ rule: z.infer<typeof RuleCard> }> {
+  const acct = req.account.toLowerCase() as Address;
+  if (req.params.payees.some((p) => p.address.toLowerCase() === acct)) throw badRequest("A schedule can't pay the wallet that signs it.");
+  const message = payrollText(req.params, req.id, acct, req.lang);
+  if (!(await signedBy(deps, acct, message, req.signature as Hex))) throw badRequest("The signature doesn't match this schedule.");
+  const now = new Date(deps.now());
+  return deps.store().transaction(async (store) => {
+    if (await store.getRule(req.id)) throw badRequest("This schedule already exists.", 409);
+    const live = (await store.listRules(acct)).filter((r) => r.status === "active" && r.kind === "payroll");
+    if (live.length >= MAX_PAYROLLS) throw badRequest(`You already have ${MAX_PAYROLLS} schedules on. Cancel one first.`);
+    await store.insertRuleDraft({ id: req.id, account: acct, kind: "payroll", params: req.params, lang: req.lang, message });
+    await store.activateRule(req.id, { signature: req.signature, nextRunAt: nextPayday(req.params, now), cursorBlock: null, now });
+    return { rule: toCard((await store.getRule(req.id))!) };
+  });
+}
+
 /** POST /rules/cancel: the account's signature over cancelText. */
 export async function cancelRuleReq(deps: MiniappDeps, req: z.infer<typeof RuleCancelRequest>): Promise<{ rule: z.infer<typeof RuleCard> }> {
   const store = deps.store();
@@ -123,6 +142,6 @@ export async function listRulesRes(deps: MiniappDeps, account: Address): Promise
   const [rows, runs] = await Promise.all([store.listRules(account.toLowerCase()), store.ruleRuns(account.toLowerCase(), 20)]);
   return {
     rules: rows.map(toCard),
-    runs: runs.map((r) => ({ ruleId: r.ruleId, kind: r.kind as "send" | "split" | "guardian", status: r.status, at: r.createdAt.toISOString(), txHashes: (r.txHashes as string[]) ?? [], error: r.error })),
+    runs: runs.map((r) => ({ ruleId: r.ruleId, kind: r.kind as RuleSpec["kind"], status: r.status, at: r.createdAt.toISOString(), txHashes: (r.txHashes as string[]) ?? [], error: r.error })),
   };
 }

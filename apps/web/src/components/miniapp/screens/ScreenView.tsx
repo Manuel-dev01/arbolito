@@ -10,6 +10,7 @@ import { Alts, Cancelled, ChangeScreen, Done, Failed, NoMarket, Processing, Quot
 import { SendAdd, SendAmount, SendDone, SendList, SendQuote } from "./Send";
 import { AutoConsent, AutoContacts, AutoIntro, AutoLimits, AutoOn } from "./Autonomy";
 import { PayoutPick, PayoutProgress, PayoutReview } from "./Payout";
+import { PaydayNew, Paydays } from "./Paydays";
 import { Revoke, Security, Settings, Withdraw } from "./Account";
 import { ReceiptDetail, ReceiptsList } from "./Receipts";
 
@@ -71,6 +72,10 @@ export function ScreenView({ screen }: { screen: Screen }) {
       return <PayoutReview />;
     case "payout-run":
       return <PayoutProgress />;
+    case "payday-new":
+      return <PaydayNew />;
+    case "paydays":
+      return <Paydays />;
     case "auto-intro":
       return <AutoIntro />;
     case "auto-limits":

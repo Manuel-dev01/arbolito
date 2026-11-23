@@ -4,8 +4,11 @@
  * Numbers follow the design: R$ 10 → ARS 3.177,41 (+5,24% vs oficial), US$ 1 = ARS 1.608.
  */
 import type { Address, Hex } from "viem";
-import type { Sym } from "../contract";
-import { CUR_OF, DECIMALS, parseHuman, type Cur, type Lang } from "./format";
+import { nextPayday, type PayrollEvery } from "@arbolito/rules";
+import type { z } from "zod";
+import type { RuleCard, Sym } from "../contract";
+import { CUR_OF, DECIMALS, SYM_OF, parseHuman, type Cur, type Lang } from "./format";
+import type { Schedule } from "./payday";
 import type { Contact, KV, ReceiptIndexEntry } from "./store";
 import type { Wallet } from "./wallet";
 
@@ -21,6 +24,8 @@ export interface MockScenario {
   autoOn?: boolean;
   /** /quotes/open returns a fresh quote once (a Telegram quote waiting to be confirmed). */
   openQuote?: boolean;
+  /** A payday waiting on the home screen. */
+  payday?: "ready" | "held";
   fail?: MockFail | null;
   /** The app's language, for the demo sheet's call labels. */
   lang?: Lang;
@@ -183,6 +188,12 @@ function json(status: number, body: unknown): Response {
 }
 const err = (status: number, code: string, message = code) => json(status, { error: { code, message } });
 
+/** A Friday payroll for two of the sample contacts. */
+function mockSchedule(lang: Lang): Schedule {
+  const items = MOCK_CONTACTS[lang].slice(0, 2).map((c, i) => ({ contactId: `p${i}`, name: c.name, address: c.address!, to: SYM_OF[c.cur] as Schedule["items"][number]["to"], amount: i ? "40" : "25" }));
+  return { ruleId: "5c0f7a52-6f0e-4c1c-8d53-9a3f2b7c1e10", items, every: { unit: "week", weekday: 5 }, hourUtc: 12, tolerancePct: 3, rates: {} };
+}
+
 /** A fetch that serves /api/miniapp/* from memory. */
 export function createMockServer(scenario: MockScenario) {
   const quotes = new Map<string, MockQuote>();
@@ -193,6 +204,11 @@ export function createMockServer(scenario: MockScenario) {
   const firstTime = (k: string) => (once.has(k) ? false : (once.add(k), true));
   /** Quote ids reported through /reject (tests read this). */
   const rejected: string[] = [];
+  const seededPayday = scenario.payday ? mockSchedule(scenario.lang ?? "es") : null;
+  const payrolls: z.infer<typeof RuleCard>[] = seededPayday
+    ? [{ ruleId: seededPayday.ruleId, kind: "payroll", status: "active", description: "", message: "", nextRunAt: nextPayday(seededPayday, new Date()).toISOString(), stoppedReason: null }]
+    : [];
+  const due = seededPayday ? [{ ruleId: seededPayday.ruleId, kind: "payroll" as const, status: scenario.payday!, at: new Date().toISOString(), txHashes: [], error: scenario.payday === "held" ? "ARS -4.10%" : null }] : [];
   let autoOn = !!scenario.autoOn;
   let paused = !!scenario.paused;
   const L = CALL_LABEL[scenario.lang ?? "es"];
@@ -384,8 +400,17 @@ export function createMockServer(scenario: MockScenario) {
     }
     if (path.startsWith("/receipts")) return json(200, { receipts: [] }); // mock receipts live in the local index
     if (path.startsWith("/link/status")) return json(200, { linked: true, telegramName: "@lucia.dg" });
+    if (path === "/payroll") {
+      const p = body.params as { every: PayrollEvery; hourUtc: number };
+      payrolls.push({ ruleId: String(body.id), kind: "payroll", status: "active", description: "", message: "", nextRunAt: nextPayday(p, new Date()).toISOString(), stoppedReason: null });
+      return json(200, { rule: payrolls.at(-1) });
+    }
+    if (path === "/rules/cancel" && payrolls.some((r) => r.ruleId === body.ruleId)) {
+      const [r] = payrolls.splice(payrolls.findIndex((x) => x.ruleId === body.ruleId), 1);
+      return json(200, { rule: { ...r, status: "stopped", nextRunAt: null } });
+    }
     if (path === "/rules/confirm" || path === "/rules/cancel") return err(400, "bad_request", "Automatic rules aren't available in the demo.");
-    if (path.startsWith("/rules")) return json(200, { rules: [], runs: [] });
+    if (path.startsWith("/rules")) return json(200, { rules: payrolls, runs: due });
     if (path === "/send/prepare") {
       await sleep(400);
       const exact = body.amountOut !== undefined;
@@ -403,6 +428,7 @@ export function createMockServer(scenario: MockScenario) {
 
   return {
     fetch: (input: string, init?: RequestInit) => handle(input, init),
+    schedules: (): Schedule[] => (seededPayday ? [seededPayday] : []),
     receiptIndex: (): ReceiptIndexEntry[] => (scenario.noReceipts ? [] : seeded.index),
     rejected,
   };
@@ -442,7 +468,15 @@ export function createMockWallet(opts: { confirm(req: SheetRequest): Promise<boo
         return opts.fail === "revert" && !isApproval(labels.get(hash) ?? "") ? "reverted" : "success";
       },
     },
-    signer: { signTypedData: sign, personalSign: sign },
+    signer: {
+      signTypedData: sign,
+      async personalSign(message) {
+        // Arbolito's own texts name themselves; Textile's proof doesn't.
+        const [first = ""] = message.split("\n");
+        if (!(await opts.confirm({ kind: "sign", label: first.startsWith("Arbolito: ") ? first.slice(10) : "Textile" }))) throw reject();
+        return randHex(65);
+      },
+    },
     async requestContact() {
       await sleep(300);
       return { name: opts.lang === "pt" ? "Camila Rocha" : "Tomás Ribeiro", address: "0x9a0c000000000000000000000000000000000004" };

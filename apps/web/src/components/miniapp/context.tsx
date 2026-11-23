@@ -14,6 +14,7 @@ import type { MiniDict } from "../../i18n/miniapp";
 import type { ClientErrorCode } from "../../lib/miniapp/client/errors";
 import type { Screen } from "./screens";
 import { ActionBar, type BtnSpec } from "./ui";
+import type { PaydaysCtx } from "./use-paydays";
 import type { PayoutCtx } from "./use-payout";
 
 export interface BalState {
@@ -144,6 +145,7 @@ export interface AppCtx {
   requestSendQuote(): void;
   confirmSend(): void;
   payout: PayoutCtx;
+  paydays: PaydaysCtx;
 
   autoDraft: AutoDraft;
   setAutoDraft(p: Partial<AutoDraft>): void;

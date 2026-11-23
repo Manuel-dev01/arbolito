@@ -92,12 +92,12 @@ export function PayoutPick() {
 
 /** Everything at once, before anything is signed. */
 export function PayoutReview() {
-  const { t, lang, bal, payout, go } = useApp();
+  const { t, lang, bal, payout, paydays, go } = useApp();
   const items = payout.review;
   if (!items?.length) return <PayoutPick />;
   const over = bal.data !== null && items.reduce((n, i) => n + costCap(i), 0n) > spendableBalance(bal.data, PAY_SYM);
   return (
-    <Frame note={t.poSignNote} primary={over ? { label: t.insufficient, kind: "off" } : { label: fill(t.poConfirm, { n: String(items.length) }), onClick: payout.confirm }} secondary={{ label: t.cancel, onClick: () => go("payout") }}>
+    <Frame note={t.poSignNote} primary={over ? { label: t.insufficient, kind: "off" } : { label: fill(payout.reviewMoves?.length ? t.pdPayAnyway : t.poConfirm, { n: String(items.length) }), onClick: payout.confirm }} secondary={{ label: t.cancel, onClick: () => go(payout.reviewMoves ? "home" : "payout") }}>
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
         <div className="mp-col" style={{ gap: 2 }}>
           <span className="mp-small">{t.aboutTo}</span>
@@ -123,7 +123,17 @@ export function PayoutReview() {
             </div>
           ))}
         </div>
+        {payout.reviewMoves?.length ? (
+          <div className="mp-banner" role="status">
+            <span>{fill(t.pdMoved, { r: payout.reviewMoves.map((m) => `${t.curName[CUR_OF[m.sym]]} −${m.worsePct.toFixed(2)}%`).join(", ") })}</span>
+          </div>
+        ) : null}
         <div className="mp-soft mp-small">{t.poHoldNote}</div>
+        {payout.reviewMoves ? null : (
+          <button type="button" className="mp-link inline" style={{ alignSelf: "flex-start" }} onClick={() => paydays.repeat(items)}>
+            {t.pdRepeat}
+          </button>
+        )}
       </div>
     </Frame>
   );
@@ -208,7 +218,7 @@ function Row({ item, index }: { item: PayoutItem; index: number }) {
 
 /** Progress while paying, then the result: what was paid, what wasn't, and the statement to share. */
 export function PayoutProgress() {
-  const { t, lang, payout, go, openLink, toast, mock } = useApp();
+  const { t, lang, payout, paydays, go, openLink, toast, mock } = useApp();
   const [names, setNames] = useState(true);
   const run = payout.run;
   if (!run) return <PayoutPick />;
@@ -268,6 +278,11 @@ export function PayoutProgress() {
               {t.poCopyLink}
             </button>
           </div>
+        ) : null}
+        {done && !run.payday ? (
+          <button type="button" className="mp-link inline" style={{ alignSelf: "flex-start" }} onClick={() => paydays.repeat(run.items)}>
+            {t.pdRepeat}
+          </button>
         ) : null}
         {!payout.running && !more && !done ? (
           <button type="button" className="mp-link muted inline" style={{ alignSelf: "flex-start" }} onClick={payout.clear}>

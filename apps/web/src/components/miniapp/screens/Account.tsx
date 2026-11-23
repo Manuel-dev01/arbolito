@@ -224,6 +224,10 @@ export function Settings() {
             <span>{t.setContacts}</span>
             <span style={{ fontWeight: 400, color: "var(--muted)" }}>{contacts.length} ›</span>
           </button>
+          <button type="button" className="mp-list-row" style={row} onClick={() => go("paydays")}>
+            <span>{t.hPaydays}</span>
+            <span style={{ fontWeight: 400, color: "var(--muted)" }}>›</span>
+          </button>
           <button type="button" className="mp-list-row" style={row} onClick={() => go("security")}>
             <span>{t.setSecurity}</span>
             <span style={{ fontWeight: 400, color: "var(--muted)" }}>{tag} ›</span>

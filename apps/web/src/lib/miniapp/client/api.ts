@@ -16,6 +16,7 @@ import {
   LinkStatusResponse,
   NeedsTakerProof,
   OpenQuoteResponse,
+  PayrollCreateRequest,
   ReceiptsListResponse,
   PrepareRequest,
   PrepareResponse,
@@ -110,6 +111,8 @@ export interface ApiClient {
   listRules(account: string): Promise<RulesList>;
   confirmRule(req: z.input<typeof RuleConfirmRequest>): Promise<Rule>;
   cancelRule(req: z.input<typeof RuleCancelRequest>): Promise<Rule>;
+  /** A payroll schedule, with the account's signature over payrollText. */
+  createPayroll(req: z.input<typeof PayrollCreateRequest>): Promise<Rule>;
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -198,6 +201,7 @@ export function createApiClient(opts: ApiOptions = {}): ApiClient {
     listRules: (account) => call(RulesListResponse, `/rules${q(account)}`),
     confirmRule: async (r) => (await call(RuleResponse, "/rules/confirm", { method: "POST", body: req(RuleConfirmRequest, r) })).rule,
     cancelRule: async (r) => (await call(RuleResponse, "/rules/cancel", { method: "POST", body: req(RuleCancelRequest, r) })).rule,
+    createPayroll: async (r) => (await call(RuleResponse, "/payroll", { method: "POST", body: req(PayrollCreateRequest, r) })).rule,
   };
 }
 

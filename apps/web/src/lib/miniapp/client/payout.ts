@@ -63,6 +63,8 @@ export interface PayoutRun {
   id: string;
   at: string;
   items: PayoutItem[];
+  /** The payday it pays (payday.ts): `before` are the wallets an earlier run of it may have paid. */
+  payday?: { ruleId: string; at: string; before: string[] };
 }
 
 export interface PayoutDeps extends Omit<ExecDeps, "onStage"> {

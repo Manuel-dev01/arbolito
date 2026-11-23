@@ -6,6 +6,7 @@ import { byCurrency, totalIn, usdToCur } from "../../../lib/miniapp/client/deriv
 import { CUR_OF, CURS, fmtMoney, fmtSym, shortHex, type Cur } from "../../../lib/miniapp/client/format";
 import { useApp } from "../context";
 import { Badge, Icon, Logo } from "../ui";
+import { PaydayCards } from "./Paydays";
 import { useReceiptList, whenLabel } from "../useReceipts";
 
 const LOC = { es: "es-AR", pt: "pt-BR", en: "en-US" } as const;
@@ -90,7 +91,7 @@ export function Home() {
   // The split of the total by currency, for the bar under it.
   const usdTotal = CURS.reduce((s, c) => s + cur[c].usdMicros, 0n);
   const split = usdTotal > 0n ? CURS.map((c) => ({ c, pct: Number((cur[c].usdMicros * 1000n) / usdTotal) / 10 })).filter((x) => x.pct > 0) : [];
-  const activeRules = (rules ?? []).filter((r) => r.status === "active").length;
+  const activeRules = (rules ?? []).filter((r) => r.status === "active" && r.kind !== "payroll").length;
 
   return (
     <div className="mp-scroll">
@@ -129,6 +130,8 @@ export function Home() {
             <Icon name="chevron" size={18} />
           </button>
         ) : null}
+
+        <PaydayCards />
 
         <div className="mp-ink-card mp-hero">
           <svg className="mp-hero-orbs" viewBox="0 0 64 64" aria-hidden="true">

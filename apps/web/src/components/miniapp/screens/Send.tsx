@@ -28,7 +28,7 @@ function usePickFromMiniPay() {
 }
 
 export function SendList() {
-  const { t, contacts, setSend, go, payout } = useApp();
+  const { t, contacts, setSend, go, payout, paydays } = useApp();
   const pick = usePickFromMiniPay();
   const [q, setQ] = useState("");
   if (contacts.length === 0)
@@ -61,6 +61,15 @@ export function SendList() {
           </span>
           <span aria-hidden="true">›</span>
         </button>
+        {paydays.schedules.length ? (
+          <button type="button" className="mp-card mp-list-row" onClick={() => go("paydays")}>
+            <span className="mp-grow mp-col" style={{ gap: 2 }}>
+              <span style={{ fontSize: 17, fontWeight: 600 }}>{t.hPaydays}</span>
+              <span className="mp-meta">{t.pdEntryB}</span>
+            </span>
+            <span aria-hidden="true">›</span>
+          </button>
+        ) : null}
         <div className="mp-card">
           {shown.length === 0 ? <div style={{ padding: 16 }} className="mp-small">{t.noMatch}</div> : null}
           {shown.map((c) => (

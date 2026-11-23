@@ -17,6 +17,7 @@
  * - Errors: `{ error: { code, message } }` with an HTTP status; `code` is one of ApiErrorCode.
  */
 import { z } from "zod";
+import { PayrollParams } from "@arbolito/rules";
 
 /** Display/prepare buffer for MiniPay's dollar-denominated gas, including approval and swap. */
 export const DOLLAR_FEE_RESERVE = 50_000n;
@@ -241,14 +242,16 @@ export const ChatRequest = z.object({
 });
 
 // ── Standing rules ("Dejá que Arbolito actúe por vos": packages/rules) ─────
+/** payroll: a schedule (POST /payroll); it sends nothing, so it needs no guard. */
+export const RuleKind = z.enum(["send", "split", "guardian", "payroll"]);
 /** A rule as the app shows it. A draft is turned on by signing `message` in MiniPay (POST /rules/confirm). */
 export const RuleCard = z.object({
   ruleId: z.string().uuid(),
-  kind: z.enum(["send", "split", "guardian"]),
+  kind: RuleKind,
   status: z.enum(["draft", "active", "stopped"]),
   /** One line in the user's language. */
   description: z.string(),
-  /** The exact text to sign (personal_sign) to turn it on. */
+  /** The exact text to sign (personal_sign) to turn it on. Empty on a payroll: it lists who is paid and how much. */
   message: z.string(),
   nextRunAt: z.string().nullable(),
   stoppedReason: z.string().nullable(),
@@ -256,13 +259,19 @@ export const RuleCard = z.object({
 /** GET /api/miniapp/rules?account= */
 export const RulesListResponse = z.object({
   rules: z.array(RuleCard),
-  runs: z.array(z.object({ ruleId: z.string().uuid(), kind: z.enum(["send", "split", "guardian"]), status: z.string(), at: z.string(), txHashes: z.array(z.string()), error: z.string().nullable() })),
+  runs: z.array(z.object({ ruleId: z.string().uuid(), kind: RuleKind, status: z.string(), at: z.string(), txHashes: z.array(z.string()), error: z.string().nullable() })),
 });
 /** POST /api/miniapp/rules/confirm: the account's personal_sign over the rule's message. */
 export const RuleConfirmRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });
 /** POST /api/miniapp/rules/cancel: the account's personal_sign over cancelText(ruleId, account). */
 export const RuleCancelRequest = z.object({ ruleId: z.string().uuid(), account: Address, signature: Hex });
 export const RuleResponse = z.object({ rule: RuleCard });
+
+/**
+ * POST /api/miniapp/payroll: creates a payroll schedule, signed. The phone builds the text (payrollText)
+ * with an id of its own and signs it; the server rebuilds it, so nothing unsigned is ever stored.
+ */
+export const PayrollCreateRequest = z.object({ id: z.string().uuid(), account: Address, lang: Lang, params: PayrollParams, signature: Hex });
 
 /** A send intent only: no wallet calls are prepared until the user reviews it in Send. */
 export const ChatSend = z.object({
