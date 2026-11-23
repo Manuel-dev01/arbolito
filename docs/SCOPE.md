@@ -19,7 +19,7 @@ Track rules: a tagged Textile FX taker conversion in the product flow; local-sta
 | Nigerian naira (cNGN) for users: hold, convert and send; Textile only; ₦ references | 🟡 tested with fakes; fork and mainnet runs to do |
 | Payouts to a payee in cNGN, wARS or wBRL: Textile firm fill, then the exact amount forwarded; the receipt names the payee | ✅ (send to a contact) |
 | Self-trade guard: a team wallet never takes a fill from our own desk; own-desk fills are left out of the counts | ✅ |
-| /metrics edition-2 view: tagged Textile taker conversions in the listed corridors, by wallets outside the team and never funded by it; payees; exclusions counted by reason | ✅ code · 👤 `TEAM_WALLETS` and `FUNDED_WALLETS` on Vercel |
+| /metrics edition-2 view: tagged Textile taker conversions in the listed corridors, by wallets outside the team and not funded directly by it; payees; exclusions counted by reason | ✅ code · 👤 `TEAM_WALLETS` and `FUNDED_WALLETS` on Vercel |
 | CBN official USD/NGN on receipts ("₦ more than the official rate") | ⬜ (needs a daily cache: the CBN file is 8 MB) |
 | Batch payouts (many payees, one review) and a payout statement for the payer | ⬜ |
 | Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes | ⬜ |
