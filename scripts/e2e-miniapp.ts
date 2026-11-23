@@ -5,10 +5,11 @@
  *   pnpm e2e:miniapp USDT wCOP 1                 plan only: quote + prepare, then release the quote
  *   pnpm e2e:miniapp USDT wCOP 1 --fork <rpc>    the calls run on an anvil fork; the firm Textile quote
  *                                               is real (Textile checks mainnet funds) and is released after
+ *   pnpm e2e:miniapp USDT cNGN 1 --fork <rpc> --to <address>   a payout: the fill, then the forward (fork only)
  *   pnpm e2e:miniapp USDT wCOP 1 --live [--yes]  Celo mainnet: send, submit, anchor the receipt
  * Gas is paid in USDT through its fee adapter on mainnet, as MiniPay does (CELO on the fork).
  */
-import { formatUnits, parseEther, type Address, type Hex } from "viem";
+import { formatUnits, getAddress, parseEther, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { TOKENS, loadEnv, txUrl } from "@arbolito/config";
 import { attributionCodes, feeCurrencyFor, hasAttribution, makePublicClient, makeWalletClient } from "@arbolito/chain";
@@ -20,7 +21,7 @@ import { createQuote } from "../apps/web/src/lib/miniapp/server/quote";
 import { getMiniappReceipt } from "../apps/web/src/lib/miniapp/server/receipt";
 import { rejectQuote } from "../apps/web/src/lib/miniapp/server/reject";
 import { submitQuote } from "../apps/web/src/lib/miniapp/server/submit";
-import { confirm, forkUrl, hasFlag, positional, runMain } from "./lib/cli";
+import { confirm, flagValue, forkUrl, hasFlag, positional, runMain } from "./lib/cli";
 
 const isSym = (s: string | undefined): s is Sym => !!s && (SYMBOLS as readonly string[]).includes(s);
 
@@ -34,6 +35,9 @@ runMain(async () => {
   const fork = forkUrl();
   const live = hasFlag("live");
   if (fork && live) throw new Error("Pass either --live or --fork, not both");
+  const toArg = flagValue("to");
+  if (toArg && !fork) throw new Error("--to only rehearses payouts on a fork");
+  const payee = toArg ? (getAddress(toArg).toLowerCase() as Address) : undefined;
 
   // Quotes and the firm quote read mainnet; only the sends go to the fork. Textile firm quotes
   // need TEXTILE_RFQ_ENABLED on the server; it is on in production (Vercel).
@@ -43,11 +47,11 @@ runMain(async () => {
   const out = TOKENS[to];
 
   console.log(`${fork ? `anvil fork ${fork}` : live ? "Celo mainnet" : "plan only"}: ${amount} ${from} → ${to} for e2e wallet ${wallet.address}`);
-  const q = await createQuote(deps, { from, to, amount, account, lang: "es" });
+  const q = await createQuote(deps, { from, to, amount, account, lang: "es" }, payee ? { recipient: payee } : undefined);
   console.log(`quote ${q.quoteId}: ${formatUnits(BigInt(q.expectedOut), out.decimals)} ${to} (min ${formatUnits(BigInt(q.minOut), out.decimals)}), venues ${q.venues.join("+")}, rate ${q.rate}`);
   console.log(`references: ${q.references.map((r) => `${r.name} ${r.pair} ${r.rate}`).join(" · ")}`);
 
-  const prepared = await prepareQuote(deps, { quoteId: q.quoteId, account });
+  const prepared = await prepareQuote(deps, { quoteId: q.quoteId, account }, payee ? { recipient: payee } : undefined);
   console.log(`prepared ${prepared.calls.length} call(s), firm until ${prepared.expiresAt}: ${prepared.calls.map((c) => c.label).join(" → ")}`);
   for (const c of prepared.calls) {
     const codes = attributionCodes(c.data as Hex);
@@ -79,7 +83,7 @@ runMain(async () => {
       if (rc.status !== "success") throw new Error(`${c.label} reverted`);
       hashes.push(hash);
       // From the Transfer logs, as the server does: a balance diff would include gas paid in the same token.
-      got += receivedInTx(rc, out.address as Address, wallet.address);
+      got += receivedInTx(rc, out.address as Address, payee ?? wallet.address);
     }
   } catch (err) {
     // Nothing is retried: a lost send may still land (the RFQ's orderDeadline bounds it).
