@@ -14,6 +14,7 @@ import { createBot } from "./bot";
 import { startAgentBuysRunner } from "./agent-buys";
 import { startCompetitorsRunner } from "./competitors";
 import { startOfficialRatesRunner } from "./official-rates";
+import { startPayrollRunner } from "./payroll";
 import { startRulesRunner } from "./rules";
 
 const env = loadEnv();
@@ -57,6 +58,8 @@ if (resumed) log(`[bot] watching ${resumed} live card(s) from before the restart
 const runner = run(bot);
 // Standing rules (RULES_RUNNER=live): runs through ArbolitoGuard with the operator key.
 const stopRules = startRulesRunner(getDb(), bot.api, env);
+// Scheduled payroll: prices each payday and tells the payer. Sends nothing, holds no key.
+const stopPayroll = startPayrollRunner(bot.api);
 // Western Union rates through buy (COMPETITORS_RUNNER=live), for "vs Western Union" on quotes and receipts.
 const stopCompetitors = startCompetitorsRunner(getDb(), env);
 // Nigeria's official USD/NGN (CBN), a few times a day: free, for receipts' "official" rate.
@@ -69,6 +72,7 @@ const stop = async () => {
   flow.stop();
   linker.stop();
   stopRules?.();
+  stopPayroll();
   stopCompetitors?.();
   stopOfficialRates();
   stopAgentBuys?.();

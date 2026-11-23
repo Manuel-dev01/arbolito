@@ -11,6 +11,8 @@ export function wrapForMiniPay(url: string, template: string | null = MINIPAY_OP
 }
 
 export interface Links {
+  /** The mini app's home (a due payday shows there). */
+  home(): string;
   /** No Discover ID: the target page explains the manual testing handoff. */
   manualHandoff?: boolean;
   /** "Confirmar en MiniPay": the mini app at this exact quote. */
@@ -45,6 +47,7 @@ export function makeLinks(baseUrl: string | undefined, template: string | null =
   };
   return {
     manualHandoff: template === null,
+    home: () => app("/app", {}),
     quote: (quoteId) => app("/app", { quote: quoteId }),
     send: (p) => app("/app", { send: p.recipient, to: p.to, amount: p.amount, token: p.token, receive: p.receive, quote: p.quoteId }),
     link: (code) => app("/app/link", { code }),
