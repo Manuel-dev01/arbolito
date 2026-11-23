@@ -1,7 +1,7 @@
 # Arbolito
 
-**An AI money-changer for Latin America, on Celo: an agent that charges, pays and settles in local stablecoins.** An *arbolito* is the street money-changer of Buenos Aires. This one lives inside MiniPay and on Telegram:
-- It changes and sends **dollars, Argentine pesos, Brazilian reais, Colombian and Mexican pesos** (USDT, wARS, wBRL, wCOP, wMXN) at the best route it can find.
+**An AI money-changer for Latin America and Nigeria, on Celo: an agent that charges, pays and settles in local stablecoins.** An *arbolito* is the street money-changer of Buenos Aires. This one lives inside MiniPay and on Telegram:
+- It changes and sends **dollars, Argentine pesos, Brazilian reais, Colombian and Mexican pesos and, since edition 2, Nigerian naira** (USDT, wARS, wBRL, wCOP, wMXN, cNGN) at the best route it can find.
 - It proves every conversion with a **receipt anchored onchain**.
 - With the user's permission, it **acts on its own**: it splits a payday into pesos, pays rent every month, and guards peso savings against devaluation, all within limits the user signs.
 - **Other agents hire it** over MCP, A2A and x402 and pay it in wARS, wBRL, wCOP, wMXN or dollars. It **pays other agents** for what it uses and rates them onchain (ERC-8004).

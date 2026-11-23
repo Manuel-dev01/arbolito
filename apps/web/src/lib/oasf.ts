@@ -14,7 +14,7 @@ export function oasfRecord() {
     schema_version: "0.8.0",
     name: "Arbolito",
     description:
-      "AI money-changer for Latin America on Celo: quotes, converts and sends USDT, wARS, wBRL, wCOP and wMXN at the best mix of Textile RFQ and Uniswap v3, anchors a verifiable receipt for every conversion, acts within limits users sign (ArbolitoGuard), charges other agents over x402 in local stablecoins, and runs a Textile FX desk.",
+      "AI money-changer for Latin America and Nigeria on Celo: quotes, converts and sends USDT, wARS, wBRL, wCOP, wMXN and cNGN at the best mix of Textile RFQ and Uniswap v3, anchors a verifiable receipt for every conversion, acts within limits users sign (ArbolitoGuard), charges other agents over x402 in local stablecoins, and runs a Textile FX desk.",
     version: "1.0.0",
     skills: [
       { id: 501, name: "Mathematical Reasoning", category: "Analytical Skills" },

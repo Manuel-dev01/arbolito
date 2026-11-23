@@ -17,11 +17,11 @@ export const A2A_VERSION = "0.3.0";
 
 export const SKILLS = [
   { id: "rates_summary", name: "LatAm dollar rates", description: "Local currency per US$ for ARS, BRL, COP and MXN, as Arbolito Desk prices them on Celo. Free.", tags: ["fx", "latam", "rates", "free"], examples: ['{"skill":"rates_summary"}'] },
-  { id: "quote", name: "Best conversion route (x402)", description: "Best route across Textile RFQ and Uniswap v3 on Celo between wARS, wBRL, wCOP, wMXN, USDT, USDC and USA₮, vs official and Western Union. US$ 0.01 over x402, payable in local stablecoins or dollars.", tags: ["fx", "quote", "x402", "wfiat"], examples: ['{"skill":"quote","from":"USDT","to":"wARS","amount":"100"}'] },
-  { id: "rates", name: "LatAm FX references (x402)", description: "Argentina's official, MEP, CCL and crypto dollars, BRL/COP/MXN references, Celo market mids, Western Union and the desk's fair values. US$ 0.005 over x402.", tags: ["fx", "oracle", "x402"], examples: ['{"skill":"rates"}'] },
+  { id: "quote", name: "Best conversion route (x402)", description: "Best route across Textile RFQ and Uniswap v3 on Celo between wARS, wBRL, wCOP, wMXN, cNGN, USDT, USDC and USA₮, vs official rates and, for pesos and reais, Western Union. US$ 0.01 over x402, payable in local stablecoins or dollars.", tags: ["fx", "quote", "x402", "wfiat"], examples: ['{"skill":"quote","from":"USDT","to":"wARS","amount":"100"}'] },
+  { id: "rates", name: "Local FX references (x402)", description: "Argentina's official, MEP, CCL and crypto dollars, BRL/COP/MXN/NGN references, Celo market mids, Western Union and the desk's fair values. US$ 0.005 over x402.", tags: ["fx", "oracle", "x402"], examples: ['{"skill":"rates"}'] },
   { id: "verify_receipt", name: "Verify a conversion receipt", description: "Checks an Arbolito receipt against Celo mainnet: anchored hash, execution and attribution tag. Free.", tags: ["proof", "receipt", "free"], examples: ['{"skill":"verify_receipt","id":"<uuid>"}'] },
   { id: "desk_state", name: "Arbolito Desk", description: "The Textile FX maker's corridors, served prices, fills and P&L. Free.", tags: ["textile", "market-making", "free"], examples: ['{"skill":"desk_state"}'] },
-  { id: "chat", name: "Ask Arbolito", description: "Ask in Spanish, Portuguese or English about changing or sending dollars, pesos and reais on Celo. Pass your wallet as metadata.account.", tags: ["chat", "es", "pt", "en"], examples: ["¿Cuántos pesos me dan por 100 dólares?"] },
+  { id: "chat", name: "Ask Arbolito", description: "Ask in Spanish, Portuguese or English about changing or sending dollars, pesos, reais and naira on Celo. Pass your wallet as metadata.account.", tags: ["chat", "es", "pt", "en"], examples: ["¿Cuántos pesos me dan por 100 dólares?"] },
 ] as const;
 
 export function agentCard(base: string) {
@@ -29,7 +29,7 @@ export function agentCard(base: string) {
     protocolVersion: A2A_VERSION,
     name: "Arbolito",
     description:
-      "An AI money-changer for Latin America on Celo. It quotes, converts and sends dollars, Argentine pesos, Brazilian reais, Colombian and Mexican pesos (USDT, wARS, wBRL, wCOP, wMXN) at the best mix of Textile RFQ and Uniswap v3, charges other agents over x402 in those same local stablecoins, and runs a Textile FX desk.",
+      "An AI money-changer for Latin America and Nigeria on Celo. It quotes, converts and sends dollars, Argentine pesos, Brazilian reais, Colombian and Mexican pesos and Nigerian naira (USDT, wARS, wBRL, wCOP, wMXN, cNGN) at the best mix of Textile RFQ and Uniswap v3, charges other agents over x402 in wARS, wBRL, wCOP, wMXN or dollars, and runs a Textile FX desk.",
     url: `${base}/api/a2a`,
     preferredTransport: "JSONRPC",
     version: "1.0.0",

@@ -96,7 +96,7 @@ export function createMcpServer(origin: string, publicUrl = origin): McpServer {
     {
       title: "Best conversion route (paid, x402)",
       description:
-        "Arbolito's best route across Textile RFQ and Uniswap v3 on Celo for converting between wARS, wBRL, wCOP, wMXN, USDT, USDC and USA₮, with alternatives and how it compares with the official rate and Western Union. Costs US$ 0.01, payable in wARS, wBRL, wCOP, wMXN, USDT, USDC or USA₮ over x402. Call without `payment` to get the requirements.",
+        "Arbolito's best route across Textile RFQ and Uniswap v3 on Celo for converting between wARS, wBRL, wCOP, wMXN, cNGN, USDT, USDC and USA₮, with alternatives and how it compares with official rates and, for pesos and reais, Western Union. Costs US$ 0.01, payable in wARS, wBRL, wCOP, wMXN, USDT, USDC or USA₮ over x402. Call without `payment` to get the requirements.",
       inputSchema: {
         from: Symbol,
         to: Symbol,
@@ -110,9 +110,9 @@ export function createMcpServer(origin: string, publicUrl = origin): McpServer {
   server.registerTool(
     "get_rates",
     {
-      title: "LatAm FX references (paid, x402)",
+      title: "Local FX references (paid, x402)",
       description:
-        "Every reference Arbolito prices with: Argentina's official, MEP, CCL and crypto dollars; BRL, COP and MXN references; Textile and Uniswap mids on Celo; Western Union's rate read through buy; and Arbolito Desk's fair values. Costs US$ 0.005 over x402 (local stablecoins or dollars). Call without `payment` to get the requirements.",
+        "Every reference Arbolito prices with: Argentina's official, MEP, CCL and crypto dollars; BRL, COP, MXN and NGN references; Textile and Uniswap mids on Celo; Western Union's rate read through buy; and Arbolito Desk's fair values. Costs US$ 0.005 over x402 (local stablecoins or dollars). Call without `payment` to get the requirements.",
       inputSchema: { payment: z.string().optional().describe("x402 v2 PAYMENT-SIGNATURE header value") },
     },
     async ({ payment }) => forwardPaid(`${origin}/api/x402/rates`, payment),
