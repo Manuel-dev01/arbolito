@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "@arbolito/chain": "workspace:*",
-    "@x402/core": "2.28.0",
-    "@x402/evm": "2.28.0",
-    "@x402/extensions": "2.28.0",
+    "@x402/core": "2.32.0",
+    "@x402/evm": "2.32.0",
+    "@x402/extensions": "2.32.0",
     "viem": "^2.57.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   }
 }

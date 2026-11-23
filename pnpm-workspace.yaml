@@ -3,3 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+# Security floors for transitive dependencies (GHSA-mrhx-c7xc-m3w5, GHSA-qv5m-9pm6-hqp3, GHSA-jpvv-r467-5p4w).
+overrides:
+  "zod@>=4.0.0 <4.6.6": ^4.6.7
+  "@hono/node-server@>=2.0.0 <2.1.6": ^2.1.6
