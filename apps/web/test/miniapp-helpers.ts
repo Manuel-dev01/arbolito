@@ -319,6 +319,16 @@ export class FakeTextile implements TextileTaker {
   submitError: Error | undefined;
   firm: (p: Parameters<TextileTaker["request"]>[0]) => TextileFirm = (p) => firmQuote(p.taker, p.sellAmount, p.sellAmount * 1600n * 10n ** 12n);
 
+  previews: Parameters<TextileTaker["preview"]>[0][] = [];
+  /** What an exact-output preview costs; null = no quote. */
+  cost: ((buyAmount: bigint) => bigint | null) | Error = () => null;
+
+  async preview(p: Parameters<TextileTaker["preview"]>[0]) {
+    this.previews.push(p);
+    if (this.cost instanceof Error) throw this.cost;
+    const c = this.cost(p.buyAmount ?? 0n);
+    return c === null ? { status: "no_quote" } : { status: "preview", sellAmount: c.toString(), buyAmount: (p.buyAmount ?? 0n).toString(), takerPays: c.toString() };
+  }
   async request(p: Parameters<TextileTaker["request"]>[0]) {
     this.requests.push(p);
     return this.firm(p);

@@ -47,14 +47,16 @@ function executedRoute(route: Route, account: Address, prepared: Prepared): Rout
   if (prepared.kind !== "textile") return { ...route, taker: account };
   const leg = route.legs[0]!;
   const buyAmount = BigInt(prepared.buyAmount);
+  const amountIn = prepared.exactOut ? BigInt(prepared.takerPays) : route.amountIn;
   const firmQuote: Quote = {
     ...leg.quote,
+    amountIn,
     amountOut: buyAmount,
     firm: true,
     expiresAt: Math.floor(Date.parse(prepared.expiresAt) / 1000),
     raw: { kind: "firm", ...prepared.firm },
   };
-  return { ...route, taker: account, legs: [{ quote: firmQuote, minOut: buyAmount }], expectedOut: buyAmount, minOut: buyAmount };
+  return { ...route, taker: account, amountIn, legs: [{ quote: firmQuote, minOut: buyAmount }], expectedOut: buyAmount, minOut: buyAmount };
 }
 
 /** Report the fill to Textile once. Never retried: on error, read the status and record both. */

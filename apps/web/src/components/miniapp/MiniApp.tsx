@@ -512,7 +512,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     }
     setSend({ busy: true });
     try {
-      const q = await ready.api.quote({ from: send.from ?? SYM_OF[send.pay], to: send.to ?? SYM_OF[sendContact.cur], amount, account: ready.account, lang });
+      const q = await ready.api.quote({ from: send.from ?? SYM_OF[send.pay], to: send.to ?? SYM_OF[sendContact.cur], amount, account: ready.account, recipient: (sendContact.address ?? undefined) as Address | undefined, lang });
       setSend({ quote: q, quoteAt: Date.now(), busy: false });
       if (screen !== "send-quote") go("send-quote");
     } catch (e) {

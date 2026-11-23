@@ -23,6 +23,8 @@ export const DOLLAR_FEE_RESERVE = 50_000n;
 
 export const SYMBOLS = ["wARS", "wBRL", "wCOP", "wMXN", "cNGN", "USDT", "USAT", "USDC"] as const;
 export const Sym = z.enum(SYMBOLS);
+/** Currencies that can be paid to the exact amount: Textile is their only market, and it quotes by what arrives. */
+export const EXACT_OUT: readonly z.infer<typeof Sym>[] = ["cNGN", "wCOP"];
 export type Sym = z.infer<typeof Sym>;
 
 const Address = z.string().regex(/^0x[0-9a-fA-F]{40}$/);
@@ -70,7 +72,20 @@ export const BalancesResponse = z.object({
 });
 
 // ── POST /api/miniapp/quote ────────────────────────────────────────────────
-export const QuoteRequest = z.object({ from: Sym, to: Sym, amount: HumanAmount, account: Address.optional(), lang: Lang.optional() });
+export const QuoteRequest = z
+  .object({
+    from: Sym,
+    to: Sym,
+    /** How much of `from` to spend. */
+    amount: HumanAmount.optional(),
+    /** Or exactly how much of `to` must arrive (EXACT_OUT currencies, paid in USDT). */
+    amountOut: HumanAmount.optional(),
+    account: Address.optional(),
+    /** Binds the quote to a payment: it can only be prepared for this wallet, and is never offered again as a change. */
+    recipient: Address.optional(),
+    lang: Lang.optional(),
+  })
+  .refine((r) => (r.amount === undefined) !== (r.amountOut === undefined), "Pass amount or amountOut, not both.");
 export const QuoteResponse = z.object({
   quoteId: z.string().uuid(),
   /** ISO time; the card counts down to it and dims after. */
@@ -117,6 +132,8 @@ export const PrepareResponse = z.object({
   expiresAt: z.string(),
   expectedOut: Atomic,
   minOut: Atomic,
+  /** On an exact-output quote: what it costs, from the firm quote. */
+  amountIn: Atomic.optional(),
 });
 /**
  * 409 needs_taker_proof body: what the wallet must sign (once per ~12 h) before retrying
@@ -136,10 +153,13 @@ export const NeedsTakerProof = z.object({
  * (from /quote, same pair and amount) is prepared with the contact as recipient; submit it with
  * /submit like a conversion, and its receipt names the recipient.
  */
-export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount, quoteId: z.string().uuid().optional(), takerProof: TakerProof.optional(),
+export const SendPrepareRequest = z.object({ account: Address, recipient: Address, from: Sym, to: Sym, amount: HumanAmount.optional(),
+  /** On an exact payment: what must arrive, as quoted. */
+  amountOut: HumanAmount.optional(), quoteId: z.string().uuid().optional(), takerProof: TakerProof.optional(),
   /** In a batch payout: what's left to pay in this currency (atomic `from`), so one approval covers it. Capped by the balance. */
   approveUpTo: Atomic.optional() });
-export const SendPrepareResponse = z.object({ calls: z.array(Call), expectedOut: Atomic, minOut: Atomic, quoteId: z.string().uuid().optional() });
+/** amountIn: what an exact payment costs, from its firm quote. */
+export const SendPrepareResponse = z.object({ calls: z.array(Call), expectedOut: Atomic, minOut: Atomic, amountIn: Atomic.optional(), quoteId: z.string().uuid().optional() });
 
 // ── POST /api/miniapp/submit ───────────────────────────────────────────────
 /** After the wallet sent the calls: register the result, build and anchor the receipt. */

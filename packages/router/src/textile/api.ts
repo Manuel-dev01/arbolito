@@ -103,7 +103,12 @@ export interface TradeParams {
   buyToken: Address;
   /** Exact input, atomic units. */
   sellAmount: bigint;
+  /** Exact output instead: what the taker must receive; `sellAmount` isn't sent. */
+  buyAmount?: bigint;
 }
+
+/** Textile takes exactly one of the two sizes. */
+const sizeOf = (p: TradeParams) => (p.buyAmount !== undefined ? { buyAmount: p.buyAmount.toString() } : { sellAmount: p.sellAmount.toString() });
 
 /** A keyless taker's proof of control, signed by the taker wallet (here or in the user's own wallet). */
 export interface TakerProof {
@@ -197,7 +202,7 @@ export class TextileClient {
 
   /** Free indicative quote from published maker levels. */
   async preview(p: TradeParams, timeoutMs = 1_500): Promise<TextilePreview> {
-    const body = { chainId: p.chainId, sellToken: p.sellToken, buyToken: p.buyToken, sellAmount: p.sellAmount.toString() };
+    const body = { chainId: p.chainId, sellToken: p.sellToken, buyToken: p.buyToken, ...sizeOf(p) };
     return (await this.call("/rfq/preview", { method: "POST", body: JSON.stringify(body), timeoutMs }, previewSchema)).data;
   }
 
@@ -211,7 +216,7 @@ export class TextileClient {
       chainId: p.chainId,
       sellToken: p.sellToken,
       buyToken: p.buyToken,
-      sellAmount: p.sellAmount.toString(),
+      ...sizeOf(p),
       taker: p.taker,
     };
     if (!this.apiKey) {

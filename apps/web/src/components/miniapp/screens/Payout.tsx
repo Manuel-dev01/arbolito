@@ -4,32 +4,35 @@ import { useState } from "react";
 import { fill } from "../../../i18n/miniapp";
 import { spendableBalance } from "../../../lib/miniapp/client/derive";
 import { mapApiError } from "../../../lib/miniapp/client/errors";
-import { CUR_OF, fmtMoney, fmtSym, parseHuman } from "../../../lib/miniapp/client/format";
-import { canContinue, runFinished, type PayoutItem } from "../../../lib/miniapp/client/payout";
+import { CUR_OF, PREFIX, fmtMoney, fmtSym, parseHuman } from "../../../lib/miniapp/client/format";
+import { canContinue, costCap, runFinished, type PayoutItem } from "../../../lib/miniapp/client/payout";
 import { namesFragment, statementId } from "../../../lib/payout-link";
 import { Frame, useApp } from "../context";
 import { Badge, Spinner } from "../ui";
-import { PAY_SYM, payable, payoutAmount } from "../use-payout";
+import { PAY_SYM, canExact, exactAmount, payable, payoutAmount } from "../use-payout";
 
 const usd = (items: { amount: string }[]) => items.reduce((n, i) => n + parseHuman(i.amount, 6), 0n);
 
 /** Who gets paid and how much: one amount per saved payee. */
 export function PayoutPick() {
-  const { t, lang, contacts, bal, payout, go } = useApp();
+  const { t, lang, contacts, bal, prices, payout, go } = useApp();
   const list = contacts.filter(payable);
   const left = contacts.length - list.length;
-  const picked = list.map((c) => payoutAmount(payout.amounts[c.id])).filter((a): a is string => a !== null);
-  const total = usd(picked.map((amount) => ({ amount })));
+  const value = (c: (typeof list)[number]) => (payout.exact[c.id] ? exactAmount(payout.amounts[c.id]) : payoutAmount(payout.amounts[c.id]));
+  const picked = list.filter((c) => value(c) !== null);
+  // Local amounts are estimated here; the review prices them.
+  const total = picked.reduce((n, c) => n + (payout.exact[c.id] ? (parseHuman(value(c)!, 6) * (prices[c.cur] ?? 0n)) / 1_000_000n : parseHuman(value(c)!, 6)), 0n);
+  const about = picked.some((c) => payout.exact[c.id]);
   const have = spendableBalance(bal.data, PAY_SYM);
   const over = bal.data !== null && total > have;
-  const bad = list.some((c) => (payout.amounts[c.id] ?? "").trim() !== "" && payoutAmount(payout.amounts[c.id]) === null);
+  const bad = list.some((c) => (payout.amounts[c.id] ?? "").trim() !== "" && value(c) === null);
   const primary = payout.reviewing
     ? { label: t.searching, kind: "busy" as const }
     : over
       ? { label: t.insufficient, kind: "off" as const }
       : !picked.length || bad
         ? { label: t.poReview, kind: "off" as const }
-        : { label: `${t.poReview} · ${fmtMoney(total, 6, "USD", lang)}`, onClick: payout.requestReview };
+        : { label: `${t.poReview} · ${about ? "≈ " : ""}${fmtMoney(total, 6, "USD", lang)}`, onClick: payout.requestReview };
   if (!list.length)
     return (
       <Frame primary={{ label: t.addContact, onClick: () => go("send-add") }}>
@@ -46,31 +49,38 @@ export function PayoutPick() {
         <p className="mp-p">{t.poLead}</p>
         <div className="mp-card">
           {list.map((c) => (
-            <label key={c.id} className="mp-list-row" style={{ minHeight: 68 }}>
+            <div key={c.id} className="mp-list-row" style={{ minHeight: 68 }}>
               <span className="mp-avatar">{c.name[0]}</span>
               <span className="mp-grow mp-col" style={{ gap: 2, minWidth: 0 }}>
                 <span style={{ fontSize: 17, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
                 <span className="mp-meta">{fill(t.receives, { c: t.curLower[c.cur] })}</span>
               </span>
               <span className="mp-row" style={{ gap: 6, flex: "none" }}>
-                <span className="mp-meta">US$</span>
+                {canExact(c) ? (
+                  <button type="button" className="mp-link inline" style={{ minWidth: 44, minHeight: 44 }} aria-label={fill(t.poSwitch, { n: c.name })} onClick={() => payout.setExact(c.id, !payout.exact[c.id])}>
+                    {payout.exact[c.id] ? PREFIX[c.cur] : "US$"} ⇅
+                  </button>
+                ) : (
+                  <span className="mp-meta">US$</span>
+                )}
                 <input
                   className="mp-input"
                   inputMode="decimal"
                   autoComplete="off"
-                  aria-label={fill(t.poAmountFor, { n: c.name })}
+                  aria-label={fill(payout.exact[c.id] ? t.poExactFor : t.poAmountFor, { n: c.name, c: t.curLower[c.cur] })}
                   value={payout.amounts[c.id] ?? ""}
-                  onChange={(e) => payout.setAmount(c.id, e.target.value.replace(/[^\d.,]/g, "").slice(0, 9))}
+                  onChange={(e) => payout.setAmount(c.id, e.target.value.replace(/[^\d.,]/g, "").slice(0, 12))}
                   placeholder="0"
                   style={{ width: 84, minHeight: 44, textAlign: "right" }}
                 />
               </span>
-            </label>
+            </div>
           ))}
         </div>
         <div className="mp-meta">
           {t.available} {fmtMoney(have, 6, "USD", lang)}
         </div>
+        {list.some(canExact) ? <div className="mp-meta">{t.poExactNote}</div> : null}
         {left > 0 ? <div className="mp-soft mp-small">{t.poLeftOut}</div> : null}
         <button type="button" className="mp-link inline" style={{ alignSelf: "flex-start" }} onClick={() => go("send-add")}>
           + {t.addContact}
@@ -82,11 +92,12 @@ export function PayoutPick() {
 
 /** Everything at once, before anything is signed. */
 export function PayoutReview() {
-  const { t, lang, payout, go } = useApp();
+  const { t, lang, bal, payout, go } = useApp();
   const items = payout.review;
   if (!items?.length) return <PayoutPick />;
+  const over = bal.data !== null && items.reduce((n, i) => n + costCap(i), 0n) > spendableBalance(bal.data, PAY_SYM);
   return (
-    <Frame note={t.poSignNote} primary={{ label: fill(t.poConfirm, { n: String(items.length) }), onClick: payout.confirm }} secondary={{ label: t.cancel, onClick: () => go("payout") }}>
+    <Frame note={t.poSignNote} primary={over ? { label: t.insufficient, kind: "off" } : { label: fill(t.poConfirm, { n: String(items.length) }), onClick: payout.confirm }} secondary={{ label: t.cancel, onClick: () => go("payout") }}>
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
         <div className="mp-col" style={{ gap: 2 }}>
           <span className="mp-small">{t.aboutTo}</span>
@@ -100,10 +111,14 @@ export function PayoutReview() {
               <span className="mp-avatar">{i.name[0]}</span>
               <span className="mp-grow mp-col" style={{ gap: 2 }}>
                 <span style={{ fontSize: 16, fontWeight: 600 }}>{i.name}</span>
-                <span className="mp-meta">{fmtMoney(parseHuman(i.amount, 6), 6, "USD", lang)}</span>
+                <span className="mp-meta">
+                  {i.exact !== undefined ? "≈ " : ""}
+                  {fmtMoney(parseHuman(i.amount, 6), 6, "USD", lang)}
+                </span>
               </span>
               <span className="mp-save" style={{ fontSize: 17, fontWeight: 800 }}>
-                ≈ {fmtSym(i.reviewedOut, i.to, lang)}
+                {i.exact !== undefined ? "" : "≈ "}
+                {fmtSym(i.reviewedOut, i.to, lang)}
               </span>
             </div>
           ))}
@@ -130,7 +145,9 @@ function Row({ item, index }: { item: PayoutItem; index: number }) {
             ? fmtSym(item.paidOut ?? item.reviewedOut, item.to, lang)
             : item.state === "held"
               ? item.heldOut
-                ? fill(t.poHeld, { a: fmtSym(item.heldOut, item.to, lang), b: fmtSym(item.reviewedOut, item.to, lang) })
+                ? item.exact !== undefined
+                  ? fill(t.poHeldCost, { a: fmtMoney(BigInt(item.heldOut), 6, "USD", lang), b: fmtMoney(parseHuman(item.amount, 6), 6, "USD", lang) })
+                  : fill(t.poHeld, { a: fmtSym(item.heldOut, item.to, lang), b: fmtSym(item.reviewedOut, item.to, lang) })
                 : t.poStopped
               : item.state === "converted"
                 ? fill(t.convNotSentB, { y: t.curLower[CUR_OF[item.to]], n: item.name })

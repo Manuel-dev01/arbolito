@@ -55,11 +55,13 @@ export const SendPrepareRequest = z.object({
   recipient: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
   from: Sym,
   to: Sym,
-  amount: z.string(),
+  amount: z.string().optional(),
   quoteId: z.string().uuid().optional(),
   takerProof: PrepareRequest.shape.takerProof,
   /** Batch payouts: what is left to pay in this currency (contract.ts). */
   approveUpTo: z.string().regex(/^\d+$/).optional(),
+  /** Exact payments: what must arrive. */
+  amountOut: z.string().optional(),
 });
 export type SendPrepareRequest = z.infer<typeof SendPrepareRequest>;
 
@@ -104,7 +106,7 @@ export interface ApiClient {
    * declined (4001). Marks the quote failed / rejected_in_minipay so Telegram's card follows.
    */
   reject(req: { quoteId: string; account: string; code?: number }): Promise<{ quoteId: string; status: string }>;
-  sendPrepare(req: SendPrepareRequest): Promise<Calls & { expectedOut: string; minOut: string }>;
+  sendPrepare(req: SendPrepareRequest): Promise<Calls & { expectedOut: string; minOut: string; amountIn?: string }>;
   listRules(account: string): Promise<RulesList>;
   confirmRule(req: z.input<typeof RuleConfirmRequest>): Promise<Rule>;
   cancelRule(req: z.input<typeof RuleCancelRequest>): Promise<Rule>;
@@ -118,7 +120,7 @@ export interface ApiOptions {
   fetch?: FetchLike;
 }
 
-const SendPrepareResponse = CallsResponse.extend({ expectedOut: z.string().regex(/^\d+$/), minOut: z.string().regex(/^\d+$/) });
+const SendPrepareResponse = CallsResponse.extend({ expectedOut: z.string().regex(/^\d+$/), minOut: z.string().regex(/^\d+$/), amountIn: z.string().regex(/^\d+$/).optional() });
 const PauseResponse = z.object({ paused: z.boolean() });
 /** Mirrors lib/miniapp/server/reject.ts (server-only module, so not imported here). */
 const RejectRequest = z.object({ quoteId: z.string().uuid(), account: z.string().regex(/^0x[0-9a-fA-F]{40}$/), code: z.number().int().optional() });

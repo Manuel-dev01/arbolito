@@ -57,6 +57,8 @@ export interface PreparedTextile extends SendFields {
   orderDeadline: string;
   buyAmount: string;
   takerPays: string;
+  /** The payee gets exactly buyAmount, so the cost is takerPays, not the previewed amountIn. */
+  exactOut?: true;
   /** The firm quote minus the claim token, kept for the ProofBundle. */
   firm: Record<string, unknown>;
   report?: { status: "submitted" | "submit_failed"; statusAfter?: string; error?: string };
@@ -66,6 +68,8 @@ export type Prepared = PreparedUniswap | PreparedTextile;
 
 /** A firm quote must have at least this long left when handed to the wallet (two sends + receipts). */
 export const FIRM_MARGIN_MS = 20_000;
+/** An exact payment may cost at most this much over its preview (0.5%). */
+export const EXACT_COST_BPS = 50n;
 /** Textile's validity windows for a TakerControl proof. */
 const PROOF_WINDOW_MS = { eip712: 60_000, eip191: 5 * 60_000 } as const;
 
@@ -201,6 +205,7 @@ async function prepareTextile(
   proof: z.infer<typeof TakerProof> | undefined,
   recipient?: Address,
   approveUpTo = 0n,
+  exactOut = false,
 ): Promise<PreparedTextile> {
   const leg = route.legs[0]!;
   if (!deps.textile.hasPartnerKey) {
@@ -216,6 +221,7 @@ async function prepareTextile(
       sellToken: leg.quote.tokenIn,
       buyToken: leg.quote.tokenOut,
       sellAmount: route.amountIn,
+      ...(exactOut ? { buyAmount: route.expectedOut } : {}),
       taker: account,
       ...(proof && !deps.textile.hasPartnerKey ? { takerProof: { nonce: proof.nonce as Hex, issuedAt: proof.issuedAt, signature: proof.signature as Hex, scheme: proof.scheme } } : {}),
     });
@@ -247,8 +253,13 @@ async function prepareTextile(
   };
   // Same checks as executeRoute, before anything reaches the wallet. Any failure releases the inventory.
   if (!eq(q.taker, account)) await cancel(upstream("Textile bound the quote to another wallet."), "textile_bad_quote");
-  if (BigInt(q.sellAmount) !== route.amountIn) await cancel(upstream("Textile quoted a different size."), "textile_bad_quote");
-  if (takerPays > route.amountIn) await cancel(upstream("Textile asked for more than the amount."), "textile_bad_quote");
+  if (exactOut) {
+    if (buyAmount !== route.expectedOut) await cancel(upstream("Textile quoted a different size."), "textile_bad_quote");
+    if (takerPays * 10_000n > route.amountIn * (10_000n + EXACT_COST_BPS)) await cancel(priceChanged(), "price_changed");
+  } else {
+    if (BigInt(q.sellAmount) !== route.amountIn) await cancel(upstream("Textile quoted a different size."), "textile_bad_quote");
+    if (takerPays > route.amountIn) await cancel(upstream("Textile asked for more than the amount."), "textile_bad_quote");
+  }
   if (!eq(q.spender, reactor) || !eq(swapTx.to, reactor)) await cancel(upstream("Textile returned an unexpected contract."), "textile_bad_quote");
   if (swapTx.chainId !== deps.chainId || BigInt(swapTx.value) !== 0n) await cancel(upstream("Textile returned an unexpected transaction."), "textile_bad_quote");
   if (buyAmount < route.minOut) await cancel(priceChanged(), "price_changed");
@@ -296,6 +307,7 @@ async function prepareTextile(
     orderDeadline: q.orderDeadline,
     buyAmount: buyAmount.toString(),
     takerPays: takerPays.toString(),
+    ...(exactOut ? { exactOut: true as const } : {}),
     firm: firmPublic as Record<string, unknown>,
   };
 }
@@ -308,6 +320,7 @@ function toResponse(quoteId: string, p: Prepared): z.infer<typeof PrepareRespons
     expectedOut: p.kind === "textile" ? p.buyAmount : p.expectedOut,
     // A firm Textile fill is exact: the guaranteed minimum is the quoted amount.
     minOut: p.kind === "textile" ? p.buyAmount : p.minOut,
+    ...(p.kind === "textile" && p.exactOut ? { amountIn: p.takerPays } : {}),
   };
 }
 
@@ -324,16 +337,17 @@ export async function prepareQuote(deps: MiniappDeps, req: z.infer<typeof Prepar
     throw quoteExpired();
   }
 
-  const { route, sendRecipient } = decodePayload(row.payload);
+  const { route, sendRecipient, exactOut } = decodePayload(row.payload);
   if (sendRecipient && opts.recipient?.toLowerCase() !== sendRecipient.toLowerCase()) throw badRequest("This quote belongs to a send. Review it with its saved recipient in Send.");
-  await checkFeeReserve(deps, account, symOf(route.tokenIn), route.amountIn);
+  // An exact payment may cost up to its tolerance more than previewed: the wallet must cover that.
+  await checkFeeReserve(deps, account, symOf(route.tokenIn), exactOut ? (route.amountIn * (10_000n + EXACT_COST_BPS)) / 10_000n : route.amountIn);
   const kind = routeKind(route);
   let prepared: Prepared;
   try {
     if (kind === "uniswap") prepared = await prepareUniswap(deps, route, account, row, opts.recipient, opts.approveUpTo);
     else if (kind === "textile") {
       if (!deps.textileEnabled) throw final(notReady("Textile execution is not enabled yet."), "textile_disabled");
-      prepared = await prepareTextile(deps, route, account, req.takerProof, opts.recipient, opts.approveUpTo);
+      prepared = await prepareTextile(deps, route, account, req.takerProof, opts.recipient, opts.approveUpTo, exactOut);
     } else throw final(noRoute("This route can't be executed from a wallet in one go."), "no_route");
   } catch (err) {
     const error = err instanceof ApiFailure ? quoteError.get(err) : undefined;

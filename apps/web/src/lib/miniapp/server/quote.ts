@@ -2,10 +2,10 @@ import { formatUnits, parseUnits, zeroAddress, type Address } from "viem";
 import type { z } from "zod";
 import { TOKENS, tokenByAddress } from "@arbolito/config";
 import { savingsVsOfficial } from "@arbolito/proof";
-import { plan, toAtomic, type Quote, type Reference, type Route } from "@arbolito/router";
-import { SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
+import { TextileApiError, plan, toAtomic, type Quote, type Reference, type Route } from "@arbolito/router";
+import { EXACT_OUT, SYMBOLS, type QuoteRequest, type QuoteResponse, type Sym } from "../contract";
 import type { MiniappDeps } from "./deps";
-import { ApiFailure, badRequest, belowMinimum, noRoute, notFound, upstream } from "./errors";
+import { ApiFailure, badRequest, belowMinimum, noRoute, notFound, notReady, upstream } from "./errors";
 import { decodePayload, encodePayload } from "./serde";
 import type { QuoteRow } from "./store";
 import { vsWesternUnion } from "./competitors";
@@ -118,13 +118,26 @@ export async function planQuote(deps: MiniappDeps, from: Sym, to: Sym, amountIn:
     if (planned.venueErrors.length) throw upstream("A market did not answer. Try again; no money moved.");
     throw noRoute();
   }
-  // Even when the better venue timed out, a drained pool's dust quote must not be offered.
-  // Use independent references (never the damaged pool's own mid); normal FX spreads remain valid.
+  assertHealthy(route, from, to, refs.references, planned.venueErrors.length > 0);
+  return {
+    route,
+    alternatives: all.filter((r) => r !== route),
+    quotesConsidered: planned.quotesConsidered,
+    references: refs.references,
+    blockNumber,
+  };
+}
+
+/**
+ * Even when the better venue timed out, a drained pool's dust quote must not be offered. Uses
+ * independent references (never the damaged pool's own mid); normal FX spreads remain valid.
+ */
+function assertHealthy(route: Route, from: Sym, to: Sym, references: readonly Reference[], venueDown: boolean): void {
   const perUsd = (s: Sym): bigint | null => {
     if (TOKENS[s].kind === "usd") return 10n ** 18n;
     const currency = s.slice(1).toUpperCase();
     for (const name of ["textile_mid", "crypto", "interbank", "official"] as const) {
-      const r = refs.references.find((x) => x.name === name && x.pair === `USD/${currency}`);
+      const r = references.find((x) => x.name === name && x.pair === `USD/${currency}`);
       if (r) {
         try { const n = parseUnits(r.rate, 18); if (n > 0n) return n; } catch { /* skip malformed reference */ }
       }
@@ -134,19 +147,49 @@ export async function planQuote(deps: MiniappDeps, from: Sym, to: Sym, amountIn:
   const inputPerUsd = perUsd(from);
   const outputPerUsd = perUsd(to);
   if (inputPerUsd && outputPerUsd) {
-    const fairOut = (amountIn * outputPerUsd * 10n ** BigInt(TOKENS[to].decimals)) / (inputPerUsd * 10n ** BigInt(TOKENS[from].decimals));
+    const fairOut = (route.amountIn * outputPerUsd * 10n ** BigInt(TOKENS[to].decimals)) / (inputPerUsd * 10n ** BigInt(TOKENS[from].decimals));
     if (route.expectedOut * 2n < fairOut) {
-      if (planned.venueErrors.length) throw upstream("A market did not answer and the remaining pool has insufficient liquidity.");
+      if (venueDown) throw upstream("A market did not answer and the remaining pool has insufficient liquidity.");
       throw noRoute("There is not enough healthy liquidity for this amount right now.");
     }
   }
-  return {
-    route,
-    alternatives: all.filter((r) => r !== route),
-    quotesConsidered: planned.quotesConsidered,
-    references: refs.references,
-    blockNumber,
+}
+
+/**
+ * A payment whose payee must get exactly `amountOut` ("₦75,000"): Textile's preview says what it costs.
+ * Only for currencies whose one market is Textile (EXACT_OUT): there is no better venue to miss.
+ */
+export async function planExactOut(deps: MiniappDeps, from: Sym, to: Sym, amountOut: bigint, account?: Address): Promise<PlannedQuote> {
+  if (from !== "USDT" || !EXACT_OUT.includes(to)) throw badRequest("This currency can't be paid to the exact amount. Enter the dollars instead.");
+  if (!deps.textileEnabled) throw notReady("Textile execution is not enabled yet.");
+  const tokenIn = TOKENS[from].address;
+  const tokenOut = TOKENS[to].address;
+  const blockNumber = await deps.chain.getBlockNumber();
+  const [preview, refs] = await Promise.all([
+    deps.textile.preview({ chainId: deps.chainId, sellToken: tokenIn, buyToken: tokenOut, sellAmount: 0n, buyAmount: amountOut }, 5_000).catch((err: unknown) => {
+      if (err instanceof TextileApiError && err.body.includes("corridor_unavailable")) throw noRoute();
+      throw upstream("A market did not answer. Try again; no money moved.");
+    }),
+    deps.references(blockNumber).catch(() => ({ references: [] as Reference[], unavailable: ["all"] })),
+  ]);
+  const cost = preview.takerPays ?? preview.sellAmount;
+  if (preview.status !== "preview" || !cost || BigInt(cost) <= 0n || preview.buyAmount === undefined || BigInt(preview.buyAmount) !== amountOut) throw noRoute("No maker can fill this size right now.");
+  const amountIn = BigInt(cost);
+  if (amountIn < TEXTILE_MIN_USD_MICROS) throw belowMinimum();
+  const quote: Quote = { venue: "textile_rfq", tokenIn, tokenOut, amountIn, amountOut, blockNumber, firm: false, raw: { kind: "preview", ...preview } };
+  const route: Route = {
+    id: crypto.randomUUID(),
+    label: `${from} →(textile) ${to}, exact output`,
+    legs: [{ quote, minOut: amountOut }],
+    tokenIn,
+    tokenOut,
+    amountIn,
+    expectedOut: amountOut,
+    minOut: amountOut,
+    taker: account ?? zeroAddress,
   };
+  assertHealthy(route, from, to, refs.references, false);
+  return { route, alternatives: [], quotesConsidered: [quote], references: refs.references, blockNumber };
 }
 
 export function toQuoteResponse(row: Pick<QuoteRow, "id" | "expiresAt">, q: PlannedQuote): z.infer<typeof QuoteResponse> {
@@ -187,15 +230,16 @@ export async function openQuote(deps: MiniappDeps, account: Address): Promise<{ 
 
 /** POST /quote: plan, store the quote (≈60 s) and map it to the contract. */
 export async function createQuote(deps: MiniappDeps, req: z.infer<typeof QuoteRequest>, intent?: { recipient: string }): Promise<z.infer<typeof QuoteResponse>> {
-  const amountIn = parseAmount(req.from, req.amount);
   const account = req.account ? (req.account.toLowerCase() as Address) : undefined;
-  const q = await planQuote(deps, req.from, req.to, amountIn, account);
+  const exact = req.amountOut !== undefined;
+  const q = exact ? await planExactOut(deps, req.from, req.to, parseAmount(req.to, req.amountOut!), account) : await planQuote(deps, req.from, req.to, parseAmount(req.from, req.amount ?? "0"), account);
+  const recipient = intent?.recipient ?? req.recipient;
   const row = await deps.store().insertQuote({
     account: account ?? null,
     fromSym: req.from,
     toSym: req.to,
-    amountIn: amountIn.toString(),
-    payload: encodePayload({ ...q, lang: req.lang ?? null, sendRecipient: intent?.recipient.toLowerCase() }),
+    amountIn: q.route.amountIn.toString(),
+    payload: encodePayload({ ...q, lang: req.lang ?? null, sendRecipient: recipient?.toLowerCase(), ...(exact ? { exactOut: true as const } : {}) }),
     expiresAt: new Date(deps.now() + QUOTE_TTL_MS),
   });
   return toQuoteResponse(row, q);

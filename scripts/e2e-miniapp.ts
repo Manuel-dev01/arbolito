@@ -5,7 +5,7 @@
  *   pnpm e2e:miniapp USDT wCOP 1                 plan only: quote + prepare, then release the quote
  *   pnpm e2e:miniapp USDT wCOP 1 --fork <rpc>    the calls run on an anvil fork; the firm Textile quote
  *                                               is real (Textile checks mainnet funds) and is released after
- *   pnpm e2e:miniapp USDT cNGN 1 --fork <rpc> --to <address> [--approve <total>]   a payout: the fill, then the forward; --approve as in a batch (fork only)
+ *   pnpm e2e:miniapp USDT cNGN 1 --fork <rpc> --to <address> [--approve <total>] [--exact]   a payout: the fill, then the forward; --approve as in a batch, --exact when the amount is what must arrive (fork only)
  *   pnpm e2e:miniapp USDT wCOP 1 --live [--yes]  Celo mainnet: send, submit, anchor the receipt
  * Gas is paid in USDT through its fee adapter on mainnet, as MiniPay does (CELO on the fork).
  */
@@ -39,6 +39,8 @@ runMain(async () => {
   if (toArg && !fork) throw new Error("--to only rehearses payouts on a fork");
   const approve = flagValue("approve");
   if (approve && !toArg) throw new Error("--approve goes with --to");
+  const exact = hasFlag("exact");
+  if (exact && !toArg) throw new Error("--exact goes with --to");
   const payee = toArg ? (getAddress(toArg).toLowerCase() as Address) : undefined;
 
   // Quotes and the firm quote read mainnet; only the sends go to the fork. Textile firm quotes
@@ -49,11 +51,12 @@ runMain(async () => {
   const out = TOKENS[to];
 
   console.log(`${fork ? `anvil fork ${fork}` : live ? "Celo mainnet" : "plan only"}: ${amount} ${from} → ${to} for e2e wallet ${wallet.address}`);
-  const q = await createQuote(deps, { from, to, amount, account, lang: "es" }, payee ? { recipient: payee } : undefined);
+  const q = await createQuote(deps, { from, to, ...(exact ? { amountOut: amount } : { amount }), account, recipient: payee, lang: "es" });
   console.log(`quote ${q.quoteId}: ${formatUnits(BigInt(q.expectedOut), out.decimals)} ${to} (min ${formatUnits(BigInt(q.minOut), out.decimals)}), venues ${q.venues.join("+")}, rate ${q.rate}`);
   console.log(`references: ${q.references.map((r) => `${r.name} ${r.pair} ${r.rate}`).join(" · ")}`);
 
   const prepared = await prepareQuote(deps, { quoteId: q.quoteId, account }, payee ? { recipient: payee, approveUpTo: approve ? parseUnits(approve, TOKENS[from].decimals) : undefined } : undefined);
+  if (prepared.amountIn) console.log(`costs exactly ${formatUnits(BigInt(prepared.amountIn), TOKENS[from].decimals)} ${from} (previewed ${formatUnits(BigInt(q.amountIn), TOKENS[from].decimals)})`);
   console.log(`prepared ${prepared.calls.length} call(s), firm until ${prepared.expiresAt}: ${prepared.calls.map((c) => c.label).join(" → ")}`);
   for (const c of prepared.calls) {
     const codes = attributionCodes(c.data as Hex);

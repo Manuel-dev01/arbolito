@@ -3,7 +3,7 @@ import { decodeFunctionData, type Address, type Hex } from "viem";
 import { CONTRACTS, TEAM_WALLETS, TOKENS, teamWallets } from "@arbolito/config";
 import { attributionCodes } from "@arbolito/chain";
 import { erc20Abi, swapRouter02Abi } from "@arbolito/router";
-import { ReceiptsListResponse, SendPrepareResponse } from "../src/lib/miniapp/contract";
+import { QuoteRequest, ReceiptsListResponse, SendPrepareResponse } from "../src/lib/miniapp/contract";
 import { setDeps } from "../src/lib/miniapp/server/deps";
 import { ApiFailure } from "../src/lib/miniapp/server/errors";
 import { createQuote } from "../src/lib/miniapp/server/quote";
@@ -144,6 +144,85 @@ describe("naira payouts (cNGN, Textile only)", () => {
     const bundle = row.bundle as { request: { recipient?: string; tokenOut: string }; execution: { deliveryTxHash?: string } };
     expect(bundle.request).toMatchObject({ recipient: CONTACT, tokenOut: TOKENS.cNGN.address });
     expect(bundle.execution.deliveryTxHash).toBe(hashes[2]);
+  });
+});
+
+describe("exact payments", () => {
+  const NGN = TOKENS.cNGN;
+  const OUT = 75_000_000_000n; // ₦75,000
+  const COST = 51_786_080n; // Textile's preview, 2026-11-23
+  async function rigged(firm: { pays?: bigint; out?: bigint } = {}) {
+    const rig = makeRig();
+    rig.textile.hasPartnerKey = true;
+    rig.textile.cost = () => COST;
+    rig.textile.firm = (p) => {
+      const f = firmQuote(p.taker, firm.pays ?? COST, firm.out ?? OUT);
+      return f;
+    };
+    const q = await createQuote(rig.deps, { from: "USDT", to: "cNGN", amountOut: "75000", account: wallet.address, recipient: OTHER });
+    const prepare = (o: { amountOut?: string; amount?: string; recipient?: Address } = { amountOut: "75000" }) =>
+      prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "cNGN", quoteId: q.quoteId, ...o });
+    return { rig, q, prepare };
+  }
+
+  it("quotes by what arrives, and asks Textile for exactly that", async () => {
+    const { rig, q, prepare } = await rigged({ pays: 51_900_000n });
+    expect([q.amountIn, q.expectedOut, q.minOut, q.usesTextile]).toEqual([COST.toString(), OUT.toString(), OUT.toString(), true]);
+    const r = SendPrepareResponse.parse(await prepare());
+    expect(rig.textile.requests[0]).toMatchObject({ buyAmount: OUT, taker: ACCOUNT });
+    expect([r.amountIn, r.expectedOut, r.minOut]).toEqual(["51900000", OUT.toString(), OUT.toString()]);
+    expect(decodeFunctionData({ abi: erc20Abi, data: r.calls[0]!.data as Hex }).args).toEqual([REACTOR, 51_900_000n]);
+    expect(decodeFunctionData({ abi: erc20Abi, data: r.calls[2]!.data as Hex }).args).toEqual([CONTACT, OUT]);
+
+    const hashes = mineCalls(rig, r.calls, {
+      tamper: (i, tx) => (i === 1 ? { ...tx, logs: [transferLog(NGN.address, REACTOR, ACCOUNT, OUT)] } : i === 2 ? { ...tx, logs: [transferLog(NGN.address, ACCOUNT, CONTACT, OUT)] } : tx),
+    });
+    const s = await submitQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address, txHashes: hashes });
+    // The receipt says what it really cost, not what it was previewed to cost.
+    expect(rig.store.receipts.find((x) => x.id === s.receiptId)).toMatchObject({ amountIn: "51900000", amountOut: OUT.toString() });
+  });
+
+  it("refuses a firm price over 0.5% above the preview, or a different amount, releasing the quote", async () => {
+    const dear = await rigged({ pays: (COST * 10_051n) / 10_000n });
+    expect((await failure(dear.prepare())).code).toBe("price_changed");
+    expect(dear.rig.textile.cancels).toHaveLength(1);
+    const short = await rigged({ out: OUT - 1n });
+    expect((await failure(short.prepare())).code).toBe("upstream");
+    expect(short.rig.textile.cancels).toHaveLength(1);
+  });
+
+  it("is prepared only for the amount and the payee it was quoted for", async () => {
+    const { rig, prepare } = await rigged();
+    expect((await failure(prepare({ amountOut: "75001" }))).status).toBe(409);
+    expect((await failure(prepare({ amount: "51.78608" }))).status).toBe(409);
+    expect((await failure(prepare({ amountOut: "75000", recipient: "0x00000000000000000000000000000000000000ee" }))).code).toBe("bad_request");
+    expect(rig.textile.requests).toHaveLength(0);
+  });
+
+  it("only where Textile is the one market, above its minimum, and with one size given", async () => {
+    const rig = makeRig();
+    rig.textile.cost = () => 900_000n;
+    const ask = (r: object) => failure(createQuote(rig.deps, { account: wallet.address, ...r } as never));
+    expect((await ask({ from: "USDT", to: "wARS", amountOut: "1000" })).code).toBe("bad_request");
+    expect((await ask({ from: "USDC", to: "cNGN", amountOut: "1000" })).code).toBe("bad_request");
+    expect((await ask({ from: "USDT", to: "cNGN", amountOut: "1300" })).code).toBe("below_minimum");
+    rig.textile.cost = () => null;
+    expect((await ask({ from: "USDT", to: "cNGN", amountOut: "75000" })).code).toBe("no_route");
+    rig.textile.cost = new Error("timeout");
+    expect((await ask({ from: "USDT", to: "cNGN", amountOut: "75000" })).code).toBe("upstream");
+    expect(QuoteRequest.safeParse({ from: "USDT", to: "cNGN", amount: "1", amountOut: "1" }).success).toBe(false);
+    expect(QuoteRequest.safeParse({ from: "USDT", to: "cNGN" }).success).toBe(false);
+  });
+});
+
+describe("quotes bound to a payee", () => {
+  it("are never offered again as a change, nor prepared as one or for someone else", async () => {
+    const rig = makeRig();
+    const q = await createQuote(rig.deps, { from: "USDT", to: "wARS", amount: "10", account: wallet.address, recipient: OTHER });
+    expect((await failure(prepareQuote(rig.deps, { quoteId: q.quoteId, account: wallet.address }))).code).toBe("bad_request");
+    expect((rig.store.quotes[0]!.payload as { sendRecipient?: string }).sendRecipient).toBe(CONTACT);
+    expect((await failure(prepareSend(rig.deps, { account: wallet.address, recipient: "0x00000000000000000000000000000000000000ee", from: "USDT", to: "wARS", amount: "10", quoteId: q.quoteId }))).code).toBe("bad_request");
+    expect((await prepareSend(rig.deps, { account: wallet.address, recipient: OTHER, from: "USDT", to: "wARS", amount: "10", quoteId: q.quoteId })).calls.length).toBeGreaterThan(0);
   });
 });
 

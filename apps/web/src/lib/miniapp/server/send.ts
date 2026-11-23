@@ -6,6 +6,7 @@ import type { MiniappDeps } from "./deps";
 import { badRequest } from "./errors";
 import { checkFeeReserve } from "./fees";
 import { loadLiveQuote, prepareQuote, publicCalls, tagged } from "./prepare";
+import { decodePayload } from "./serde";
 import { parseAmount } from "./quote";
 
 /**
@@ -20,9 +21,9 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
   const recipient = req.recipient.toLowerCase() as Address;
   if (recipient === account) throw badRequest("Pick a contact other than your own wallet.");
   if (/^0x0{40}$/.test(recipient)) throw badRequest("That contact has no wallet address.");
-  const amountIn = parseAmount(req.from, req.amount);
-
   if (req.from === req.to) {
+    if (req.amount === undefined) throw badRequest("Pass the amount to send.");
+    const amountIn = parseAmount(req.from, req.amount);
     await checkFeeReserve(deps, account, req.from, amountIn);
     const data = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [recipient, amountIn] });
     const call = tagged(deps, { to: TOKENS[req.from].address as Address, data, value: 0n, label: "send to contact" });
@@ -32,7 +33,9 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
   if (!req.quoteId) throw badRequest("A send that changes currency needs a quote first.");
   const row = await loadLiveQuote(deps, deps.store(), req.quoteId, account);
   // The quote must be for exactly this send: never prepare a different pair or size than shown.
-  if (row.fromSym !== req.from || row.toSym !== req.to || BigInt(row.amountIn) !== amountIn) {
+  const { route, exactOut } = decodePayload(row.payload);
+  const sameSize = exactOut ? req.amountOut !== undefined && parseAmount(req.to, req.amountOut) === route.expectedOut : req.amount !== undefined && parseAmount(req.from, req.amount) === BigInt(row.amountIn);
+  if (row.fromSym !== req.from || row.toSym !== req.to || !sameSize) {
     throw badRequest("The quote doesn't match this send; ask for a new one.", 409);
   }
   let approveUpTo: bigint | undefined;
@@ -42,5 +45,5 @@ export async function prepareSend(deps: MiniappDeps, req: z.infer<typeof SendPre
     approveUpTo = asked < held ? asked : held;
   }
   const p = await prepareQuote(deps, { quoteId: req.quoteId, account, takerProof: req.takerProof }, { recipient, approveUpTo });
-  return { calls: p.calls, expectedOut: p.expectedOut, minOut: p.minOut, quoteId: p.quoteId };
+  return { calls: p.calls, expectedOut: p.expectedOut, minOut: p.minOut, quoteId: p.quoteId, ...(p.amountIn ? { amountIn: p.amountIn } : {}) };
 }

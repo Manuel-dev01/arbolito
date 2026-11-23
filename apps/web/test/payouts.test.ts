@@ -25,13 +25,15 @@ const run = (...items: PayoutItem[]): PayoutRun => ({ id: "r", at: "2026-11-24T1
 const states = (r: PayoutRun) => r.items.map((i) => i.state);
 
 /** A rig whose wallet and prices can be made to fail at a given payment or confirmation. */
-function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => bigint; sendAt?: (n: number, call: number) => Error | null; waitAt?: (n: number, call: number) => "success" | "reverted" | Error; quoteErr?: (n: number) => Error | null; submitFails?: boolean } = {}) {
+function rig(o: { quoteIn?: (n: number) => bigint; firmIn?: (n: number) => bigint; quoteOut?: (n: number) => bigint; firmOut?: (n: number) => bigint; sendAt?: (n: number, call: number) => Error | null; waitAt?: (n: number, call: number) => "success" | "reverted" | Error; quoteErr?: (n: number) => Error | null; submitFails?: boolean } = {}) {
   let quotes = 0;
   let current = 0;
   let call = 0;
   let hash = 0;
   const paidTo: string[] = [];
   const approvals: (string | undefined)[] = [];
+  const sizes: string[] = [];
+  const bound: (string | undefined)[] = [];
   const saves: PayoutRun[] = [];
   const reject = vi.fn(async () => ({ quoteId: "", status: "failed" }));
   const submit = vi.fn(async ({ quoteId }: { quoteId: string }) => {
@@ -39,18 +41,20 @@ function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => big
     return { receiptId: `receipt-${quoteId}`, status: "registering", url: "" };
   });
   const api = {
-    quote: async () => {
+    quote: async (r: { recipient?: string }) => {
+      bound.push(r.recipient);
       current = ++quotes;
       const e = o.quoteErr?.(current);
       if (e) throw e;
-      return { quoteId: `q${current}`, expectedOut: (o.quoteOut?.(current) ?? 14_430_000_000n).toString() };
+      return { quoteId: `q${current}`, amountIn: (o.quoteIn?.(current) ?? 10_000_000n).toString(), expectedOut: (o.quoteOut?.(current) ?? 14_430_000_000n).toString() };
     },
-    sendPrepare: async (r: { recipient: string; approveUpTo?: string }) => {
+    sendPrepare: async (r: { recipient: string; approveUpTo?: string; amount?: string; amountOut?: string }) => {
+      sizes.push(r.amountOut !== undefined ? `out ${r.amountOut}` : `in ${r.amount}`);
       call = 0;
       approvals.push(r.approveUpTo);
       paidTo.push(r.recipient);
       const c = (data: string) => ({ to: "0x0000000000000000000000000000000000000001", data, value: "0", label: "" });
-      return { calls: [c("0x095ea7b3"), c("0x0d335884"), c("0xa9059cbb")], expectedOut: (o.firmOut?.(current) ?? 14_430_000_000n).toString(), minOut: "1" };
+      return { calls: [c("0x095ea7b3"), c("0x0d335884"), c("0xa9059cbb")], expectedOut: (o.firmOut?.(current) ?? 14_430_000_000n).toString(), minOut: "1", ...(r.amountOut !== undefined ? { amountIn: (o.firmIn?.(current) ?? 10_000_000n).toString() } : {}) };
     },
     submit,
     reject,
@@ -74,7 +78,7 @@ function rig(o: { quoteOut?: (n: number) => bigint; firmOut?: (n: number) => big
     },
   } as unknown as Wallet;
   const deps = { api, wallet, lang: "en", retryDelayMs: 0, save: (r: PayoutRun) => saves.push(r) } as unknown as PayoutDeps;
-  return { deps, paidTo, approvals, saves, reject, submit, sends: () => hash };
+  return { deps, paidTo, approvals, sizes, bound, saves, reject, submit, sends: () => hash };
 }
 
 const rejected = () => Object.assign(new Error("User rejected the request."), { code: 4001 });
@@ -93,6 +97,38 @@ describe("batch payouts", () => {
     const r = rig();
     await runPayout(r.deps, run(item(1), item(2, { amount: "2.5" }), item(3, { to: "wARS" }), item(4, { state: "paid" }), item(5, { state: "held" })));
     expect(r.approvals).toEqual(["12500000", "2500000", "10000000"]);
+  });
+
+  it("binds every quote to its payee", async () => {
+    const r = rig();
+    await runPayout(r.deps, run(item(1), item(2)));
+    expect(r.bound).toEqual([item(1).address, item(2).address]);
+  });
+
+  describe("exact amounts", () => {
+    const exact = (p: Partial<PayoutItem> = {}) => item(1, { exact: "14430", ...p });
+
+    it("asks for what must arrive, and records what it cost", async () => {
+      const r = rig({ firmIn: () => 10_020_000n });
+      const out = await runPayout(r.deps, run(exact()));
+      expect([states(out), r.sizes, out.items[0]!.paidIn]).toEqual([["paid"], ["out 14430"], "10020000"]);
+      // The approval leaves room for the tolerance, and no more.
+      expect(r.approvals).toEqual(["10050000"]);
+    });
+
+    it("holds when it would cost over 0.5% more, on the quote and on the firm price", async () => {
+      const a = rig({ quoteIn: () => 10_051_000n });
+      const held = await runPayout(a.deps, run(exact()));
+      expect([states(held), held.items[0]!.heldOut, a.sends()]).toEqual([["held"], "10051000", 0]);
+      const b = rig({ firmIn: () => 10_051_000n });
+      expect(states(await runPayout(b.deps, run(exact())))).toEqual(["held"]);
+      expect(b.sends()).toBe(0);
+      expect(b.reject).toHaveBeenCalled();
+    });
+
+    it("a cheaper price is simply paid", async () => {
+      expect(states(await runPayout(rig({ quoteIn: () => 9_000_000n, firmIn: () => 9_000_000n }).deps, run(exact())))).toEqual(["paid"]);
+    });
   });
 
   it("the app's client sends the batch approval to the server", async () => {

@@ -34,6 +34,8 @@ export function routeFromJson(j: Json): Route {
 /** What a miniapp_quotes row stores in `payload`. */
 export interface QuotePayload {
   sendRecipient?: string;
+  /** route.expectedOut must arrive exactly; route.amountIn is what it was previewed to cost. */
+  exactOut?: true;
   v: 1;
   route: Json;
   alternatives: Json[];
@@ -45,6 +47,7 @@ export interface QuotePayload {
 
 export interface DecodedPayload {
   sendRecipient?: string;
+  exactOut?: true;
   route: Route;
   alternatives: Route[];
   quotesConsidered: Quote[];
@@ -62,6 +65,7 @@ export function encodePayload(p: DecodedPayload & { lang?: string | null }): Quo
     blockNumber: p.blockNumber.toString(),
     lang: p.lang ?? null,
     ...(p.sendRecipient ? { sendRecipient: p.sendRecipient } : {}),
+    ...(p.exactOut ? { exactOut: true as const } : {}),
   };
 }
 
@@ -75,5 +79,6 @@ export function decodePayload(raw: unknown): DecodedPayload {
     references: p.references,
     blockNumber: BigInt(p.blockNumber),
     ...(p.sendRecipient ? { sendRecipient: p.sendRecipient } : {}),
+    ...(p.exactOut ? { exactOut: true as const } : {}),
   };
 }

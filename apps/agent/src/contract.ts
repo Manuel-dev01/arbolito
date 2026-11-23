@@ -36,7 +36,9 @@ export const ApiError = z.object({ error: z.object({ code: ApiErrorCode, message
 
 export const Reference = z.object({ name: z.string(), pair: z.string(), rate: z.string(), source: z.string(), at: z.string() });
 
-export const QuoteRequest = z.object({ from: Sym, to: Sym, amount: HumanAmount, account: Address.optional(), lang: Lang.optional() });
+export const QuoteRequest = z
+  .object({ from: Sym, to: Sym, amount: HumanAmount.optional(), amountOut: HumanAmount.optional(), account: Address.optional(), recipient: Address.optional(), lang: Lang.optional() })
+  .refine((r) => (r.amount === undefined) !== (r.amountOut === undefined), "Pass amount or amountOut, not both.");
 export type QuoteRequest = z.infer<typeof QuoteRequest>;
 export const QuoteResponse = z.object({
   quoteId: z.string().uuid(),

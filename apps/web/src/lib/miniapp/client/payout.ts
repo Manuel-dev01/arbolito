@@ -39,12 +39,16 @@ export interface PayoutItem {
   address: string;
   from: Sym;
   to: Sym;
-  /** Human units of `from` ("25" or "12.5"). */
+  /** Human units of `from` ("25" or "12.5"); on an exact payment, what it was reviewed to cost. */
   amount: string;
+  /** Exactly this much of `to` must arrive (human units): the price can only change what it costs. */
+  exact?: string;
   /** What the payee gets at the reviewed price (atomic). */
   reviewedOut: string;
-  /** On a held payment, what they would get now. */
+  /** On a held payment, what they would get now (or, when exact, what it would cost now). */
   heldOut?: string;
+  /** What an exact payment cost. */
+  paidIn?: string;
   state: PayoutItemState;
   error?: ClientErrorCode;
   quoteId?: string;
@@ -72,6 +76,9 @@ const codeOf = (e: unknown): ClientErrorCode => (e instanceof ApiFailure ? e.cod
 
 export const isUnderTolerance = (reviewed: bigint, now: bigint) => now * 10_000n < reviewed * (10_000n - PAYOUT_TOLERANCE_BPS);
 
+/** The other way round, for an exact payment: it costs over the tolerance more. */
+export const isOverTolerance = (reviewed: bigint, now: bigint) => now * 10_000n > reviewed * (10_000n + PAYOUT_TOLERANCE_BPS);
+
 /** States a run picks up again. Held ones need a new review first. */
 const open = (s: PayoutItemState) => s === "todo" || s === "stopped";
 
@@ -80,9 +87,15 @@ export function restoreRun(run: PayoutRun): PayoutRun {
   return { ...run, items: run.items.map((i) => (i.state === "sending" ? { ...i, state: "unknown" } : i)) };
 }
 
+/** The most a payment can cost: an exact one may go up to the tolerance over its review. */
+export const costCap = (x: PayoutItem): bigint => {
+  const a = parseHuman(x.amount, DECIMALS[x.from]);
+  return x.exact === undefined ? a : (a * (10_000n + PAYOUT_TOLERANCE_BPS)) / 10_000n;
+};
+
 /** What's left to pay from payment `i` on in its currency: one approval covers it (the venue, and so the spender, goes with the currency). */
 export const leftInCurrency = (items: readonly PayoutItem[], i: number): bigint =>
-  items.slice(i).reduce((n, x) => (open(x.state) && x.from === items[i]!.from && x.to === items[i]!.to ? n + parseHuman(x.amount, DECIMALS[x.from]) : n), 0n);
+  items.slice(i).reduce((n, x) => (open(x.state) && x.from === items[i]!.from && x.to === items[i]!.to ? n + costCap(x) : n), 0n);
 
 export const runFinished = (run: PayoutRun) => run.items.every((i) => i.state === "paid");
 export const canContinue = (run: PayoutRun) => run.items.some((i) => open(i.state));
@@ -100,14 +113,20 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
     if (!open(item.state)) continue;
     const account = deps.wallet.account;
     const reviewed = BigInt(item.reviewedOut);
+    const reviewedIn = parseHuman(item.amount, DECIMALS[item.from]);
+    const size = item.exact !== undefined ? { amountOut: item.exact } : { amount: item.amount };
+    /** The figure that moved too far, or null: what they get, or on an exact payment what it costs. */
+    const tooFar = (q: { expectedOut: string; amountIn?: string }) =>
+      item.exact !== undefined ? (q.amountIn !== undefined && isOverTolerance(reviewedIn, BigInt(q.amountIn)) ? q.amountIn : null) : isUnderTolerance(reviewed, BigInt(q.expectedOut)) ? q.expectedOut : null;
 
     let quoteId: string;
     try {
       deps.onStage?.(i, { stage: "preparing" });
-      const q = await deps.api.quote({ from: item.from, to: item.to, amount: item.amount, account, lang: deps.lang as never });
+      const q = await deps.api.quote({ from: item.from, to: item.to, ...size, account, recipient: item.address as Hex, lang: deps.lang as never });
       quoteId = q.quoteId;
-      if (isUnderTolerance(reviewed, BigInt(q.expectedOut))) {
-        patch(i, { state: "held", heldOut: q.expectedOut, error: undefined });
+      const off = tooFar(q);
+      if (off !== null) {
+        patch(i, { state: "held", heldOut: off, error: undefined });
         continue;
       }
     } catch (e) {
@@ -119,6 +138,7 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
     const approveUpTo = leftInCurrency(run.items, i).toString();
     let total = 0;
     let out = "0";
+    let cost: string | undefined;
     const sent: Hex[] = [];
     const exec: ExecDeps = {
       ...deps,
@@ -133,13 +153,15 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
       },
     };
     const res = await executeCalls(exec, async () => {
-      const p = await prepareSendWithProof(exec, { account, recipient: item.address as Hex, from: item.from, to: item.to, amount: item.amount, quoteId, approveUpTo });
-      if (isUnderTolerance(reviewed, BigInt(p.expectedOut))) {
-        held = p.expectedOut;
+      const p = await prepareSendWithProof(exec, { account, recipient: item.address as Hex, from: item.from, to: item.to, ...size, quoteId, approveUpTo });
+      const off = tooFar(p);
+      if (off !== null) {
+        held = off;
         throw new Error("held");
       }
       total = p.calls.length;
       out = p.expectedOut;
+      cost = p.amountIn;
       return p;
     });
 
@@ -150,7 +172,7 @@ export async function runPayout(deps: PayoutDeps, start: PayoutRun): Promise<Pay
       continue;
     }
     if (res.kind === "done") {
-      patch(i, { state: "paid", paidOut: out, calls: total, hashes: res.hashes, error: undefined });
+      patch(i, { state: "paid", paidOut: out, paidIn: cost, calls: total, hashes: res.hashes, error: undefined });
       const receipt = await submitWithRetry(exec, quoteId, res.hashes);
       if (receipt) patch(i, { receiptId: receipt.receiptId });
       continue;

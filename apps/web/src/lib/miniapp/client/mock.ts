@@ -74,9 +74,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** The persona's balances (es: Lucía) in whole units. */
 const PERSONA_BAL: Record<Cur, number> = { ARS: 182450, BRL: 1240, COP: 0, MXN: 0, NGN: 0, USD: 860 };
 
-export function mockQuote(from: Sym, to: Sym, amount: string, id = uuid(), validMs = 48_000) {
-  const amountIn = parseHuman(amount, DECIMALS[from]);
-  const expectedOut = convert(amountIn, from, to);
+export function mockQuote(from: Sym, to: Sym, amount: string, id = uuid(), validMs = 48_000, amountOut?: string) {
+  const amountIn = amountOut ? convert(parseHuman(amountOut, DECIMALS[to]), to, from) : parseHuman(amount, DECIMALS[from]);
+  const expectedOut = amountOut ? parseHuman(amountOut, DECIMALS[to]) : convert(amountIn, from, to);
   const pct = pctFor(CUR_OF[from], CUR_OF[to]);
   const bps = pct === null ? 0n : BigInt(Math.round(pct * 100));
   const deltaOut = pct === null ? 0n : expectedOut - (expectedOut * 10000n) / (10000n + bps);
@@ -239,7 +239,7 @@ export function createMockServer(scenario: MockScenario) {
       await sleep(800);
       if (fail === "no_route") return err(422, "no_route", "no market");
       if (fail === "upstream") return err(502, "upstream", "upstream");
-      const q = mockQuote(body.from as Sym, body.to as Sym, String(body.amount));
+      const q = mockQuote(body.from as Sym, body.to as Sym, String(body.amount), undefined, undefined, body.amountOut as string | undefined);
       quotes.set(q.quoteId, q);
       return json(200, q);
     }
@@ -388,15 +388,15 @@ export function createMockServer(scenario: MockScenario) {
     if (path.startsWith("/rules")) return json(200, { rules: [], runs: [] });
     if (path === "/send/prepare") {
       await sleep(400);
-      const amountIn = parseHuman(String(body.amount), DECIMALS[body.from as Sym]);
-      const out = convert(amountIn, body.from as Sym, body.to as Sym);
+      const exact = body.amountOut !== undefined;
+      const out = exact ? parseHuman(String(body.amountOut), DECIMALS[body.to as Sym]) : convert(parseHuman(String(body.amount), DECIMALS[body.from as Sym]), body.from as Sym, body.to as Sym);
       const calls = body.from === body.to
         ? [{ to: "0x0000000000000000000000000000000000000005", data: "0xa9059cbb", value: "0", label: L.send }]
         : [
             { to: "0x0000000000000000000000000000000000000001", data: "0x095ea7b3", value: "0", label: `${L.approve} ${String(body.from)}` },
             { to: "0x0000000000000000000000000000000000000002", data: "0x3593564c", value: "0", label: L.changeSend },
           ];
-      return json(200, { calls, expectedOut: out.toString(), minOut: ((out * 995n) / 1000n).toString() });
+      return json(200, { calls, expectedOut: out.toString(), minOut: (exact ? out : (out * 995n) / 1000n).toString(), ...(exact ? { amountIn: convert(out, body.to as Sym, body.from as Sym).toString() } : {}) });
     }
     return err(404, "bad_request", `mock: no route for ${path}`);
   }

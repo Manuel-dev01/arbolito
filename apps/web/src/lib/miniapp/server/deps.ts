@@ -22,7 +22,7 @@ import { RateLimiter } from "./rate-limit";
 import { DrizzleStore, type MiniappStore } from "./store";
 
 /** The TextileClient surface the backend uses (tests inject a fake; it must never hit /rfq/request live). */
-export type TextileTaker = Pick<TextileClient, "request" | "submit" | "status" | "cancel" | "hasPartnerKey">;
+export type TextileTaker = Pick<TextileClient, "preview" | "request" | "submit" | "status" | "cancel" | "hasPartnerKey">;
 
 export interface AnchorOutcome {
   txHash: Hex;

@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Address } from "viem";
+import { formatUnits, type Address } from "viem";
+import { EXACT_OUT } from "../../lib/miniapp/contract";
 import type { ApiClient, Quote } from "../../lib/miniapp/client/api";
 import type { ClientErrorCode } from "../../lib/miniapp/client/errors";
 import type { ExecStage } from "../../lib/miniapp/client/execute";
-import { SYM_OF, type Lang } from "../../lib/miniapp/client/format";
+import { DECIMALS, SYM_OF, type Lang } from "../../lib/miniapp/client/format";
 import { MAX_PAYEES, restoreRun, runPayout, settleReceipts, type PayoutDeps, type PayoutItem, type PayoutRun } from "../../lib/miniapp/client/payout";
 import { newId, type Contact, type ReceiptIndexEntry, type Store } from "../../lib/miniapp/client/store";
 import type { Wallet } from "../../lib/miniapp/client/wallet";
@@ -25,7 +26,20 @@ export function payoutAmount(typed: string | undefined): string | null {
   return AMOUNT.test(v) && Number(v) >= MIN_USD ? v : null;
 }
 
+/** Currencies a payee can be paid in to the exact amount ("₦75,000"). */
+export const canExact = (c: Contact) => EXACT_OUT.includes(SYM_OF[c.cur]);
+
+const EXACT = /^\d{1,9}(\.\d{1,2})?$/;
+/** A typed local amount as the API takes it, or null. The US$ 1 minimum is checked with the price. */
+export function exactAmount(typed: string | undefined): string | null {
+  const v = (typed ?? "").trim().replace(",", ".").replace(/\.$/, "");
+  return EXACT.test(v) && Number(v) > 0 ? v : null;
+}
+
 export interface PayoutCtx {
+  /** Contacts whose amount is typed in their own currency and must arrive exactly. */
+  exact: Record<string, boolean>;
+  setExact(contactId: string, on: boolean): void;
   amounts: Record<string, string>;
   setAmount(contactId: string, typed: string): void;
   review: PayoutItem[] | null;
@@ -58,6 +72,7 @@ export function usePayout(
   o: { contacts: Contact[]; lang: Lang; go(s: Screen, o?: { replace?: boolean }): void; showError(c: ClientErrorCode): void; refreshBalances(): void; addReceipt(e: ReceiptIndexEntry): void; sheetAmount(s: string): void },
 ): PayoutCtx {
   const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [exact, setExactState] = useState<Record<string, boolean>>({});
   const [review, setReview] = useState<PayoutItem[] | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [run, setRunState] = useState<PayoutRun | null>(null);
@@ -113,9 +128,17 @@ export function usePayout(
     setReview(null);
   }, []);
 
+  const setExact = useCallback((id: string, on: boolean) => {
+    setExactState((e) => ({ ...e, [id]: on }));
+    // The number meant something else in the other currency.
+    setAmounts((a) => ({ ...a, [id]: "" }));
+    setReview(null);
+  }, []);
+
   const requestReview = useCallback(async () => {
     if (!ready || reviewing) return;
-    const picked = latest.current.contacts.filter((c) => payable(c) && payoutAmount(amounts[c.id])).slice(0, MAX_PAYEES);
+    const picked = latest.current.contacts.filter((c) => payable(c) && (exact[c.id] ? exactAmount(amounts[c.id]) : payoutAmount(amounts[c.id]))).slice(0, MAX_PAYEES);
+    const sizeOf = (c: Contact) => (exact[c.id] ? { amountOut: exactAmount(amounts[c.id])! } : { amount: payoutAmount(amounts[c.id])! });
     if (!picked.length) return;
     setReviewing(true);
     const items: PayoutItem[] = [];
@@ -125,13 +148,22 @@ export function usePayout(
         const part = picked.slice(i, i + 3);
         const quotes: Quote[] = await Promise.all(
           part.map((c) => {
-            const ask = () => ready.api.quote({ from: PAY_SYM, to: SYM_OF[c.cur], amount: payoutAmount(amounts[c.id])!, account: ready.account, lang: latest.current.lang });
+            const ask = () => ready.api.quote({ from: PAY_SYM, to: SYM_OF[c.cur], ...sizeOf(c), account: ready.account, recipient: c.address as Address, lang: latest.current.lang });
             // A quote is free and moves nothing: one slow market shouldn't cost the whole review.
             return ask().catch((e: { code?: ClientErrorCode }) => (e.code === "upstream" || e.code === "network" ? ask() : Promise.reject(e)));
           }),
         );
         part.forEach((c, n) =>
-          items.push({ contactId: c.id, name: c.name, address: c.address!, from: PAY_SYM, to: SYM_OF[c.cur], amount: payoutAmount(amounts[c.id])!, reviewedOut: quotes[n]!.expectedOut, state: "todo" }),
+          items.push({
+            contactId: c.id,
+            name: c.name,
+            address: c.address!,
+            from: PAY_SYM,
+            to: SYM_OF[c.cur],
+            ...(exact[c.id] ? { exact: exactAmount(amounts[c.id])!, amount: formatUnits(BigInt(quotes[n]!.amountIn), DECIMALS[PAY_SYM]) } : { amount: payoutAmount(amounts[c.id])! }),
+            reviewedOut: quotes[n]!.expectedOut,
+            state: "todo",
+          }),
         );
       }
       // Same currency together, so one approval serves them all.
@@ -143,7 +175,7 @@ export function usePayout(
     } finally {
       setReviewing(false);
     }
-  }, [ready, reviewing, amounts]);
+  }, [ready, reviewing, amounts, exact]);
 
   const execute = useCallback(
     async (r: PayoutRun) => {
@@ -171,6 +203,7 @@ export function usePayout(
     const r: PayoutRun = { id: newId(), at: new Date().toISOString(), items: review };
     setReview(null);
     setAmounts({});
+    setExactState({});
     latest.current.go("payout-run", { replace: true });
     void execute(r);
   }, [review, execute]);
@@ -185,6 +218,8 @@ export function usePayout(
   };
 
   return {
+    exact,
+    setExact,
     amounts,
     setAmount,
     review,
@@ -197,7 +232,9 @@ export function usePayout(
     resume,
     acceptHeld: (i) => {
       const x = run?.items[i];
-      if (x?.state === "held" && x.heldOut) edit(i, { state: "todo", reviewedOut: x.heldOut, heldOut: undefined });
+      if (x?.state !== "held" || !x.heldOut) return;
+      const price = x.exact !== undefined ? { amount: formatUnits(BigInt(x.heldOut), DECIMALS[x.from]) } : { reviewedOut: x.heldOut };
+      edit(i, { state: "todo", ...price, heldOut: undefined });
     },
     resolveUnknown: (i, was) => {
       if (run?.items[i]?.state === "unknown") edit(i, was === "paid" ? { state: "paid" } : { state: "todo", hashes: undefined, quoteId: undefined, calls: undefined });
