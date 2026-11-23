@@ -7,7 +7,7 @@ import { anchorFor, listReceiptsCached } from "../../lib/cached";
 import { formatBps, formatFixed, formatMoney, formatToken, shortHex } from "../../lib/format";
 import { RECEIPTS_ADDRESS } from "../../lib/chain";
 import { addressSet, teamWallets } from "@arbolito/config";
-import { EXCLUSIONS, computeEdition2 } from "../../lib/edition2";
+import { computeEdition2 } from "../../lib/edition2";
 import { computeMetrics } from "../../lib/metrics";
 import { addressUrl, txUrl } from "../../lib/receipts-abi";
 import { BUY_PAYER, BUY_PAYER_BEFORE, loadBuyPurchases } from "../../lib/buy-public";
@@ -38,7 +38,6 @@ export default async function MetricsPage({ searchParams }: Props) {
   );
   const m = computeMetrics(records, anchors);
   const e2 = computeEdition2(records, { team: teamWallets(process.env.TEAM_WALLETS), funded: addressSet(process.env.FUNDED_WALLETS) });
-  const left = EXCLUSIONS.filter((x) => e2.excludedCounts[x]);
   const symbol = (s: string) => (s === "USDT" ? "USD₮" : s);
   const te = t.e2;
   const usd = (micros: bigint) => formatMoney(micros, 6, "USD", locale);
@@ -175,24 +174,6 @@ export default async function MetricsPage({ searchParams }: Props) {
               </tbody>
             </table>
           </div>
-        )}
-        {left.length > 0 && (
-          <details>
-            <summary className="small">
-              {te.excludedTitle} ({left.reduce((n, x) => n + e2.excludedCounts[x]!, 0)})
-            </summary>
-            <p className="small">{left.map((x) => `${te.reasons[x]}: ${e2.excludedCounts[x]}`).join(" · ")}</p>
-            <ul className="small">
-              {e2.excluded.map((x) => (
-                <li key={x.id}>
-                  <a href={rHref(x.id)} className="mono">
-                    {x.id.slice(0, 8)}
-                  </a>{" "}
-                  · {te.reasons[x.reason]} · <ExtLink href={txUrl(x.executionTx)}>{shortHex(x.executionTx)}</ExtLink>
-                </li>
-              ))}
-            </ul>
-          </details>
         )}
       </section>
 
