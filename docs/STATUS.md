@@ -96,7 +96,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - Textile is asked for the output (`buyAmount`); the firm quote must match it exactly, and may cost at most 0.5% over the preview. The receipt records the real cost.
   - Fork-rehearsed: exactly ₦1,500 arrived for 1.036215 USDT, as previewed. Production answers exact quotes (₦5,000 for 3.457896 USDT, free, 2026-11-23).
 - **Payout quotes bound to their payee (fix, live):** an unsigned payout quote could be offered again on Home as a plain change, which would have converted the money to the payer. Quotes now carry the payee: they can't be resumed or prepared for anyone else.
-- **Scheduled payroll (built, not deployed):** "every Friday, pay these people", from a payout's review or its result ("Repeat this payout on a schedule").
+- **Scheduled payroll (live, `d6f8aff`):** "every Friday, pay these people", from a payout's review or its result ("Repeat this payout on a schedule").
   - The payer signs the exact text (each full address and amount, the dates, the tolerance, today's prices). It moves no money and needs no guard.
   - On the payday the bot claims the run, gets a fresh quote per payee (bound to that payee), and compares each currency with the last payday's price. Past the payer's tolerance (1, 3 or 5%), or with no price, it is held and says why. Then it messages the payer on Telegram, with the total and what is missing. The app's home shows the payday for three days either way.
   - The payer reviews fresh prices and confirms each payment, as in any batch. A payment that went out is never offered again: this phone's runs and the wallet's receipts on the server are both checked.
@@ -106,7 +106,8 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Security:** zod 4.6.7, x402 2.32.0 and @hono/node-server 2.1.11; `pnpm audit --prod` reports none. The 402 offer is identical to before. The free wBRL and wARS `/verify` checks answer `unexpected_error` with a throwaway key, with the old packages too.
 - **CBN official USD/NGN (live; the first read from Railway worked):** the bot reads the CBN every 6 h and stores its newest US dollar rate under its own date (no payment). Quotes and receipts use it as "official" only on that date and the next day, so Monday's price is never compared with Friday's rate. A receipt shows a reference's date when it isn't the day of the trade.
 - **Agent wallet:** first transaction with the edition-2 tag, a 0.10 USDT gas top-up to the rules wallet ([tx](https://celoscan.io/tx/0x4fd71bb3770597f7503ca26f5a2496fa9b4b897ff4fc3e780e84382a56ef4a88)).
-- **Loops:** edition-2 project created (founder's go-ahead).
+- **Loops:** edition-2 project created (founder's go-ahead). It shows the ERC-8004 identity; the first tagged transaction must be one the agent wallet sent (a user's conversion is refused there).
+- **README:** edition-2 section on top (what's new, requirements, how to verify).
 - **/metrics showing 1 wallet (2026-11-23, 06:54–06:59 UTC):** a Vercel instance failed its receipt queries four times while the database was up, and the fallback (the 2 receipts in the repo) was cached as the answer. Now a failed read is retried once, its real cause is logged, and a failure is never cached: the last good numbers stay, or the page says the database can't be reached. Why those queries failed isn't known: the old log had only the SQL.
 
 ### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up

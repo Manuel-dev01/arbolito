@@ -1,30 +1,32 @@
 # Arbolito
 
-**An AI money-changer for Latin America and Nigeria, on Celo: an agent that charges, pays and settles in local stablecoins.** An *arbolito* is the street money-changer of Buenos Aires. This one lives inside MiniPay and on Telegram:
+**Pay people in their own money.** You hold dollars and owe people in Nigeria, Argentina or Brazil. Arbolito is an AI money-changer on Celo: it gets the price, changes the dollars, and each person receives naira, pesos or reais, with a receipt both sides can check. An *arbolito* is the street money-changer of Buenos Aires. This one lives inside MiniPay and on Telegram:
 - It changes and sends **dollars, Argentine pesos, Brazilian reais, Colombian and Mexican pesos and, since edition 2, Nigerian naira** (USDT, wARS, wBRL, wCOP, wMXN, cNGN) at the best route it can find.
+- It **pays one person or twenty** from one review, and prepares the batch again every payday.
 - It proves every conversion with a **receipt anchored onchain**.
 - With the user's permission, it **acts on its own**: it splits a payday into pesos, pays rent every month, and guards peso savings against devaluation, all within limits the user signs.
 - **Other agents hire it** over MCP, A2A and x402 and pay it in wARS, wBRL, wCOP, wMXN or dollars. It **pays other agents** for what it uses and rates them onchain (ERC-8004).
 
 Next to it runs **Arbolito Desk**, a market maker that quotes six currency corridors on Textile FX.
 
-Built for **Celo · Agents on Open Rails** (deadline Nov 9, 2026). Everything below runs on **Celo mainnet** with real money, and every transaction Arbolito sends carries our ERC-8021 attribution code **`celo_e054d92430a5`**.
+Entered in **Celo · Agents Open for Business**, Stablecoin Corridors (Textile FX): start at [Edition 2](#edition-2-whats-new-since-20-november-2026). It extends the project that won **1st place, Open Corridors: Textile FX** in the previous edition, Agents on Open Rails. Everything below runs on **Celo mainnet** with real money. Transactions prepared for users and sent by the agent carry the ERC-8021 code **`celo_0acfe36b6ea3`** (edition 2) and `celo_e054d92430a5` (edition 1).
 
 | | Link |
 |---|---|
-| Demo video | [4-minute walkthrough on YouTube](https://youtu.be/lB6YraoRJ7g) |
+| Demo video | [4-minute walkthrough on YouTube](https://youtu.be/lB6YraoRJ7g) (edition 1; the edition-2 video is coming) |
 | Website | [arbolito-livid.vercel.app](https://arbolito-livid.vercel.app) |
 | Mini App | Built for MiniPay (Discover listing pending). Open `https://arbolito-livid.vercel.app/app` in MiniPay, or try the demo at [`/app?mock=1`](https://arbolito-livid.vercel.app/app?mock=1) |
 | Telegram | [@arbolitoo_bot](https://t.me/arbolitoo_bot) (open to everyone) |
 | The agent | [/agent](https://arbolito-livid.vercel.app/agent): what it charges, pays and settles, each row a Celo transaction |
-| Public metrics | [/metrics](https://arbolito-livid.vercel.app/metrics): conversions, receipts and volume, each linked to its transactions |
+| Public metrics | [/metrics](https://arbolito-livid.vercel.app/metrics): [edition 2](https://arbolito-livid.vercel.app/metrics#edition-2), then all conversions, receipts and volume, each linked to its transactions |
 | Arbolito Desk | [/desk](https://arbolito-livid.vercel.app/desk): live quotes, fills, inventory, P&L and uptime |
 | Agent identity | ERC-8004 **agentId 9976** ([registration](https://arbolito-livid.vercel.app/.well-known/agent-registration.json), [8004scan](https://8004scan.io/agents/celo/9976)) |
 | For agents | MCP `https://arbolito-livid.vercel.app/api/mcp` · A2A [agent card](https://arbolito-livid.vercel.app/.well-known/agent-card.json) · x402 `GET /api/x402/quote`, `GET /api/x402/rates` |
 
 ## Contents
+- [Edition 2: what's new since 20 November 2026](#edition-2-whats-new-since-20-november-2026)
 - [Try it in 5 minutes](#try-it-in-5-minutes)
-- [Where each track is answered](#where-each-track-is-answered)
+- [Where each track is answered (edition 1)](#where-each-track-is-answered-edition-1)
 - [The problem](#the-problem)
 - [What Arbolito does (Stable Agents: LatAm)](#what-arbolito-does-stable-agents-latam)
 - [Charges, pays and settles in local stablecoins](#charges-pays-and-settles-in-local-stablecoins)
@@ -37,6 +39,59 @@ Built for **Celo · Agents on Open Rails** (deadline Nov 9, 2026). Everything be
 - [Run it locally](#run-it-locally)
 - [More docs](#more-docs)
 
+## Edition 2: what's new since 20 November 2026
+
+**The job.** Someone holding dollars pays several people abroad every week or month. Today they pick a rate, trust a middleman, and check with each person that the right amount arrived. With Arbolito they review one list, confirm in their own wallet, and everyone gets a receipt.
+
+**How a payment works.**
+```
+payer's USDT ─► Textile firm quote (RFQ taker) ─► fill in the payer's wallet ─► exact amount forwarded to the payee
+                                                        └─► receipt anchored on Celo, naming the payee
+```
+Naira always goes through Textile FX, its only market. Pesos and reais take the better of Textile and Uniswap. The payer signs everything; the server never holds funds.
+
+### What is new
+The last commit before edition 2 was [`9f753b7`](https://github.com/Manuel-dev01/arbolito/commit/9f753b7) (15 November). [Every change since](https://github.com/Manuel-dev01/arbolito/compare/9f753b7...main):
+
+| New | Commits | What it does |
+|---|---|---|
+| **Nigerian naira** | [`ec521c3`](https://github.com/Manuel-dev01/arbolito/commit/ec521c3) | Hold, convert and send cNGN in the Mini App, on Telegram and in the chat |
+| **Pay several people** | [`8fa2570`](https://github.com/Manuel-dev01/arbolito/commit/8fa2570), [`d776d72`](https://github.com/Manuel-dev01/arbolito/commit/d776d72) | One review; then each payee has their own fresh quote, fill and receipt. One approval per currency. A payment whose price falls over 0.5% is held, unsigned |
+| **Payout statement** | [`8fa2570`](https://github.com/Manuel-dev01/arbolito/commit/8fa2570) | `/payouts/<id>`: a shareable page (print it or save it as PDF) built only from anchored receipts. Names stay in the link's fragment, never on the server |
+| **Exact local amounts** | [`ea559fb`](https://github.com/Manuel-dev01/arbolito/commit/ea559fb) | "₦75,000 must arrive": Textile is asked for the output, and the firm quote must match it exactly. Naira and Colombian pesos |
+| **Scheduled payroll** | [`8369753`](https://github.com/Manuel-dev01/arbolito/commit/8369753), [`d048f62`](https://github.com/Manuel-dev01/arbolito/commit/d048f62), [`70ebb5b`](https://github.com/Manuel-dev01/arbolito/commit/70ebb5b) | "Every Friday, pay these people". The agent prices the list on the day, holds it if the price is past the payer's limit, and tells them on Telegram. The payer confirms |
+| **Official naira rate** | [`2bd534a`](https://github.com/Manuel-dev01/arbolito/commit/2bd534a) | The Central Bank of Nigeria's rate on quotes and receipts, only on its own date and the next day |
+| **Self-trade guard** | [`50319bd`](https://github.com/Manuel-dev01/arbolito/commit/50319bd) | Our own wallets never take a fill from our own desk |
+| **Edition-2 tag and metrics** | [`470c09a`](https://github.com/Manuel-dev01/arbolito/commit/470c09a), [`81cf3c6`](https://github.com/Manuel-dev01/arbolito/commit/81cf3c6) | Both codes on user and agent transactions; a view that counts only tagged Textile taker conversions in the track's corridors |
+
+From edition 1: the Mini App and Telegram bot, single sends, anchored receipts, ArbolitoGuard rules, x402 and the desk. The desk is a Textile **maker**, so nothing it does is part of this entry.
+
+### Against the track's requirements
+| Requirement | Where it stands |
+|---|---|
+| A tagged Textile FX conversion on mainnet, in the product flow | ✅ 1 USDT → 1,448.567082 cNGN: [fill](https://celoscan.io/tx/0x7e6906f1959bf93cc98127bc9a84f9c7acb952e34da28759ee4bf2996ffedd9c), [verified receipt](https://arbolito-livid.vercel.app/r/b49c8dd4-d4bc-4f52-aca5-a888ae1237a2) |
+| Local stablecoins paid to people outside the team | 🟡 Built and rehearsed on a mainnet fork (1 USDT and an exact ₦1,500, each forwarded in full). No mainnet payout yet; each one will appear on [/metrics](https://arbolito-livid.vercel.app/metrics#edition-2) |
+| ERC-8004 identity | ✅ [agentId 9976](https://8004scan.io/agents/celo/9976), owned by the agent wallet `0x7e03…6c3c` |
+| Named user | 🟡 None yet. We are looking for the first payer and payees, and will name them here with their consent |
+
+### How to verify it
+1. **The fill is real.** Open the [receipt](https://arbolito-livid.vercel.app/r/b49c8dd4-d4bc-4f52-aca5-a888ae1237a2): your browser recomputes its hash, checks the anchor, and checks what Textile's contract delivered.
+2. **The tag.** On that receipt's execution transaction, *Input Data* ends with `celo_0acfe36b6ea3,celo_e054d92430a5`. With Celo's library: `verifyTx` from `@celo/attribution-tags` returns both codes.
+3. **The counts.** [/metrics#edition-2](https://arbolito-livid.vercel.app/metrics#edition-2) links every conversion it counts to its transaction.
+4. **A batch, without a wallet.** [Open the demo](https://arbolito-livid.vercel.app/app?mock=1&lang=en) → Send → Pay several people. Type two amounts, review, and pay. Then *Repeat this payout on a schedule*.
+5. **A payday.** The demo with one [ready](https://arbolito-livid.vercel.app/app?mock=1&lang=en&state=home-payday) and one [held](https://arbolito-livid.vercel.app/app?mock=1&lang=en&state=home-payday-held). The decision is [`packages/rules/src/payroll.ts`](packages/rules/src/payroll.ts); the runner is [`apps/agent/src/payroll.ts`](apps/agent/src/payroll.ts).
+6. **A live exact quote** (free, moves nothing):
+   ```bash
+   curl -s -X POST https://arbolito-livid.vercel.app/api/miniapp/quote -H 'content-type: application/json' \
+     -d '{"from":"USDT","to":"cNGN","amountOut":"5000","lang":"en"}'
+   ```
+7. **The tests.** `pnpm test:unit` covers the batch (cancel, revert, crash mid-payment, price moves), exact amounts, the payroll runner and the edition-2 counts.
+
+### Good to know
+- MiniPay asks for each confirmation: up to 3 for the first payee in a currency, then 2 each. A schedule itself takes one signature and no fee.
+- A payment whose outcome is unknown is never retried on its own; a payday leaves out anyone who was, or may have been, paid.
+- A schedule stores wallets and amounts, so the agent can price them. It stores no names, and the API never gives the list back.
+
 ## Try it in 5 minutes
 1. **The app, without a wallet.** Open [`/app?mock=1`](https://arbolito-livid.vercel.app/app?mock=1) on a phone-sized window.
    - Change US$ 100 to pesos: you see the best route, the official rate and Western Union side by side.
@@ -44,14 +99,14 @@ Built for **Celo · Agents on Open Rails** (deadline Nov 9, 2026). Everything be
    - Demo mode moves no money.
 2. **The real thing.** In MiniPay, open `https://arbolito-livid.vercel.app/app` (it connects by itself), or message [@arbolitoo_bot](https://t.me/arbolitoo_bot) *"cuántos pesos me dan por 10 dólares"*.
 3. **A real receipt.** Open any receipt from [/metrics](https://arbolito-livid.vercel.app/metrics#receipts). The page recomputes its hash in your browser and checks it against Celo: anchored, executed, and delivered exactly what it says. Expect a green "Verified".
-4. **The attribution tag.** On that receipt, open the execution transaction on Celoscan → *Input Data*. The calldata ends with the ERC-8021 suffix for `celo_e054d92430a5`.
+4. **The attribution tag.** On that receipt, open the execution transaction on Celoscan → *Input Data*. The calldata ends with the ERC-8021 suffix: `celo_0acfe36b6ea3,celo_e054d92430a5` since 23 November 2026, `celo_e054d92430a5` before.
 5. **The agent.** Open [/agent](https://arbolito-livid.vercel.app/agent): x402 sales, payments to buy and other agents (with their ERC-8004 ratings), and automatic rule runs, each with its transaction.
 6. **Hire it from your own agent.**
    - In Claude Code: `claude mcp add --transport http arbolito https://arbolito-livid.vercel.app/api/mcp`, then ask for `get_rates_summary` (free) or `get_quote` (it returns the x402 payment terms).
    - Or with curl: `curl -i https://arbolito-livid.vercel.app/api/x402/rates` returns a `402` whose `PAYMENT-REQUIRED` header lists the price in wARS, wBRL, wCOP, wMXN, USDT, USDC and USA₮.
 7. **The desk.** [/desk](https://arbolito-livid.vercel.app/desk) shows quotes, fills from outside takers, inventory and P&L. [8004scan](https://8004scan.io/agents/celo/9976) shows the identity.
 
-## Where each track is answered
+## Where each track is answered (edition 1)
 | Track | Criterion | Evidence |
 |---|---|---|
 | **Stable Agents: LatAm** | Works on mainnet with real wFIAT | wARS/wBRL/wCOP/wMXN conversions with anchored receipts ([/metrics](https://arbolito-livid.vercel.app/metrics)); every tx tagged |
@@ -116,7 +171,7 @@ Ripio's local stablecoins on Celo (wARS, wBRL, wCOP, wMXN) make that a token swa
   ```bash
   curl -i "https://arbolito-livid.vercel.app/api/x402/quote?from=USDT&to=wARS&amount=100"
   # 402 Payment Required; PAYMENT-REQUIRED lists 7 tokens on eip155:42220, payTo 0x7e03…6c3c,
-  # extensions: builder-code (celo_e054d92430a5), eip2612GasSponsoring
+  # extensions: builder-code (celo_0acfe36b6ea3), eip2612GasSponsoring
   ```
   Pay with any x402 v2 client (exact scheme, Celo mainnet). Bad parameters are refused with a 400 before any payment is asked; a failed handler cancels the payment. `pnpm x402:check <url> <token>` signs a payment with a throwaway key and asks the facilitator to verify it, without settling.
 - **OASF** record at [`/.well-known/oasf.json`](https://arbolito-livid.vercel.app/.well-known/oasf.json). All of the above are listed in the [ERC-8004 registration](https://arbolito-livid.vercel.app/.well-known/agent-registration.json).
@@ -143,7 +198,7 @@ Ripio's local stablecoins on Celo (wARS, wBRL, wCOP, wMXN) make that a token swa
 ## Onchain, verifiable
 | What | Where |
 |---|---|
-| Attribution code on every Arbolito tx | `celo_e054d92430a5` (ERC-8021) |
+| Attribution codes (ERC-8021) | `celo_0acfe36b6ea3` (edition 2) with `celo_e054d92430a5` (edition 1) on user and agent transactions; the desk carries edition 1's |
 | ArbolitoReceipts (receipt anchors) | [`0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34`](https://celoscan.io/address/0x5C0b1208D81e0a44DEd74C7e01C54e8ee6b62d34) |
 | ArbolitoGuard v2 (bounded autonomy) | [`0x411E44dB70476F74C3560F5cCFdbc8c63f231d33`](https://celoscan.io/address/0x411E44dB70476F74C3560F5cCFdbc8c63f231d33) |
 | ERC-8004 identity | agentId **9976** on the Identity Registry `0x8004A169…a432` ([tx](https://celoscan.io/tx/0xbb465125ec0aa57324ab3ee39887755504222813a8341c45486abf9a95d5ce89)) |
@@ -162,7 +217,8 @@ Telegram bot ─────┼─► router ────────┼─ Text
 Chat (DeepSeek) ──┘   best route     └─ dolarapi, ER-API, ECB, Textile, Western Union via buy (references)
                         │
                         ├─► ProofBundle ──► ArbolitoReceipts (anchor) ──► /r/<id> (verify in browser)
-                        └─► ArbolitoGuard ◄── rules runner: sends, splits, peso guardian (every 60 s)
+                        └─► ArbolitoGuard ◄── rules runner: sends, splits, peso guardian (every 15 min)
+Payroll runner (no key) ─► prices each payday ─► Telegram and the app's home; the payer confirms
 
 Other agents ─► MCP / A2A / x402 (/api/x402/*) ─► Celo facilitator ─► agent wallet (payTo)
 Agent wallet ─► buy (Western Union) and outside agents over x402 ─► ERC-8004 rating
@@ -171,7 +227,7 @@ Arbolito Desk: price feed ─► Stitch (Textile filler) ◄─► Textile RFQ; 
 - **Monorepo:** pnpm, TypeScript (strict), viem, Next.js 16 on Vercel, Postgres (Neon), Foundry contracts, Vitest.
 - **Services:**
   - The web app (Mini App, its API, public pages, x402, MCP, A2A) runs on Vercel.
-  - The Telegram bot runs on Railway. It also runs the rules, the Western Union reads and the agent purchases.
+  - The Telegram bot runs on Railway. It also runs the rules, the payroll schedules, the Western Union reads and the agent purchases.
   - The desk feed runs on Railway too.
 - **Money safety:**
   - The user's own MiniPay wallet signs every conversion and send. The chat agent has no tool that moves money.
@@ -179,18 +235,18 @@ Arbolito Desk: price feed ─► Stitch (Textile filler) ◄─► Textile RFQ; 
   - Every transaction Arbolito sends is **simulated first**, **tagged**, and **capped** in code.
   - Nothing that may have moved money is retried blindly. Every paid call is quoted first, for free.
   - Every new money path is rehearsed on an **anvil fork of Celo mainnet** first. That covers the guard, the rules runner and the peso guardian, run against the deployed contract.
-- **Tests:** about 500 unit tests and the Foundry suite (`pnpm test`, offline), plus database tests and fork tests against real mainnet state.
+- **Tests:** over 600 unit tests and the Foundry suite (`pnpm test`, offline), plus database tests and fork tests against real mainnet state.
 - **The full design:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). It covers components, wallets and keys, every money flow as a sequence diagram, the ProofBundle, the safety model, the data model and testing.
 
 ## Repo map
 | Path | What |
 |---|---|
-| `apps/web` | Website, MiniPay Mini App (`/app`), receipts (`/r`), `/agent`, `/metrics`, `/desk`, the Mini App's API, the x402 API, MCP and A2A |
-| `apps/agent` | Telegram bot, the rules runner, the Western Union runner, agent purchases |
+| `apps/web` | Website, MiniPay Mini App (`/app`), receipts (`/r`), payout statements (`/payouts`), `/agent`, `/metrics`, `/desk`, the Mini App's API, the x402 API, MCP and A2A |
+| `apps/agent` | Telegram bot, the rules runner, the payroll runner, the Western Union runner, agent purchases |
 | `apps/desk` | Arbolito Desk: price feed, Stitch supervisor, risk officer, rebalancer, ledger |
 | `packages/router` | Uniswap v3 and Textile RFQ adapters, the route planner, the executor |
 | `packages/proof` | ProofBundle schema, canonical hashing, anchoring, verification |
-| `packages/rules` | Standing rules (send, split, guardian): types, signed text, schedule, decisions, the runner |
+| `packages/rules` | Standing rules (send, split, guardian) and payroll schedules: types, signed text, schedule, decisions, the runner |
 | `packages/x402` | x402 v1 client (pays buy), v2 client (pays other agents), the seller (Arbolito's paid API) |
 | `packages/competitors` | Reading Western Union in a browser rented through buy |
 | `packages/chain` | Clients, the guarded sender (caps, attribution, simulation), guard encoders, ERC-8004 reputation |
@@ -217,9 +273,9 @@ Other test sets need outside services:
 | File | What's in it |
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it's built: components, wallets, every money flow, safety, data, tests |
-| [docs/SCOPE.md](docs/SCOPE.md) | What's done and what's left, mapped to the judging criteria |
+| [docs/SCOPE.md](docs/SCOPE.md) | What's done and what's left, edition 2 first |
 | [docs/STATUS.md](docs/STATUS.md) | The build log, newest first |
 | [docs/DESK-STRATEGY.md](docs/DESK-STRATEGY.md) | The desk's strategy, results and how to verify them |
 | [docs/TEXTILE-WRITEUP.md](docs/TEXTILE-WRITEUP.md) | The desk write-up for Textile |
 | [docs/04-reference.md](docs/04-reference.md) | Verified addresses, pools, endpoints and gotchas |
-| [docs/08-judging-criteria.md](docs/08-judging-criteria.md) | The official judging criteria we built against |
+| [docs/08-judging-criteria.md](docs/08-judging-criteria.md) | Edition 1's official judging criteria |

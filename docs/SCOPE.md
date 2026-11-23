@@ -23,7 +23,7 @@ Track rules: a tagged Textile FX taker conversion in the product flow; local-sta
 | Pay an exact local amount ("₦75,000"), cNGN and wCOP | 🟡 live, fork-rehearsed; no real payout yet |
 | CBN official USD/NGN on receipts, under its own date | ✅ live |
 | Batch payouts (many payees, one review, a receipt each) and a payout statement at `/payouts/<id>` (link and PDF) | 🟡 live; no real payout yet |
-| Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes, held past a tolerance | 🟡 built; not deployed |
+| Scheduled payroll ("every Friday pay these 5") with fresh Textile quotes, held past a tolerance | 🟡 live; no real payday yet |
 | Named users: one in Nigeria, one in LatAm, with consent | 👤 |
 | Loops project for edition 2, then AskBots review (24 Nov, 4 Dec) | 👤 |
 
