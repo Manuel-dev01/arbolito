@@ -65,10 +65,10 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 ## Log
 ### 2026-11-23: edition 2 build starts (Stablecoin Corridors)
 - **Tagging:** `ATTRIBUTION_CODE` takes a comma-separated list, current edition first.
-  - Every prepared call and every tx we send carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`.
+  - With both codes listed, every call prepared for a user and every tx the web app or bot sends carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`. Production doesn't list both yet (next points), so no transaction carries the new code so far.
   - "Is this ours" checks match the first code. The x402 builder code carries one code, the first.
   - `.env` is updated. **Vercel and arbolito-bot still carry only the old code** until the founder approves the change.
-  - desk-feed keeps only edition 1's code on purpose: maker activity doesn't count in edition 2.
+  - desk-feed keeps only edition 1's code on purpose: maker activity doesn't count in edition 2. It also runs code from before the list (5a8361c), which rejects one.
 - **cNGN for users:** the Mini App, bot and chat hold, convert and send naira (Textile only, 6 decimals, ₦).
   - References: Textile's USDT_NGN mid and ER-API's USD/NGN (labelled interbank).
   - Free previews on 2026-11-23: 1 USDT → ₦1,443.07, fee ≈ 0.02%, about 43.8k USDT of depth.
@@ -79,7 +79,10 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **Self-trade guard:** a team wallet (packages/config/src/team.ts + `TEAM_WALLETS`) never takes a firm quote our desk would fill. The quote is released before anything is signed.
   - Independent users keep the best price.
   - Own-desk fills are logged and left out of the edition-2 counts.
-- **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov that have a Textile taker leg. It shows independent payers and payees per corridor, and lists every exclusion with its reason.
+  - The founder's second MiniPay wallet was missing from the list; added before anything was pushed.
+- **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov whose Textile taker leg is in a listed corridor (USD₮ with cNGN, IDRX, wARS, wBRL, wMXN or wCOP, either way, labelled in the direction traded).
+  - Payers and payees are outside the team and never funded by it: `FUNDED_WALLETS`, every address our public wallets sent tokens to (`pnpm funded:wallets`; one hop, private).
+  - Every exclusion is counted by reason. Receipts are linked except where the reason would name a private wallet.
 - 549 unit tests pass. Commits: 470c09a, ec521c3, 50319bd, 81cf3c6.
 
 ### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up
