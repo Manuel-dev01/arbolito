@@ -7,7 +7,9 @@ import { attachDatabasePool } from "@vercel/functions";
 /**
  * Server-only data access for receipts. Source of truth is the `receipts` table (packages/db);
  * when DATABASE_URL is unset (local dev, tests, a build without env) or a receipt is not in the
- * DB, it falls back to the published bundles in docs/receipts/*.json.
+ * DB, it falls back to the published bundles in docs/receipts/*.json. A failed query throws: the
+ * cached wrappers (cached.ts) must not store a fallback as if it were the answer (2026-11-23:
+ * /metrics showed 1 wallet for minutes after a few failed queries).
  *
  * Records are plain JSON (no bigint) so they can sit in Next's data cache.
  */
@@ -127,9 +129,26 @@ function rowRecord(row: ReceiptRow, supersedes: string | null): ReceiptRecord | 
   };
 }
 
-function logDbError(what: string, e: unknown) {
-  // Message only: connection errors can echo the host, never the password, but keep it short.
-  console.error(`[receipts] ${what} failed, falling back to docs/receipts: ${e instanceof Error ? e.message.slice(0, 200) : "error"}`);
+/** Drizzle's message is only the SQL; what went wrong is in its cause. Connection errors can echo the host, never the password. */
+function dbError(e: unknown): string {
+  const c = (e instanceof Error && e.cause ? e.cause : e) as { code?: unknown; message?: unknown };
+  return `${c?.code ? `${String(c.code)} ` : ""}${String(c?.message ?? "error").slice(0, 160)}`;
+}
+
+/** One read, tried twice: a connection that died while the instance was idle fails its first query. */
+async function read<T>(what: string, query: () => Promise<T>): Promise<T> {
+  try {
+    return await query();
+  } catch (e) {
+    console.error(`[receipts] ${what} failed, retrying once: ${dbError(e)}`);
+    await new Promise((ok) => setTimeout(ok, 250));
+    try {
+      return await query();
+    } catch (again) {
+      console.error(`[receipts] ${what} failed: ${dbError(again)}`);
+      throw again;
+    }
+  }
 }
 
 // ---------------------------------------------------------------- public API
@@ -139,36 +158,39 @@ export async function getReceipt(id: string): Promise<ReceiptRecord | undefined>
   const db = UUID.test(id) ? webDb() : undefined;
   if (db) {
     try {
-      const row = await getReceiptRow(db, id);
-      if (row) {
-        const older = await getSupersededRow(db, id);
-        const rec = rowRecord(row, older?.id ?? null);
-        if (rec) return rec;
-      }
+      const rec = await read("getReceipt", async () => {
+        const row = await getReceiptRow(db, id);
+        return row ? rowRecord(row, (await getSupersededRow(db, id))?.id ?? null) : undefined;
+      });
+      if (rec) return rec;
     } catch (e) {
-      logDbError("getReceipt", e);
+      // "We couldn't look" is not "it doesn't exist".
+      const file = readFileRecord(id);
+      if (!file) throw e;
+      return file;
     }
   }
   return readFileRecord(id);
 }
 
-/** Every receipt (DB rows plus any published file bundle the DB does not have), newest first. */
+const newestFirst = (list: ReceiptRecord[]) => list.sort((a, b) => (a.bundle.createdAt < b.bundle.createdAt ? 1 : a.bundle.createdAt > b.bundle.createdAt ? -1 : 0));
+
+/** Only the published bundles, newest first: what a page shows when the database can't be read. */
+export const listFileReceipts = (): ReceiptRecord[] => newestFirst(readFileRecords());
+
+/** Every receipt (DB rows plus any published file bundle the DB does not have), newest first. Throws when the DB can't be read. */
 export async function listReceipts(): Promise<ReceiptRecord[]> {
   const out: ReceiptRecord[] = [];
   const db = webDb();
   if (db) {
-    try {
-      const rows = await listReceiptRows(db);
-      const replacedBy = new Map(rows.filter((r) => r.supersededBy).map((r) => [r.supersededBy!, r.id]));
-      for (const row of rows) {
-        const rec = rowRecord(row, replacedBy.get(row.id) ?? null);
-        if (rec) out.push(rec);
-      }
-    } catch (e) {
-      logDbError("listReceipts", e);
+    const rows = await read("listReceipts", () => listReceiptRows(db));
+    const replacedBy = new Map(rows.filter((r) => r.supersededBy).map((r) => [r.supersededBy!, r.id]));
+    for (const row of rows) {
+      const rec = rowRecord(row, replacedBy.get(row.id) ?? null);
+      if (rec) out.push(rec);
     }
   }
   const inDb = new Set(out.map((r) => r.bundle.routeId));
   for (const rec of readFileRecords()) if (!inDb.has(rec.bundle.routeId)) out.push(rec);
-  return out.sort((a, b) => (a.bundle.createdAt < b.bundle.createdAt ? 1 : a.bundle.createdAt > b.bundle.createdAt ? -1 : 0));
+  return newestFirst(out);
 }

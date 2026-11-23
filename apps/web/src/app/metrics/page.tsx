@@ -26,7 +26,7 @@ export default async function MetricsPage({ searchParams }: Props) {
   const t = messages(lang).metrics;
   const tr = messages(lang).receipt;
 
-  const [{ records, fetchedAt }, purchases] = await Promise.all([listReceiptsCached(), loadBuyPurchases().catch(() => [])]);
+  const [{ records, fetchedAt, degraded }, purchases] = await Promise.all([listReceiptsCached(), loadBuyPurchases().catch(() => [])]);
   const active = records.filter((r) => !r.supersededBy);
   const anchors = new Map(
     await Promise.all(
@@ -80,7 +80,7 @@ export default async function MetricsPage({ searchParams }: Props) {
         <Display as="h1" a={t.titleA} b={t.titleB} accent="pink" className="display-m" />
         <p className="lead">{t.lead}</p>
         <p className="small muted">
-          {t.updated(`${updated} UTC`)} · {fromDb ? t.sourceDb : t.sourceFile}
+          {t.updated(`${updated} UTC`)} · {degraded ? <b>{t.sourceDown}</b> : fromDb ? t.sourceDb : t.sourceFile}
         </p>
       </header>
 

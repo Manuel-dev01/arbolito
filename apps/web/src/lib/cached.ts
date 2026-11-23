@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import type { Hex } from "viem";
 import type { ProofBundle } from "@arbolito/proof";
 import { findAnchor, verifyOnchain, type Verification } from "./chain";
-import { getReceipt, listReceipts, type ReceiptRecord } from "./data";
+import { getReceipt, listFileReceipts, listReceipts, type ReceiptRecord } from "./data";
 
 /**
  * Next data-cache wrappers (server only). Receipts and metrics refresh every ~60 s; onchain
@@ -10,16 +10,31 @@ import { getReceipt, listReceipts, type ReceiptRecord } from "./data";
  * so an RPC hiccup only costs one render.
  */
 
-export const getReceiptCached = unstable_cache(async (id: string): Promise<ReceiptRecord | null> => (await getReceipt(id)) ?? null, ["receipt-v1"], {
+export const getReceiptCached = unstable_cache(async (id: string): Promise<ReceiptRecord | null> => (await getReceipt(id)) ?? null, ["receipt-v2"], {
   revalidate: 60,
   tags: ["receipts"],
 });
 
-export const listReceiptsCached = unstable_cache(
-  async (): Promise<{ records: ReceiptRecord[]; fetchedAt: string }> => ({ records: await listReceipts(), fetchedAt: new Date().toISOString() }),
-  ["receipts-list-v1"],
-  { revalidate: 60, tags: ["receipts"] },
-);
+interface ReceiptList {
+  records: ReceiptRecord[];
+  fetchedAt: string;
+  /** The database couldn't be read and nothing was cached: only the published bundles are here. */
+  degraded?: true;
+}
+
+const listCached = unstable_cache(async (): Promise<ReceiptList> => ({ records: await listReceipts(), fetchedAt: new Date().toISOString() }), ["receipts-list-v2"], {
+  revalidate: 60,
+  tags: ["receipts"],
+});
+
+/** The last good list survives a failed refresh (a thrown error is never cached); with none, the published bundles, marked degraded. */
+export async function listReceiptsCached(): Promise<ReceiptList> {
+  try {
+    return await listCached();
+  } catch {
+    return { records: listFileReceipts(), fetchedAt: new Date().toISOString(), degraded: true };
+  }
+}
 
 /** Thrown inside the cache so a failed check is returned but never cached. */
 class NotVerified extends Error {
