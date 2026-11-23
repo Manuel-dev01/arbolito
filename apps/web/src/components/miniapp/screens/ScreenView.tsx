@@ -9,6 +9,7 @@ import { ChatScreen } from "./Chat";
 import { Alts, Cancelled, ChangeScreen, Done, Failed, NoMarket, Processing, QuoteLoading, QuoteScreen, TgQuote } from "./Change";
 import { SendAdd, SendAmount, SendDone, SendList, SendQuote } from "./Send";
 import { AutoConsent, AutoContacts, AutoIntro, AutoLimits, AutoOn } from "./Autonomy";
+import { PayoutPick, PayoutProgress, PayoutReview } from "./Payout";
 import { Revoke, Security, Settings, Withdraw } from "./Account";
 import { ReceiptDetail, ReceiptsList } from "./Receipts";
 
@@ -64,6 +65,12 @@ export function ScreenView({ screen }: { screen: Screen }) {
       return <SendQuote />;
     case "send-done":
       return <SendDone />;
+    case "payout":
+      return <PayoutPick />;
+    case "payout-review":
+      return <PayoutReview />;
+    case "payout-run":
+      return <PayoutProgress />;
     case "auto-intro":
       return <AutoIntro />;
     case "auto-limits":

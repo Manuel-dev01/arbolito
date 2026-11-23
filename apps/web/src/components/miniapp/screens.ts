@@ -6,6 +6,7 @@ export const SCREENS = [
   "home", "chat",
   "change", "quote-loading", "quote", "quote-expired", "quote-changed", "quote-nomarket", "alts", "processing", "done", "failed", "cancelled", "tg-quote",
   "send", "send-add", "send-amount", "send-quote", "send-done",
+  "payout", "payout-review", "payout-run",
   "auto-intro", "auto-limits", "auto-contacts", "auto-consent", "auto-on",
   "security", "revoke", "receipts", "receipt", "settings", "withdraw",
 ] as const;
@@ -14,13 +15,14 @@ export type Screen = (typeof SCREENS)[number];
 
 export const isScreen = (s: unknown): s is Screen => typeof s === "string" && (SCREENS as readonly string[]).includes(s);
 
-type TitleKey = keyof Pick<MiniDict, "hAdd" | "hChange" | "hQuote" | "hAlts" | "hSend" | "hAddContact" | "hReceipt" | "hAuto" | "hSecurity" | "hWithdraw" | "hContacts">;
+type TitleKey = keyof Pick<MiniDict, "hAdd" | "hChange" | "hQuote" | "hAlts" | "hSend" | "hAddContact" | "hReceipt" | "hAuto" | "hSecurity" | "hWithdraw" | "hContacts" | "hPayout">;
 
 /** [header title, parent for the in-app ‹ when there is no history to pop]. */
 export const HEADER: Partial<Record<Screen, [TitleKey | "sendTo", Screen]>> = {
   add: ["hAdd", "welcome"], "add-ripio": ["hAdd", "add"],
   change: ["hChange", "home"], "quote-loading": ["hQuote", "change"], quote: ["hQuote", "change"], "quote-expired": ["hQuote", "change"], "quote-changed": ["hQuote", "change"], "quote-nomarket": ["hQuote", "change"], alts: ["hAlts", "quote"],
   send: ["hSend", "home"], "send-add": ["hAddContact", "send"], "send-amount": ["sendTo", "send"], "send-quote": ["sendTo", "send-amount"],
+  payout: ["hPayout", "send"], "payout-review": ["hPayout", "payout"], "payout-run": ["hPayout", "home"],
   "auto-intro": ["hAuto", "home"], "auto-limits": ["hAuto", "auto-intro"], "auto-contacts": ["hAuto", "auto-limits"], "auto-consent": ["hAuto", "auto-contacts"],
   security: ["hSecurity", "settings"], revoke: ["hSecurity", "security"], receipt: ["hReceipt", "receipts"], withdraw: ["hWithdraw", "home"],
 };

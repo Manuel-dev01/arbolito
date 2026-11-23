@@ -34,6 +34,7 @@ import { HEADER, STATE_ALIASES, STEP, TABS, TAB_SCREENS, isScreen, type Screen }
 import { Header } from "./ui";
 import { Gate } from "./screens/Gate";
 import { ScreenView } from "./screens/ScreenView";
+import { usePayout } from "./use-payout";
 import { CurSheet, DetailsSheet, LangSheet, MiniPaySheet, ThemeSheet } from "./sheets";
 import { codeFromUrl, LinkScreen } from "./screens/Link";
 
@@ -564,6 +565,8 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     await settle(res, q, "send", null);
   }, [ready, sendContact, send.busy, send.amount, send.quote, send.pay, send.from, send.to, send.draftId, t, toast, requestSendQuote, setSend, lang, onStage, go, settle]);
 
+  const payout = usePayout(ready, { contacts, lang, go, showError, refreshBalances: () => void refreshBalances(), addReceipt, sheetAmount: (s) => (sheetAmount.current = s) });
+
   // ── Autonomy ──
   const activateAuto = useCallback(async () => {
     if (!ready || autoDraft.busy) return;
@@ -1063,6 +1066,7 @@ export function MiniApp({ mode = "app" }: { mode?: "app" | "link" }) {
     setSend,
     requestSendQuote: () => void requestSendQuote(),
     confirmSend: () => void confirmSend(),
+    payout,
     autoDraft,
     setAutoDraft,
     activateAuto: () => void activateAuto(),

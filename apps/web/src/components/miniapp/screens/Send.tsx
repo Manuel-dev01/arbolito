@@ -28,7 +28,7 @@ function usePickFromMiniPay() {
 }
 
 export function SendList() {
-  const { t, contacts, setSend, go } = useApp();
+  const { t, contacts, setSend, go, payout } = useApp();
   const pick = usePickFromMiniPay();
   const [q, setQ] = useState("");
   if (contacts.length === 0)
@@ -54,6 +54,13 @@ export function SendList() {
       <div className="mp-pad" style={{ gap: 14, paddingTop: 4 }}>
         <h1 className="mp-h1 md">{t.sendTitle}</h1>
         <input className="mp-input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} style={{ minHeight: 48 }} />
+        <button type="button" className="mp-card mp-list-row" onClick={() => go(payout.run ? "payout-run" : "payout")}>
+          <span className="mp-grow mp-col" style={{ gap: 2 }}>
+            <span style={{ fontSize: 17, fontWeight: 600 }}>{payout.run ? t.poOpenRun : t.poEntry}</span>
+            <span className="mp-meta">{payout.run ? t.poOpenRunB : t.poEntryB}</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
         <div className="mp-card">
           {shown.length === 0 ? <div style={{ padding: 16 }} className="mp-small">{t.noMatch}</div> : null}
           {shown.map((c) => (

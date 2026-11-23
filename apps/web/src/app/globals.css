@@ -2859,3 +2859,25 @@ body:has(.pub) {
     transition: none;
   }
 }
+
+/* Payout statements print as a plain document ("Save as PDF"). */
+@page {
+  margin: 14mm;
+}
+@media print {
+  .pub .nav-wrap,
+  .pub .pie,
+  .pub .no-print {
+    display: none;
+  }
+  .pub .main {
+    max-width: none;
+    padding: 0;
+  }
+  .pub .table-wrap {
+    overflow: visible;
+  }
+  .pub tr {
+    break-inside: avoid;
+  }
+}

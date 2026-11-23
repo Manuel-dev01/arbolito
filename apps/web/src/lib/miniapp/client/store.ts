@@ -3,6 +3,7 @@
  * Every read/write is guarded: storage may be unavailable, and the app must still render.
  */
 import type { Cur, Lang } from "./format";
+import type { PayoutRun } from "./payout";
 
 export interface Contact {
   id: string;
@@ -106,6 +107,10 @@ export function createStore(kv: KV | null = defaultKV()) {
 
     pendingSubmits: (account: string) => read<PendingSubmit[]>(`pending.${acct(account)}`, []),
     setPendingSubmits: (account: string, list: PendingSubmit[]) => write(`pending.${acct(account)}`, list.length ? list : null),
+
+    /** The payout in progress, or the last one until it is closed. */
+    payoutRun: (account: string) => read<PayoutRun | null>(`payout.${acct(account)}`, null),
+    setPayoutRun: (account: string, r: PayoutRun | null) => write(`payout.${acct(account)}`, r),
 
     /** Set when the user leaves for Ripio, so returning lands on "Esperando tu envío". */
     pendingRipio: (account: string) => read<{ at: number; sym: string; before: string } | null>(`ripio.${acct(account)}`, null),

@@ -26,4 +26,4 @@ export function proxy(req: NextRequest) {
 }
 
 // Skips assets, the API and the known pages; everything else is checked (cheaply) above.
-export const config = { matcher: ["/((?!_next/|api/|r/|desk|metrics|minipay-check|favicon|icon|apple-icon).+)"] };
+export const config = { matcher: ["/((?!_next/|api/|r/|payouts/|desk|metrics|minipay-check|favicon|icon|apple-icon).+)"] };

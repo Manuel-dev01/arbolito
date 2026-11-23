@@ -434,6 +434,14 @@ const es = {
     conversionsLink: "Cambios de los usuarios, con su comprobante",
     deskLink: "La mesa de cambio (Textile FX)",
   },
+  payouts: {
+    kicker: "Resumen de pagos", title: "Resumen de pagos", titleA: "Cada pago, ", titleB: "con prueba.",
+    lead: "Cada fila sale de un comprobante anclado en Celo: cuánto se pagó, cuánto recibió cada persona, a qué tasa y en qué transacciones.",
+    payer: "pagó", payments: "Pagos", paid: "Pagado", received: "Recibido", payees: (n: number) => (n === 1 ? "1 persona" : `${n} personas`), print: "Guardar como PDF",
+    col: { payee: "Persona", paid: "Pagado", received: "Recibido", rate: "Tasa", date: "Fecha (UTC)", receipt: "Comprobante", tx: "Transacciones" },
+    state: { verified: "✓ Verificado", pending: "Sin verificar todavía", mismatch: "No coincide" },
+    foot: "Los nombres, si aparecen, los puso quien compartió el enlace: no están en los comprobantes ni en Celo.",
+  },
   metrics: {
     title: "Métricas en vivo",
     lead: "Todo lo que Arbolito hizo en Celo mainnet, calculado desde sus comprobantes públicos. Cada número enlaza a su fuente.",
@@ -907,6 +915,14 @@ const pt: Messages = {
     conversionsLink: "Trocas dos usuários, com comprovante",
     deskLink: "A mesa de câmbio (Textile FX)",
   },
+  payouts: {
+    kicker: "Resumo de pagamentos", title: "Resumo de pagamentos", titleA: "Cada pagamento, ", titleB: "com prova.",
+    lead: "Cada linha vem de um comprovante ancorado na Celo: quanto foi pago, quanto cada pessoa recebeu, a que taxa e em quais transações.",
+    payer: "pago por", payments: "Pagamentos", paid: "Pago", received: "Recebido", payees: (n: number) => (n === 1 ? "1 pessoa" : `${n} pessoas`), print: "Salvar como PDF",
+    col: { payee: "Pessoa", paid: "Pago", received: "Recebido", rate: "Taxa", date: "Data (UTC)", receipt: "Comprovante", tx: "Transações" },
+    state: { verified: "✓ Verificado", pending: "Ainda não verificado", mismatch: "Não confere" },
+    foot: "Os nomes, se aparecem, foram colocados por quem compartilhou o link: não estão nos comprovantes nem na Celo.",
+  },
   metrics: {
     title: "Métricas ao vivo",
     lead: "Tudo o que o Arbolito fez na Celo mainnet, calculado a partir dos comprovantes públicos. Cada número leva à sua fonte.",
@@ -1377,6 +1393,14 @@ const en: Messages = {
     empty: "Nothing yet. It shows up here as soon as it happens.",
     conversionsLink: "Users' conversions, each with its receipt",
     deskLink: "The FX desk (Textile FX)",
+  },
+  payouts: {
+    kicker: "Payout statement", title: "Payout statement", titleA: "Every payment, ", titleB: "with proof.",
+    lead: "Each row comes from a receipt anchored on Celo: what was paid, what each person received, at which rate and in which transactions.",
+    payer: "paid by", payments: "Payments", paid: "Paid", received: "Received", payees: (n: number) => (n === 1 ? "1 person" : `${n} people`), print: "Save as PDF",
+    col: { payee: "Person", paid: "Paid", received: "Received", rate: "Rate", date: "Date (UTC)", receipt: "Receipt", tx: "Transactions" },
+    state: { verified: "✓ Verified", pending: "Not verified yet", mismatch: "Doesn't match" },
+    foot: "Names, when shown, were added by whoever shared the link: they aren't in the receipts or on Celo.",
   },
   metrics: {
     title: "Live metrics",

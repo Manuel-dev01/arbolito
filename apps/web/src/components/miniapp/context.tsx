@@ -14,6 +14,7 @@ import type { MiniDict } from "../../i18n/miniapp";
 import type { ClientErrorCode } from "../../lib/miniapp/client/errors";
 import type { Screen } from "./screens";
 import { ActionBar, type BtnSpec } from "./ui";
+import type { PayoutCtx } from "./use-payout";
 
 export interface BalState {
   status: "loading" | "ok" | "offline";
@@ -142,6 +143,7 @@ export interface AppCtx {
   setSend(p: Partial<SendState>): void;
   requestSendQuote(): void;
   confirmSend(): void;
+  payout: PayoutCtx;
 
   autoDraft: AutoDraft;
   setAutoDraft(p: Partial<AutoDraft>): void;
