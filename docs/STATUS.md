@@ -83,7 +83,10 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 - **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov whose Textile taker leg is in a listed corridor (USD₮ with cNGN, IDRX, wARS, wBRL, wMXN or wCOP, either way, labelled in the direction traded).
   - Payers and payees are outside the team and never funded by it: `FUNDED_WALLETS`, every address our public wallets sent tokens to (`pnpm funded:wallets`; one hop, private).
   - Every exclusion is counted by reason. Receipts are linked except where the reason would name a private wallet.
-- 549 unit tests pass. Commits: 470c09a, ec521c3, 50319bd, 81cf3c6.
+- **Checks:** 553 unit tests (1 skipped), 105 contract tests (3 skipped), both typechecks and the production build pass. /metrics checked against the real database at 1280 and 360 px in three languages; edition-1 numbers are unchanged.
+  - Fork tests: the guardian and rules-runner tests pass. The proof and router ones time out on this machine (about 1 s per RPC call), on 470c09a too. The chain ones did not finish.
+  - cNGN has not run on a fork or on mainnet yet.
+  - Next.js 16.4.0 has critical and high advisories; fixed in 16.4.1 and 16.4.5. Not upgraded yet.
 
 ### 2026-11-22: Neon quota outage fixed, desk restarted and approvals topped up
 - **Cause:** the Neon free plan ran past its 100 CU-hour monthly quota (error 53000). The desk ticks every 10 s and the bot every 60 s, so the database never suspended.
