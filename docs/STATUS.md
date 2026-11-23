@@ -87,11 +87,13 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - First cNGN conversion on mainnet (the founder's MiniPay wallet, so it proves the flow and isn't traction): 1 USDT → 1,448.567082 cNGN through a Textile firm quote from an outside maker, both codes onchain, receipt anchored and verified ([tx](https://celoscan.io/tx/0x7e6906f1959bf93cc98127bc9a84f9c7acb952e34da28759ee4bf2996ffedd9c), [receipt](https://arbolito-livid.vercel.app/r/b49c8dd4-d4bc-4f52-aca5-a888ae1237a2)).
   - Next.js upgraded 16.4.0 → 16.4.5 (critical and high advisories).
 
-- **Batch payouts (built, not deployed):** Send → Pay several people. One review, then each payee gets a fresh quote, their own fill and forward, and their own receipt.
+- **Batch payouts (live):** Send → Pay several people. One review, then each payee gets a fresh quote, their own fill and forward, and their own receipt.
   - A payee who would get over 0.5% less than reviewed is held, unsigned. A cancel or failure stops the run; what was paid stays paid.
   - Progress is saved on the phone before each confirmation. A payment found mid-flight becomes "unknown" and is never retried on its own.
   - `/payouts/<id>`: the id is the list of receipts, so nothing is stored and every row comes from an anchored receipt. Names travel only in the link's fragment.
-  - 15 tests; the demo run, a rejection and the statement (with sample receipts) checked in a browser. MiniPay asks for up to 3 confirmations per payee.
+  - 15 tests; the demo run, a rejection and the statement (with sample receipts) checked in a browser. MiniPay asks for up to 3 confirmations for the first payee in a currency, then 2: the first approval covers what's left to pay in that currency, capped by the balance (fork-rehearsed: approve 2, pay 1, 1 left; that change is not deployed yet).
+- **CBN official USD/NGN (built, not deployed):** the bot reads the CBN every 6 h and stores its newest US dollar rate under its own date (no payment). Quotes and receipts use it as "official" only on that date and the next day, so Monday's price is never compared with Friday's rate. A receipt shows a reference's date when it isn't the day of the trade.
+- **Agent wallet:** first transaction with the edition-2 tag, a 0.10 USDT gas top-up to the rules wallet ([tx](https://celoscan.io/tx/0x4fd71bb3770597f7503ca26f5a2496fa9b4b897ff4fc3e780e84382a56ef4a88)).
 - **Loops:** edition-2 project created (founder's go-ahead).
 - **/metrics showing 1 wallet (2026-11-23, 06:54–06:59 UTC):** a Vercel instance failed its receipt queries four times while the database was up, and the fallback (the 2 receipts in the repo) was cached as the answer. Now a failed read is retried once, its real cause is logged, and a failure is never cached: the last good numbers stay, or the page says the database can't be reached. Why those queries failed isn't known: the old log had only the SQL.
 
