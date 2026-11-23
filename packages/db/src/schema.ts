@@ -342,9 +342,9 @@ export const competitorRates = pgTable(
   "competitor_rates",
   {
     id: uuid().primaryKey().defaultRandom(),
-    /** western_union */
+    /** western_union, or cbn: Nigeria's official rate, free, `at` = the rate's own date */
     provider: text().notNull(),
-    /** USD-ARS | USD-BRL */
+    /** USD-ARS | USD-BRL | USD-NGN */
     corridor: text().notNull(),
     /** Local currency per US$ (decimal string), before the provider's transfer fee. */
     rate: text().notNull(),

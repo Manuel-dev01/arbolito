@@ -13,6 +13,7 @@ import { closeDb, getDb } from "@arbolito/db";
 import { createBot } from "./bot";
 import { startAgentBuysRunner } from "./agent-buys";
 import { startCompetitorsRunner } from "./competitors";
+import { startOfficialRatesRunner } from "./official-rates";
 import { startRulesRunner } from "./rules";
 
 const env = loadEnv();
@@ -58,6 +59,8 @@ const runner = run(bot);
 const stopRules = startRulesRunner(getDb(), bot.api, env);
 // Western Union rates through buy (COMPETITORS_RUNNER=live), for "vs Western Union" on quotes and receipts.
 const stopCompetitors = startCompetitorsRunner(getDb(), env);
+// Nigeria's official USD/NGN (CBN), a few times a day: free, for receipts' "official" rate.
+const stopOfficialRates = startOfficialRatesRunner(getDb());
 // Paid calls to other Celo agents, each rated on ERC-8004 (AGENT_BUYS=live).
 const stopAgentBuys = startAgentBuysRunner(getDb(), env);
 
@@ -67,6 +70,7 @@ const stop = async () => {
   linker.stop();
   stopRules?.();
   stopCompetitors?.();
+  stopOfficialRates();
   stopAgentBuys?.();
   if (runner.isRunning()) await runner.stop();
   await closeDb();

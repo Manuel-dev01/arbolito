@@ -20,7 +20,7 @@ export async function latestCompetitorRates(db: Db, provider: string, maxAgeMs: 
   return rows.filter((r) => (seen.has(r.corridor) ? false : (seen.add(r.corridor), true)));
 }
 
-/** Recent readings (each with the buy payment that fetched it), newest first: the proof list on /metrics. */
+/** Recent Western Union readings (each with the buy payment that fetched it), newest first: the proof list on /metrics. */
 export async function recentCompetitorRates(db: Db, limit = 30): Promise<CompetitorRateRow[]> {
-  return db.select().from(competitorRates).orderBy(desc(competitorRates.at)).limit(limit);
+  return db.select().from(competitorRates).where(eq(competitorRates.provider, "western_union")).orderBy(desc(competitorRates.at)).limit(limit);
 }

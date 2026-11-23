@@ -115,7 +115,8 @@ const frankfurterSchema = z.object({ date: z.string(), rates: z.record(z.string(
  * rate here: USD/COP from ExchangeRate-API's open feed (daily; it asks for attribution where shown,
  * which the receipt's source link gives) and USD/MXN from the ECB via Frankfurter. Colombia's TRM
  * (datos.gov.co) refuses server requests, so nothing is labelled "official" for COP. USD/NGN also
- * comes from ER-API (the CBN's official rate is an 8 MB, 15–30 s download: too slow per quote).
+ * comes from ER-API here; the CBN's official rate is a whole-history download, so the bot stores it daily
+ * and the web app adds it while current (apps/agent/src/official-rates.ts).
  */
 export async function interbankRefs(timeoutMs = 1500): Promise<Reference[]> {
   const erUrl = "https://open.er-api.com/v6/latest/USD";

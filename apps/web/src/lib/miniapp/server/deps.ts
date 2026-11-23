@@ -15,7 +15,7 @@ import {
   type VenueAdapter,
 } from "@arbolito/router";
 import { webDb } from "../../data";
-import { westernUnionReferences } from "./competitors";
+import { cbnReference, westernUnionReferences } from "./competitors";
 import { notReady } from "./errors";
 import { logError } from "./http";
 import { RateLimiter } from "./rate-limit";
@@ -108,15 +108,19 @@ export function buildDeps(): MiniappDeps {
     adapters: [new UniswapV3Adapter(chain), new TextileRfqAdapter(undefined, undefined, 3_500)],
     async references(blockNumber) {
       if (refsCache && Date.now() - refsCache.at < REFS_TTL_MS) return refsCache.value;
-      // Market references, plus Western Union's latest rates read through buy (best effort).
-      const [value, wu] = await Promise.all([
+      // Market references, plus Western Union's latest rates read through buy and the CBN's official naira (best effort).
+      const [value, wu, cbn] = await Promise.all([
         fetchReferences(chain, blockNumber),
         westernUnionReferences(webDb()).catch((err) => {
           logError("western union refs", err);
           return [];
         }),
+        cbnReference(webDb()).catch((err) => {
+          logError("cbn ref", err);
+          return [];
+        }),
       ]);
-      value.references.push(...wu);
+      value.references.push(...wu, ...cbn);
       refsCache = { at: Date.now(), value };
       return value;
     },

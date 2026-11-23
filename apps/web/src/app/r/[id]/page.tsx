@@ -86,7 +86,7 @@ function Comparison({ v, lang }: { v: ReceiptView; lang: Lang }) {
   const t = messages(lang);
   const locale = LOCALE[lang];
   const rows = [
-    { key: "arbolito", name: t.story.arbolito, rate: v.rate, value: v.amountOut, me: true, delta: 0n, bps: 0, source: undefined as string | undefined, via: undefined as string | undefined },
+    { key: "arbolito", name: t.story.arbolito, rate: v.rate, value: v.amountOut, me: true, delta: 0n, bps: 0, source: undefined as string | undefined, via: undefined as string | undefined, dated: undefined as string | undefined },
     ...v.comparisons.map((c) => ({
       key: c.name,
       name: t.receipt.refName[c.name],
@@ -96,6 +96,7 @@ function Comparison({ v, lang }: { v: ReceiptView; lang: Lang }) {
       delta: c.delta,
       bps: c.bps,
       source: c.source,
+      dated: c.at.slice(0, 10) === v.createdAt.slice(0, 10) ? undefined : new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(c.at)),
       via: c.via ? t.receipt.via(c.via.pair, t.receipt.refShort[c.via.name]) : undefined,
     })),
   ];
@@ -135,6 +136,7 @@ function Comparison({ v, lang }: { v: ReceiptView; lang: Lang }) {
               {r.source && (
                 <span>
                   {r.via ? `${r.via} · ` : ""}
+                  {r.dated ? `${r.dated} · ` : ""}
                   {r.source.startsWith("http") ? (
                     <ExtLink href={r.source}>{t.receipt.source} ↗</ExtLink>
                   ) : (

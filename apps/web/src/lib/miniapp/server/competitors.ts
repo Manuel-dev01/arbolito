@@ -25,6 +25,16 @@ export async function westernUnionReferences(db: Db | null | undefined, now = Da
   }));
 }
 
+/** A CBN rate counts as official on its date and the next day. Comparing today's price with an older one would say more about the days between. */
+export const CBN_CURRENT_MS = 48 * 3_600_000;
+
+/** Nigeria's official USD/NGN, while it is current (apps/agent/src/official-rates.ts stores it under its own date). */
+export async function cbnReference(db: Db | null | undefined, now = Date.now()): Promise<Reference[]> {
+  if (!db) return [];
+  const rows = await latestCompetitorRates(db, "cbn", CBN_CURRENT_MS, now);
+  return rows.filter((r) => r.corridor === "USD-NGN" && r.at.getTime() <= now).map((r) => ({ name: "official", pair: "USD/NGN", rate: r.rate, source: r.sourceUrl, at: r.at.toISOString() }));
+}
+
 /** "1618.75" → 1618.75e18 as a bigint (18 decimals). */
 function fixed18(s: string): bigint {
   const [i = "0", f = ""] = s.split(".");
