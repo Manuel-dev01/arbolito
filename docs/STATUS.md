@@ -65,7 +65,7 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 ## Log
 ### 2026-11-23: edition 2 build starts (Stablecoin Corridors)
 - **Tagging:** `ATTRIBUTION_CODE` takes a comma-separated list, current edition first.
-  - With both codes listed, every call prepared for a user and every tx the web app or bot sends carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`. Vercel and arbolito-bot list both since 2026-11-23 07:20 UTC; no mainnet transaction has used it yet.
+  - With both codes listed, every call prepared for a user and every tx the web app or bot sends carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`. Vercel and arbolito-bot list both since 2026-11-23 07:20 UTC; the first mainnet transaction with both was sent the same day (below).
   - "Is this ours" checks match the first code. The x402 builder code carries one code, the first.
   - desk-feed keeps only edition 1's code on purpose: maker activity doesn't count in edition 2. It also runs code from before the list (5a8361c), which rejects one.
 - **cNGN for users:** the Mini App, bot and chat hold, convert and send naira (Textile only, 6 decimals, ₦).
@@ -83,7 +83,8 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - Payers and payees are outside the team and not funded directly by it: `FUNDED_WALLETS`, every address our public wallets sent tokens to (`pnpm funded:wallets`; one hop, private).
 - **Checks:** 556 unit tests (1 skipped), 105 contract tests (3 skipped), both typechecks and the production build pass. /metrics checked against the real database at 1280 and 360 px in three languages; edition-1 numbers are unchanged.
   - Fork tests: the guardian and rules-runner tests pass. The proof and router ones time out on this machine (about 1 s per RPC call), on 470c09a too. The chain ones did not finish.
-  - cNGN payout rehearsed on a fork: 1 USDT → 1,449.346142 cNGN through a real Textile firm quote, forwarded in full to the payee; all three calls carry both codes. Not on mainnet yet.
+  - cNGN payout rehearsed on a fork: 1 USDT → 1,449.346142 cNGN through a real Textile firm quote, forwarded in full to the payee; all three calls carry both codes.
+  - First cNGN conversion on mainnet (the founder's MiniPay wallet, so it proves the flow and isn't traction): 1 USDT → 1,448.567082 cNGN through a Textile firm quote from an outside maker, both codes onchain, receipt anchored and verified ([tx](https://celoscan.io/tx/0x7e6906f1959bf93cc98127bc9a84f9c7acb952e34da28759ee4bf2996ffedd9c), [receipt](https://arbolito-livid.vercel.app/r/b49c8dd4-d4bc-4f52-aca5-a888ae1237a2)).
   - Next.js upgraded 16.4.0 → 16.4.5 (critical and high advisories).
 
 - **/metrics showing 1 wallet (2026-11-23, 06:54–06:59 UTC):** a Vercel instance failed its receipt queries four times while the database was up, and the fallback (the 2 receipts in the repo) was cached as the answer. Now a failed read is retried once, its real cause is logged, and a failure is never cached: the last good numbers stay, or the page says the database can't be reached. Why those queries failed isn't known: the old log had only the SQL.
