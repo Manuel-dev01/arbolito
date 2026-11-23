@@ -38,6 +38,32 @@ const CALL_LABEL: Record<Lang, { approve: string; change: string; send: string; 
   en: { approve: "Approve", change: "Change", send: "Send", changeSend: "Change and send", permit: "Limited permission", activate: "Turn on Arbolito", revoke: "Revoke permission" },
 };
 
+/** Which currency some words name; undefined when they name none. */
+function symIn(words: string): Sym | undefined {
+  if (/real\b|reales|reais|brl|r\$/.test(words)) return "wBRL";
+  if (/naira|\bngn\b|₦/.test(words)) return "cNGN";
+  if (/colombian|\bcop\b/.test(words)) return "wCOP";
+  if (/mexican|\bmxn\b/.test(words)) return "wMXN";
+  // A word of its own: "dollars" contains "ars".
+  if (/\bpesos?\b|\bars\b/.test(words)) return "wARS";
+  if (/d[oó]lar|dollar|\busdt?\b|us\$/.test(words)) return "USDT";
+  return undefined;
+}
+
+/** The demo chat's reading of "change 20 dollars to naira": the currency next to the number is the one paid. */
+export function parseMockChat(text: string, fallbackAmount: string): { from: Sym; to: Sym; amount: string } {
+  const said = text.toLowerCase();
+  const m = /(r\$|us\$|₦|\$)?\s*(\d{1,3}(?:,\d{3})+|\d+(?:[.,]\d+)?)(?:\s?(k)\b)?/.exec(said);
+  const raw = m ? (/^\d{1,3}(?:,\d{3})+$/.test(m[2]!) ? m[2]!.replace(/,/g, "") : m[2]!.replace(",", ".")) : fallbackAmount;
+  const after = m ? said.slice(m.index + m[0].length) : said;
+  const paidWords = after.split(/\s(?:to|into|in|for|give|a|por|para|pra|en|em)\s/)[0]!;
+  const from = symIn(m?.[1] ?? "") ?? symIn(paidWords) ?? "USDT";
+  const rest = (m ? said.slice(0, m.index) : "") + " " + after.slice(paidWords.length);
+  const wanted = symIn(rest);
+  const to = wanted && wanted !== from ? wanted : from === "USDT" || from === "wBRL" ? "wARS" : "USDT";
+  return { from, to, amount: m?.[3] ? String(Number(raw) * 1000) : raw };
+}
+
 /** Clearly fake demo account (never a real wallet). */
 export const MOCK_ACCOUNT: Address = "0x5a1c1a000000000000000000000000000000a4b0";
 
@@ -85,6 +111,8 @@ export function mockQuote(from: Sym, to: Sym, amount: string, id = uuid(), valid
   const pct = pctFor(CUR_OF[from], CUR_OF[to]);
   const bps = pct === null ? 0n : BigInt(Math.round(pct * 100));
   const deltaOut = pct === null ? 0n : expectedOut - (expectedOut * 10000n) / (10000n + bps);
+  // Textile is the naira's one market.
+  const naira = from === "cNGN" || to === "cNGN";
   const two = (CUR_OF[from] === "BRL" && CUR_OF[to] === "ARS") || (CUR_OF[from] === "ARS" && CUR_OF[to] === "BRL");
   const rate = (R[CUR_OF[from]] / R[CUR_OF[to]]).toFixed(6);
   const now = new Date();
@@ -100,11 +128,9 @@ export function mockQuote(from: Sym, to: Sym, amount: string, id = uuid(), valid
     rate,
     vsOfficial: pct === null ? null : { pct, pair: `${CUR_OF[from]}/${CUR_OF[to]}`, deltaOut: deltaOut.toString() },
     steps: two ? 2 : 1,
-    venues: (two ? ["textile", "uniswap"] : ["uniswap"]) as ("uniswap" | "textile")[],
-    usesTextile: two,
-    alternatives: [
-      { expectedOut: ((expectedOut * 9946n) / 10000n).toString(), venues: ["uniswap"] as ("uniswap" | "textile")[], diffBps: -54 },
-    ],
+    venues: (two ? ["textile", "uniswap"] : naira ? ["textile"] : ["uniswap"]) as ("uniswap" | "textile")[],
+    usesTextile: two || naira,
+    alternatives: naira ? [] : [{ expectedOut: ((expectedOut * 9946n) / 10000n).toString(), venues: ["uniswap"] as ("uniswap" | "textile")[], diffBps: -54 }],
     references: offRate ? [{ name: "Oficial", pair: `${CUR_OF[from]}/${CUR_OF[to]}`, rate: offRate, source: "BCRA", at: now.toISOString() }] : [],
   };
 }
@@ -163,14 +189,18 @@ export const MOCK_CONTACTS: Record<Lang, Omit<Contact, "id">[]> = {
     { name: "Martín Ferreyra", tag: "Alquiler", cur: "ARS", phone: "+54 9 11 4420-1934", address: "0x9a0c000000000000000000000000000000000002" },
     { name: "Agência Sol", tag: "Cliente", cur: "BRL", phone: "+55 11 98765-4321", address: "0x9a0c000000000000000000000000000000000003" },
     { name: "Tomás Ribeiro", tag: "", cur: "BRL", phone: "+55 21 99812-3307", address: "0x9a0c000000000000000000000000000000000004" },
+    { name: "Ada Okafor", tag: "Diseño", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
   ],
   pt: [
     { name: "Lucía Gómez", tag: "Designer", cur: "ARS", phone: "+54 9 11 5832-4107", address: "0x9a0c000000000000000000000000000000000005" },
     { name: "Mateo Díaz", tag: "Dev", cur: "ARS", phone: "+54 9 11 6021-5590", address: "0x9a0c000000000000000000000000000000000006" },
     { name: "Camila Rocha", tag: "", cur: "BRL", phone: "+55 11 97321-8840", address: "0x9a0c000000000000000000000000000000000007" },
+    { name: "Ada Okafor", tag: "Design", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
   ],
   en: [
+    { name: "Ada Okafor", tag: "Designer", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
     { name: "Graciela Gómez", tag: "Mom", cur: "ARS", phone: "+54 9 351 412-7781", address: "0x9a0c000000000000000000000000000000000001" },
+    { name: "Chinedu Eze", tag: "Developer", cur: "NGN", phone: "+234 806 555 0187", address: "0x9a0c000000000000000000000000000000000009" },
     { name: "Martín Ferreyra", tag: "Rent", cur: "ARS", phone: "+54 9 11 4420-1934", address: "0x9a0c000000000000000000000000000000000002" },
     { name: "Agência Sol", tag: "Client", cur: "BRL", phone: "+55 11 98765-4321", address: "0x9a0c000000000000000000000000000000000003" },
     { name: "Tomás Ribeiro", tag: "", cur: "BRL", phone: "+55 21 99812-3307", address: "0x9a0c000000000000000000000000000000000004" },
@@ -208,7 +238,7 @@ export function createMockServer(scenario: MockScenario) {
   const payrolls: z.infer<typeof RuleCard>[] = seededPayday
     ? [{ ruleId: seededPayday.ruleId, kind: "payroll", status: "active", description: "", message: "", nextRunAt: nextPayday(seededPayday, new Date()).toISOString(), stoppedReason: null }]
     : [];
-  const due = seededPayday ? [{ ruleId: seededPayday.ruleId, kind: "payroll" as const, status: scenario.payday!, at: new Date().toISOString(), txHashes: [], error: scenario.payday === "held" ? "ARS -4.10%" : null }] : [];
+  const due = seededPayday ? [{ ruleId: seededPayday.ruleId, kind: "payroll" as const, status: scenario.payday!, at: new Date().toISOString(), txHashes: [], error: scenario.payday === "held" ? `${CUR_OF[seededPayday.items[0]!.to]} -4.10%` : null }] : [];
   let autoOn = !!scenario.autoOn;
   let paused = !!scenario.paused;
   const L = CALL_LABEL[scenario.lang ?? "es"];
@@ -227,8 +257,8 @@ export function createMockServer(scenario: MockScenario) {
       return json(200, {
         at: now,
         references: [
-          { name: "Oficial", pair: "USD/ARS", rate: "1545.00", source: "BCRA", at: now },
-          { name: "Oficial", pair: "BRL/ARS", rate: "302.89", source: "BCRA", at: now },
+          { name: "official", pair: "USD/ARS", rate: "1545.00", source: "BCRA", at: now },
+          { name: "official", pair: "BRL/ARS", rate: "302.89", source: "BCRA", at: now },
           // Same scale as R above, so a total shown in COP or MXN matches the persona's balances.
           { name: "interbank", pair: "USD/COP", rate: "3190", source: "ER-API", at: now },
           { name: "interbank", pair: "USD/MXN", rate: "18.77", source: "ECB", at: now },
@@ -382,11 +412,7 @@ export function createMockServer(scenario: MockScenario) {
       const lang = (body.lang as Lang) ?? "es";
       const text = typeof body.text === "string" ? body.text : null;
       const transcript = text ? null : lang === "pt" ? "troca 200 reais por pesos" : lang === "en" ? "change 100 dollars to pesos" : "pasá 100 dólares a pesos";
-      const said = (text ?? transcript ?? "").toLowerCase();
-      const amt = /(\d+(?:[.,]\d+)?)/.exec(said)?.[1]?.replace(",", ".") ?? (lang === "pt" ? "200" : "100");
-      const from: Sym = /real|reai|brl|r\$/.test(said) ? "wBRL" : /peso|ars/.test(said) && !/a pesos|to pesos|por pesos/.test(said) ? "wARS" : "USDT";
-      // Which pesos: colombianos and mexicanos are named; plain "pesos" means Argentine ones.
-      const to: Sym = from === "wARS" ? "USDT" : /colombian|\bcop\b/.test(said) ? "wCOP" : /mexican|\bmxn\b/.test(said) ? "wMXN" : /naira|\bngn\b/.test(said) ? "cNGN" : "wARS";
+      const { from, to, amount: amt } = parseMockChat(text ?? transcript ?? "", lang === "pt" ? "200" : "100");
       if (fail === "no_route") return json(200, { transcript, reply: lang === "en" ? "No market right now for that pair." : "Ahora no hay mercado para ese cambio.", quotes: [] });
       const q = mockQuote(from, to, amt);
       quotes.set(q.quoteId, q);
