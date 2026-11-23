@@ -65,9 +65,8 @@ Update at the end of every work block: what shipped, what's blocked, what's next
 ## Log
 ### 2026-11-23: edition 2 build starts (Stablecoin Corridors)
 - **Tagging:** `ATTRIBUTION_CODE` takes a comma-separated list, current edition first.
-  - With both codes listed, every call prepared for a user and every tx the web app or bot sends carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`. Production doesn't list both yet (next points), so no transaction carries the new code so far.
+  - With both codes listed, every call prepared for a user and every tx the web app or bot sends carries `celo_0acfe36b6ea3` and `celo_e054d92430a5`. Vercel and arbolito-bot list both since 2026-11-23 07:20 UTC; no mainnet transaction has used it yet.
   - "Is this ours" checks match the first code. The x402 builder code carries one code, the first.
-  - `.env` is updated. **Vercel and arbolito-bot still carry only the old code** until the founder approves the change.
   - desk-feed keeps only edition 1's code on purpose: maker activity doesn't count in edition 2. It also runs code from before the list (5a8361c), which rejects one.
 - **cNGN for users:** the Mini App, bot and chat hold, convert and send naira (Textile only, 6 decimals, ₦).
   - References: Textile's USDT_NGN mid and ER-API's USD/NGN (labelled interbank).
@@ -82,7 +81,6 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - The founder's second MiniPay wallet was missing from the list; added before anything was pushed.
 - **/metrics edition-2 view:** counts receipts tagged with the new code since 20 Nov whose Textile taker leg is in a listed corridor (USD₮ with cNGN, IDRX, wARS, wBRL, wMXN or wCOP, either way, labelled in the direction traded).
   - Payers and payees are outside the team and not funded directly by it: `FUNDED_WALLETS`, every address our public wallets sent tokens to (`pnpm funded:wallets`; one hop, private).
-  - Every exclusion is counted by reason. Receipts are linked except where the reason would name a private wallet.
 - **Checks:** 556 unit tests (1 skipped), 105 contract tests (3 skipped), both typechecks and the production build pass. /metrics checked against the real database at 1280 and 360 px in three languages; edition-1 numbers are unchanged.
   - Fork tests: the guardian and rules-runner tests pass. The proof and router ones time out on this machine (about 1 s per RPC call), on 470c09a too. The chain ones did not finish.
   - cNGN payout rehearsed on a fork: 1 USDT → 1,449.346142 cNGN through a real Textile firm quote, forwarded in full to the payee; all three calls carry both codes. Not on mainnet yet.
