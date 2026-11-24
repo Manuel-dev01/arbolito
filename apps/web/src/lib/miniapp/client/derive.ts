@@ -48,7 +48,9 @@ export function pricesFrom(balances: Balances | null | undefined, rates?: Rates 
   const usdBrl = refRate(rates, "USD/BRL");
   if (!p.BRL && usdBrl) p.BRL = BigInt(Math.round(1e6 / usdBrl));
   const brlArs = refRate(rates, "BRL/ARS");
-  if (!p.BRL && brlArs && p.ARS) p.BRL = BigInt(Math.round(Number(p.ARS) * brlArs));
+  // Both legs official: the official real against the market peso was 10% off (2026-11-23).
+  const officialArs = Number(rates?.references.find((r) => r.name === "official" && r.pair.toUpperCase() === "USD/ARS")?.rate);
+  if (!p.BRL && brlArs && (officialArs > 0 || p.ARS)) p.BRL = BigInt(Math.round((officialArs > 0 ? 1e6 / officialArs : Number(p.ARS)) * brlArs));
   for (const cur of ["COP", "MXN", "NGN"] as const) {
     const usdX = refRate(rates, `USD/${cur}`);
     if (!p[cur] && usdX) p[cur] = BigInt(Math.round(1e6 / usdX));

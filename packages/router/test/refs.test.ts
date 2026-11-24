@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fiatOf, fmtRate, interbankRefs } from "../src/refs";
+import { MIN_POOL_USDT, fiatOf, fmtRate, interbankRefs, uniswapRefs } from "../src/refs";
 
 describe("fmtRate", () => {
   it("keeps 8 significant digits as a plain decimal", () => {
@@ -51,6 +51,25 @@ describe("interbankRefs", () => {
     expect((await interbankRefs()).map((r) => r.pair)).toEqual(["USD/MXN"]);
     vi.stubGlobal("fetch", vi.fn(async () => new Response("down", { status: 503 })));
     await expect(interbankRefs()).rejects.toThrow(/no interbank source/);
+  });
+});
+
+describe("uniswapRefs", () => {
+  const client = (usdt: (pool: string) => bigint) =>
+    ({
+      multicall: async ({ contracts }: { contracts: { functionName: string; args?: string[] }[] }) =>
+        contracts.map((c) => ({
+          status: "success",
+          result: c.functionName === "slot0" ? [2n ** 96n, 0] : c.functionName === "liquidity" ? 912959230885651704n : usdt(c.args![0]!.toLowerCase()),
+        })),
+    }) as never;
+
+  it("leaves out a pool with almost no dollars in it (wBRL held 17 USDT on 2026-11-23, stuck at R$ 5.3197)", async () => {
+    const brl = "0x01c3cf91cdf7b34181c7ec8566c0236951fea40f";
+    const all = await uniswapRefs(client(() => MIN_POOL_USDT), 1n);
+    expect(all.map((r) => r.pair).sort()).toEqual(["USD/ARS", "USD/BRL"]);
+    const deep = await uniswapRefs(client((p) => (p === brl ? 17_417_202n : 41_903_807_790n)), 1n);
+    expect(deep.map((r) => r.pair)).toEqual(["USD/ARS"]);
   });
 });
 

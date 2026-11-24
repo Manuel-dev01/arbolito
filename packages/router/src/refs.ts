@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PublicClient } from "viem";
 import { POOLS, TOKENS, loadEnv } from "@arbolito/config";
-import { poolAbi } from "./abis";
+import { erc20Abi, poolAbi } from "./abis";
 import { fetchTextileTickers } from "./textile/tickers";
 import type { Reference } from "./types";
 
@@ -63,12 +63,19 @@ export async function brlRefs(timeoutMs = 1500): Promise<Reference[]> {
   return brl ? [{ name: "official", pair: "BRL/ARS", rate: fmtRate(brl.venta!), source: `${url}#BRL.oficial.venta`, at: brl.fechaActualizacion }] : [];
 }
 
+/**
+ * A pool needs this many USDT to be a price. The wBRL one holds 147K wBRL and 17 USDT (2026-11-23): its
+ * mid has sat at R$ 5.3197 for weeks while a dollar trades at about R$ 5.94.
+ */
+export const MIN_POOL_USDT = 500n * 10n ** 6n;
+
 /** Uniswap pool mids for the ARS and BRL corridors, as USD/ARS and USD/BRL (USDT as USD). */
 export async function uniswapRefs(client: PublicClient, blockNumber: bigint): Promise<Reference[]> {
   const wanted = POOLS.filter((p) => p.routable && (p.token0 === "wARS" || p.token1 === "wBRL"));
-  const [slots, liquidity] = await Promise.all([
+  const [slots, liquidity, dollars] = await Promise.all([
     client.multicall({ allowFailure: true, blockNumber, contracts: wanted.map((p) => ({ address: p.address, abi: poolAbi, functionName: "slot0" }) as const) }),
     client.multicall({ allowFailure: true, blockNumber, contracts: wanted.map((p) => ({ address: p.address, abi: poolAbi, functionName: "liquidity" }) as const) }),
+    client.multicall({ allowFailure: true, blockNumber, contracts: wanted.map((p) => ({ address: TOKENS.USDT.address, abi: erc20Abi, functionName: "balanceOf", args: [p.address] }) as const) }),
   ]);
   const at = new Date().toISOString();
   const out: Reference[] = [];
@@ -79,6 +86,8 @@ export async function uniswapRefs(client: PublicClient, blockNumber: bigint): Pr
     // tick 887271, "mid" 3.4e26): its price says nothing about the market, so it is no reference.
     const l = liquidity[i];
     if (l?.status !== "success" || l.result === 0n) return;
+    const usdt = dollars[i];
+    if (usdt?.status !== "success" || usdt.result < MIN_POOL_USDT) return;
     const t0 = TOKENS[p.token0];
     const t1 = TOKENS[p.token1];
     const price1per0 = priceFromSqrtX96(s.result[0], t0.decimals, t1.decimals);

@@ -63,6 +63,33 @@ describe("pricesFrom", () => {
     expect(dollarsPer(p.MXN)).toBeCloseTo(18.77, 0);
   });
 
+  it("without a market price for the real, crosses official with official (2026-11-23)", () => {
+    const at = "2026-11-23T20:52:43Z";
+    const p = pricesFrom({ account: ACCOUNT, balances: [], usdMicros: {}, blockNumber: "1" } as never, {
+      at,
+      references: [
+        { name: "official", pair: "USD/ARS", rate: "1600", source: "x", at },
+        { name: "official", pair: "BRL/ARS", rate: "266.3457", source: "x", at },
+        { name: "uniswap_mid", pair: "USD/ARS", rate: "1763.1468", source: "x", at },
+      ],
+    } as never);
+    expect(dollarsPer(p.ARS)).toBeCloseTo(1763, -1);
+    expect(dollarsPer(p.BRL)).toBeCloseTo(1600 / 266.3457, 1);
+  });
+
+  it("prices the real from Textile when it is the only market", () => {
+    const at = "2026-11-23T20:52:43Z";
+    const p = pricesFrom({ account: ACCOUNT, balances: [], usdMicros: {}, blockNumber: "1" } as never, {
+      at,
+      references: [
+        { name: "official", pair: "BRL/ARS", rate: "266.3457", source: "x", at },
+        { name: "textile_mid", pair: "USD/BRL", rate: "5.9422", source: "x", at },
+        { name: "western_union", pair: "USD/BRL", rate: "5.7432", source: "x", at },
+      ],
+    } as never);
+    expect(dollarsPer(p.BRL)).toBeCloseTo(5.9422, 2);
+  });
+
   it("prices from the market, not the official rate (2026-11-10: a stale official showed ARS 1,570 and R$ 5.58 for days)", () => {
     const at = "2026-11-10T15:00:00Z";
     const p = pricesFrom({ account: ACCOUNT, balances: [], usdMicros: {}, blockNumber: "1" } as never, {
