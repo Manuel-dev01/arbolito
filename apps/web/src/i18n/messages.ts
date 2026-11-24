@@ -25,7 +25,7 @@ export function withLang(href: string, lang: Lang): string {
 const es = {
   meta: {
     title: "Arbolito: el cambista que vive en tu chat",
-    description: "Cambiá y mandá nairas, pesos, reales y dólares desde MiniPay o Telegram, al mejor precio del momento y con un comprobante que cualquiera puede verificar.",
+    description: "Cambiá y mandá pesos, reales, nairas y dólares desde MiniPay o Telegram, al mejor precio del momento y con un comprobante que cualquiera puede verificar.",
   },
   nav: {
     home: "Inicio",
@@ -48,13 +48,13 @@ const es = {
   },
   landing: {
     hero: {
-      currencies: "NGN · ARS · BRL · USD",
+      currencies: "ARS · BRL · NGN · USD",
       live: "En vivo",
       updated: (time: string) => `actualizado ${time}`,
       titleA: "El cambista ",
       titleB: "que vive",
       titleC: " en tu chat.",
-      lead: "Pedile por texto o audio que cambie o mande nairas, pesos, reales y dólares. Busca el mejor precio del momento y te da un comprobante que lo prueba.",
+      lead: "Pedile por texto o audio que cambie o mande pesos, reales, nairas y dólares. Busca el mejor precio del momento y te da un comprobante que lo prueba.",
       ctaMiniPay: "Abrir en MiniPay",
       ctaTelegram: "Abrir en Telegram",
       telegramHint: "o escribile a @arbolitoo_bot",
@@ -218,11 +218,11 @@ const es = {
         },
         {
           q: "¿En qué países funciona?",
-          a: "Donde funciona MiniPay: Nigeria, Argentina, Brasil, Chile, Colombia, Perú, Uruguay y México, entre otros. Hoy cambiamos entre nairas, pesos argentinos, reales y dólares.",
+          a: "Donde funciona MiniPay: Argentina, Brasil, Chile, Colombia, Perú, Uruguay, México y Nigeria, entre otros. Hoy cambiamos entre pesos argentinos, reales, nairas y dólares, y pesos colombianos y mexicanos cuando hay mercado.",
         },
         {
           q: "¿Necesito saber de cripto?",
-          a: "No. Hablás en nairas, pesos, reales y dólares, y confirmás en tu billetera como cualquier pago. Los detalles técnicos están en “Ver detalles”, si te interesan.",
+          a: "No. Hablás en pesos, reales, nairas y dólares, y confirmás en tu billetera como cualquier pago. Los detalles técnicos están en “Ver detalles”, si te interesan.",
         },
         {
           q: "¿Y si el precio cambia mientras confirmo?",
@@ -245,7 +245,7 @@ const es = {
     arbolito: "Arbolito",
     routeTitle: "Cómo lo hicimos",
     routeSteps: (n: number, path: string) => (n === 1 ? `Directo, en 1 paso: ${path}.` : `En ${n} pasos: ${path}.`),
-    fiatName: { ARS: "pesos", BRL: "reales", USD: "dólares" } as Record<string, string>,
+    fiatName: { ARS: "pesos", BRL: "reales", NGN: "nairas", USD: "dólares" } as Record<string, string>,
     verifyTitle: "Verificación",
     badge: {
       verified: { t: "Verificado", d: "La huella de este comprobante coincide con la registrada públicamente. Nadie la puede cambiar después." },
@@ -506,7 +506,7 @@ export type Messages = typeof es;
 const pt: Messages = {
   meta: {
     title: "Arbolito: o cambista que mora no seu chat",
-    description: "Troque e envie nairas, pesos, reais e dólares pelo MiniPay ou Telegram, com o melhor preço do momento e um comprovante que qualquer pessoa pode verificar.",
+    description: "Troque e envie pesos, reais, nairas e dólares pelo MiniPay ou Telegram, com o melhor preço do momento e um comprovante que qualquer pessoa pode verificar.",
   },
   nav: {
     home: "Início",
@@ -529,13 +529,13 @@ const pt: Messages = {
   },
   landing: {
     hero: {
-      currencies: "NGN · ARS · BRL · USD",
+      currencies: "ARS · BRL · NGN · USD",
       live: "Ao vivo",
       updated: (time) => `atualizado ${time}`,
       titleA: "O cambista ",
       titleB: "que mora",
       titleC: " no seu chat.",
-      lead: "Peça por texto ou áudio para trocar ou enviar nairas, pesos, reais e dólares. Ele busca o melhor preço do momento e te dá um comprovante que prova isso.",
+      lead: "Peça por texto ou áudio para trocar ou enviar pesos, reais, nairas e dólares. Ele busca o melhor preço do momento e te dá um comprovante que prova isso.",
       ctaMiniPay: "Abrir no MiniPay",
       ctaTelegram: "Abrir no Telegram",
       telegramHint: "ou escreva para @arbolitoo_bot",
@@ -699,11 +699,11 @@ const pt: Messages = {
         },
         {
           q: "Em quais países funciona?",
-          a: "Onde o MiniPay funciona: Nigéria, Argentina, Brasil, Chile, Colômbia, Peru, Uruguai e México, entre outros. Hoje trocamos entre nairas, pesos argentinos, reais e dólares.",
+          a: "Onde o MiniPay funciona: Argentina, Brasil, Chile, Colômbia, Peru, Uruguai, México e Nigéria, entre outros. Hoje trocamos entre pesos argentinos, reais, nairas e dólares, e pesos colombianos e mexicanos quando há mercado.",
         },
         {
           q: "Preciso entender de cripto?",
-          a: "Não. Você fala em nairas, pesos, reais e dólares, e confirma na sua carteira como qualquer pagamento. Os detalhes técnicos ficam em “Ver detalhes”, se tiver interesse.",
+          a: "Não. Você fala em pesos, reais, nairas e dólares, e confirma na sua carteira como qualquer pagamento. Os detalhes técnicos ficam em “Ver detalhes”, se tiver interesse.",
         },
         {
           q: "E se o preço mudar enquanto confirmo?",
@@ -726,7 +726,7 @@ const pt: Messages = {
     arbolito: "Arbolito",
     routeTitle: "Como fizemos",
     routeSteps: (n, path) => (n === 1 ? `Direto, em 1 passo: ${path}.` : `Em ${n} passos: ${path}.`),
-    fiatName: { ARS: "pesos", BRL: "reais", USD: "dólares" },
+    fiatName: { ARS: "pesos", BRL: "reais", NGN: "nairas", USD: "dólares" },
     verifyTitle: "Verificação",
     badge: {
       verified: { t: "Verificado", d: "A impressão digital deste comprovante confere com a registrada publicamente. Ninguém pode alterá-la depois." },
@@ -985,7 +985,7 @@ const pt: Messages = {
 const en: Messages = {
   meta: {
     title: "Arbolito: the money-changer that lives in your chat",
-    description: "Change and send naira, pesos, reais and dollars from MiniPay or Telegram, at the best rate of the moment, with a receipt anyone can verify.",
+    description: "Change and send pesos, reais, naira and dollars from MiniPay or Telegram, at the best rate of the moment, with a receipt anyone can verify.",
   },
   nav: {
     home: "Home",
@@ -1008,13 +1008,13 @@ const en: Messages = {
   },
   landing: {
     hero: {
-      currencies: "NGN · ARS · BRL · USD",
+      currencies: "ARS · BRL · NGN · USD",
       live: "Live",
       updated: (time) => `updated ${time}`,
       titleA: "The money-changer ",
       titleB: "that lives",
       titleC: " in your chat.",
-      lead: "Ask by text or voice to change or send naira, pesos, reais and dollars. It finds the best rate of the moment and hands you a receipt that proves it.",
+      lead: "Ask by text or voice to change or send pesos, reais, naira and dollars. It finds the best rate of the moment and hands you a receipt that proves it.",
       ctaMiniPay: "Open in MiniPay",
       ctaTelegram: "Open in Telegram",
       telegramHint: "or message @arbolitoo_bot",
@@ -1178,11 +1178,11 @@ const en: Messages = {
         },
         {
           q: "Which countries does it work in?",
-          a: "Wherever MiniPay works: Nigeria, Argentina, Brazil, Chile, Colombia, Peru, Uruguay and Mexico, among others. Today we change between naira, Argentine pesos, reais and dollars.",
+          a: "Wherever MiniPay works: Argentina, Brazil, Chile, Colombia, Peru, Uruguay, Mexico and Nigeria, among others. Today we change between Argentine pesos, reais, naira and dollars, plus Colombian and Mexican pesos when there's a market.",
         },
         {
           q: "Do I need to know about crypto?",
-          a: "No. You talk in naira, pesos, reais and dollars, and confirm in your wallet like any payment. The technical details are under “See details”, if you're curious.",
+          a: "No. You talk in pesos, reais, naira and dollars, and confirm in your wallet like any payment. The technical details are under “See details”, if you're curious.",
         },
         {
           q: "What if the price changes while I confirm?",
@@ -1205,7 +1205,7 @@ const en: Messages = {
     arbolito: "Arbolito",
     routeTitle: "How we did it",
     routeSteps: (n, path) => (n === 1 ? `Direct, in 1 step: ${path}.` : `In ${n} steps: ${path}.`),
-    fiatName: { ARS: "pesos", BRL: "reais", USD: "dollars" },
+    fiatName: { ARS: "pesos", BRL: "reais", NGN: "naira", USD: "dollars" },
     verifyTitle: "Verification",
     badge: {
       verified: { t: "Verified", d: "This receipt's fingerprint matches the publicly recorded one. Nobody can change it afterwards." },

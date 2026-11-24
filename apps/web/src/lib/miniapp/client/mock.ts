@@ -198,8 +198,8 @@ export const MOCK_CONTACTS: Record<Lang, Omit<Contact, "id">[]> = {
     { name: "Ada Okafor", tag: "Design", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
   ],
   en: [
-    { name: "Ada Okafor", tag: "Designer", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
     { name: "Graciela Gómez", tag: "Mom", cur: "ARS", phone: "+54 9 351 412-7781", address: "0x9a0c000000000000000000000000000000000001" },
+    { name: "Ada Okafor", tag: "Designer", cur: "NGN", phone: "+234 803 555 0142", address: "0x9a0c000000000000000000000000000000000008" },
     { name: "Chinedu Eze", tag: "Developer", cur: "NGN", phone: "+234 806 555 0187", address: "0x9a0c000000000000000000000000000000000009" },
     { name: "Martín Ferreyra", tag: "Rent", cur: "ARS", phone: "+54 9 11 4420-1934", address: "0x9a0c000000000000000000000000000000000002" },
     { name: "Agência Sol", tag: "Client", cur: "BRL", phone: "+55 11 98765-4321", address: "0x9a0c000000000000000000000000000000000003" },

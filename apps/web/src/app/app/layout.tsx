@@ -4,7 +4,7 @@ import "./miniapp.css";
 
 export const metadata: Metadata = {
   title: "Arbolito",
-  description: "Cambiá y mandá nairas, pesos, reales y dólares desde MiniPay, al mejor precio y con comprobante.",
+  description: "Cambiá y mandá pesos, reales, nairas y dólares desde MiniPay, al mejor precio y con comprobante.",
   robots: { index: false },
 };
 
