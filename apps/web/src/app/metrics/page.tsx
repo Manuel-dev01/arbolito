@@ -283,7 +283,7 @@ export default async function MetricsPage({ searchParams }: Props) {
             <tbody>
               {m.receipts.map((r) => (
                 <tr key={r.id}>
-                  <td className="small">{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "America/Argentina/Buenos_Aires" }).format(new Date(r.createdAt))}</td>
+                  <td className="small">{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(r.createdAt))}</td>
                   <td>
                     <a href={rHref(r.id)}>
                       {formatMoney(r.amountIn, r.tokenIn.decimals, r.tokenIn.fiat, locale)} → {formatMoney(r.amountOut, r.tokenOut.decimals, r.tokenOut.fiat, locale)}

@@ -48,13 +48,16 @@ export function PaydayCards() {
   );
 }
 
+/** The 9 in the morning just gone by: repeating on that day never falls due hours after paying it. */
+const lastPaydayHour = () => new Date(Date.now() - 9 * 3_600_000);
+
 /** "Repeat this payout": how often, and how far the price may move before a payday is held. */
 export function PaydayNew() {
   const { t, lang, paydays, telegram, go } = useApp();
   const today = new Date();
   const [unit, setUnit] = useState<"week" | "month">("week");
-  const [weekday, setWeekday] = useState(5);
-  const [day, setDay] = useState(25);
+  const [weekday, setWeekday] = useState(() => lastPaydayHour().getDay());
+  const [day, setDay] = useState(() => Math.min(lastPaydayHour().getDate(), 28));
   const [tolerance, setTolerance] = useState(3);
   const items = paydays.draft;
   if (!items?.length) return <Paydays />;

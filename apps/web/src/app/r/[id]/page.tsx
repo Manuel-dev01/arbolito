@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { bundleHash } from "@arbolito/proof";
 import { ExtLink, Shell } from "../../../components/public/shell";
 import { badgeState, type BadgeState } from "../../../components/public/public-data";
+import { LocalTime } from "../../../components/public/local-time";
 import { VerifyPanel } from "../../../components/public/verify-panel";
 import { getLang, LOCALE, messages, withLang, type Lang, type Messages } from "../../../i18n/messages";
 import { anchorFor, getReceiptCached, verifyReceipt } from "../../../lib/cached";
@@ -15,8 +16,6 @@ type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
-
-const TZ = "America/Argentina/Buenos_Aires";
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -175,8 +174,6 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
   const anchor = verification.result?.anchor ?? anchorLookup;
   const state = badgeState(!!rec.supersededBy, v.createdAt, verification);
 
-  const short = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TZ }).format(new Date(v.createdAt));
-  const long = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "long", timeZone: TZ }).format(new Date(v.createdAt));
   const officialPair = v.savings?.pair ?? `${v.tokenIn.fiat}/${v.tokenOut.fiat}`;
   const officialFiat = officialPair.split("/")[1] ?? v.tokenOut.fiat;
   const savedAbs = v.savings ? (v.savings.delta < 0n ? -v.savings.delta : v.savings.delta) : 0n;
@@ -203,7 +200,7 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
       <section className="card glass rc-hero" aria-labelledby="receipt-title">
         <div className="rc-top">
           <span className="kicker" id="receipt-title">
-            {s.eyebrow} · <time dateTime={v.createdAt}>{long}</time>
+            {s.eyebrow} · <LocalTime iso={v.createdAt} locale={locale} options={{ dateStyle: "long", timeStyle: "long" }} />
           </span>
           <a href="#verificacion" className={`vtag vtag-${state}`}>
             {s.tag[state]}
@@ -229,7 +226,7 @@ export default async function ReceiptPage({ params, searchParams }: Props) {
           </>
         )}
         <span className="rc-sub">
-          {money(v.amountIn, v.tokenIn, locale)} → {money(v.amountOut, v.tokenOut, locale)} · {short}
+          {money(v.amountIn, v.tokenIn, locale)} → {money(v.amountOut, v.tokenOut, locale)} · <LocalTime iso={v.createdAt} locale={locale} options={{ day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }} />
         </span>
         <div className="pair-tiles">
           <div className="pair-tile">
