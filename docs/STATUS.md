@@ -103,7 +103,12 @@ Update at the end of every work block: what shipped, what's blocked, what's next
   - No names leave the phone, and GET /rules shows only how many people a schedule pays.
   - No database migration: `rules` kind `payroll`, runs `ready` or `held`.
   - Checked: 24 new unit tests, a database test, create / tamper / repeat / cancel against the real API and database (rows deleted), a payday priced with live free quotes (one ready, one held at −4.87%), and the demo in a browser in three languages. Not yet run on a real payday.
-- **Walkthrough fixes (built, not deployed):**
+- **Walkthrough fixes, second round (built, not deployed):**
+  - The wBRL/USDT Uniswap pool holds 17 USDT, so its price (R$ 5.3197, unchanged for weeks) is no longer a reference: a pool needs 500 USDT. The real now comes from Textile (R$ 5.94 on 2026-11-24). Balances were already valued at the better of both.
+  - Without a market price, the real crosses the official peso with the official real.
+  - Receipt times are in the reader's time zone; a schedule starts on the day it's set up, never due hours later.
+  - Copy: naira joins pesos, reais and dollars instead of leading the list; the FAQ also names Colombian and Mexican pesos.
+- **Walkthrough fixes (live, `d1ebb59`):**
   - The demo's contacts include naira payees, and its chat reads "change 20 dollars to naira" correctly ("dollars" contains "ars", so it was read as pesos).
   - The batch review names the market that priced each payment.
   - Naira is on the home rate card and wherever the app, the site and the bot say what they change.
