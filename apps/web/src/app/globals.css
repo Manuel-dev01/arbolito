@@ -616,6 +616,12 @@ body:has(.pub) {
 .pub .coin-canvas[data-ready] {
   opacity: 1;
 }
+/* In one column the coins have no side of their own: they stay behind the text as a watermark. */
+@media (max-width: 900px) {
+  .pub .coin-canvas[data-ready] {
+    opacity: 0.2;
+  }
+}
 /* Content sits above the coins, as in the design (cards are glass over them). */
 .pub > header,
 .pub > main,
