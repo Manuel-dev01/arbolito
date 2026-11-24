@@ -242,7 +242,7 @@ export function buildChatHandlers(
     async help() {
       return {
         data: {
-          can: ["check balances", "quote and convert pesos, reais, naira and dollars", "deposit and cash-out links via Ripio", "show receipts after a conversion", "list saved contacts and prepare sends for review in MiniPay"],
+          can: ["check balances", "quote and convert pesos, reais, naira and dollars", "deposit and cash-out links via Ripio", "show receipts after a conversion", "list saved contacts and prepare sends for review in MiniPay", "pay several people at once and schedule paydays (on the Send screen: Pay several people; not from this chat)"],
           tokens: TOKEN_SYMBOLS,
         },
       };

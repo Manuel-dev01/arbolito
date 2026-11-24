@@ -107,9 +107,15 @@ export const copy = {
   welcome: (lang: Lang, name: string | null) =>
     pick<[string]>(
       {
-        es: (n) => `Hola${n}. Soy <b>Arbolito</b>, tu cambista: cambio y mando pesos, reales, nairas y dólares al mejor precio del momento, y cada operación tiene su comprobante.`,
-        pt: (n) => `Oi${n}. Eu sou o <b>Arbolito</b>, seu cambista: troco e envio reais, pesos, nairas e dólares pelo melhor preço do momento, e cada operação tem seu comprovante.`,
-        en: (n) => `Hi${n}. I'm <b>Arbolito</b>, your money-changer: I convert and send pesos, reais, naira and dollars at the best rate right now, and every trade comes with a receipt.`,
+        es: (n) => `Hola${n}. Soy <b>Arbolito</b>, tu cambista: cambio y mando pesos, reales, nairas y dólares al mejor precio del momento, y cada operación tiene su comprobante.
+
+En mi app de MiniPay también podés pagarles a varias personas a la vez, a cada una en su moneda. Yo preparo cada día de pago; vos confirmás.`,
+        pt: (n) => `Oi${n}. Eu sou o <b>Arbolito</b>, seu cambista: troco e envio reais, pesos, nairas e dólares pelo melhor preço do momento, e cada operação tem seu comprovante.
+
+No meu app do MiniPay você também pode pagar várias pessoas de uma vez, cada uma na sua moeda. Eu preparo cada dia de pagamento; você confirma.`,
+        en: (n) => `Hi${n}. I'm <b>Arbolito</b>, your money-changer: I convert and send pesos, reais, naira and dollars at the best rate right now, and every trade comes with a receipt.
+
+In my MiniPay app you can also pay several people at once, each in their own currency. I prepare every payday; you confirm.`,
       },
       lang,
       name ? `, ${name}` : "",
